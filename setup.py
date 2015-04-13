@@ -1,3 +1,6 @@
+
+import os
+
 try:
     from setuptools import setup, find_packages
 except ImportError:
@@ -13,9 +16,13 @@ config = {
     'author_email': '',
     'version': '0.1',
     'install_requires': ['nose','biopython','pysam'],
-    'packages': find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     'scripts': ['cms/selection.py','cms/main.py'],
     'name': 'python-cms'
 }
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:
+    config['packages'] = find_packages(exclude=EXCLUDE_FROM_PACKAGES)
 
 setup(**config)
