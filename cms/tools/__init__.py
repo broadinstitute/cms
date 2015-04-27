@@ -153,7 +153,13 @@ class DownloadPackage(InstallMethod):
                 self.require_executability else os.R_OK):
             if self.verifycmd:
                 log.debug("validating")
-                self.installed = (os.system(self.verifycmd) == self.verifycode)
+                returnCode = os.system(self.verifycmd)
+                # if returnCode is >255, the high byte is the exit status, 
+                # and the low byte is signal number that killed the process
+                if returnCode > 255: 
+                    # shift by 8 to get the exit code from the high byte
+                    returnCode = returnCode >> 8
+                self.installed = (returnCode == self.verifycode)
             else:
                 self.installed = True
         else:

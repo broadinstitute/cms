@@ -22,8 +22,8 @@ class TestToolsInstallation(TestCaseWithTmp):
                 isLeaf = False
                 for leafClass in iter_leaf_subclasses(subclass) :
                     yield leafClass
-            #if isLeaf :
-            #    yield aClass
+            if isLeaf :
+                yield aClass
         '''Load every tool's default chain of install methods and try them.'''
         for tool_class in iter_leaf_subclasses(tools.Tool):
             t = tool_class()
