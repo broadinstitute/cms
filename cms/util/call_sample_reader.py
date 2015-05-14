@@ -7,7 +7,10 @@ __date__ = "PLACEHOLDER"
 import csv
 import os, re
 from collections import defaultdict
-from urllib2 import urlopen
+try:
+    from urllib2 import urlopen
+except ImportError: # for py3
+    from urllib.request import urlopen
 
 class CallSampleReader(object):
     '''
