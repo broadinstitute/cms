@@ -29,6 +29,10 @@ class Selection(object):
 # File conversion parser to create selscan-compatible input, including population filtering
 
 def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
+    """
+            Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
+            tped file of the sort expected by selscan. 
+    """
     parser.help = """This function converts an input VCF into a TPED file usable by selscan.
                      It can optionally filter samples by population given a callsample file, and by ancestral call quality."""
 
@@ -106,6 +110,10 @@ __commands__.append(('selscan_file_conversion', parser_selscan_file_conversion))
 # === Selscan common parser ===
 
 def parser_selscan_common(parser=argparse.ArgumentParser()):
+    """
+        Build a parser to which arguments are added which are common to 
+        several selscan functions.
+    """
     parser.add_argument("inputTped", help="Input tped file")
     parser.add_argument("outFile", help="Output filepath")
     
@@ -130,6 +138,9 @@ def parser_selscan_common(parser=argparse.ArgumentParser()):
 # === Selscan EHH ===
 
 def parser_selscan_ehh(parser=argparse.ArgumentParser()):
+    """
+        Perform selscan's calculation of EHH.
+    """
     parser = parser_selscan_common(parser)
 
     parser.add_argument("locusID", help="The locus ID")
@@ -171,6 +182,9 @@ __commands__.append(('selscan_ehh', parser_selscan_ehh))
 # === Selscan IHS ===
 
 def parser_selscan_ihs(parser=argparse.ArgumentParser()):
+    """
+        Perform selscan's calculation of iHS.
+    """
     parser = parser_selscan_common(parser)
 
     parser.add_argument('--skipLowFreq', default=False, action='store_true',
@@ -204,6 +218,9 @@ __commands__.append(('selscan_ihs', parser_selscan_ihs))
 # === Selscan XPEHH ===
 
 def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
+    """
+        Perform selscan's calculation of XPEHH.
+    """
     parser = parser_selscan_common(parser)
 
     parser.add_argument("inputRefTped", help="Input tped for the reference population to which the first is compared")

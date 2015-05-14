@@ -49,6 +49,10 @@ class SelscanFormatter(object):
     @classmethod
     def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
         outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None):
+        """
+            Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
+            tped file of the sort expected by selscan. 
+        """
         processor = VCFReader(vcf_file)
 
         tabix_file = pysam.TabixFile(vcf_file, parser=pysam.asVCF())
