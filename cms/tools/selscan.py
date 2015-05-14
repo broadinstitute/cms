@@ -5,17 +5,133 @@
 
 __author__ = "tomkinsc@broadinstitute.org"
 
-
-from Bio import SeqIO
-import logging, tools, util.file
+# built-ins
 import os, os.path, subprocess
+import logging
+import gzip
+from datetime import datetime, timedelta
+
+# intra-module dependencies
+import tools, util.file
+from util.vcf_reader import VCFReader
+from util.call_sample_reader import CallSampleReader
+from util.recom_map import RecomMap
+
+#third-party dependencies
+from Bio import SeqIO
+import pysam
+from boltons.timeutils import relative_time
+import numpy as np
 
 tool_version = '1.0.4'
 url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
 
-class SelScanTool(tools.Tool):
+class SelscanFormatter(object):
+
+    @staticmethod
+    def _moving_avg(x, prevAvg, N):
+        return float( sum([int(prevAvg)] * (N-1)) + x) / float(N)
+
+    @staticmethod
+    def _build_variant_output_strings(chrm, idx, pos_bp, map_pos_cm, genos, ref_allele, alt_allele, ancestral_call, allele_freq):
+        outputStringDict = dict()
+        outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
+        outputStringDict["metadataString"] = "{chr} {pos_bp}-{idx} {pos_bp} {map_pos_cm} {ref_allele} {alt_allele} {ancestral_call} {allele_freq}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, ref_allele=ref_allele, alt_allele=alt_allele, ancestral_call=ancestral_call, allele_freq=allele_freq)
+
+        return outputStringDict
+
+    @staticmethod
+    def _build_map_output_string(chrm, pos_bp, map_pos_cm):
+        return "{chr} {pos_bp} {map_pos_cm} {pos_bp}\n".format(chr=chrm, pos_bp=pos_bp, map_pos_cm=map_pos_cm)
+
+    @classmethod
+    def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
+        outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None):
+        processor = VCFReader(vcf_file)
+
+        tabix_file = pysam.TabixFile(vcf_file, parser=pysam.asVCF())
+        records = processor.records( str(chromosome_num), start_pos_bp, end_pos_bp, pysam.asVCF())
+
+        end_pos = processor.clens[str(chromosome_num)] if end_pos_bp == None else end_pos_bp
+
+        outTpedFile = outfile_location + "/" + outfile_prefix + ".tped.gz"
+        outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.meta.gz"
+
+        if samples_to_include is not None and len(samples_to_include) > 0:
+            indices_of_matching_samples = sorted([processor.sample_names.index(x) for x in samples_to_include])
+        else:
+            indices_of_matching_samples = range(0,len(processor.sample_names))
+
+        rm = RecomMap(gen_map_file)
+
+        for filePath in [outTpedFile, outTpedMetaFile]:
+            assert not os.path.exists(filePath), "File {} already exists. Consider removing this file or specifying a different output prefix. Processing aborted.".format(filePath)
+            pass
+
+        startTime = datetime.now()
+        sec_remaining_avg = 0
+        current_pos_bp = 1
+
+        with util.file.open_or_gzopen(outTpedFile, 'w') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w') as of2:
+            # WRITE header for metadata file here with selected subset of sample_names
+            headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
+            of2.write(headerString)
+
+            recordCount = 0
+            for record in records:
+                
+                if processor.variant_is_type(record.info, "SNP"):
+                    alternateAlleles = [record.alt]
+                    if record.alt not in ['A','T','C','G']:
+                        #print record.alt
+                        if consider_multi_allelic:
+                            alternateAlleles = record.alt.split(",")
+                        else:
+                            # continue on to next variant record
+                            continue
+
+                    ancestral_allele = processor.parse_ancestral(record.info)
+                    chromStr = "chr{}".format(record.contig)
+
+                    # if the AA is populated, and the call meets the specified criteria
+                    if (ancestral_allele in ['A','T','C','G']) or (include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g']):
+                        phased_genotypes_for_selected_samples = np.array( record[0:len(record)])[ indices_of_matching_samples ] #use numpy index array
+                        genotypes_for_selected_samples = np.ravel(  [ list(x[::2]) for x in phased_genotypes_for_selected_samples] )
+
+                        map_pos_cm = rm.physToMap(chromStr, record.pos)
+
+                        numberOfHaplotypes = float(len(genotypes_for_selected_samples))
+                        
+                        for idx, altAllele in enumerate(alternateAlleles):
+                            codingFunc = np.vectorize(coding_function)
+                            coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,str(idx+1),record.ref,ancestral_allele,altAllele)
+
+                            allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
+
+                            outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
+                            of1.write(outStrDict["tpedString"])
+                            of2.write(outStrDict["metadataString"].replace(" ","\t"))
+
+                        recordCount += 1
+                        current_pos_bp = int(record.pos)
+
+                        if recordCount % 1000 == 0:
+                            number_of_seconds_elapsed = (datetime.now() - startTime).total_seconds()
+                            bp_per_sec = float(current_pos_bp) / float(number_of_seconds_elapsed)
+                            bp_remaining = end_pos - current_pos_bp
+                            sec_remaining = bp_remaining / bp_per_sec
+                            sec_remaining_avg = cls._moving_avg(sec_remaining, sec_remaining_avg, 10)
+                            time_left = timedelta(seconds=sec_remaining_avg)
+                        
+
+                            if sec_remaining > 10:
+                                human_time_remaining = relative_time(datetime.utcnow()+time_left)
+                                print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
+                                print("Estimated time of completion: {}".format(human_time_remaining))
+
+class SelscanTool(tools.Tool):
     def __init__(self, install_methods = None):
         if install_methods == None:
             install_methods = []
@@ -40,18 +156,95 @@ class SelScanTool(tools.Tool):
         return tool_version
 
 
-    def execute_ehh():
+    def execute_ehh(self, locus_id, tped_file, out_file, window, cutoff, max_extend, threads, maf, gap_scale):
+        out_file = os.path.abspath(out_file)
+
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--ehh")
+        toolCmd.append(locus_id)
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if window:
+            toolCmd.append("--ehh-win")
+            toolCmd.append(window)
+        if cutoff:
+            toolCmd.append("--cutoff")
+            toolCmd.append("{:.6}".format(cutoff))
+        if max_extend:
+            toolCmd.append("--max-extend")
+            toolCmd.append((max_extend))
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
 
-    def execute_ihs():
+        toolCmd = [str(x) for x in toolCmd]
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, skip_low_freq=True, trunc_ok=False):
+        # --ihs --tped ./1out.tped.gz --out 1ihsout
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--ihs")
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if skip_low_freq:
+            toolCmd.append("--skip-low-freq")
+        if trunc_ok:
+            toolCmd.append("--trunc-ok")
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
 
-    def execute_xpehh():
+        toolCmd = [str(x) for x in toolCmd]        
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    def execute_xpehh(self, tped_file, tped_ref_file, out_file, threads, maf, gap_scale, trunc_ok=False):
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--xpehh")
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--tped-ref")
+        toolCmd.append(tped_ref_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if trunc_ok:
+            toolCmd.append("--trunc-ok")
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
 
+        toolCmd = [str(x) for x in toolCmd]
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
 
     # OLD: to use for fleshing out other execution functions
     def execute(self, inFastas, outFile, localpair, globalpair, preservecase, reorder, 

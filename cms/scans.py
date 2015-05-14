@@ -14,7 +14,7 @@ from Bio import SeqIO
 
 # from this package
 import tools.selscan
-import util.cmd, util.file, util.vcf
+import util.cmd, util.file, util.vcf_reader, util.call_sample_reader
 
 log = logging.getLogger(__name__)
 
@@ -26,44 +26,104 @@ class Selection(object):
     def main(self):
         return 0
 
+# File conversion parser to create selscan-compatible input, including population filtering
+
+def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
+    parser.help = """This function converts an input VCF into a TPED file usable by selscan.
+                     It can optionally filter samples by population given a callsample file, and by ancestral call quality."""
+
+    parser.add_argument("inputVCF", help="Input VCF file")
+    parser.add_argument("genMap", help="Genetic recombination map tsv file with four columns: (Chromosome, Position(bp), Rate(cM/Mb), Map(cM))")
+    parser.add_argument("outPrefix", help="Output file prefix")
+    parser.add_argument("outLocation", help="Output location")        
+
+    parser.add_argument('chromosomeNum', type=int, help="""Chromosome number.""")
+    parser.add_argument('--startBp', default=0, type=int,
+        help="""Coordinate in bp of start position. (default: %(default)s).""")
+    parser.add_argument('--endBp', type=int,
+        help="""Coordinate in bp of end position.""")
+    #parser.add_argument("--ancestralVcf", type=str,
+    #    help="""A one-sample VCF file describing the ancestral allele for all
+    #    SNPs.  File must be built on the same reference and coordinate space as inVcf.  All
+    #    het genotypes will be ignored.  This will allow us to code ancestral alleles as
+    #    1 and derived alleles as 0.  If this file is not specified, we will use major
+    #    alleles as 1 (ancestral) and minor alleles as 0 (derived).""",
+    #    default=None)
+
+    parser.add_argument('--considerMultiAllelic', default=False, action='store_true',
+        help='Include multi-allelic variants in the output as separate records')
+    parser.add_argument('--includeLowQualAncestral', default=False, action='store_true',
+        help='Include variants where the ancestral information is low-quality (as indicated by lower-case x for AA=x in the VCF info column) (default: %(default)s).')
+    
+
+
+    #subparsers = parser.add_subparsers()
+    #subparser = subparsers.add_parser("filter")
+    parser.add_argument("--sampleMembershipFile", help="The call sample file containing four columns: sample, pop, super_pop, gender")
+    parser.add_argument('--filterPops', nargs='+',
+        help='Populations to include in the calculation (ex. "FIN")')
+    parser.add_argument('--filterSuperPops', nargs='+',
+        help='Super populations to include in the calculation (ex. "EUR")')
+
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_file_conversion)
+    return parser
+
+def main_selscan_file_conversion(args):
+    
+    # define coding functions here, in accordance with spec arg preferences
+
+    if (args.filterPops or args.filterSuperPops) and not args.sampleMembershipFile:
+        raise argparse.ArgumentTypeError('Argument "--sampleMembershipFile" must be specifed if --filterPops or --filterSuperPops are used.')
+
+    csr = util.call_sample_reader.CallSampleReader(args.sampleMembershipFile)
+    samples_to_include = list(csr.filterSamples(pop=args.filterPops, super_pop=args.filterSuperPops))
+
+
+    def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
+        ''' For a given genotype value, current_value, of a given sample, t
+         his function returns a coded value as expected by selscan
+         '''
+        return "1" if current_value==val_representing_alt_allele else "0"
+
+    tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file=args.inputVCF, 
+                                    gen_map_file=args.genMap, 
+                                    samples_to_include=samples_to_include, 
+                                    outfile_location=args.outLocation, 
+                                    outfile_prefix=args.outPrefix, 
+                                    chromosome_num=args.chromosomeNum, 
+                                    start_pos_bp=args.startBp, 
+                                    end_pos_bp=args.endBp, 
+                                    ploidy=2, 
+                                    consider_multi_allelic=args.considerMultiAllelic, 
+                                    include_variants_with_low_qual_ancestral=args.includeLowQualAncestral,
+                                    coding_function=coding_function)
+
+    return 0
+
+__commands__.append(('selscan_file_conversion', parser_selscan_file_conversion))
+
 # === Selscan common parser ===
 
 def parser_selscan_common(parser=argparse.ArgumentParser()):
-    parser.add_argument("inVcf", help="Input VCF file")
-    parser.add_argument("outPrefix", help="Base name for all output files")
-    parser.add_argument("--ancestralVcf", type=str,
-        help="""A one-sample VCF file describing the ancestral allele for all
-        SNPs.  File must be on the same reference and coordinate space as inVcf.  All
-        het genotypes will be ignored.  This will allow us to code ancestral alleles as
-        1 and derived alleles as 0.  If this file is not specified, we will use major
-        alleles as 1 (ancestral) and minor alleles as 0 (derived).""",
-        default=None)
-    parser.add_argument('--mapFile', type=str,
-        help="""Recombination map file; tab delimited with four columns:
-        chrom, pos (bp), recom rate (cM/Mb), and map pos (cM)""",
-        default=None)
-    parser.add_argument('--gap-scale', default=20000, type=int,
+    parser.add_argument("inputTped", help="Input tped file")
+    parser.add_argument("outFile", help="Output filepath")
+    
+    #parser.add_argument('--mapFile', type=str,
+    #    help="""Recombination map file; tab delimited with four columns:
+    #    chrom, pos (bp), recom rate (cM/Mb), and map pos (cM)""",
+    #    default=None)
+    parser.add_argument('--gapScale', default=20000, type=int,
         help="""Gap scale parameter in bp. If a gap is encountered between
         two snps > GAP_SCALE and < MAX_GAP, then the genetic distance is
         scaled by GAP_SCALE/GA (default: %(default)s).""")
-    parser.add_argument('--chromosome', type=int,
-        help="""Chromosome number.""")
-    parser.add_argument('--start-bp', default=0, type=int,
-        help="""Coordinate in bp of start position. (default: %(default)s).""")
-    parser.add_argument('--end-bp', type=int,
-        help="""Coordinate in bp of end position.""")
+    
     parser.add_argument('--maf', default=0.05, type=float,
         help="""Minor allele frequency. If a site has a MAF below this value, the program will not use
         it as a core snp. (default: %(default)s).""")
     parser.add_argument('--threads', default=1, type=int,
         help="""The number of threads to spawn during the calculation.
         Partitions loci across threads. (default: %(default)s).""")
-
-    subparsers = parser.add_subparsers()
-    subparser = subparsers.add_parser("filter")
-    subparser.add_argument("inCallSampleFile", help="The file containing four columns: sample, pop, super_pop, gender")
-    subparser.add_argument('pops', nargs='+',
-        help='Populations to include in the calculation (ex. "FIN")')
 
     return parser
 
@@ -72,24 +132,40 @@ def parser_selscan_common(parser=argparse.ArgumentParser()):
 def parser_selscan_ehh(parser=argparse.ArgumentParser()):
     parser = parser_selscan_common(parser)
 
+    parser.add_argument("locusID", help="The locus ID")
+
     parser.add_argument('--window', default=100000, type=int,
         help="""When calculating EHH, this is the length of the window in bp in 
         each direction from the query locus (default: %(default)s).""")
     parser.add_argument('--cutoff', default=0.05, type=float,
         help="""The EHH decay cutoff (default: %(default)s).""")
-    parser.add_argument('--max-extend', default=1000000, type=int,
+    parser.add_argument('--maxExtend', default=1000000, type=int,
         help="""The maximum distance an EHH decay curve is allowed to extend from the core.
-        Set <= 0 for no restriction. (default: %(default)s).""")    
+        Set <= 0 for no restriction. (default: %(default)s).""")
+
+    parser.epilog = """Output format: <physicalPos> <geneticPos> <'1' EHH> <'0' EHH>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ehh)
     return parser
 
 def main_selscan_ehh(args):
-    # selscan expects the map file to be in the format: 
-    # <chr#> <locusID> <genetic pos> <physical pos>.
-    #print "ARGS: ", args
-    pass
+    if args.threads < 1:
+         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+
+    tools.selscan.SelscanTool().execute_ehh(
+        locus_id        = args.locusID,
+        tped_file       = args.inputTped,
+        out_file        = args.outFile,
+        window          = args.window,
+        cutoff          = args.cutoff,
+        max_extend      = args.maxExtend,
+        threads         = args.threads,
+        maf             = args.maf,
+        gap_scale       = args.gapScale
+    )
+    return 0
+
 __commands__.append(('selscan_ehh', parser_selscan_ehh))
 
 # === Selscan IHS ===
@@ -97,19 +173,32 @@ __commands__.append(('selscan_ehh', parser_selscan_ehh))
 def parser_selscan_ihs(parser=argparse.ArgumentParser()):
     parser = parser_selscan_common(parser)
 
-    parser.add_argument('--skip-low-freq', default=False, action='store_true',
+    parser.add_argument('--skipLowFreq', default=False, action='store_true',
         help=' Do not include low frequency variants in the construction of haplotypes (default: %(default)s).')
-    parser.add_argument('--trunc-ok', default=False, action='store_true',
+    parser.add_argument('--truncOk', default=False, action='store_true',
         help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
         integrate the curve anyway.
         Normal function is to disregard the score for that core. (default: %(default)s).""")
+
+    parser.epilog = """Output format: <locusID> <physicalPos> <'1' freq> <ihh1> <ihh0> <unstandardized iHS>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ihs)
     return parser
 
 def main_selscan_ihs(args):
-    pass
+    if args.threads < 1:
+         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+
+    tools.selscan.SelscanTool().execute_ihs(
+        tped_file       = args.inputTped,
+        out_file        = args.outFile,
+        skip_low_freq   = args.skipLowFreq,
+        trunc_ok        = args.truncOk,
+        threads         = args.threads,
+        maf             = args.maf,
+        gap_scale       = args.gapScale   
+    )
 __commands__.append(('selscan_ihs', parser_selscan_ihs))
 
 # === Selscan XPEHH ===
@@ -117,17 +206,33 @@ __commands__.append(('selscan_ihs', parser_selscan_ihs))
 def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
     parser = parser_selscan_common(parser)
 
+    parser.add_argument("inputRefTped", help="Input tped for the reference population to which the first is compared")
+
+    parser.add_argument('--truncOk', default=False, action='store_true',
+        help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
+        integrate the curve anyway.
+        Normal function is to disregard the score for that core. (default: %(default)s).""")
+
+    parser.epilog = """Output format: <locusID> <physicalPos> <geneticPos> <popA '1' freq> <ihhA> <popB '1' freq> <ihhB> <unstandardized XPEHH>"""
+
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_xpehh)
     return parser
 
 def main_selscan_xpehh(args):
-    parser.add_argument('--trunc-ok', default=False, action='store_true',
-        help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
-        integrate the curve anyway.
-        Normal function is to disregard the score for that core. (default: %(default)s).""")
-    
-    pass
+    if args.threads < 1:
+         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+         
+    # create TPED files here
+    tools.selscan.SelscanTool().execute_xpehh(
+        tped_file       = args.inputTped,
+        tped_ref_file   = args.inputRefTped,
+        out_file        = args.outFile,
+        trunc_ok        = args.truncOk,
+        threads         = args.threads,
+        maf             = args.maf,
+        gap_scale       = args.gapScale
+    )
 __commands__.append(('selscan_xpehh', parser_selscan_xpehh))
 
 # === Parser setup ===

@@ -153,7 +153,13 @@ class CallSampleReader(object):
 
             For exclusion (for example all of the super_pop "EUR" except "FIN" and "GBR") use set()
             all_eur_but_fin = list(set(csr.filterSamples(super_pop="EUR")) - set(csr.filterSamples(pop=["FIN"])))
+
+            If no kwargs are specified, a list of all samples is returned.
         '''
+        if len(kwargs) == 0:
+            return self.sample_names
+
+        samples_to_include = set()
         for key, value in kwargs.items():
             patterns = []
             # handle passing in either a single string or a list of strings
@@ -162,7 +168,8 @@ class CallSampleReader(object):
             else:
                 patterns.append(value)
 
-            return (k for k, v in self.sample_membership.items() if v[key] in patterns)
+            samples_to_include |= set((k for k, v in self.sample_membership.items() if v[key] in patterns))
+        return list(samples_to_include)
 
 if __name__ == "__main__":
     rootDir = os.path.dirname(os.path.realpath(__file__))
