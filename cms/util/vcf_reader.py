@@ -4,10 +4,15 @@
 import os, re
 import time
 
-try: # (py2 izip == py3 zip)
-    from itertools import count, zip_longest, zip
-except ImportError :
-    from itertools import count, izip_longest as zip_longest, izip as zip
+try:
+    from itertools import izip as zip
+except ImportError: # py3 zip is izip
+    pass
+
+try: 
+    from itertools import count, zip_longest
+except ImportError:
+    from itertools import count, izip_longest as zip_longest
 from collections import deque
 
 # external
