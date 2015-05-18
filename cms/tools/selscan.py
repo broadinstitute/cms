@@ -139,15 +139,18 @@ class SelscanTool(tools.Tool):
     def __init__(self, install_methods = None):
         if install_methods == None:
             install_methods = []
-            os_type                 = get_os_type()
-            binaryPath              = get_selscan_binary_path( os_type    )
-            binaryDir               = get_selscan_binary_path( os_type, full=False )
+            os_type                 = self.get_os_type()
+            binaryPath              = self.get_selscan_binary_path( os_type    )
+            binaryDir               = self.get_selscan_binary_path( os_type, full=False )
+
+            # pwdBeforeMafft = os.getcwd()
+            # os.chdir(os.path.dirname(self.install_and_get_path()))
             
             target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=binaryPath)
             verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), ver=tool_version, binPath=binaryPath) 
 
             install_methods.append(
-                    tools.DownloadPackage(  url.format( ver=tool_version ),
+                    DownloadAndBuildSelscan(  url.format( ver=tool_version ),
                                             target_rel_path = target_rel_path,
                                             verifycmd       = verify_command,
                                             verifycode      = 1 # selscan returns exit code of 1 for the help text...
@@ -250,124 +253,109 @@ class SelscanTool(tools.Tool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
-    # OLD: to use for fleshing out other execution functions
-    def execute(self, inFastas, outFile, localpair, globalpair, preservecase, reorder, 
-                outputAsClustal, maxiters, gapOpeningPenalty=None, offset=None, threads=-1, verbose=True):
+    @classmethod
+    def uncomment_line(cls, line):
+        line = line.strip()
+        while line.startswith( ("#", " ") ):
+            line = line[1:]
+        return line.strip()
 
-        inputFileName         = ""
-        tempCombinedInputFile = ""
+    @classmethod
+    def comment_line(cls, line):
+        return "#" + cls.uncomment_line(line)
 
-        # get the full paths of input and output files in case the user has specified relative paths
-        inputFiles = []
-        for f in inFastas:
-            inputFiles.append(os.path.abspath(f))
-        outFile = os.path.abspath(outFile)
+    @classmethod
+    def change_line_comment(cls, line, comment_action):
+        if comment_action == 1:
+            return cls.comment_line(line)
+        if comment_action == -1:
+            return cls.uncomment_line(line)
+        return line
 
-        # ensure that all sequence IDs in each input file are unique 
-        # (otherwise the alignment result makes little sense)
-        # we can check before combining to localize duplications to a specific file
-        for filePath in inputFiles:
-            self.__seqIdsAreAllUnique(filePath)
+    @classmethod
+    def reform_makefile(cls, inputFileName, outputFileName):
+        OSX_DELIMITER = "#for osx systems\n"
+        LINUX_DELIMITER = "#for linux systems\n"
 
-        # if multiple fasta files are specified for input
-        if len(inputFiles)>1:
-            # combined specified input files into a single temp FASTA file so MAFFT can read them
-            tempFileSuffix = ""
-            for filePath in inputFiles:
-                tempFileSuffix += "__" + os.path.basename(filePath)
-            tempCombinedInputFile = util.file.mkstempfname('__combined.{}'.format(tempFileSuffix))
-            with open(tempCombinedInputFile, "w") as outfile:
-                for f in inputFiles:
-                    with open(f, "r") as infile:
-                        outfile.write(infile.read())
-                #outFile.close()
-            inputFileName = tempCombinedInputFile
-        # if there is only once file specified, just use it
-        else:
-            inputFileName = inputFiles[0]
+        inputFilePath = os.path.abspath(inputFileName)
 
-        # check that all sequence IDs in a file are unique
-        self.__seqIdsAreAllUnique(inputFileName)
+        outputFilePath = os.path.dirname(os.path.realpath(inputFilePath))
+        outputFilePath = os.path.join("/{}".format(outputFileName))
 
-        # change the pwd, since the shell script that comes with mafft depends on the pwd
-        # being correct
-        pwdBeforeMafft = os.getcwd()
-        os.chdir(os.path.dirname(self.install_and_get_path()))
+        current_os = cls.get_os_type()
+        comment_action = 0 #-1 = remove comments until blank line, 0 = do not change line, 1 = comment line
 
-        # build the MAFFT command
-        toolCmd = [self.install_and_get_path()]
-        toolCmd.append("--auto")
-        toolCmd.append("--thread {}".format( max( int(threads), 1 )) )
+        with open(inputFilePath, "r") as inFile:
+            with open(outputFilePath, "w") as outFile:
+                for line in inFile:
+                    if line == OSX_DELIMITER:
+                        outFile.write(line)
+                        if current_os == "osx":
+                            comment_action = -1
+                        else: 
+                            comment_action = 1
+                        continue
+                    if line == LINUX_DELIMITER:
+                        outFile.write(line)
+                        if current_os == "linux":
+                            comment_action = -1
+                        else: 
+                            comment_action = 1
+                        continue
+                    if line.replace(" ","") == '\n' and comment_action != 0:
+                        comment_action = 0
 
-        if localpair and globalpair:
-            raise Exception("Alignment type must be either local or global, not both.")
+                    line = cls.change_line_comment(line, comment_action)
+                    outFile.write(line.replace("\n","")+"\n")
 
-        if localpair:
-            toolCmd.append("--localpair")
-            if not maxiters:
-                maxiters = 1000
-        if globalpair:
-            toolCmd.append("--globalpair")
-            if not maxiters:
-                maxiters = 1000
-        if preservecase:
-            toolCmd.append("--preservecase")
-        if reorder:
-            toolCmd.append("--reorder")
-        if gapOpeningPenalty:
-            toolCmd.append("--op {penalty}".format(penalty=gapOpeningPenalty))
-        if offset:
-            toolCmd.append("--ep {num}".format(num=offset))
-        if not verbose:
-            toolCmd.append("--quiet")
-        if outputAsClustal:
-            toolCmd.append("--clustalout")
-        if maxiters:
-            toolCmd.append("--maxiterate {iters}".format(iters=maxiters))
-        
-        toolCmd.append(inputFileName)
+    @staticmethod
+    def get_os_type():
+        ''' inspects the system uname and returns a string representing the OS '''
 
-        log.debug(' '.join(toolCmd))
+        uname = os.uname()
+        if uname[0] == "Darwin":
+            return "osx"
+        if uname[0] == "Linux":
+            return "linux"
 
-        # run the MAFFT alignment
-        with open(outFile, 'w') as outf:
-            subprocess.check_call(toolCmd, stdout=outf)
+    @staticmethod
+    def get_selscan_binary_path(os_type, full=True):
+        ''' returns the location of the binary relative to the extracted archive, for the given os '''
 
-        if len(tempCombinedInputFile):
-            # remove temp FASTA file
-            os.unlink(tempCombinedInputFile)
+        selscanPath = "bin/"
 
-        # restore pwd
-        os.chdir(pwdBeforeMafft)
+        if os_type == "osx":
+            selscanPath += "osx/"
+        elif os_type == "linux":
+            selscanPath += "linux/"
+        elif os_type == "win":
+            selscanPath += "win/"
 
-def get_os_type():
-    ''' inspects the system uname and returns a string representing the OS '''
+        if full:
+            selscanPath += "selscan"
 
-    uname = os.uname()
-    if uname[0] == "Darwin":
-        return "osx"
-    if uname[0] == "Linux":
-        return "linux"
+            if os_type == "win":
+                selscanPath += ".exe"
 
-def get_selscan_binary_path(os_type, full=True):
-    ''' returns the location of the binary relative to the extracted archive, for the given os '''
+        return selscanPath
 
-    selscanPath = "bin/"
+class DownloadAndBuildSelscan(tools.DownloadPackage) :
+    def post_download(self) :
+        selscanDir = os.path.join(self.destination_dir, 'selscan-{ver}'.format(ver=tool_version))
+        selscanSrcDir = os.path.join(selscanDir,'src')
+        # In this version, comment/uncomment the appropriate build flags
+        makeFilePath = os.path.join(selscanSrcDir, 'Makefile')
 
-    if os_type == "osx":
-        selscanPath += "osx/"
-    elif os_type == "linux":
-        selscanPath += "linux/"
-    elif os_type == "win":
-        selscanPath += "win/"
+        os.rename(makeFilePath, makeFilePath + '.orig')
 
-    if full:
-        selscanPath += "selscan"
+        SelscanTool.reform_makefile(makeFilePath + '.orig', makeFilePath)
 
-        if os_type == "win":
-            selscanPath += ".exe"
+        #log.debug("Install path: {}".format(SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type())))
 
-    return selscanPath
+        # Now we can make:
+        os.system('cd "{}" && make -s && mv ./selscan {}'.format(selscanSrcDir, os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
+
+
 
 
 
