@@ -314,9 +314,8 @@ def main_selscan_store_results_in_db(args):
     
     filepath = os.path.abspath(args.inputFile)
     if os.path.isfile(filepath):
-        with open(filepath, "r") as inFile:
-            metaDataDict = json.load(inFile)
-            print metaDataDict
+        pass
+        # use data reader class here
 
             
             
