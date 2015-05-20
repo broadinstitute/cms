@@ -126,6 +126,13 @@ class VCFReader(object):
             #return match.group("vt").lower() == variantType.lower()
         return False
 
+    @classmethod
+    def allele_is_snp(cls, record):
+        VALID_BASES = ["A","C","G","T","N","a","c","g","t","n"]
+        if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
+             all(variant in VALID_BASES for variant in record.alt.split(",")) ):
+            return True
+        return False
         
 
 # def test():

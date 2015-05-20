@@ -23,7 +23,7 @@ import pysam
 from boltons.timeutils import relative_time
 import numpy as np
 
-tool_version = '1.0.4'
+tool_version = '1.0.5'
 url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class SelscanFormatter(object):
         end_pos = processor.clens[str(chromosome_num)] if end_pos_bp == None else end_pos_bp
 
         outTpedFile = outfile_location + "/" + outfile_prefix + ".tped.gz"
-        outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.meta.gz"
+        outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.allele_meta.gz"
 
         if samples_to_include is not None and len(samples_to_include) > 0:
             indices_of_matching_samples = sorted([processor.sample_names.index(x) for x in samples_to_include])
@@ -86,7 +86,10 @@ class SelscanFormatter(object):
             recordCount = 0
             for record in records:
                 
-                if processor.variant_is_type(record.info, "SNP"):
+                # if the variant is a SNP
+                # OLD style looking at INFO VT value: 
+                # processor.variant_is_type(record.info, "SNP"):
+                if processor.allele_is_snp(record): 
                     alternateAlleles = [record.alt]
                     if record.alt not in ['A','T','C','G']:
                         #print record.alt

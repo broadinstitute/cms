@@ -174,15 +174,22 @@ class CallSampleReader(object):
             samples_to_include |= set((k for k, v in self.sample_membership.items() if v[key] in patterns))
         return list(samples_to_include)
 
+    def get_population_for_sample(self, sample_name):
+        return self.sample_membership[sample_name]["pop"]
+
+    def get_superpopulation_for_sample(self, sample_name):
+        return self.sample_membership[sample_name]["super_pop"]
+
 if __name__ == "__main__":
     rootDir = os.path.dirname(os.path.realpath(__file__))
     filePath = rootDir + "/integrated_call_samples_v3.20130502.ALL.panel"
     fileUrl = "ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel"
 
 
-    csr = CallSampleReader(filePath)
-    #csr = CallSampleReader(fileUrl)
+    #csr = CallSampleReader(filePath)
+    csr = CallSampleReader(fileUrl)
 
+    #print(csr.get_superpopulation_for_sample("HG02462"))
     #print(CallSampleReader.read_population_membership(fileUrl))
     # print("EUR count: ", len( list(csr.filterSamples(super_pop="EUR")) ))
     # print("FIN count: ", len( list(csr.filterSamples(pop=["FIN"])) ))

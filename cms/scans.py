@@ -8,13 +8,14 @@ __commands__ = []
 
 # built-ins
 import array, argparse, logging, os, sys, array, bisect
+import json
 
 # from external modules
 from Bio import SeqIO
 
 # from this package
 import tools.selscan
-import util.cmd, util.file, util.vcf_reader, util.call_sample_reader
+import util.cmd, util.file, util.vcf_reader, util.call_sample_reader, util.json_helpers
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ def main_selscan_file_conversion(args):
     csr = util.call_sample_reader.CallSampleReader(args.sampleMembershipFile)
     samples_to_include = list(csr.filterSamples(pop=args.filterPops, super_pop=args.filterSuperPops))
 
+    # Write JSON file containing metadata describing this TPED file
 
     def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
         ''' For a given genotype value, current_value, of a given sample, t
@@ -103,8 +105,23 @@ def main_selscan_file_conversion(args):
                                     include_variants_with_low_qual_ancestral=args.includeLowQualAncestral,
                                     coding_function=coding_function)
 
-    return 0
+    outTpedFile = args.outLocation  + "/" + args.outPrefix + ".tped.gz"
+    outMetadataFile = args.outLocation  + "/" + args.outPrefix + ".metadata.json"
+    outTpedAlleleMetaFile = args.outLocation  + "/" + args.outPrefix + ".tped.allele_metadata.gz"
 
+    metaDataDict = {}
+    metaDataDict["vcf_file"]                  = args.inputVCF
+    metaDataDict["chromosome_num"]            = args.chromosomeNum,
+    metaDataDict["call_membership_file"]      = args.sampleMembershipFile
+    metaDataDict["genetic_map"]               = args.genMap
+    metaDataDict["tped_file"]                 = outTpedFile
+    metaDataDict["tped_allele_metadata_file"] = outTpedAlleleMetaFile
+    metaDataDict["samples_included"]          = samples_to_include
+    metaDataDict["populations"]               = args.filterPops if args.filterPops is not None else []
+    metaDataDict["super_populations"]         = args.filterSuperPops if args.filterSuperPops is not None else []
+    util.json_helpers.JSONHelper.annotate_json_file(outMetadataFile, metaDataDict)
+
+    return 0
 __commands__.append(('selscan_file_conversion', parser_selscan_file_conversion))
 
 # === Selscan common parser ===
@@ -164,6 +181,8 @@ def main_selscan_ehh(args):
     if args.threads < 1:
          raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
 
+    # Check to see if json file exists for given tped, and if so annotate it with the output filenames
+
     tools.selscan.SelscanTool().execute_ehh(
         locus_id        = args.locusID,
         tped_file       = args.inputTped,
@@ -175,8 +194,16 @@ def main_selscan_ehh(args):
         maf             = args.maf,
         gap_scale       = args.gapScale
     )
-    return 0
 
+    metaData = {}
+    metaData["ehh"]     = args.outFile + ".ehh." + args.locusID + ".out"
+    metaData["ehh_anc"] = args.outFile + ".ehh." + args.locusID + ".out" + ".anc.colormap"
+    metaData["ehh_der"] = args.outFile + ".ehh." + args.locusID + ".out" + ".der.colormap"
+    metaData["ehh_log"] = args.outFile + ".ehh." + args.locusID + ".log"
+    jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+
+    return 0
 __commands__.append(('selscan_ehh', parser_selscan_ehh))
 
 # === Selscan IHS ===
@@ -213,6 +240,14 @@ def main_selscan_ihs(args):
         maf             = args.maf,
         gap_scale       = args.gapScale   
     )
+
+    metaData = {}
+    metaData["ihs"] = args.outFile+".ihs.out"
+    metaData["ihs_log"] = args.outFile+".ihs.log"
+    jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+
+    return 0
 __commands__.append(('selscan_ihs', parser_selscan_ihs))
 
 # === Selscan XPEHH ===
@@ -250,7 +285,44 @@ def main_selscan_xpehh(args):
         maf             = args.maf,
         gap_scale       = args.gapScale
     )
+
+    metaData = {}
+    metaData["xpehh"] = args.outFile+".xpehh.out"
+    metaData["xpehh_log"] = args.outFile+".xpehh.log"
+    metaData["xpehh_pop_A_tped"] = args.inputTped
+    metaData["xpehh_pop_B_tped"] = args.inputRefTped
+    jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+
+    return 0
 __commands__.append(('selscan_xpehh', parser_selscan_xpehh))
+
+# === Selscan XPEHH ===
+
+def parser_selscan_store_results_in_db(parser=argparse.ArgumentParser()):
+    """
+        Aggregate results from selscan in to a SQLite database via helper JSON metadata file.
+    """
+    parser.add_argument("inputFile", help="Input *.metadata.json file")
+    parser.add_argument("outFile", help="Output SQLite filepath")
+
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_store_results_in_db)
+    return parser
+
+def main_selscan_store_results_in_db(args):
+    
+    filepath = os.path.abspath(args.inputFile)
+    if os.path.isfile(filepath):
+        with open(filepath, "r") as inFile:
+            metaDataDict = json.load(inFile)
+            print metaDataDict
+
+            
+            
+
+    return 0
+__commands__.append(('store_selscan_results_in_db', parser_selscan_store_results_in_db))
 
 # === Parser setup ===
 
