@@ -26,9 +26,9 @@ class VCFReader(object):
     variantTypeRegex     = re.compile(".*VT=(?P<vt>[^;,|\s]+)[,|\s]*[;|]")
     contigLengthRegex    = re.compile('##contig=<ID=(?P<contig_id>[^,]*),.*length=(?P<length>\d*).*>')
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, parser=pysam.asVCF()):
         self.vcf_file_path = file_path
-        self.tabix_file    = pysam.TabixFile(file_path, parser=pysam.asVCF())
+        self.tabix_file    = pysam.TabixFile(file_path, parser=parser)
         self.sample_names  = self.sample_names()
         self.clens         = self.contig_lengths()
         self.indexDelta    = -1 if tuple(map(int, pysam.__version__.split('.'))) > (0,5) else 0

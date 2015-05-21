@@ -6,10 +6,16 @@
 __author__ = "tomkinsc@broadinstitute.org"
 
 # built-ins
-import os, os.path, subprocess
+import operator
+import os, os.path, subprocess, re
 import logging
 import gzip
 from datetime import datetime, timedelta
+
+try:
+    from itertools import izip as zip
+except ImportError: # py3 zip is izip
+    pass
 
 # intra-module dependencies
 import tools, util.file
@@ -29,6 +35,7 @@ url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 log = logging.getLogger(__name__)
 
 class SelscanFormatter(object):
+    genoRegex = re.compile("^(\S+\s+){9}(?P<genos>.*)$")
 
     @staticmethod
     def _moving_avg(x, prevAvg, N):
@@ -55,10 +62,9 @@ class SelscanFormatter(object):
         """
         processor = VCFReader(vcf_file)
 
-        tabix_file = pysam.TabixFile(vcf_file, parser=pysam.asVCF())
-        records = processor.records( str(chromosome_num), start_pos_bp, end_pos_bp, pysam.asVCF())
-
         end_pos = processor.clens[str(chromosome_num)] if end_pos_bp == None else end_pos_bp
+
+        records = processor.records( str(chromosome_num), start_pos_bp, end_pos, pysam.asVCF())
 
         outTpedFile = outfile_location + "/" + outfile_prefix + ".tped.gz"
         outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.allele_meta.gz"
@@ -67,6 +73,9 @@ class SelscanFormatter(object):
             indices_of_matching_samples = sorted([processor.sample_names.index(x) for x in samples_to_include])
         else:
             indices_of_matching_samples = range(0,len(processor.sample_names))
+
+        indices_of_matching_genotypes = [(x*2, (x*2)+1) for x in indices_of_matching_samples]
+        indices_of_matching_genotypes = list(np.ravel(np.array(indices_of_matching_genotypes)))
 
         rm = RecomMap(gen_map_file)
 
@@ -83,13 +92,18 @@ class SelscanFormatter(object):
             headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
             of2.write(headerString)
 
+            of1linesToWrite = []
+            of2linesToWrite = []
+
             recordCount = 0
             for record in records:
                 
                 # if the variant is a SNP
                 # OLD style looking at INFO VT value: 
                 # processor.variant_is_type(record.info, "SNP"):
-                if processor.allele_is_snp(record): 
+                VALID_BASES = ["A","C","G","T","N","a","c","g","t","n"]
+                if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
+                     all(variant in VALID_BASES for variant in record.alt.split(",")) ):
                     alternateAlleles = [record.alt]
                     if record.alt not in ['A','T','C','G']:
                         #print record.alt
@@ -104,39 +118,62 @@ class SelscanFormatter(object):
 
                     # if the AA is populated, and the call meets the specified criteria
                     if (ancestral_allele in ['A','T','C','G']) or (include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g']):
-                        phased_genotypes_for_selected_samples = np.array( record[0:len(record)])[ indices_of_matching_samples ] #use numpy index array
-                        genotypes_for_selected_samples = np.ravel(  [ list(x[::2]) for x in phased_genotypes_for_selected_samples] )
 
-                        map_pos_cm = rm.physToMap(chromStr, record.pos)
+                        recordString = record.__str__()
 
-                        numberOfHaplotypes = float(len(genotypes_for_selected_samples))
-                        
-                        for idx, altAllele in enumerate(alternateAlleles):
-                            codingFunc = np.vectorize(coding_function)
-                            coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,str(idx+1),record.ref,ancestral_allele,altAllele)
+                        match = cls.genoRegex.match(recordString)
+                        if match:
+                            rawGenos = match.group("genos")
+                            genos = rawGenos[::2]
+                            genotypes_for_selected_samples = operator.itemgetter(*indices_of_matching_genotypes)(genos)
 
-                            allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
+                            map_pos_cm = rm.physToMap(chromStr, record.pos)
 
-                            outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
-                            of1.write(outStrDict["tpedString"])
-                            of2.write(outStrDict["metadataString"].replace(" ","\t"))
+                            numberOfHaplotypes = float(len(genotypes_for_selected_samples))
+                            
+                            for idx, altAllele in enumerate(alternateAlleles):
+                                codingFunc = np.vectorize(coding_function)
+                                strRepresentingThisGenotype = str(idx+1)
+                                coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
 
-                        recordCount += 1
-                        current_pos_bp = int(record.pos)
+                                allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
-                        if recordCount % 1000 == 0:
-                            number_of_seconds_elapsed = (datetime.now() - startTime).total_seconds()
-                            bp_per_sec = float(current_pos_bp) / float(number_of_seconds_elapsed)
-                            bp_remaining = end_pos - current_pos_bp
-                            sec_remaining = bp_remaining / bp_per_sec
-                            sec_remaining_avg = cls._moving_avg(sec_remaining, sec_remaining_avg, 10)
-                            time_left = timedelta(seconds=sec_remaining_avg)
-                        
+                                outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
 
-                            if sec_remaining > 10:
-                                human_time_remaining = relative_time(datetime.utcnow()+time_left)
-                                print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
-                                print("Estimated time of completion: {}".format(human_time_remaining))
+                                of1linesToWrite.append(outStrDict["tpedString"])
+                                of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+
+                            recordCount += 1
+                            current_pos_bp = int(record.pos)
+
+                            if recordCount % 1000 == 0:
+                                #write out blocks of lines periodically, with synced iterators
+                                for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
+                                    of1.write(of1line)
+                                    of2.write(of2line)
+                                of1linesToWrite = []
+                                of2linesToWrite = []
+
+
+                                number_of_seconds_elapsed = (datetime.now() - startTime).total_seconds()
+                                bp_per_sec = float(current_pos_bp) / float(number_of_seconds_elapsed)
+                                bp_remaining = end_pos - current_pos_bp
+                                sec_remaining = bp_remaining / bp_per_sec
+                                sec_remaining_avg = cls._moving_avg(sec_remaining, sec_remaining_avg, 10)
+                                time_left = timedelta(seconds=sec_remaining_avg)
+                            
+
+                                if sec_remaining > 10:
+                                    human_time_remaining = relative_time(datetime.utcnow()+time_left)
+                                    print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
+                                    print("Estimated time of completion: {}".format(human_time_remaining))
+
+            # after we've gone through all records, write any lines that have not yet been written
+            for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
+                of1.write(of1line)
+                of2.write(of2line)
+            of1linesToWrite = []
+            of2linesToWrite = []
 
 class SelscanTool(tools.Tool):
     def __init__(self, install_methods = None):

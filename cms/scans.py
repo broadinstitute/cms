@@ -195,13 +195,15 @@ def main_selscan_ehh(args):
         gap_scale       = args.gapScale
     )
 
-    metaData = {}
-    metaData["ehh"]     = args.outFile + ".ehh." + args.locusID + ".out"
-    metaData["ehh_anc"] = args.outFile + ".ehh." + args.locusID + ".out" + ".anc.colormap"
-    metaData["ehh_der"] = args.outFile + ".ehh." + args.locusID + ".out" + ".der.colormap"
-    metaData["ehh_log"] = args.outFile + ".ehh." + args.locusID + ".log"
+    locusMetadata = {}
+    locusMetadata["locus"]   = args.locusID
+    locusMetadata["ehh"]     = args.outFile + ".ehh." + args.locusID + ".out"
+    locusMetadata["ehh_anc"] = args.outFile + ".ehh." + args.locusID + ".out" + ".anc.colormap"
+    locusMetadata["ehh_der"] = args.outFile + ".ehh." + args.locusID + ".out" + ".der.colormap"
+    locusMetadata["ehh_log"] = args.outFile + ".ehh." + args.locusID + ".log"
+
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, locusMetadata, key_to_act_on="ehh", append=True)
 
     return 0
 __commands__.append(('selscan_ehh', parser_selscan_ehh))
