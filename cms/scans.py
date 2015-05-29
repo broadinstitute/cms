@@ -171,7 +171,7 @@ def parser_selscan_ehh(parser=argparse.ArgumentParser()):
         help="""The maximum distance an EHH decay curve is allowed to extend from the core.
         Set <= 0 for no restriction. (default: %(default)s).""")
 
-    parser.epilog = """Output format: <physicalPos> <geneticPos> <'1' EHH> <'0' EHH>"""
+    parser.epilog = """Output format: <physicalPosDelta_bp> <geneticPosDelta_cm> <'1' EHH> <'0' EHH><EHH>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ehh)
@@ -223,7 +223,7 @@ def parser_selscan_ihs(parser=argparse.ArgumentParser()):
         integrate the curve anyway.
         Normal function is to disregard the score for that core. (default: %(default)s).""")
 
-    parser.epilog = """Output format: <locusID> <physicalPos> <'1' freq> <ihh1> <ihh0> <unstandardized iHS>"""
+    parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ihs)
@@ -267,7 +267,7 @@ def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
         integrate the curve anyway.
         Normal function is to disregard the score for that core. (default: %(default)s).""")
 
-    parser.epilog = """Output format: <locusID> <physicalPos> <geneticPos> <popA '1' freq> <ihhA> <popB '1' freq> <ihhB> <unstandardized XPEHH>"""
+    parser.epilog = """Output format: <locusID> <physicalPos_bp> <geneticPos_cm> <popA '1' freq> <ihhA> <popB '1' freq> <ihhB> <unstandardized XPEHH>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_xpehh)

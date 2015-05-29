@@ -5,6 +5,7 @@ import os
 import itertools
 from functools import wraps
 import json
+import csv
 
 # external
 import peewee as pw
@@ -94,6 +95,7 @@ class EHHInfo(ScanTable):
     map_pos_cm_delta = pw.DoubleField()
     EHH_ones         = pw.DoubleField()
     EHH_zeros        = pw.DoubleField()
+    EHH              = pw.DoubleField()
 
     class Meta:
         indexes = (
@@ -102,7 +104,7 @@ class EHHInfo(ScanTable):
 
     def __str__(self):
         return ",".join([str(self.core_locus), str(self.population_set), 
-            str(self.allele_freq_in_pop_set)])
+            str(self.EHH_ones), str(self.EHH_zeroes), str(self.EHH)])
 
 class IHSInfo(ScanTable):
     '''
@@ -241,13 +243,14 @@ class DatabaseManager(object):
         return item
 
     def add_ehh_info(self, population_set, core_locus, pos_bp_delta, 
-        map_pos_cm_delta, EHH_ones, EHH_zeros):
+        map_pos_cm_delta, EHH_ones, EHH_zeros, EHH):
         item, created = EHHInfo.get_or_create( population_set  = population_set, 
                                             core_locus       = core_locus, 
                                             pos_bp_delta     = pos_bp_delta, 
                                             map_pos_cm_delta = map_pos_cm_delta, 
                                             EHH_ones         = EHH_ones, 
-                                            EHH_zeros        = EHH_zeros)
+                                            EHH_zeros        = EHH_zeros,
+                                            EHH              = EHH)
         return item
 
     def add_ihs_info(self, population_set, locus, IHH_1, IHH_0, 
@@ -276,34 +279,48 @@ class DatabaseManager(object):
 
         return item
 
-    def get_popset_for_pop_names(self, name_list):
+    def get_popset_for_pop_names(self, population_name_list, superpopulation_name_list):
         '''
             Get the population set corresponding to the list of population names 
             specified in name_list.
         '''
-        pops = Population.select(Population.id).where(Population.name << name_list)
+        pops = Population.select(Population.id).where(Population.name << population_name_list)
+        superpops = SuperPopulation.select(SuperPopulation.id).where(SuperPopulation.name << superpopulation_name_list)
 
         pop_ids = []
         for pop in pops:
             pop_ids.append(int(pop.id))
 
+        superpop_ids = []
+        for superpop in superpops:
+            superpop_ids.append(int(superpop.id))
+
         query = PopulationSet.select()
 
         popSets = {}
         for row in query:
-            tempList = []
-            for popset in row.populations:
-                tempList.append(popset.id)
-            popSets[row.id] = set(tempList)
+            setPopulationIDs = []
+            for pop in row.populations:
+                setPopulationIDs.append(pop.id)
+
+            setSuperpopulationIDs = []
+            for superpop in row.super_populations:
+                setSuperpopulationIDs.append(superpop.id)
+
+            popSets[row.id] = {"pops":set(setPopulationIDs), "superpops":set(setSuperpopulationIDs)}
 
         matchingPopSets = []
         for k,v in popSets.iteritems():
-            if v == set(pop_ids):
+            if v["pops"] == set(pop_ids) and v["superpops"] == set(superpop_ids):
                 matchingPopSets.append(k)
 
-        matchingPopSet = PopulationSet.get(PopulationSet.id==matchingPopSets[0])
 
-        return matchingPopSet
+        if len(matchingPopSets):
+            matchingPopSet = PopulationSet.get(PopulationSet.id==matchingPopSets[0])
+
+            return matchingPopSet
+        else:
+            return None
 
     def get_locus_info(self, chrom, pos_bp):
         return LocusInfo.select().where((LocusInfo.chrom == chrom) 
@@ -326,10 +343,10 @@ class DatabaseManager(object):
             (XPEHHInfo.population_set_a.id == population_set_a.id) & 
             (XPEHHInfo.population_set_b.id == population_set_b.id))
 
-class ReadCalculationData(object):
+class CalculationReader(object):
     def __init__(self, jsonMetadataFile):
-        self.jsonMetadataFile = jsonMetadataFile
-        self.metadata = self.read_metadata( jsonMetadataFile )
+        self.jsonMetadataFile = os.path.abspath( os.path.expanduser(jsonMetadataFile) )
+        self.metadata = self.read_metadata( self.jsonMetadataFile )
 
     # TODO: move to utils.json_helper
     @classmethod
@@ -346,13 +363,76 @@ class ReadCalculationData(object):
 
         return metaDataDict
 
+    def read_ehh(self):
+        if "ehh" in self.metadata:
+            for locusDict in self.metadata["ehh"]:
+                if "locus" in locusDict:
+                    with open(locusDict["ehh"], "r") as inFile:
+                        for line in csv.DictReader(inFile, fieldnames=("physical_pos_bp", "genetic_pos_cm", "derived_1_ehh", "ancestral_0_ehh", "ehh"), delimiter="\t"):
+                            yield (locusDict["locus"], line)
+                        
+
+    def read_ihs(self):
+        if "ihs" in self.metadata:
+            with open(self.metadata["ihs"], "r") as inFile:
+                for line in csv.DictReader(inFile, fieldnames=("locus_id","physical_pos_bp","1_freq","ihh1","ihh0","ihs"), delimiter="\t"):
+                    yield line
+
+    def read_xpehh(self):
+        if "xpehh" in self.metadata:
+            with open(self.metadata["xpehh"], "r") as inFile:
+                pass
+                # first read in info from json file for other tped...
+
+class ScanStatStorer(CalculationReader):
+    def __init__(self, metadata_json_file, db_path):
+        # py2/3 compatible call of superclass constructor
+        super(ScanStatStorer, self).__init__(metadata_json_file)
+        self.db = DatabaseManager(db_path)
+
+    def get_or_store_population_set(self):
+        self.population_set = self.db.get_popset_for_pop_names(population_name_list=self.metadata["populations"], superpopulation_name_list=self.metadata["super_populations"])
+        if not self.population_set:
+            self.population_set = self.db.add_population_set(population_list=self.metadata["populations"], superpopulation_list=self.metadata["super_populations"])
+
+    def store_locus_info(self):
+        # read in TPED, and store info for each locus in file
+        with open(self.metadata["tped_allele_metadata_file"], "r") as inFile:
+            for line in csv.DictReader(inFile, fieldnames=("chrom", "variant_id", "pos_bp", "map_pos_cm", "ref_allele", "alt_allele", "ancestral_call", "allele_freq_in_pop"), delimiter="\t"):
+                self.db.add_locus_info(self, line["chrom"], line["variant_id"], line["pos_bp"], line["map_pos_cm"], line["ref_allele"], line["alt_allele"], line["ancestral_call"])
+    def store_ihs(self):
+        self.get_or_store_population_set()
+
+        for line in self.read_ihs():            
+            # get locus object
+            chromNum = self.metadata["chromosome_num"][0]
+            pos_bp = line[1]
+            locus = self.db.get_locus_info(chromNum, pos_bp)
+
+            # store info in DB
+            self.db.add_ihs_info(self, population_set, locus, IHH_1, IHH_0, IHS_unstandardized, IHS_standardized)
+        pass
+
+    def store_ehh(self):
+        pass
+
+    def store_xpehh(self):
+        pass
+
 if __name__ == "__main__":
-    db = DatabaseManager('~/Desktop/scan_stats.db')
+    #db = DatabaseManager('~/Desktop/scan_stats.db')
     #db.add_locus_info(1, 123, 100, 1.2, "A", "T", "A")
     #result = db.add_population_set( population_list=["FIN","GBR","YRI"], superpopulation_list=["EUR","AFR"] )
 
-    pop_set = db.get_popset_for_pop_names(["FIN","GBR","YRI"])
-    print [i.id for i in pop_set.populations]
+    #cr = ScanStatStorer("~/Desktop/chr22_AFR_2.metadata.json", "~/Desktop/scan_stats.db")
+
+    #cr.store_population_set()
+
+    #print cr.metadata
+    #print cr.read_ehh()
+
+    #pop_set = db.get_popset_for_pop_names(["FIN","GBR","YRI"])
+    #print [i.id for i in pop_set.populations]
 
 
 

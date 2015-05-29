@@ -16,18 +16,19 @@ class JSONHelper(object):
         if fileExists:
             with open(filepath, "r") as inFile:                
                 metaDataDict = json.load(inFile)
+
+                if append:
+                    metaDataDict.setdefault(key_to_act_on, []).append(dict_to_set)
+                else:
             
-                for k,v in dict_to_set.iteritems():
-                    if not key_to_act_on:
-                        metaDataDict[k] = v
-                    else:
-                        if append:
-                            metaDataDict.setdefault(key_to_act_on, []).append(v)
+                    for k,v in dict_to_set.iteritems():
+                        if not key_to_act_on:
+                            metaDataDict[k] = v
                         else:
                             metaDataDict[key_to_act_on] = v
-                    # if None is specified for the value, remove from the dict
-                    if v == None:
-                        del metaDataDict[k]
+                        # if None is specified for the value, remove from the dict
+                        if v == None:
+                            del metaDataDict[k]
 
         if fileExists or create_if_nonexistent:
 
