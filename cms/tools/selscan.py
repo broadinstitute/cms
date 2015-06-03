@@ -67,7 +67,7 @@ class SelscanFormatter(object):
         records = processor.records( str(chromosome_num), start_pos_bp, end_pos, pysam.asVCF())
 
         outTpedFile = outfile_location + "/" + outfile_prefix + ".tped.gz"
-        outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.allele_meta.gz"
+        outTpedMetaFile = outfile_location + "/" + outfile_prefix + ".tped.allele_metadata.gz"
 
         if samples_to_include is not None and len(samples_to_include) > 0:
             indices_of_matching_samples = sorted([processor.sample_names.index(x) for x in samples_to_include])
@@ -97,13 +97,13 @@ class SelscanFormatter(object):
 
             recordCount = 0
             for record in records:
-                
                 # if the variant is a SNP
                 # OLD style looking at INFO VT value: 
                 # processor.variant_is_type(record.info, "SNP"):
                 VALID_BASES = ["A","C","G","T","N","a","c","g","t","n"]
                 if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
                      all(variant in VALID_BASES for variant in record.alt.split(",")) ):
+
                     alternateAlleles = [record.alt]
                     if record.alt not in ['A','T','C','G']:
                         #print record.alt
@@ -118,7 +118,6 @@ class SelscanFormatter(object):
 
                     # if the AA is populated, and the call meets the specified criteria
                     if (ancestral_allele in ['A','T','C','G']) or (include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g']):
-
                         recordString = record.__str__()
 
                         match = cls.genoRegex.match(recordString)
@@ -131,17 +130,30 @@ class SelscanFormatter(object):
 
                             numberOfHaplotypes = float(len(genotypes_for_selected_samples))
                             
-                            for idx, altAllele in enumerate(alternateAlleles):
-                                codingFunc = np.vectorize(coding_function)
-                                strRepresentingThisGenotype = str(idx+1)
-                                coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
+                            # Dict to get number corresponding to altAllele {str(altAllele):idx for idx,altAllele in enumerate(alternateAlleles)}
 
-                                allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
+                            codingFunc = np.vectorize(coding_function)
+                            coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples, record.ref, ancestral_allele)
 
-                                outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
+                            allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
-                                of1linesToWrite.append(outStrDict["tpedString"])
-                                of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+                            outStrDict = cls._build_variant_output_strings(record.contig, str(1), record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele, allele_freq_for_pop)
+
+                            of1linesToWrite.append(outStrDict["tpedString"])
+                            of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+
+                            # to split out multi-allelic into separate lines in output TPED
+                            # for idx, altAllele in enumerate(alternateAlleles):
+                            #     codingFunc = np.vectorize(coding_function)
+                            #     strRepresentingThisGenotype = str(idx+1)
+                            #     coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
+
+                            #     allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
+
+                            #     outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
+
+                            #     of1linesToWrite.append(outStrDict["tpedString"])
+                            #     of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
 
                             recordCount += 1
                             current_pos_bp = int(record.pos)

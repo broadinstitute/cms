@@ -15,7 +15,7 @@ from Bio import SeqIO
 
 # from this package
 import tools.selscan
-import util.cmd, util.file, util.vcf_reader, util.call_sample_reader, util.json_helpers
+import util.cmd, util.file, util.vcf_reader, util.call_sample_reader, util.json_helpers, util.db_helper
 
 log = logging.getLogger(__name__)
 
@@ -86,11 +86,25 @@ def main_selscan_file_conversion(args):
 
     # Write JSON file containing metadata describing this TPED file
 
-    def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
-        ''' For a given genotype value, current_value, of a given sample, t
-         his function returns a coded value as expected by selscan
-         '''
-        return "1" if current_value==val_representing_alt_allele else "0"
+    #def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
+    def coding_function(current_value, reference_allele, ancestral_allele):
+        """for a given genotype call, returns the proper tped/selscan encoding, such that the ancestral allele is 
+        always 1 and the reference allele is always 0. Collapses multiallelic sites to biallelic"""
+        #OLD: return "1" if current_value==val_representing_alt_allele else "0"
+        # as per Joe:
+
+        #ref is always 0 in the VCF
+        if ancestral_allele == reference_allele: 
+            if current_value == 0:
+                return "1"
+            else:
+                return "0" #
+
+        else:
+            if current_value == 0:
+                return "0"
+            else:
+                return "1"
 
     tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file=args.inputVCF, 
                                     gen_map_file=args.genMap, 
@@ -277,7 +291,6 @@ def main_selscan_xpehh(args):
     if args.threads < 1:
          raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
          
-    # create TPED files here
     tools.selscan.SelscanTool().execute_xpehh(
         tped_file       = args.inputTped,
         tped_ref_file   = args.inputRefTped,
@@ -294,12 +307,13 @@ def main_selscan_xpehh(args):
     metaData["xpehh_pop_A_tped"] = args.inputTped
     metaData["xpehh_pop_B_tped"] = args.inputRefTped
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData, key_to_act_on="xpehh", append=True)
 
     return 0
 __commands__.append(('selscan_xpehh', parser_selscan_xpehh))
 
-# === Selscan XPEHH ===
+# === For storage and retrieval of data from SQLite ===
 
 def parser_selscan_store_results_in_db(parser=argparse.ArgumentParser()):
     """
@@ -308,21 +322,43 @@ def parser_selscan_store_results_in_db(parser=argparse.ArgumentParser()):
     parser.add_argument("inputFile", help="Input *.metadata.json file")
     parser.add_argument("outFile", help="Output SQLite filepath")
 
-    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.common_args(parser, (('loglevel', 'INFO'), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_store_results_in_db)
     return parser
 
 def main_selscan_store_results_in_db(args):
     
-    filepath = os.path.abspath(args.inputFile)
-    if os.path.isfile(filepath):
-        pass
-        # use data reader class here
+    inFilePath = os.path.abspath(args.inputFile)
+    if os.path.isfile(inFilePath):
+        metaData = util.json_helpers.JSONHelper.read_data(inFilePath)
 
-            
-            
+        cr = util.db_helper.ScanStatStorer(inFilePath, args.outFile)
 
+        if "locus_info_stored_in_db" not in metaData:
+            log.info("Storing locus info in DB...")
+            cr.store_locus_info()
+            util.json_helpers.JSONHelper.annotate_json_file(inFilePath, {"locus_info_stored_in_db":str(args.outFile)})
+
+        if "ihs_info_stored_in_db" not in metaData:
+            log.info("Storing IHS info in DB...")
+            cr.store_ihs()
+            util.json_helpers.JSONHelper.annotate_json_file(inFilePath, {"ihs_info_stored_in_db":str(args.outFile)})
+
+        if "ehh_info_stored_in_db" not in metaData:
+            log.info("Storing EHH info in DB...")
+            cr.store_ehh()
+            util.json_helpers.JSONHelper.annotate_json_file(inFilePath, {"ehh_info_stored_in_db":str(args.outFile)})
+
+        if "xpehh_info_stored_in_db" not in metaData:
+            log.info("Storing XPEHH info in DB...")
+            cr.store_xpehh()
+            util.json_helpers.JSONHelper.annotate_json_file(inFilePath, {"xpehh_info_stored_in_db":str(args.outFile)})
+
+        log.info("DB storage complete: {}".format(args.outFile))
+    else:
+        raise IOError('Input metadata file specified does not exist: {}'.format( inFilePath ))
     return 0
+
 __commands__.append(('store_selscan_results_in_db', parser_selscan_store_results_in_db))
 
 # === Parser setup ===
@@ -332,3 +368,4 @@ def full_parser():
 
 if __name__ == '__main__':
     util.cmd.main_argparse(__commands__, __doc__)
+

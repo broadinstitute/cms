@@ -6,6 +6,20 @@ import json
 class JSONHelper(object):
 
     @staticmethod
+    def read_data(file_path):
+        filepath = os.path.abspath(file_path) 
+
+        fileExists = os.path.isfile(filepath)
+
+        jsonDataDict = {}
+
+        if fileExists:
+            with open(filepath, "r") as inFile:                
+                jsonDataDict = json.load(inFile)
+
+        return jsonDataDict
+
+    @staticmethod
     def annotate_json_file(file_path, dict_to_set, create_if_nonexistent=True, key_to_act_on=None, append=False):
         filepath = os.path.abspath(file_path) 
 
