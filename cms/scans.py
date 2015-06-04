@@ -95,29 +95,29 @@ def main_selscan_file_conversion(args):
 
         #ref is always 0 in the VCF
         if ancestral_allele == reference_allele: 
-            if current_value == 0:
+            if current_value == "0":
                 return "1"
             else:
                 return "0" #
 
         else:
-            if current_value == 0:
+            if current_value == "0":
                 return "0"
             else:
                 return "1"
 
-    tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file=args.inputVCF, 
-                                    gen_map_file=args.genMap, 
-                                    samples_to_include=samples_to_include, 
-                                    outfile_location=args.outLocation, 
-                                    outfile_prefix=args.outPrefix, 
-                                    chromosome_num=args.chromosomeNum, 
-                                    start_pos_bp=args.startBp, 
-                                    end_pos_bp=args.endBp, 
-                                    ploidy=2, 
-                                    consider_multi_allelic=args.considerMultiAllelic, 
-                                    include_variants_with_low_qual_ancestral=args.includeLowQualAncestral,
-                                    coding_function=coding_function)
+    tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file = args.inputVCF, 
+                                    gen_map_file                              = args.genMap, 
+                                    samples_to_include                        = samples_to_include, 
+                                    outfile_location                          = args.outLocation, 
+                                    outfile_prefix                            = args.outPrefix, 
+                                    chromosome_num                            = args.chromosomeNum, 
+                                    start_pos_bp                              = args.startBp, 
+                                    end_pos_bp                                = args.endBp, 
+                                    ploidy                                    = 2, 
+                                    consider_multi_allelic                    = args.considerMultiAllelic, 
+                                    include_variants_with_low_qual_ancestral  = args.includeLowQualAncestral,
+                                    coding_function                           = coding_function)
 
     outTpedFile = args.outLocation  + "/" + args.outPrefix + ".tped.gz"
     outMetadataFile = args.outLocation  + "/" + args.outPrefix + ".metadata.json"
