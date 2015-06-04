@@ -405,7 +405,7 @@ class DownloadAndBuildSelscan(tools.DownloadPackage) :
         #log.debug("Install path: {}".format(SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type())))
 
         # Now we can make:
-        os.system('cd "{}" && make -s && mv ./selscan {}'.format(selscanSrcDir, os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
+        os.system('cd "{}" && make -s && mv ./selscan ./norm {}'.format(selscanSrcDir, os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
 
 
 
