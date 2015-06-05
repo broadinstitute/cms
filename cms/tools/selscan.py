@@ -44,7 +44,8 @@ class SelscanFormatter(object):
     @staticmethod
     def _build_variant_output_strings(chrm, idx, pos_bp, map_pos_cm, genos, ref_allele, alt_allele, ancestral_call, allele_freq):
         outputStringDict = dict()
-        outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
+        #outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
+        outputStringDict["tpedString"]     = "{chr} {pos_bp} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
         outputStringDict["metadataString"] = "{chr} {pos_bp}-{idx} {pos_bp} {map_pos_cm} {ref_allele} {alt_allele} {ancestral_call} {allele_freq}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, ref_allele=ref_allele, alt_allele=alt_allele, ancestral_call=ancestral_call, allele_freq=allele_freq)
 
         return outputStringDict
@@ -124,6 +125,7 @@ class SelscanFormatter(object):
                         if match:
                             rawGenos = match.group("genos")
                             genos = rawGenos[::2]
+                            recordPosition = record.pos+1
                             genotypes_for_selected_samples = operator.itemgetter(*indices_of_matching_genotypes)(genos)
 
                             map_pos_cm = rm.physToMap(chromStr, record.pos)
@@ -137,7 +139,7 @@ class SelscanFormatter(object):
 
                             allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
-                            outStrDict = cls._build_variant_output_strings(record.contig, str(1), record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele, allele_freq_for_pop)
+                            outStrDict = cls._build_variant_output_strings(record.contig, str(1), recordPosition, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele, allele_freq_for_pop)
 
                             of1linesToWrite.append(outStrDict["tpedString"])
                             of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
@@ -156,7 +158,7 @@ class SelscanFormatter(object):
                             #     of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
 
                             recordCount += 1
-                            current_pos_bp = int(record.pos)
+                            current_pos_bp = int(recordPosition)
 
                             if recordCount % 1000 == 0:
                                 #write out blocks of lines periodically, with synced iterators
