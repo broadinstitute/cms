@@ -66,7 +66,7 @@ class Tool(object):
         assert not os.system(self.exec_path + ' ' + args)
     def install_and_get_path(self) :
         self.install()
-        if self.executable_path()==None:
+        if self.executable_path() is None:
             raise NameError("unsuccessful in installing " + type(self).__name__)
         return self.executable_path()
 

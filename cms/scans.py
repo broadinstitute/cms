@@ -313,6 +313,104 @@ def main_selscan_xpehh(args):
     return 0
 __commands__.append(('selscan_xpehh', parser_selscan_xpehh))
 
+# === Selscan normalization ===
+
+def parser_selscan_norm_common(parser=argparse.ArgumentParser()):
+    """
+        Build a parser to which arguments are added which are common to 
+        several selscan functions.
+    """
+
+    input_file_help_string = """A list of files delimited by whitespace for joint normalization.
+    Expected format for iHS files (no header):\n
+    <locus name> <physical pos> <freq> <ihh1> <ihh2> <ihs>
+    Expected format for XP-EHH files (one line header):
+    <locus name> <physical pos> <genetic pos> <freq1> <ihh1> <freq2> <ihh2> <xpehh>"""
+
+    parser.add_argument("inputFiles", help=input_file_help_string, nargs='+')
+
+    parser.add_argument('--bins', default=100, type=int,
+        help="""The number of frequency bins in [0,1] for score normalization (default: %(default)s)""")
+
+    parser.add_argument('--critPercent', default=-1.00, type=float,
+        help="""Set the critical value such that a SNP with iHS in the most extreme CRIT_PERCENT tails 
+        (two-tailed) is marked as an extreme SNP. Not used by default (default: %(default)s)""")
+
+    parser.add_argument('--critValue', default=2.00, type=float,
+        help="""Set the critical value such that a SNP with |iHS| > CRIT_VAL is marked as an extreme SNP.  
+        Default as in Voight et al. (default: %(default)s)""")
+
+    parser.add_argument('--minSNPs', default=10, type=int,
+        help="""Only consider a bp window if it has at least this many SNPs (default: %(default)s)""")
+
+    parser.add_argument('--qbins', default=20, type=int,
+        help="""Outlying windows are binned by number of sites within each
+        window.  This is the number of quantile bins to use. (default: %(default)s)""")
+
+    parser.add_argument('--winSize', default=100000, type=int,
+        help="""GThe non-overlapping window size for calculating the percentage
+        of extreme SNPs (default: %(default)s)""")
+
+    parser.add_argument('--bpWin', default=False, action='store_true',
+        help='If set, will use windows of a constant bp size with varying number of SNPs')
+
+    return parser
+
+def parser_selscan_norm_ihs(parser=argparse.ArgumentParser()):
+    parser = parser_selscan_norm_common(parser)
+    
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_norm_ihs)
+
+    return parser
+
+def main_selscan_norm_ihs(args):
+    """
+        Normalize Selscan's iHS output
+    """
+    # impose sanity checks on values here, perhaps
+
+    tools.selscan.SelscanNormTool().execute_ihs_norm(
+        input_file_list = args.inputFiles,
+        bins            = args.bins,
+        crit_percent    = args.critPercent,
+        crit_val        = args.critValue,
+        min_snps        = args.minSNPs,
+        qbins           = args.qbins,
+        winsize         = args.winSize,
+        bp_win          = args.bpWin
+    )
+    return 0
+__commands__.append(('selscan_norm_ihs', parser_selscan_norm_ihs))
+
+
+def parser_selscan_norm_xpehh(parser=argparse.ArgumentParser()):
+    parser = parser_selscan_norm_common(parser)
+    
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_norm_xpehh)
+
+    return parser
+
+def main_selscan_norm_xpehh(args):
+    """
+        Normalize Selscan's XPEHH output
+    """
+    # impose sanity checks on values here, perhaps
+
+    tools.selscan.SelscanNormTool().execute_xpehh_norm(
+        input_file_list = args.inputFiles,
+        bins            = args.bins,
+        crit_percent    = args.critPercent,
+        crit_val        = args.critValue,
+        min_snps        = args.minSNPs,
+        qbins           = args.qbins,
+        winsize         = args.winSize,
+        bp_win          = args.bpWin
+    )
+    return 0
+__commands__.append(('selscan_norm_xpehh', parser_selscan_norm_xpehh))
+
 # === For storage and retrieval of data from SQLite ===
 
 def parser_selscan_store_results_in_db(parser=argparse.ArgumentParser()):

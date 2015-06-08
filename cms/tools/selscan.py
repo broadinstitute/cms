@@ -27,7 +27,7 @@ import pysam
 from boltons.timeutils import relative_time
 import numpy as np
 
-tool_version = '1.0.5'
+tool_version = '1.0.5a'
 url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
@@ -202,15 +202,12 @@ class SelscanFormatter(object):
             of1linesToWrite = []
             of2linesToWrite = []
 
-class SelscanTool(tools.Tool):
+class SelscanBaseTool(tools.Tool):
     def __init__(self, install_methods = None):
         if install_methods is None:
             install_methods = []
             os_type                 = self.get_os_type()
             binaryPath              = self.get_selscan_binary_path( os_type    )
-
-            # pwdBeforeMafft = os.getcwd()
-            # os.chdir(os.path.dirname(self.install_and_get_path()))
             
             target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=binaryPath)
             verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
@@ -228,97 +225,6 @@ class SelscanTool(tools.Tool):
 
     def version(self):
         return tool_version
-
-
-    def execute_ehh(self, locus_id, tped_file, out_file, window, cutoff, max_extend, threads, maf, gap_scale):
-        out_file = os.path.abspath(out_file)
-
-        toolCmd = [self.install_and_get_path()]
-        toolCmd.append("--ehh")
-        toolCmd.append(locus_id)
-        toolCmd.append("--tped")
-        toolCmd.append(tped_file)
-        toolCmd.append("--out")
-        toolCmd.append(out_file)
-        if window:
-            toolCmd.append("--ehh-win")
-            toolCmd.append(window)
-        if cutoff:
-            toolCmd.append("--cutoff")
-            toolCmd.append("{:.6}".format(cutoff))
-        if max_extend:
-            toolCmd.append("--max-extend")
-            toolCmd.append((max_extend))
-        if threads > 0:
-            toolCmd.append("--threads")
-            toolCmd.append((threads))
-        else:
-            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
-        if maf:
-            toolCmd.append("--maf")
-            toolCmd.append("{:.6}".format(maf))
-        if gap_scale:
-            toolCmd.append("--gap-scale")
-            toolCmd.append((gap_scale))
-
-        toolCmd = [str(x) for x in toolCmd]
-        log.debug(' '.join(toolCmd))
-        subprocess.check_call( toolCmd )
-
-    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, skip_low_freq=True, trunc_ok=False):
-        # --ihs --tped ./1out.tped.gz --out 1ihsout
-        toolCmd = [self.install_and_get_path()]
-        toolCmd.append("--ihs")
-        toolCmd.append("--tped")
-        toolCmd.append(tped_file)
-        toolCmd.append("--out")
-        toolCmd.append(out_file)
-        if skip_low_freq:
-            toolCmd.append("--skip-low-freq")
-        if trunc_ok:
-            toolCmd.append("--trunc-ok")
-        if threads > 0:
-            toolCmd.append("--threads")
-            toolCmd.append((threads))
-        else:
-            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
-        if maf:
-            toolCmd.append("--maf")
-            toolCmd.append("{:.6}".format(maf))
-        if gap_scale:
-            toolCmd.append("--gap-scale")
-            toolCmd.append((gap_scale))
-
-        toolCmd = [str(x) for x in toolCmd]        
-        log.debug(' '.join(toolCmd))
-        subprocess.check_call( toolCmd )
-
-    def execute_xpehh(self, tped_file, tped_ref_file, out_file, threads, maf, gap_scale, trunc_ok=False):
-        toolCmd = [self.install_and_get_path()]
-        toolCmd.append("--xpehh")
-        toolCmd.append("--tped")
-        toolCmd.append(tped_file)
-        toolCmd.append("--tped-ref")
-        toolCmd.append(tped_ref_file)
-        toolCmd.append("--out")
-        toolCmd.append(out_file)
-        if trunc_ok:
-            toolCmd.append("--trunc-ok")
-        if threads > 0:
-            toolCmd.append("--threads")
-            toolCmd.append((threads))
-        else:
-            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
-        if maf:
-            toolCmd.append("--maf")
-            toolCmd.append("{:.6}".format(maf))
-        if gap_scale:
-            toolCmd.append("--gap-scale")
-            toolCmd.append((gap_scale))
-
-        toolCmd = [str(x) for x in toolCmd]
-        log.debug(' '.join(toolCmd))
-        subprocess.check_call( toolCmd )
 
     @classmethod
     def uncomment_line(cls, line):
@@ -386,7 +292,7 @@ class SelscanTool(tools.Tool):
             return "linux"
 
     @staticmethod
-    def get_selscan_binary_path(os_type, full=True):
+    def get_selscan_binary_path(os_type, binaryName="selscan", full=True):
         ''' returns the location of the binary relative to the extracted archive, for the given os '''
 
         selscanPath = "bin/"
@@ -399,12 +305,201 @@ class SelscanTool(tools.Tool):
             selscanPath += "win/"
 
         if full:
-            selscanPath += "selscan"
+            selscanPath += binaryName
 
             if os_type == "win":
                 selscanPath += ".exe"
 
         return selscanPath
+
+class SelscanTool(SelscanBaseTool):
+    def __init__(self, install_methods = None):
+        super(SelscanTool, self).__init__()
+
+    def execute_ehh(self, locus_id, tped_file, out_file, window, cutoff, max_extend, threads, maf, gap_scale):
+        out_file = os.path.abspath(out_file)
+
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--ehh")
+        toolCmd.append(locus_id)
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if window:
+            toolCmd.append("--ehh-win")
+            toolCmd.append(window)
+        if cutoff:
+            toolCmd.append("--cutoff")
+            toolCmd.append("{:.6}".format(cutoff))
+        if max_extend:
+            toolCmd.append("--max-extend")
+            toolCmd.append((max_extend))
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
+
+        toolCmd = [str(x) for x in toolCmd]
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, skip_low_freq=True, trunc_ok=False):
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--ihs")
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if skip_low_freq:
+            toolCmd.append("--skip-low-freq")
+        if trunc_ok:
+            toolCmd.append("--trunc-ok")
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
+
+        toolCmd = [str(x) for x in toolCmd]        
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    def execute_xpehh(self, tped_file, tped_ref_file, out_file, threads, maf, gap_scale, trunc_ok=False):
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--xpehh")
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--tped-ref")
+        toolCmd.append(tped_ref_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if trunc_ok:
+            toolCmd.append("--trunc-ok")
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
+
+        toolCmd = [str(x) for x in toolCmd]
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    
+
+class SelscanNormTool(SelscanBaseTool):
+    def __init__(self, install_methods = None):
+        super(SelscanNormTool, self).__init__()
+
+        if install_methods is None:
+            install_methods = []
+            os_type                 = self.get_os_type()
+            normBinaryPath          = self.get_selscan_binary_path( os_type, binaryName="norm" )
+            
+            target_norm_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=normBinaryPath)
+            verify_norm_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
+                                                                                ver=tool_version, binPath=normBinaryPath) 
+
+            install_methods.extend([
+                    tools.DownloadPackage( url.format( ver=tool_version ),
+                                            target_rel_path = target_norm_rel_path,
+                                            verifycmd       = verify_norm_command,
+                                            verifycode      = 1 ) # norm --help returns exit code of 1
+            ])
+
+        tools.Tool.__init__(self, install_methods = install_methods)
+
+    def execute_ihs_norm(self, input_file_list, bins, crit_percent, crit_val, min_snps, qbins, winsize, bp_win=False):
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--ihs")
+
+        if len(input_file_list):
+            toolCmd.append("--files")
+            toolCmd.append(" ".join(input_file_list))
+        else:
+            raise argparse.ArgumentTypeError("You must specify at least one file to normalize.")
+
+        if bins:
+            toolCmd.append("--bins")
+            toolCmd.append(bins)
+        if crit_percent:
+            toolCmd.append("--crit-percent")
+            toolCmd.append("{:.6}".format(crit_percent))
+        if crit_val:
+            toolCmd.append("--crit-val")
+            toolCmd.append("{:.6}".format(crit_val))
+        if min_snps:
+            toolCmd.append("--min-snps")
+            toolCmd.append(min_snps)
+        if qbins:
+            toolCmd.append("--qbins")
+            toolCmd.append(qbins)
+        if winsize:
+            toolCmd.append("--winsize")
+            toolCmd.append(winsize)
+        if bp_win:
+            toolCmd.append("--bp-win")
+
+        toolCmd = [str(x) for x in toolCmd]        
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
+    def execute_xpehh_norm(self, input_file_list, bins, crit_percent, crit_val, min_snps, qbins, winsize, bp_win=False):
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--xpehh")
+
+        
+        if len(input_file_list):
+            toolCmd.append("--files")
+            toolCmd.append(" ".join(input_file_list))
+        else:
+            raise argparse.ArgumentTypeError("You must specify at least one file to normalize.")
+
+        if bins:
+            toolCmd.append("--bins")
+            toolCmd.append(bins)
+        if crit_percent:
+            toolCmd.append("--crit-percent")
+            toolCmd.append("{:.6}".format(crit_percent))
+        if crit_val:
+            toolCmd.append("--crit-val")
+            toolCmd.append("{:.6}".format(crit_val))
+        if min_snps:
+            toolCmd.append("--min-snps")
+            toolCmd.append(min_snps)
+        if qbins:
+            toolCmd.append("--qbins")
+            toolCmd.append(qbins)
+        if winsize:
+            toolCmd.append("--winsize")
+            toolCmd.append(winsize)
+        if bp_win:
+            toolCmd.append("--bp-win")
+
+        toolCmd = [str(x) for x in toolCmd]        
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
 
 class DownloadAndBuildSelscan(tools.DownloadPackage) :
     def post_download(self) :
@@ -417,11 +512,9 @@ class DownloadAndBuildSelscan(tools.DownloadPackage) :
 
         SelscanTool.reform_makefile(makeFilePath + '.orig', makeFilePath)
 
-        #log.debug("Install path: {}".format(SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type())))
-
         # Now we can make:
         os.system('cd "{}" && make -s && mv ./selscan ./norm {}'.format(selscanSrcDir, 
-            os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
+            os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type(), full=False))))
 
 
 
