@@ -5,7 +5,7 @@ __author__ = "dpark@broadinstitute.org"
 __version__ = "PLACEHOLDER"
 __date__ = "PLACEHOLDER"
 
-import os, shutil, logging, sqlite3
+import os, shutil, logging
 import pysam
 import util.file, util.misc
 

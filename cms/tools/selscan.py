@@ -45,7 +45,7 @@ class SelscanFormatter(object):
         outputStringDict = dict()
         # outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, 
         #     idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
-        outputStringDict["tpedString"]     = "{chr} {pos_bp} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, 
+        outputStringDict["tpedString"]     = "{chr} {pos_bp} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm,
                                                         pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
         outputStringDict["metadataString"] = "{chr} {pos_bp}-{idx} {pos_bp} {map_pos_cm} {ref_allele}".format( chr=chrm, 
             idx        = idx, 
@@ -69,6 +69,8 @@ class SelscanFormatter(object):
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
             tped file of the sort expected by selscan. 
         """
+        assert ploidy > 0
+
         processor = VCFReader(vcf_file)
 
         end_pos = processor.clens[str(chromosome_num)] if end_pos_bp is None else end_pos_bp

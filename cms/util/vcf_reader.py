@@ -12,6 +12,7 @@ except ImportError: # py3 zip is izip
 #    from itertools import count, zip_longest
 #except ImportError:
 #    from itertools import count, izip_longest as zip_longest
+from itertools import count
 from collections import deque
 
 # external
@@ -46,7 +47,7 @@ class VCFReader(object):
         """
         Consume an iterable not reading it into memory; return the number of items.
         """
-        counter = count()
+        counter = itertools.count()
         deque(zip(iterable, counter), maxlen=0)  # (consume at C speed)
         return next(counter)
 

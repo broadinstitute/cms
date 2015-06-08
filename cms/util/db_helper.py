@@ -282,8 +282,8 @@ class DatabaseManager(object):
                                         IHS_standardized else None)
             return item
         except pw.IntegrityError:
-            log.warning("iHS already in DB for locus {}, skipping.".format(
-                                str(locus.variant_id)) )
+            log.warning("iHS already in DB for locus %s, skipping.", 
+                                                            locus.variant_id )
 
     def add_xpehh_info(self, locus, population_set_a, population_set_b, 
         population_set_a_one_freq, IHH_a, population_set_b_one_freq, IHH_b, 
@@ -388,8 +388,8 @@ class DatabaseManager(object):
                                       ref_allele     = ref_allele, 
                                       alt_allele     = alt_allele, 
                                       ancestral_call = ancestral_call 
-                                      ).where((LocusInfo.chrom == chrom) 
-                                        & (LocusInfo.pos_bp == pos_bp))
+                                      ).where((LocusInfo.chrom == chrom) &
+                                          (LocusInfo.pos_bp == pos_bp))
         else:
             query = LocusInfo.update( variant_id     = variant_id, 
                                       pos_bp         = int(pos_bp),

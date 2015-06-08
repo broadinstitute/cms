@@ -7,7 +7,7 @@ __author__   = "tomkinsc@broadinstitute.org"
 __commands__ = []
 
 # built-ins
-import array, argparse, logging, os, bisect
+import array, argparse, logging, os
 
 # from external modules
 # from Bio import SeqIO
@@ -289,7 +289,7 @@ def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
 
 def main_selscan_xpehh(args):
     if args.threads < 1:
-         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+        raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
          
     tools.selscan.SelscanTool().execute_xpehh(
         tped_file       = args.inputTped,
@@ -452,7 +452,7 @@ def main_selscan_store_results_in_db(args):
             cr.store_xpehh()
             util.json_helpers.JSONHelper.annotate_json_file(inFilePath, {"xpehh_info_stored_in_db":str(args.outFile)})
 
-        log.info("DB storage complete: {}".format(args.outFile))
+        log.info("DB storage complete: %s", args.outFile)
     else:
         raise IOError('Input metadata file specified does not exist: %s', inFilePath )
     return 0
