@@ -1,23 +1,21 @@
 #!/usr/bin/python
 
 # built-ins
-import os, re
-import time
+import re
 
 try:
     from itertools import izip as zip
 except ImportError: # py3 zip is izip
     pass
 
-try: 
-    from itertools import count, zip_longest
-except ImportError:
-    from itertools import count, izip_longest as zip_longest
+#try: 
+#    from itertools import count, zip_longest
+#except ImportError:
+#    from itertools import count, izip_longest as zip_longest
 from collections import deque
 
 # external
 import pysam
-from boltons.iterutils import chunked_iter
 
 class VCFReader(object):
 
@@ -29,7 +27,7 @@ class VCFReader(object):
     def __init__(self, file_path, parser=pysam.asVCF()):
         self.vcf_file_path = file_path
         self.tabix_file    = pysam.TabixFile(file_path, parser=parser)
-        self.sample_names  = self.sample_names()
+        self.sample_names  = self.read_sample_names()
         self.clens         = self.contig_lengths()
         self.indexDelta    = -1 if tuple(map(int, pysam.__version__.split('.'))) > (0,5) else 0
 
@@ -83,10 +81,10 @@ class VCFReader(object):
                 if str(elem).find("CHROM", 1) > 0:
                     break
             except StopIteration:
-                raise ValueError("Header not found in VCF file: {}".format(vcfFilePath))
+                raise ValueError("Header not found in VCF file: {}".format(self.vcf_file_path))
         return str(elem)
 
-    def sample_names(self):
+    def read_sample_names(self):
         '''
             Returns a list of the sample names described in the VCF file
         '''
@@ -102,8 +100,8 @@ class VCFReader(object):
             Returns an iterator for the file records.
         '''
 
-        start_pos_bp = 1 if start_pos_bp == None else start_pos_bp
-        end_pos_bp = self.clens[str(chromosome_num)] if end_pos_bp == None else end_pos_bp
+        start_pos_bp = 1 if start_pos_bp is None else start_pos_bp
+        end_pos_bp = self.clens[str(chromosome_num)] if end_pos_bp is None else end_pos_bp
 
         # subtract one since pysam uses incorrect 0-indexed positions
         records = self.tabix_file.fetch( str(chromosome_num), start_pos_bp+self.indexDelta, end_pos_bp+self.indexDelta, parser)

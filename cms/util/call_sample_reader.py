@@ -5,7 +5,7 @@ __version__ = "PLACEHOLDER"
 __date__ = "PLACEHOLDER"
 
 import csv
-import os, re
+import os
 from collections import defaultdict
 try:
     from urllib2 import urlopen
@@ -103,7 +103,7 @@ class CallSampleReader(object):
             f.close()
         return sample_names
 
-    def store_sample_membership(self, row, rowFieldNames):
+    def store_sample_membership(self, row, rowFieldNames=None):
         '''
             Add the metadata keys for a given row to the sample key of the sample_membership dict
         '''
@@ -120,7 +120,7 @@ class CallSampleReader(object):
         self.pop_membership["ALL"].append(row["sample"])
 
 
-    def store_population_names(self, row, rowFieldNames):
+    def store_population_names(self, row, rowFieldNames=None):
         '''
             Add the sample to the list of all sample names
         '''

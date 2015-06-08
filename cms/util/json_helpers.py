@@ -41,7 +41,7 @@ class JSONHelper(object):
                         else:
                             metaDataDict[key_to_act_on] = v
                         # if None is specified for the value, remove from the dict
-                        if v == None:
+                        if v is None:
                             del metaDataDict[k]
 
         if fileExists or create_if_nonexistent:

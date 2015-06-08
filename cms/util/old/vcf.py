@@ -5,7 +5,7 @@ __author__ = "dpark@broadinstitute.org"
 __version__ = "PLACEHOLDER"
 __date__ = "PLACEHOLDER"
 
-import os, shutil, logging, itertools, sqlite3
+import os, shutil, logging, sqlite3
 import pysam
 import util.file, util.misc
 
@@ -152,7 +152,7 @@ def calc_maf(genos, ancestral=None, ploidy=1):
     alist = sorted([(n,a) for a,n in acounts.items()])
 
     # daf
-    if ancestral != None:
+    if ancestral is not None:
         out['a_ancestral'] = ancestral
         derived = list(sorted([a for a in acounts.keys() if a!=ancestral]))
         out['a_derived'] = ','.join(derived)
@@ -196,7 +196,7 @@ class TabixReader(pysam.Tabixfile):
     def chroms(self):
         return self.contigs
     def get(self, chrom=None, start=None, stop=None, region=None):
-        if start!=None:
+        if start is not None:
             start -= 1
         return self.fetch(reference=chrom, start=start, end=stop,
             region=region, parser=self.parser)
@@ -325,7 +325,7 @@ class VcfReader(TabixReader):
             seq = list(na * (stop-start+1))
 
         for sample in samples:
-            assert sample==None or sample in self.samples()
+            assert sample is None or sample in self.samples()
 
             # Make copy of reference sequence
             newseq = [s for s in seq]
@@ -346,7 +346,7 @@ def replaceAlleles(sample,seq,vcf_records):
     for i,alleles,genos in vcf_records:
 
         # set allele to the DNA sequence we will replace at positions i through i+len(refallele)-1
-        if sample==None:
+        if sample is None:
             # caller is asking for the reference sample's sequence
             allele = alleles[0]
             alleles = [allele]
@@ -362,7 +362,7 @@ def replaceAlleles(sample,seq,vcf_records):
 
         # replace portion of sequence with allele
         # NEED BUGFIXES HERE for overlapping VCF records
-        if allele == None:
+        if allele is None:
             # nothing here ... is this even possible anymore?
             pass
         elif len(alleles[0])==1:

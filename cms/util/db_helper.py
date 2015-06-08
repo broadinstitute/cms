@@ -2,16 +2,15 @@
 
 # built-ins
 import os
-import itertools, logging
+import logging
 from functools import wraps
-import json
 import csv
 
 # module
 import util.file, util.json_helpers
 
 # external
-import boltons
+import boltons.iterutils
 import peewee as pw
 from playhouse import shortcuts as plsc # from pip module "peewee"
 
@@ -19,8 +18,6 @@ log = logging.getLogger(__name__)
 
 class ScanTable(pw.Model):
     pass
-    #class Meta:
-    #    database = db
 
 class SuperPopulation(ScanTable):
     name = pw.CharField(unique=True)
@@ -48,7 +45,7 @@ class LocusInfo(ScanTable):
     alt_allele             = pw.CharField()
     ancestral_call         = pw.CharField(null=True)
 
-    class Meta:
+    class Meta(object):
         indexes = (
             (('chrom','pos_bp','alt_allele'), True),
         )
@@ -81,7 +78,7 @@ class AlleleInfo(ScanTable):
 
     allele_freq_in_pop_set = pw.DoubleField(null=True)
 
-    class Meta:
+    class Meta(object):
         indexes = (
             (('locus','population_set'), True),
         )
@@ -103,7 +100,7 @@ class EHHInfo(ScanTable):
     EHH_zeros        = pw.DoubleField()
     EHH              = pw.DoubleField()
 
-    class Meta:
+    class Meta(object):
         indexes = (
             (('population_set','core_locus','pos_bp_delta'), True),
         )
@@ -125,14 +122,15 @@ class IHSInfo(ScanTable):
     IHS_unstandardized = pw.DoubleField()
     IHS_standardized   = pw.DoubleField(null=True)
 
-    class Meta:
+    class Meta(object):
         indexes = (
             (('locus','population_set'), True),
         )
 
     def __str__(self):
-        return ",".join([str(population_set), str(locus), str(IHH_1), 
-            str(IHH_0), str(IHS_unstandardized), str(IHS_standardized)])
+        return ",".join([str(self.population_set), str(self.locus), 
+            str(self.IHH_1), str(self.IHH_0), str(self.IHS_unstandardized), 
+            str(self.IHS_standardized)])
 
 class XPEHHInfo(ScanTable):
     '''
@@ -151,16 +149,17 @@ class XPEHHInfo(ScanTable):
     XPEHH_unstandardized      = pw.DoubleField()
     XPEHH_standardized        = pw.DoubleField(null=True)
 
-    class Meta:
+    class Meta(object):
         indexes = (
             (('locus','population_set_a','population_set_a'), True),
         )
 
     def __str__(self):
-        return ",".join([str(locus), str(population_set_a), 
-            str(population_set_b), str(population_set_a_one_freq), str(IHH_a), 
-            str(population_set_b_one_freq), str(IHH_b), 
-            str(XPEHH_unstandardized), str(XPEHH_standardized)])
+        return ",".join([str(self.locus), str(self.population_set_a), 
+            str(self.population_set_b), str(self.population_set_a_one_freq), 
+            str(self.IHH_a), str(self.population_set_b_one_freq), 
+            str(self.IHH_b), str(self.XPEHH_unstandardized), 
+            str(self.XPEHH_standardized)])
 
 # ===========================
 # TODO: maybe don't include foreign key values in the string representations
@@ -212,7 +211,7 @@ class DatabaseManager(object):
     
     def add_super_population(self, superpop_name):
         item, created = SuperPopulation.get_or_create(name=superpop_name)
-        return item
+        return (item, created)
 
     def add_population(self, pop_name):
         item, created = Population.get_or_create(name=pop_name)
@@ -227,7 +226,7 @@ class DatabaseManager(object):
                                           ref_allele     = ref_allele, 
                                           alt_allele     = alt_allele, 
                                           ancestral_call = ancestral_call)
-        return item
+        return (item, created)
 
     def add_population_set(self, population_list, superpopulation_list, 
         name="", description=""):
@@ -248,7 +247,7 @@ class DatabaseManager(object):
         item, created = AlleleInfo.get_or_create(locus=locus, 
                                                 population_set=population_set, 
                           allele_freq_in_pop_set=float(allele_freq_in_pop_set))   
-        return item
+        return (item, created)
 
     def add_ehh_info(self, population_set, core_locus, pos_bp_delta, 
         map_pos_cm_delta, EHH_ones, EHH_zeros, EHH):
@@ -262,9 +261,9 @@ class DatabaseManager(object):
                                     EHH_ones         = float(EHH_ones),
                                     EHH_zeros        = float(EHH_zeros),
                                     EHH              = float(EHH))
-            return item
+            return (item, created)
         except pw.IntegrityError:
-            log.warning("Second variant considered " +\
+            log.warning("Second variant considered " +
             "in EHH calculation at locus {} + {}bp; skipping storage.".format(
                                 str(core_locus.variant_id), str(pos_bp_delta)))
             
@@ -301,7 +300,7 @@ class DatabaseManager(object):
                 XPEHH_unstandardized      = float(XPEHH_unstandardized) if 
                                                 XPEHH_standardized else None)
 
-        return item
+        return (item, created)
 
     def get_popset_for_pop_names(self, population_name_list, 
                                                     superpopulation_name_list):
@@ -356,23 +355,23 @@ class DatabaseManager(object):
 
     def get_locus_info(self, chrom, pos_bp, locus_id=None):
         if not locus_id:
-            return LocusInfo.get((LocusInfo.chrom == chrom) 
-                                            & (LocusInfo.pos_bp == pos_bp))
+            return LocusInfo.get((LocusInfo.chrom == chrom) &
+                                            (LocusInfo.pos_bp == pos_bp))
         else:
-            return LocusInfo.get((LocusInfo.variant_id == locus_id) 
-                                            & (LocusInfo.chrom == chrom))
+            return LocusInfo.get((LocusInfo.variant_id == locus_id) &
+                                            (LocusInfo.chrom == chrom))
 
     def get_allele_info(self, locus, population_set):
-        return AlleleInfo.get( (AlleleInfo.locus.id == locus.id) 
-                        & (AlleleInfo.population_set.id == population_set.id) )
+        return AlleleInfo.get( (AlleleInfo.locus.id == locus.id) &
+                        (AlleleInfo.population_set.id == population_set.id) )
 
     def get_ehh_info(self, core_locus, population_set):
-        return EHHInfo.select().where( (EHHInfo.core_locus.id == core_locus.id) 
-                            & (EHHInfo.population_set.id == population_set.id) )
+        return EHHInfo.select().where( (EHHInfo.core_locus.id == core_locus.id)& 
+                            (EHHInfo.population_set.id == population_set.id) )
 
     def get_ihs_info(self, locus, population_set):
-        return IHSInfo.get( (IHSInfo.locus.id == locus.id) 
-                            & (IHSInfo.population_set.id == population_set.id) )        
+        return IHSInfo.get( (IHSInfo.locus.id == locus.id) &
+                            (IHSInfo.population_set.id == population_set.id) )        
 
     def get_xpehh_info(self, locus, population_set_a, population_set_b):
         return XPEHHInfo.get( (XPEHHInfo.locus.id == locus.id) & 
@@ -381,7 +380,7 @@ class DatabaseManager(object):
 
     def update_locus_info(self, chrom, variant_id, pos_bp, map_pos_cm, 
                             ref_allele, alt_allele, ancestral_call):
-        if not locus_id:
+        if not variant_id:
             query = LocusInfo.update( chrom          = int(chrom),
                                       variant_id     = variant_id, 
                                       pos_bp         = int(pos_bp),
@@ -392,14 +391,14 @@ class DatabaseManager(object):
                                       ).where((LocusInfo.chrom == chrom) 
                                         & (LocusInfo.pos_bp == pos_bp))
         else:
-            locus = LocusInfo.update( variant_id     = variant_id, 
+            query = LocusInfo.update( variant_id     = variant_id, 
                                       pos_bp         = int(pos_bp),
                                       map_pos_cm     = float(map_pos_cm),
                                       ref_allele     = ref_allele, 
                                       alt_allele     = alt_allele, 
                                       ancestral_call = ancestral_call 
-                                      ).where((LocusInfo.variant_id == locus_id) 
-                                        & (LocusInfo.chrom == chrom))
+                              ).where((LocusInfo.variant_id == variant_id) &
+                                (LocusInfo.chrom == chrom))
 
         query.execute()
 
@@ -412,8 +411,8 @@ class DatabaseManager(object):
                                 EHH_ones         = float(EHH_ones),
                                 EHH_zeros        = float(EHH_zeros),
                                 EHH              = float(EHH)
-                               ).where( (EHHInfo.core_locus.id == core_locus.id) 
-                             & (EHHInfo.population_set.id == population_set.id))
+                           ).where( (EHHInfo.core_locus.id == core_locus.id) &
+                           (EHHInfo.population_set.id == population_set.id))
 
         query.execute()
 
@@ -426,8 +425,8 @@ class DatabaseManager(object):
                                 IHH_0               = float(IHH_0),
                                 IHS_unstandardized  = float(IHS_unstandardized),
                                 IHS_standardized    = float(IHS_standardized)
-                                ).where( (IHSInfo.locus.id == locus.id) 
-                             & (IHSInfo.population_set.id == population_set.id))
+                                ).where( (IHSInfo.locus.id == locus.id) &
+                               (IHSInfo.population_set.id == population_set.id))
 
         query.execute()
 
@@ -559,8 +558,8 @@ class ScanStatStorer(CalculationReader):
             # get list of loci matching IDs specified in this chunk
             with self.dbm.db.atomic():
                 query = LocusInfo.select().where(
-                    (LocusInfo.variant_id << locusIds) 
-                    & (LocusInfo.chrom == chromNum))
+                    (LocusInfo.variant_id << locusIds) &
+                    (LocusInfo.chrom == chromNum))
 
             # build a dict mapping variant_id -> index
             for locusResult in query:

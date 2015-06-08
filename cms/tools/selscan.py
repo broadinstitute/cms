@@ -9,8 +9,8 @@ __author__ = "tomkinsc@broadinstitute.org"
 import operator
 import os, os.path, subprocess, re
 import logging
-import gzip
 from datetime import datetime, timedelta
+import argparse
 
 try:
     from itertools import izip as zip
@@ -20,11 +20,9 @@ except ImportError: # py3 zip is izip
 # intra-module dependencies
 import tools, util.file
 from util.vcf_reader import VCFReader
-from util.call_sample_reader import CallSampleReader
 from util.recom_map import RecomMap
 
 #third-party dependencies
-from Bio import SeqIO
 import pysam
 from boltons.timeutils import relative_time
 import numpy as np
@@ -42,11 +40,20 @@ class SelscanFormatter(object):
         return float( sum([int(prevAvg)] * (N-1)) + x) / float(N)
 
     @staticmethod
-    def _build_variant_output_strings(chrm, idx, pos_bp, map_pos_cm, genos, ref_allele, alt_allele, ancestral_call, allele_freq):
+    def _build_variant_output_strings(chrm, idx, pos_bp, map_pos_cm, genos, 
+                                                                ref_allele, alt_allele, ancestral_call, allele_freq):
         outputStringDict = dict()
-        #outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
-        outputStringDict["tpedString"]     = "{chr} {pos_bp} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
-        outputStringDict["metadataString"] = "{chr} {pos_bp}-{idx} {pos_bp} {map_pos_cm} {ref_allele} {alt_allele} {ancestral_call} {allele_freq}\n".format(chr=chrm, idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, ref_allele=ref_allele, alt_allele=alt_allele, ancestral_call=ancestral_call, allele_freq=allele_freq)
+        # outputStringDict["tpedString"]     = "{chr} {pos_bp}-{idx} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, 
+        #     idx=idx, pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
+        outputStringDict["tpedString"]     = "{chr} {pos_bp} {map_pos_cm} {pos_bp} {genos}\n".format(chr=chrm, idx=idx, 
+                                                        pos_bp=pos_bp, map_pos_cm=map_pos_cm, genos=" ".join(genos))
+        outputStringDict["metadataString"] = "{chr} {pos_bp}-{idx} {pos_bp} {map_pos_cm} {ref_allele}".format( chr=chrm, 
+            idx        = idx, 
+            pos_bp     = pos_bp, 
+            map_pos_cm = map_pos_cm, 
+            ref_allele = ref_allele) + "{alt_allele} {ancestral_call} {allele_freq}\n".format( alt_allele = alt_allele, 
+                                                                                        ancestral_call = ancestral_call, 
+                                                                                        allele_freq    = allele_freq)
 
         return outputStringDict
 
@@ -56,14 +63,15 @@ class SelscanFormatter(object):
 
     @classmethod
     def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
-        outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None):
+        outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, 
+        consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None):
         """
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
             tped file of the sort expected by selscan. 
         """
         processor = VCFReader(vcf_file)
 
-        end_pos = processor.clens[str(chromosome_num)] if end_pos_bp == None else end_pos_bp
+        end_pos = processor.clens[str(chromosome_num)] if end_pos_bp is None else end_pos_bp
 
         records = processor.records( str(chromosome_num), start_pos_bp, end_pos, pysam.asVCF())
 
@@ -82,7 +90,6 @@ class SelscanFormatter(object):
 
         for filePath in [outTpedFile, outTpedMetaFile]:
             assert not os.path.exists(filePath), "File {} already exists. Consider removing this file or specifying a different output prefix. Processing aborted.".format(filePath)
-            pass
 
         startTime = datetime.now()
         sec_remaining_avg = 0
@@ -105,11 +112,12 @@ class SelscanFormatter(object):
                 if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
                      all(variant in VALID_BASES for variant in record.alt.split(",")) ):
 
-                    alternateAlleles = [record.alt]
+                    #alternateAlleles = [record.alt]
                     if record.alt not in ['A','T','C','G']:
                         #print record.alt
                         if consider_multi_allelic:
-                            alternateAlleles = record.alt.split(",")
+                            pass
+                            #alternateAlleles = record.alt.split(",")
                         else:
                             # continue on to next variant record
                             continue
@@ -139,20 +147,25 @@ class SelscanFormatter(object):
 
                             allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
-                            outStrDict = cls._build_variant_output_strings(record.contig, str(1), recordPosition, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele, allele_freq_for_pop)
+                            outStrDict = cls._build_variant_output_strings(record.contig, str(1), recordPosition, 
+                                map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, 
+                                ancestral_allele, allele_freq_for_pop)
 
                             of1linesToWrite.append(outStrDict["tpedString"])
                             of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
 
-                            # to split out multi-allelic into separate lines in output TPED
+                            # # to split out multi-allelic into separate lines in output TPED
                             # for idx, altAllele in enumerate(alternateAlleles):
                             #     codingFunc = np.vectorize(coding_function)
                             #     strRepresentingThisGenotype = str(idx+1)
-                            #     coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples,strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
+                            #     coded_genotypes_for_selected_samples = codingFunc( genotypes_for_selected_samples, 
+                            #         strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
 
                             #     allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
-                            #     outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, allele_freq_for_pop)
+                            #     outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, 
+                            #         map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, 
+                            #         ancestral_allele, allele_freq_for_pop)
 
                             #     of1linesToWrite.append(outStrDict["tpedString"])
                             #     of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
@@ -191,17 +204,17 @@ class SelscanFormatter(object):
 
 class SelscanTool(tools.Tool):
     def __init__(self, install_methods = None):
-        if install_methods == None:
+        if install_methods is None:
             install_methods = []
             os_type                 = self.get_os_type()
             binaryPath              = self.get_selscan_binary_path( os_type    )
-            binaryDir               = self.get_selscan_binary_path( os_type, full=False )
 
             # pwdBeforeMafft = os.getcwd()
             # os.chdir(os.path.dirname(self.install_and_get_path()))
             
             target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=binaryPath)
-            verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), ver=tool_version, binPath=binaryPath) 
+            verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
+                                                                                ver=tool_version, binPath=binaryPath) 
 
             install_methods.append(
                     DownloadAndBuildSelscan(  url.format( ver=tool_version ),
@@ -407,7 +420,8 @@ class DownloadAndBuildSelscan(tools.DownloadPackage) :
         #log.debug("Install path: {}".format(SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type())))
 
         # Now we can make:
-        os.system('cd "{}" && make -s && mv ./selscan ./norm {}'.format(selscanSrcDir, os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
+        os.system('cd "{}" && make -s && mv ./selscan ./norm {}'.format(selscanSrcDir, 
+            os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type()))))
 
 
 

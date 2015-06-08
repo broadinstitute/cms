@@ -7,11 +7,10 @@ __author__   = "tomkinsc@broadinstitute.org"
 __commands__ = []
 
 # built-ins
-import array, argparse, logging, os, sys, array, bisect
-import json
+import array, argparse, logging, os, bisect
 
 # from external modules
-from Bio import SeqIO
+# from Bio import SeqIO
 
 # from this package
 import tools.selscan
@@ -58,7 +57,8 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
     parser.add_argument('--considerMultiAllelic', default=False, action='store_true',
         help='Include multi-allelic variants in the output as separate records')
     parser.add_argument('--includeLowQualAncestral', default=False, action='store_true',
-        help='Include variants where the ancestral information is low-quality (as indicated by lower-case x for AA=x in the VCF info column) (default: %(default)s).')
+        help='Include variants where the ancestral information is low-quality ' + 
+        '(as indicated by lower-case x for AA=x in the VCF info column) (default: %(default)s).')
     
 
 
@@ -193,7 +193,7 @@ def parser_selscan_ehh(parser=argparse.ArgumentParser()):
 
 def main_selscan_ehh(args):
     if args.threads < 1:
-         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+        raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
 
     # Check to see if json file exists for given tped, and if so annotate it with the output filenames
 
@@ -245,7 +245,7 @@ def parser_selscan_ihs(parser=argparse.ArgumentParser()):
 
 def main_selscan_ihs(args):
     if args.threads < 1:
-         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+        raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
 
     tools.selscan.SelscanTool().execute_ihs(
         tped_file       = args.inputTped,
@@ -356,7 +356,7 @@ def main_selscan_store_results_in_db(args):
 
         log.info("DB storage complete: {}".format(args.outFile))
     else:
-        raise IOError('Input metadata file specified does not exist: {}'.format( inFilePath ))
+        raise IOError('Input metadata file specified does not exist: %s', inFilePath )
     return 0
 
 __commands__.append(('store_selscan_results_in_db', parser_selscan_store_results_in_db))

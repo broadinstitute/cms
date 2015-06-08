@@ -3,7 +3,7 @@
 import bisect
 import util.file
 
-class RecomMap:
+class RecomMap(object):
     ''' Load in a recombination map which is a tab text file with four columns:
         chrom, pos (bp), recom rate (cM/Mb), and map pos (cM).  It must contain
         a header line but the contents of the header line are ignored.
@@ -23,7 +23,7 @@ class RecomMap:
             for line in inf:
                 row = line.rstrip('\n').split(delim)
                 assert len(row)==4, "there must be four columns, found %d.  line: %s" % (len(row), line.rstrip('\r\n'))
-                if self.header==None:
+                if self.header is None:
                     self.header = row
                 else:
                     c,p,rate,map_p = (row[0], int(row[1]), float(row[2]), float(row[3]))
