@@ -1,0 +1,9 @@
+ignore-paths:
+  - old/
+  - .*old/
+ignore-patterns:
+  - (^|/).*_test\.py(/|$)
+
+pylint:
+  disable:
+    - too-many-arguments

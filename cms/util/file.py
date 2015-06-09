@@ -126,7 +126,7 @@ def readFlatFileHeader(filename, headerPrefix='#', delim='\t'):
         header[0] = header[0][len(headerPrefix):]
     return header
 
-class FlatFileParser:
+class FlatFileParser(object):
     ''' Generic flat file parser that parses tabular text input
     '''
     def __init__(self, lineIter=None, name=None, outType='dict',
@@ -174,7 +174,7 @@ class FlatFileParser:
                     return self.parseRow(line)
             else:
                 return self.parseRow(line)
-        except Exception as e:
+        except Exception:
             template = "Exception parsing file at line {}. Line contents: '{}'"
             message = template.format(self.line_num, row)
             if self.name:
@@ -205,8 +205,8 @@ class FlatFileParser:
 def fastaMaker(seqs, linewidth=60):
     assert linewidth > 0
 
-    for id, seq in seqs:
-        yield ">{}\n".format(id)
+    for idStr, seq in seqs:
+        yield ">{}\n".format(idStr)
 
         while len(seq) > linewidth:
             line = seq[:linewidth]

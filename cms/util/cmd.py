@@ -49,7 +49,7 @@ def common_args(parser, arglist=(('tmpDir',None), ('loglevel',None))):
                 v=__version__
             parser.add_argument('--version', '-V', action='version', version=v)
         else:
-            raise Exception("unrecognized argument %s" % arg)
+            raise Exception("unrecognized argument %s" % k)
     return parser
 
 def main_command(mainfunc):
@@ -109,16 +109,17 @@ def main_argparse(commands, description):
     args = parser.parse_args()
     
     setup_logger(not hasattr(args, 'loglevel') and 'DEBUG' or args.loglevel)
-    log.info("software version: %s, python version: %s" % (__version__, sys.version))
-    log.info("command: %s %s %s" % (
+    log.info("software version: %s, python version: %s", __version__, sys.version)
+    log.info("command: %s %s %s", 
         sys.argv[0], sys.argv[1],
-        ' '.join(["%s=%s" % (k,v) for k,v in vars(args).items() if k not in ('command', 'func_main')])))
+        ' '.join(["%s=%s" % (k,v) for k,v in vars(args).items() if k not in ('command', 'func_main')]))
     
     if hasattr(args, 'tmpDir'):
-        ''' If this command has a tmpDir option, use that as a base directory
+        """ 
+            If this command has a tmpDir option, use that as a base directory
             and create a subdirectory within it which we will then destroy at
             the end of execution.
-        '''
+        """
         proposed_dir = 'tmp-%s-%s' % (script_name(),args.command)
         if 'LSB_JOBID' in os.environ:
             proposed_dir = 'tmp-%s-%s-%s-%s' % (script_name(),args.command,os.environ['LSB_JOBID'],os.environ['LSB_JOBINDEX'])
@@ -129,7 +130,7 @@ def main_argparse(commands, description):
             ret = args.func_main(args)
         except:
             if hasattr(args, 'tmpDirKeep') and args.tmpDirKeep and not (tempfile.tempdir.startswith('/tmp') or tempfile.tempdir.startswith('/local')):
-                log.exception("Exception occurred while running %s, saving tmpDir at %s" % (args.command, tempfile.tempdir))
+                log.exception("Exception occurred while running %s, saving tmpDir at %s" , args.command, tempfile.tempdir)
             else:
                 shutil.rmtree(tempfile.tempdir)
             raise
@@ -138,7 +139,7 @@ def main_argparse(commands, description):
     else:
         # otherwise just run the command
         ret = args.func_main(args)
-    if ret==None:
+    if ret is None:
         ret = 0
     return ret
 

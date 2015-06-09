@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import argparse
 
 try:
-    from itertools import izip as zip
+    from itertools import izip as zip # pylint:disable=redefined-builtin
 except ImportError: # py3 zip is izip
     pass
 

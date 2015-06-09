@@ -187,7 +187,7 @@ class DatabaseManager(object):
         # add the db to the table Meta class, rather than replying on peewee's
         # Using construct
         for model in self.tables:
-            model._meta.database = self.db
+            model._meta.database = self.db # pylint:disable=protected-access
 
         self.db.connect()
         self.db.create_tables( self.tables, safe=True )
@@ -206,7 +206,7 @@ class DatabaseManager(object):
         def wrapped(inst, *args, **kwargs):
             # this is peewee's way of setting the db within scope
             with pw.Using(inst.db, inst.tables):
-                return f(inst, *args, **kwargs)
+                return f(inst, *args, **kwargs) # pylint:disable=not-callable
         return wrapped
     
     def add_super_population(self, superpop_name):
@@ -215,7 +215,7 @@ class DatabaseManager(object):
 
     def add_population(self, pop_name):
         item, created = Population.get_or_create(name=pop_name)
-        return item
+        return (item, created)
 
     def add_locus_info(self, chrom, variant_id, pos_bp, map_pos_cm, ref_allele, 
                         alt_allele, ancestral_call):

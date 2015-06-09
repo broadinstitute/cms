@@ -7,7 +7,7 @@ __author__   = "tomkinsc@broadinstitute.org"
 __commands__ = []
 
 # built-ins
-import array, argparse, logging, os
+import argparse, logging, os
 
 # from external modules
 # from Bio import SeqIO

@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 def get_tool_by_name(name):
     if name not in installed_tools:
-        pass
+        #pass
         raise NotImplementedError
     return installed_tools[name]
 
@@ -38,7 +38,9 @@ class Tool(object):
 
         TO DO: add something about dependencies..
     '''
-    def __init__(self, install_methods=[]):
+    def __init__(self, install_methods):
+        if install_methods is None:
+            install_methods = []
         self.install_methods = install_methods
         self.installed_method = None
         self.exec_path = None
@@ -178,9 +180,7 @@ class DownloadPackage(InstallMethod):
         util.file.mkdir_p(download_dir)
         filepath = urlparse(self.url).path
         filename = filepath.split('/')[-1]
-        log.info("Downloading from {} ...".format(self.url,
-                                                  download_dir,
-                                                  filename))
+        log.info("Downloading from %s ...", self.url) # destPath=download_dir, destFilename=filename
         urlretrieve(self.url, "%s/%s" % (download_dir,filename))
         self.download_file = filename
         self.unpack(download_dir)
@@ -214,11 +214,10 @@ class DownloadPackage(InstallMethod):
                                                         compression_option,
                                                         download_dir,
                                                         self.download_file)
-            log.debug("Untaring with command: {}".format(untar_cmd))
+            log.debug("Untaring with command: %s", untar_cmd)
             exitCode = os.system(untar_cmd)
             if exitCode:
-                log_str="tar returned non-zero exitcode {}".format(exitCode)
-                log.info(log_str)
+                log.info("tar returned non-zero exitcode %s", exitCode)
                 return
             else:
                 log.debug("tar returned with exit code 0")

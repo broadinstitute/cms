@@ -9,7 +9,7 @@ import util.file, util.misc
 
 log = logging.getLogger(__name__)
 
-class SnpAnnotater:
+class SnpAnnotater(object):
     ''' Add annotations to snps based on a snpEff-annotated VCF file.
     '''
     def __init__(self, snpEffVcf=None, snpIterator=None):
@@ -44,16 +44,16 @@ class SnpAnnotater:
                     effect,impact,gene_id,gene_name,protein_pos,residue_ref,residue_alt)
                     values (?,?,?,?,?,?,?,?,?,?,?)""",
                     imap(lambda row:
-                        [row['CHROM'], int(row['POS']), row['REF'], row['ALT']]
-                        + parse_eff(row['CHROM'], row['POS'], row['INFO']),
+                        [row['CHROM'], int(row['POS']), row['REF'], row['ALT']] +
+                        parse_eff(row['CHROM'], row['POS'], row['INFO']),
                         ifilter(lambda r: r['ALT'] != '.', ffp)))
-            except Exception as e:
-                log.exception("exception processing file %s line %s" % (snpEffVcf, ffp.line_num))
+            except Exception:
+                log.exception("exception processing file %s line %s", snpEffVcf, ffp.line_num)
                 raise
             self.cur.execute("select chr,pos from annot group by chr,pos having count(*)>1")
             dupes = [(c,p) for c,p in self.cur]
             if dupes:
-                log.info("deleting annotation for %d duplicate positions: %s" % (len(dupes), ', '.join(['%s:%s'%(c,p) for c,p in dupes])))
+                log.info("deleting annotation for %d duplicate positions: %s", len(dupes), ', '.join(['%s:%s'%(c,p) for c,p in dupes]))
                 self.cur.executemany("delete from annot where chr=? and pos=?", dupes)
             self.conn.commit()
     def __iter__(self):
@@ -65,8 +65,9 @@ class SnpAnnotater:
             allele_ref,allele_alt,residue_ref,residue_alt
             from annot where chr=? and pos=?""", [row['chr'], int(row['pos'])])
         x = self.cur.fetchone()
-        if x != None:
-            row['effect'],row['impact'],row['gene_id'],row['gene_name'],row['protein_pos'],row['allele_ref'],row['allele_alt'],row['residue_ref'],row['residue_alt'] = x
+        if x is not None:
+            row['effect'],row['impact'],row['gene_id'],row['gene_name'],row['protein_pos'],\
+                row['allele_ref'],row['allele_alt'],row['residue_ref'],row['residue_alt'] = x
             row['alleles'] = '/'.join((row['allele_ref'],row['allele_alt']))
             if row['residue_alt']:
                 row['residues'] = '/'.join((row['residue_ref'],row['residue_alt']))
@@ -116,7 +117,7 @@ def parse_eff(chrom, pos, info, required=True):
             else:
                 try:
                     gene_name = urllib.unquote_plus(other[5]).encode('ascii')
-                except UnicodeDecodeError as e:
+                except UnicodeDecodeError:
                     log.error("error at %s:%s decoding the string '%s'" % (chrom, pos, other[5]))
                     raise
             aa_chg = other[3]
@@ -151,11 +152,11 @@ def parse_eff(chrom, pos, info, required=True):
         eff = out[0][1:]
         return eff
 
-    except Exception as e:
+    except Exception:
         log.exception("exception parsing snpEff on row %s:%s - %s" % (chrom, pos, info))
         raise
-    except Error as e:
-        log.error("error parsing snpEff on row %s:%s - %s" % (chrom, pos, info))
-        raise
+    #except Error:
+    #    log.error("error parsing snpEff on row %s:%s - %s" % (chrom, pos, info))
+    #    raise
 
 
