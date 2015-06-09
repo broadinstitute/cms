@@ -41,7 +41,7 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
     parser.add_argument("outPrefix", help="Output file prefix")
     parser.add_argument("outLocation", help="Output location")        
 
-    parser.add_argument('chromosomeNum', type=int, help="""Chromosome number.""")
+    parser.add_argument('chromosomeNum', type=str, help="""Chromosome number.""")
     parser.add_argument('--startBp', default=0, type=int,
         help="""Coordinate in bp of start position. (default: %(default)s).""")
     parser.add_argument('--endBp', type=int,
