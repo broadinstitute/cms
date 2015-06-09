@@ -20,7 +20,7 @@ def histogram(items):
         out[i] += 1
     return out
 
-def freqs(items, zero_checks = set()):
+def freqs(items, zero_checks):
     ''' Given a list of comparable, non-unique items, produce an iterator of
             (item, count, freq) tuples.
             item is a unique instance of one of the items seen on input
@@ -31,6 +31,9 @@ def freqs(items, zero_checks = set()):
         the input, they will be emitted with a zero count and freq.
         See histogram(items)
     '''
+    if zero_checks is None:
+        zero_checks = set()
+
     tot = 0
     out = {}
     for i in items:

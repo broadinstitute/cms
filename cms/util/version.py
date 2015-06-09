@@ -26,7 +26,7 @@ def call_git_describe():
         if type(out) != str:
             out = out.decode('utf-8')
         ver = out.strip()
-    except:
+    except Exception:
         ver = None
     os.chdir(cwd)
     return ver
@@ -38,7 +38,7 @@ def read_release_version():
     try:
         with open(release_file(), 'rt') as inf:
             version = inf.readlines()[0].strip()
-    except:
+    except Exception:
         version = None
     return version
  

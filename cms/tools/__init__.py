@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 def get_tool_by_name(name):
     if name not in installed_tools:
-        pass
+        #pass
         raise NotImplementedError
     return installed_tools[name]
 
@@ -38,7 +38,9 @@ class Tool(object):
 
         TO DO: add something about dependencies..
     '''
-    def __init__(self, install_methods=[]):
+    def __init__(self, install_methods):
+        if install_methods is None:
+            install_methods = []
         self.install_methods = install_methods
         self.installed_method = None
         self.exec_path = None
@@ -66,7 +68,7 @@ class Tool(object):
         assert not os.system(self.exec_path + ' ' + args)
     def install_and_get_path(self) :
         self.install()
-        if self.executable_path()==None:
+        if self.executable_path() is None:
             raise NameError("unsuccessful in installing " + type(self).__name__)
         return self.executable_path()
 
@@ -153,7 +155,13 @@ class DownloadPackage(InstallMethod):
                 self.require_executability else os.R_OK):
             if self.verifycmd:
                 log.debug("validating")
-                self.installed = (os.system(self.verifycmd) == self.verifycode)
+                returnCode = os.system(self.verifycmd)
+                # if returnCode is >255, the high byte is the exit status, 
+                # and the low byte is signal number that killed the process
+                if returnCode > 255: 
+                    # shift by 8 to get the exit code from the high byte
+                    returnCode = returnCode >> 8
+                self.installed = (returnCode == self.verifycode)
             else:
                 self.installed = True
         else:
@@ -172,9 +180,7 @@ class DownloadPackage(InstallMethod):
         util.file.mkdir_p(download_dir)
         filepath = urlparse(self.url).path
         filename = filepath.split('/')[-1]
-        log.info("Downloading from {} ...".format(self.url,
-                                                  download_dir,
-                                                  filename))
+        log.info("Downloading from %s ...", self.url) # destPath=download_dir, destFilename=filename
         urlretrieve(self.url, "%s/%s" % (download_dir,filename))
         self.download_file = filename
         self.unpack(download_dir)
@@ -208,11 +214,10 @@ class DownloadPackage(InstallMethod):
                                                         compression_option,
                                                         download_dir,
                                                         self.download_file)
-            log.debug("Untaring with command: {}".format(untar_cmd))
+            log.debug("Untaring with command: %s", untar_cmd)
             exitCode = os.system(untar_cmd)
             if exitCode:
-                log_str="tar returned non-zero exitcode {}".format(exitCode)
-                log.info(log_str)
+                log.info("tar returned non-zero exitcode %s", exitCode)
                 return
             else:
                 log.debug("tar returned with exit code 0")
