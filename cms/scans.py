@@ -46,6 +46,8 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
         help="""Coordinate in bp of start position. (default: %(default)s).""")
     parser.add_argument('--endBp', type=int,
         help="""Coordinate in bp of end position.""")
+    parser.add_argument('--ploidy', default=2, type=int,
+        help="""Number of chromosomes expected for each genotype. (default: %(default)s).""")
     #parser.add_argument("--ancestralVcf", type=str,
     #    help="""A one-sample VCF file describing the ancestral allele for all
     #    SNPs.  File must be built on the same reference and coordinate space as inVcf.  All
@@ -77,6 +79,9 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
 def main_selscan_file_conversion(args):
     
     # define coding functions here, in accordance with spec arg preferences
+
+    if args.ploidy < 1:
+        raise argparse.ArgumentError('Argument "--ploidy" must be one or greater.')
 
     if (args.filterPops or args.filterSuperPops) and not args.sampleMembershipFile:
         raise argparse.ArgumentTypeError('Argument "--sampleMembershipFile" must be specifed if --filterPops or --filterSuperPops are used.')
@@ -114,7 +119,7 @@ def main_selscan_file_conversion(args):
                                     chromosome_num                            = args.chromosomeNum, 
                                     start_pos_bp                              = args.startBp, 
                                     end_pos_bp                                = args.endBp, 
-                                    ploidy                                    = 2, 
+                                    ploidy                                    = args.ploidy, 
                                     consider_multi_allelic                    = args.considerMultiAllelic, 
                                     include_variants_with_low_qual_ancestral  = args.includeLowQualAncestral,
                                     coding_function                           = coding_function)
