@@ -252,7 +252,7 @@ def main_selscan_ihs(args):
     tools.selscan.SelscanTool().execute_ihs(
         tped_file          = args.inputTped,
         out_file           = args.outFile,
-        write_detailed_ihh = True if not args.dontWriteLeftRightiHH else False
+        write_detailed_ihh = True if not args.dontWriteLeftRightiHH else False,
         skip_low_freq      = args.skipLowFreq,
         trunc_ok           = args.truncOk,
         threads            = args.threads,
