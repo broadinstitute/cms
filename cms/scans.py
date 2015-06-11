@@ -232,12 +232,14 @@ def parser_selscan_ihs(parser=argparse.ArgumentParser()):
 
     parser.add_argument('--skipLowFreq', default=False, action='store_true',
         help=' Do not include low frequency variants in the construction of haplotypes (default: %(default)s).')
+    parser.add_argument('--dontWriteLeftRightiHH', default=False, action='store_true',
+        help=' When writing out iHS, do not write out the constituent left and right ancestral and derived iHH scores for each locus.(default: %(default)s).')
     parser.add_argument('--truncOk', default=False, action='store_true',
         help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
         integrate the curve anyway.
         Normal function is to disregard the score for that core. (default: %(default)s).""")
 
-    parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS>"""
+    parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS> <derived_ihh_left> <derived_ihh_right> <ancestral_ihh_left> <ancestral_ihh_right>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ihs)
@@ -248,13 +250,14 @@ def main_selscan_ihs(args):
         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
 
     tools.selscan.SelscanTool().execute_ihs(
-        tped_file       = args.inputTped,
-        out_file        = args.outFile,
-        skip_low_freq   = args.skipLowFreq,
-        trunc_ok        = args.truncOk,
-        threads         = args.threads,
-        maf             = args.maf,
-        gap_scale       = args.gapScale   
+        tped_file          = args.inputTped,
+        out_file           = args.outFile,
+        write_detailed_ihh = True if not args.dontWriteLeftRightiHH else False
+        skip_low_freq      = args.skipLowFreq,
+        trunc_ok           = args.truncOk,
+        threads            = args.threads,
+        maf                = args.maf,
+        gap_scale          = args.gapScale   
     )
 
     metaData = {}

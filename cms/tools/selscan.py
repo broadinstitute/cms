@@ -353,7 +353,7 @@ class SelscanTool(SelscanBaseTool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
-    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, skip_low_freq=True, trunc_ok=False):
+    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, write_detailed_ihh=True, skip_low_freq=True, trunc_ok=False):
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--ihs")
         toolCmd.append("--tped")
@@ -362,6 +362,8 @@ class SelscanTool(SelscanBaseTool):
         toolCmd.append(out_file)
         if skip_low_freq:
             toolCmd.append("--skip-low-freq")
+        if write_detailed_ihh:
+            toolCmd.append("--ihs-detail")
         if trunc_ok:
             toolCmd.append("--trunc-ok")
         if threads > 0:
