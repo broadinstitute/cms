@@ -41,11 +41,13 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
     parser.add_argument("outPrefix", help="Output file prefix")
     parser.add_argument("outLocation", help="Output location")        
 
-    parser.add_argument('chromosomeNum', type=int, help="""Chromosome number.""")
+    parser.add_argument('chromosomeNum', type=str, help="""Chromosome number.""")
     parser.add_argument('--startBp', default=0, type=int,
         help="""Coordinate in bp of start position. (default: %(default)s).""")
     parser.add_argument('--endBp', type=int,
         help="""Coordinate in bp of end position.""")
+    parser.add_argument('--ploidy', default=2, type=int,
+        help="""Number of chromosomes expected for each genotype. (default: %(default)s).""")
     #parser.add_argument("--ancestralVcf", type=str,
     #    help="""A one-sample VCF file describing the ancestral allele for all
     #    SNPs.  File must be built on the same reference and coordinate space as inVcf.  All
@@ -77,6 +79,9 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
 def main_selscan_file_conversion(args):
     
     # define coding functions here, in accordance with spec arg preferences
+
+    if args.ploidy < 1:
+        raise argparse.ArgumentError('Argument "--ploidy" must be one or greater.')
 
     if (args.filterPops or args.filterSuperPops) and not args.sampleMembershipFile:
         raise argparse.ArgumentTypeError('Argument "--sampleMembershipFile" must be specifed if --filterPops or --filterSuperPops are used.')
@@ -114,7 +119,7 @@ def main_selscan_file_conversion(args):
                                     chromosome_num                            = args.chromosomeNum, 
                                     start_pos_bp                              = args.startBp, 
                                     end_pos_bp                                = args.endBp, 
-                                    ploidy                                    = 2, 
+                                    ploidy                                    = args.ploidy, 
                                     consider_multi_allelic                    = args.considerMultiAllelic, 
                                     include_variants_with_low_qual_ancestral  = args.includeLowQualAncestral,
                                     coding_function                           = coding_function)
@@ -232,12 +237,14 @@ def parser_selscan_ihs(parser=argparse.ArgumentParser()):
 
     parser.add_argument('--skipLowFreq', default=False, action='store_true',
         help=' Do not include low frequency variants in the construction of haplotypes (default: %(default)s).')
+    parser.add_argument('--dontWriteLeftRightiHH', default=False, action='store_true',
+        help=' When writing out iHS, do not write out the constituent left and right ancestral and derived iHH scores for each locus.(default: %(default)s).')
     parser.add_argument('--truncOk', default=False, action='store_true',
         help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
         integrate the curve anyway.
         Normal function is to disregard the score for that core. (default: %(default)s).""")
 
-    parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS>"""
+    parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS> <derived_ihh_left> <derived_ihh_right> <ancestral_ihh_left> <ancestral_ihh_right>"""
 
     util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
     util.cmd.attach_main(parser, main_selscan_ihs)
@@ -248,13 +255,14 @@ def main_selscan_ihs(args):
         raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
 
     tools.selscan.SelscanTool().execute_ihs(
-        tped_file       = args.inputTped,
-        out_file        = args.outFile,
-        skip_low_freq   = args.skipLowFreq,
-        trunc_ok        = args.truncOk,
-        threads         = args.threads,
-        maf             = args.maf,
-        gap_scale       = args.gapScale   
+        tped_file          = args.inputTped,
+        out_file           = args.outFile,
+        write_detailed_ihh = True if not args.dontWriteLeftRightiHH else False,
+        skip_low_freq      = args.skipLowFreq,
+        trunc_ok           = args.truncOk,
+        threads            = args.threads,
+        maf                = args.maf,
+        gap_scale          = args.gapScale   
     )
 
     metaData = {}

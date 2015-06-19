@@ -105,6 +105,11 @@ class SelscanFormatter(object):
             of1linesToWrite = []
             of2linesToWrite = []
 
+            recordLengths = set()
+
+            #prevGenoCount = 0
+            #numberCountChanges = 0
+
             recordCount = 0
             for record in records:
                 # if the variant is a SNP
@@ -136,7 +141,24 @@ class SelscanFormatter(object):
                             rawGenos = match.group("genos")
                             genos = rawGenos[::2]
                             recordPosition = record.pos+1
-                            genotypes_for_selected_samples = operator.itemgetter(*indices_of_matching_genotypes)(genos)
+                            if chromosome_num.upper() != "X":
+                                try:
+                                    genotypes_for_selected_samples = operator.itemgetter(*indices_of_matching_genotypes)(genos)
+                                except Exception: # if this is a record of mixed ploidy, that is to say the X chromosome
+                                    raise
+                            else:
+                                matching_genotypes = np.array(record[:len(record)])[indices_of_matching_samples]
+                                genotypes_for_selected_samples_split = [x.split("|") for x in matching_genotypes]
+                                genotypes_for_selected_samples = [y for x in genotypes_for_selected_samples_split for y in x]
+                                #log.info("Number of genotypes in mixed sample: %s", len(genotypes_for_selected_samples))
+                                #log.error(genotypes_for_selected_samples)
+                                #log.error(rawGenos)
+                                #log.error(genos)
+                                #log.error(indices_of_matching_genotypes)
+                                #log.error(recordPosition)
+                                #pass
+
+                            recordLengths.add(len(genotypes_for_selected_samples))
 
                             map_pos_cm = rm.physToMap(chromStr, record.pos)
 
@@ -153,8 +175,11 @@ class SelscanFormatter(object):
                                 map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, 
                                 ancestral_allele, allele_freq_for_pop)
 
-                            of1linesToWrite.append(outStrDict["tpedString"])
-                            of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+                            #of1linesToWrite.append(outStrDict["tpedString"])
+                            #of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+
+                            of1line = outStrDict["tpedString"]
+                            of2line = outStrDict["metadataString"].replace(" ","\t")
 
                             # # to split out multi-allelic into separate lines in output TPED
                             # for idx, altAllele in enumerate(alternateAlleles):
@@ -175,15 +200,27 @@ class SelscanFormatter(object):
                             recordCount += 1
                             current_pos_bp = int(recordPosition)
 
-                            if recordCount % 1000 == 0:
+                            #genotypesCount = len(coded_genotypes_for_selected_samples)
+                            #if genotypesCount != prevGenoCount:
+                            #    numberCountChanges += 1
+                            #    prevGenoCount = genotypesCount
+
                                 #write out blocks of lines periodically, with synced iterators
-                                for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
-                                    of1.write(of1line)
-                                    of2.write(of2line)
-                                of1linesToWrite = []
-                                of2linesToWrite = []
+                            #for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
+                            if len(coded_genotypes_for_selected_samples) == ploidy*len(indices_of_matching_samples):
+                                of1.write(of1line)
+                                of2.write(of2line)
+                            else:
+                                genotypesCount            = len(coded_genotypes_for_selected_samples)
+                                countSpecificTpedName     = outTpedFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                                countSpecificMetafileName = outTpedMetaFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                                with util.file.open_or_gzopen(countSpecificTpedName, 'a') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'a') as of2l:
+                                    of1l.write(of1line)
+                                    of2l.write(of2line)
+                                #of1linesToWrite = []
+                                #of2linesToWrite = []
 
-
+                            if recordCount % 1000 == 0:
                                 number_of_seconds_elapsed = (datetime.now() - startTime).total_seconds()
                                 bp_per_sec = float(current_pos_bp) / float(number_of_seconds_elapsed)
                                 bp_remaining = end_pos - current_pos_bp
@@ -194,15 +231,19 @@ class SelscanFormatter(object):
 
                                 if sec_remaining > 10:
                                     human_time_remaining = relative_time(datetime.utcnow()+time_left)
+                                    print("")
                                     print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
                                     print("Estimated time of completion: {}".format(human_time_remaining))
+                                    #log.info("Genotype counts found: %s", str(list(recordLengths)))
 
             # after we've gone through all records, write any lines that have not yet been written
-            for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
-                of1.write(of1line)
-                of2.write(of2line)
-            of1linesToWrite = []
-            of2linesToWrite = []
+            # for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
+            #     of1.write(of1line)
+            #     of2.write(of2line)
+            # of1linesToWrite = []
+            # of2linesToWrite = []
+
+            log.info("Genotype counts found: %s", str(list(recordLengths)))
 
 class SelscanBaseTool(tools.Tool):
     def __init__(self, install_methods = None):
@@ -353,7 +394,7 @@ class SelscanTool(SelscanBaseTool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
-    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, skip_low_freq=True, trunc_ok=False):
+    def execute_ihs(self, tped_file, out_file, threads, maf, gap_scale, write_detailed_ihh=True, skip_low_freq=True, trunc_ok=False):
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--ihs")
         toolCmd.append("--tped")
@@ -362,6 +403,8 @@ class SelscanTool(SelscanBaseTool):
         toolCmd.append(out_file)
         if skip_low_freq:
             toolCmd.append("--skip-low-freq")
+        if write_detailed_ihh:
+            toolCmd.append("--ihs-detail")
         if trunc_ok:
             toolCmd.append("--trunc-ok")
         if threads > 0:
