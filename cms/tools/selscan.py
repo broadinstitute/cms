@@ -27,7 +27,7 @@ import pysam
 from boltons.timeutils import relative_time
 import numpy as np
 
-tool_version = '1.0.5a'
+tool_version = '1.1.0'
 url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
