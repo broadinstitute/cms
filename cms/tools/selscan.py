@@ -40,6 +40,30 @@ class SelscanFormatter(object):
         return float( sum([int(prevAvg)] * (N-1)) + x) / float(N)
 
     @staticmethod
+    def remove_last_line_of_file(fileObj, close=False):
+        # Move the file pointer to the end of the file. 
+        fileObj.seek(0, os.SEEK_END)
+
+        # offset to skip the null character at the end of the file
+        pos = fileObj.tell() - 1
+
+        # Read each character in the file one at a time from the last 
+        # character going backwards, searching for a newline character
+        # If we find a new line, exit the search
+        while pos > 0 and fileObj.read(1) != "\n":
+            pos -= 1
+            fileObj.seek(pos, os.SEEK_SET)
+
+        # As we're not at the start of the file, 
+        # delete all the characters ahead of this position
+        if pos > 0:
+            #fileObj.seek(pos, os.SEEK_SET)
+            fileObj.truncate()
+
+        if close:
+            fileObj.close()
+
+    @staticmethod
     def _build_variant_output_strings(chrm, idx, pos_bp, map_pos_cm, genos, 
                                                                 ref_allele, alt_allele, ancestral_call, allele_freq):
         outputStringDict = dict()
@@ -97,7 +121,7 @@ class SelscanFormatter(object):
         sec_remaining_avg = 0
         current_pos_bp = 1
 
-        with util.file.open_or_gzopen(outTpedFile, 'w') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w') as of2:
+        with util.file.open_or_gzopen(outTpedFile, 'w+') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w+') as of2:
             # WRITE header for metadata file here with selected subset of sample_names
             headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
             of2.write(headerString)
@@ -105,13 +129,42 @@ class SelscanFormatter(object):
             of1linesToWrite = []
             of2linesToWrite = []
 
-            recordLengths = set()
-
-            #prevGenoCount = 0
-            #numberCountChanges = 0
+            recordLengths = set() #
 
             recordCount = 0
+            mostRecentRecordPosSeen = -1
+            positionHasBeenSeenBefore = False
+            previouslyCodedGenotypes = []
+            lineToWrite1 = None
+            lineToWrite2 = None
+            previousAncestral = None
+            ancestralDiffersFromPrevious = True
             for record in records:
+                # in some cases, there may be records with duplicate positions in the VCF file
+                # to account for that we collapse rows that pass our filter and then write out the rows when we 
+                # encounter a record with a new position 
+                if record.pos != mostRecentRecordPosSeen:
+                    if lineToWrite1 is not None and lineToWrite2 is not None:
+                        if len(previouslyCodedGenotypes) == ploidy*len(indices_of_matching_samples):
+                            # write the output line
+                            of1.write(lineToWrite1)
+                            of2.write(lineToWrite2)
+                               
+                        else:
+                            genotypesCount            = len(previouslyCodedGenotypes)
+                            countSpecificTpedName     = outTpedFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                            countSpecificMetafileName = outTpedMetaFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                            with util.file.open_or_gzopen(countSpecificTpedName, 'a') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'a') as of2l:
+                                of1l.write(lineToWrite1)
+                                of2l.write(lineToWrite2)
+
+                        lineToWrite1 = None
+                        lineToWrite2 = None
+                    mostRecentRecordPosSeen = record.pos
+                    positionHasBeenSeenBefore = False
+                else:
+                    positionHasBeenSeenBefore = True
+
                 # if the variant is a SNP
                 # OLD style looking at INFO VT value: 
                 # processor.variant_is_type(record.info, "SNP"):
@@ -134,6 +187,13 @@ class SelscanFormatter(object):
 
                     # if the AA is populated, and the call meets the specified criteria
                     if (ancestral_allele in ['A','T','C','G']) or (include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g']):
+                        
+                        if previousAncestral != ancestral_allele:
+                            previousAncestral = ancestral_allele
+                            ancestralDiffersFromPrevious = True
+                        else:
+                            ancestralDiffersFromPrevious = False
+
                         recordString = record.__str__()
 
                         match = cls.genoRegex.match(recordString)
@@ -150,13 +210,6 @@ class SelscanFormatter(object):
                                 matching_genotypes = np.array(record[:len(record)])[indices_of_matching_samples]
                                 genotypes_for_selected_samples_split = [x.split("|") for x in matching_genotypes]
                                 genotypes_for_selected_samples = [y for x in genotypes_for_selected_samples_split for y in x]
-                                #log.info("Number of genotypes in mixed sample: %s", len(genotypes_for_selected_samples))
-                                #log.error(genotypes_for_selected_samples)
-                                #log.error(rawGenos)
-                                #log.error(genos)
-                                #log.error(indices_of_matching_genotypes)
-                                #log.error(recordPosition)
-                                #pass
 
                             recordLengths.add(len(genotypes_for_selected_samples))
 
@@ -164,10 +217,25 @@ class SelscanFormatter(object):
 
                             numberOfHaplotypes = float(len(genotypes_for_selected_samples))
                             
-                            # Dict to get number corresponding to altAllele {str(altAllele):idx for idx,altAllele in enumerate(alternateAlleles)}
-
                             codingFunc = np.vectorize(coding_function)
                             coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples, record.ref, ancestral_allele)
+
+                            if recordCount == 0:
+                                previouslyCodedGenotypes = ["0"] * len(coded_genotypes_for_selected_samples)
+
+                            # bitwise OR coded genotypes for duplicate records, merge variants
+                            # ...except selscan logic is inverted, so bitwise AND
+                            # TODO: invert?? so that zeros
+                            # record @ pos1 = 001001
+                            # record @ pos1 = 100001
+                            #                -------
+                            # coded result  = 101001
+                            #log.debug(genotypes_for_selected_samples)
+                            #log.debug(coded_genotypes_for_selected_samples)
+                            if positionHasBeenSeenBefore:
+                                coded_genotypes_for_selected_samples = list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) & int("".join(previouslyCodedGenotypes),2)))[2:].zfill(len(coded_genotypes_for_selected_samples)))
+
+                            previouslyCodedGenotypes = coded_genotypes_for_selected_samples
 
                             allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
 
@@ -175,50 +243,11 @@ class SelscanFormatter(object):
                                 map_pos_cm, coded_genotypes_for_selected_samples, record.ref, record.alt, 
                                 ancestral_allele, allele_freq_for_pop)
 
-                            #of1linesToWrite.append(outStrDict["tpedString"])
-                            #of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
-
-                            of1line = outStrDict["tpedString"]
-                            of2line = outStrDict["metadataString"].replace(" ","\t")
-
-                            # # to split out multi-allelic into separate lines in output TPED
-                            # for idx, altAllele in enumerate(alternateAlleles):
-                            #     codingFunc = np.vectorize(coding_function)
-                            #     strRepresentingThisGenotype = str(idx+1)
-                            #     coded_genotypes_for_selected_samples = codingFunc( genotypes_for_selected_samples, 
-                            #         strRepresentingThisGenotype,record.ref,ancestral_allele,altAllele)
-
-                            #     allele_freq_for_pop = float(list(coded_genotypes_for_selected_samples).count("1")) / numberOfHaplotypes
-
-                            #     outStrDict = cls._build_variant_output_strings(record.contig, idx+1, record.pos, 
-                            #         map_pos_cm, coded_genotypes_for_selected_samples, record.ref, altAllele, 
-                            #         ancestral_allele, allele_freq_for_pop)
-
-                            #     of1linesToWrite.append(outStrDict["tpedString"])
-                            #     of2linesToWrite.append(outStrDict["metadataString"].replace(" ","\t"))
+                            lineToWrite1 = outStrDict["tpedString"]
+                            lineToWrite2 = outStrDict["metadataString"].replace(" ","\t")
 
                             recordCount += 1
                             current_pos_bp = int(recordPosition)
-
-                            #genotypesCount = len(coded_genotypes_for_selected_samples)
-                            #if genotypesCount != prevGenoCount:
-                            #    numberCountChanges += 1
-                            #    prevGenoCount = genotypesCount
-
-                                #write out blocks of lines periodically, with synced iterators
-                            #for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
-                            if len(coded_genotypes_for_selected_samples) == ploidy*len(indices_of_matching_samples):
-                                of1.write(of1line)
-                                of2.write(of2line)
-                            else:
-                                genotypesCount            = len(coded_genotypes_for_selected_samples)
-                                countSpecificTpedName     = outTpedFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
-                                countSpecificMetafileName = outTpedMetaFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
-                                with util.file.open_or_gzopen(countSpecificTpedName, 'a') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'a') as of2l:
-                                    of1l.write(of1line)
-                                    of2l.write(of2line)
-                                #of1linesToWrite = []
-                                #of2linesToWrite = []
 
                             if recordCount % 1000 == 0:
                                 number_of_seconds_elapsed = (datetime.now() - startTime).total_seconds()
@@ -228,7 +257,6 @@ class SelscanFormatter(object):
                                 sec_remaining_avg = cls._moving_avg(sec_remaining, sec_remaining_avg, 10)
                                 time_left = timedelta(seconds=sec_remaining_avg)
                             
-
                                 if sec_remaining > 10:
                                     human_time_remaining = relative_time(datetime.utcnow()+time_left)
                                     print("")
@@ -236,12 +264,19 @@ class SelscanFormatter(object):
                                     print("Estimated time of completion: {}".format(human_time_remaining))
                                     #log.info("Genotype counts found: %s", str(list(recordLengths)))
 
-            # after we've gone through all records, write any lines that have not yet been written
-            # for of1line, of2line in zip(of1linesToWrite, of2linesToWrite):
-            #     of1.write(of1line)
-            #     of2.write(of2line)
-            # of1linesToWrite = []
-            # of2linesToWrite = []
+            if lineToWrite1 is not None and lineToWrite2 is not None:
+                if len(previouslyCodedGenotypes) == ploidy*len(indices_of_matching_samples):
+                    # write the output lines
+                    of1.write(lineToWrite1)
+                    of2.write(lineToWrite2)
+                       
+                else:
+                    genotypesCount            = len(previouslyCodedGenotypes)
+                    countSpecificTpedName     = outTpedFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                    countSpecificMetafileName = outTpedMetaFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
+                    with util.file.open_or_gzopen(countSpecificTpedName, 'a') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'a') as of2l:
+                        of1l.write(lineToWrite1)
+                        of2l.write(lineToWrite2)
 
             log.info("Genotype counts found: %s", str(list(recordLengths)))
 
