@@ -121,7 +121,7 @@ class SelscanFormatter(object):
         sec_remaining_avg = 0
         current_pos_bp = 1
 
-        with util.file.open_or_gzopen(outTpedFile, 'w+') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w+') as of2:
+        with util.file.open_or_gzopen(outTpedFile, 'w') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w') as of2:
             # WRITE header for metadata file here with selected subset of sample_names
             headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
             of2.write(headerString)
@@ -144,6 +144,11 @@ class SelscanFormatter(object):
                 # to account for that we collapse rows that pass our filter and then write out the rows when we 
                 # encounter a record with a new position 
                 if record.pos != mostRecentRecordPosSeen:
+
+                    if positionHasBeenSeenBefore and not consider_multi_allelic:
+                        lineToWrite1 = None
+                        lineToWrite2 = None
+
                     if lineToWrite1 is not None and lineToWrite2 is not None:
                         if len(previouslyCodedGenotypes) == ploidy*len(indices_of_matching_samples):
                             # write the output line
@@ -232,8 +237,9 @@ class SelscanFormatter(object):
                             # coded result  = 101001
                             #log.debug(genotypes_for_selected_samples)
                             #log.debug(coded_genotypes_for_selected_samples)
+
                             if positionHasBeenSeenBefore:
-                                coded_genotypes_for_selected_samples = list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) & int("".join(previouslyCodedGenotypes),2)))[2:].zfill(len(coded_genotypes_for_selected_samples)))
+                                coded_genotypes_for_selected_samples = np.array(list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) & int("".join(previouslyCodedGenotypes),2)))[2:].zfill(len(coded_genotypes_for_selected_samples))))
 
                             previouslyCodedGenotypes = coded_genotypes_for_selected_samples
 
@@ -264,6 +270,10 @@ class SelscanFormatter(object):
                                     print("Estimated time of completion: {}".format(human_time_remaining))
                                     #log.info("Genotype counts found: %s", str(list(recordLengths)))
 
+            if positionHasBeenSeenBefore and not consider_multi_allelic:
+                lineToWrite1 = None
+                lineToWrite2 = None
+
             if lineToWrite1 is not None and lineToWrite2 is not None:
                 if len(previouslyCodedGenotypes) == ploidy*len(indices_of_matching_samples):
                     # write the output lines
@@ -285,7 +295,7 @@ class SelscanBaseTool(tools.Tool):
         if install_methods is None:
             install_methods = []
             os_type                 = self.get_os_type()
-            binaryPath              = self.get_selscan_binary_path( os_type    )
+            binaryPath              = self.get_selscan_binary_path( os_type )
             
             target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=binaryPath)
             verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
