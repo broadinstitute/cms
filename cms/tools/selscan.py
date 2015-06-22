@@ -11,6 +11,7 @@ import os, os.path, subprocess, re
 import logging
 from datetime import datetime, timedelta
 import argparse
+import operator
 
 try:
     from itertools import izip as zip # pylint:disable=redefined-builtin
@@ -88,7 +89,8 @@ class SelscanFormatter(object):
     @classmethod
     def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
         outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, 
-        consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None):
+        consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None, 
+        multi_alleli_merge_function="AND"):
         """
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
             tped file of the sort expected by selscan. 
@@ -117,6 +119,14 @@ class SelscanFormatter(object):
         for filePath in [outTpedFile, outTpedMetaFile]:
             assert not os.path.exists(filePath), "File {} already exists. Consider removing this file or specifying a different output prefix. Processing aborted.".format(filePath)
 
+        mergeOperatorString = ""
+        if multi_alleli_merge_function == "OR":
+            mergeOperatorString = "|"
+        if multi_alleli_merge_function == "AND":
+            mergeOperatorString = "&"
+        if multi_alleli_merge_function == "XOR":
+            mergeOperatorString = "^"
+
         startTime = datetime.now()
         sec_remaining_avg = 0
         current_pos_bp = 1
@@ -134,7 +144,7 @@ class SelscanFormatter(object):
             recordCount = 0
             mostRecentRecordPosSeen = -1
             positionHasBeenSeenBefore = False
-            previouslyCodedGenotypes = []
+            previouslyCodedGenotypes = GenoRecord([])
             lineToWrite1 = None
             lineToWrite2 = None
             previousAncestral = None
@@ -177,12 +187,12 @@ class SelscanFormatter(object):
                 if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
                      all(variant in VALID_BASES for variant in record.alt.split(",")) ):
 
-                    #alternateAlleles = [record.alt]
+                    alternateAlleles = [record.alt]
                     if record.alt not in ['A','T','C','G']:
                         #print record.alt
                         if consider_multi_allelic:
                             pass
-                            #alternateAlleles = record.alt.split(",")
+                            alternateAlleles = record.alt.split(",")
                         else:
                             # continue on to next variant record
                             continue
@@ -223,14 +233,29 @@ class SelscanFormatter(object):
                             numberOfHaplotypes = float(len(genotypes_for_selected_samples))
                             
                             codingFunc = np.vectorize(coding_function)
-                            coded_genotypes_for_selected_samples = codingFunc(genotypes_for_selected_samples, record.ref, ancestral_allele)
 
+                            coded_genotypes_for_selected_samples = GenoRecord(["0"] * len(genotypes_for_selected_samples))
+                            if consider_multi_allelic:
+                                #coded_genotypes_for_selected_samples = GenoRecord(["1"] * len(genotypes_for_selected_samples))
+                                for idx, altAllele in enumerate(alternateAlleles):
+                                    #value_of_current_allele = str(idx+1)
+                                    coded_genotypes_for_selected_samples_for_allele = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele))
+                                    #coded_genotypes_for_selected_samples |= coded_genotypes_for_selected_samples_for_allele
+                                    if idx==0:
+                                        coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples_for_allele
+                                    else:
+                                        coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples.f[mergeOperatorString](coded_genotypes_for_selected_samples_for_allele)
+                                    #coded_genotypes_for_selected_samples = np.array(list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) | int("".join(coded_genotypes_for_selected_samples_for_allele),2)))[2:].zfill(len(coded_genotypes_for_selected_samples))))
+                            else:
+                                coded_genotypes_for_selected_samples = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele))
+
+                            # if this is the first record in the file, create an array filled with zeros for the previously coded alleles
                             if recordCount == 0:
-                                previouslyCodedGenotypes = ["0"] * len(coded_genotypes_for_selected_samples)
-
+                                previouslyCodedGenotypes = GenoRecord(["1"] * len(genotypes_for_selected_samples))
+                                
                             # bitwise OR coded genotypes for duplicate records, merge variants
                             # ...except selscan logic is inverted, so bitwise AND
-                            # TODO: invert?? so that zeros
+                            # TODO: invert?
                             # record @ pos1 = 001001
                             # record @ pos1 = 100001
                             #                -------
@@ -239,7 +264,9 @@ class SelscanFormatter(object):
                             #log.debug(coded_genotypes_for_selected_samples)
 
                             if positionHasBeenSeenBefore:
-                                coded_genotypes_for_selected_samples = np.array(list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) & int("".join(previouslyCodedGenotypes),2)))[2:].zfill(len(coded_genotypes_for_selected_samples))))
+                                #coded_genotypes_for_selected_samples |= previouslyCodedGenotypes
+                                coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples.f[mergeOperatorString](previouslyCodedGenotypes)
+                                #coded_genotypes_for_selected_samples = np.array(list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) & int("".join(previouslyCodedGenotypes),2)))[2:].zfill(len(coded_genotypes_for_selected_samples))))
 
                             previouslyCodedGenotypes = coded_genotypes_for_selected_samples
 
@@ -590,6 +617,43 @@ class SelscanNormTool(SelscanBaseTool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
+class GenoRecord(list):
+    def __init__(self, genotypes):
+        """
+            the input parameter for instantiation, "genotypes", is expected
+            to be a list of genotype values encoded as "0" or "1" (strings)
+        """
+        #self.genotypes = genotypes
+        self.extend(genotypes)
+
+        self.f =        { 
+                            '~': self.__invert__,
+                            '^': self.__xor__,
+                            '|': self.__or__,
+                            '&': self.__and__,
+                            '' : self.__self__
+                        }
+
+    def __self__(self):
+        return self
+
+    #def __str__(self):
+    #    return "".join(self)
+
+    def __invert__(self):
+        return GenoRecord(["0" if x=="1" else "1" for x in self])
+
+    def __and__(self, other):
+        return self._perform_bitwise(other, operator.and_)
+
+    def __or__(self, other):
+        return self._perform_bitwise(other, operator.or_)
+
+    def __xor__(self, other):
+        return self._perform_bitwise(other, operator.xor)
+
+    def _perform_bitwise(self, other, operation):
+        return GenoRecord(list( str( bin( operation(int("".join(self),2), int("".join(other),2)) ) )[2:].zfill(len(other)) ))
 
 class DownloadAndBuildSelscan(tools.DownloadPackage) :
     def post_download(self) :
