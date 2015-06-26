@@ -239,7 +239,7 @@ class SelscanFormatter(object):
                                 #coded_genotypes_for_selected_samples = GenoRecord(["1"] * len(genotypes_for_selected_samples))
                                 for idx, altAllele in enumerate(alternateAlleles):
                                     #value_of_current_allele = str(idx+1)
-                                    coded_genotypes_for_selected_samples_for_allele = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele))
+                                    coded_genotypes_for_selected_samples_for_allele = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, idx))
                                     #coded_genotypes_for_selected_samples |= coded_genotypes_for_selected_samples_for_allele
                                     if idx==0:
                                         coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples_for_allele
