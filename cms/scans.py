@@ -8,6 +8,7 @@ __commands__ = []
 
 # built-ins
 import argparse, logging, os
+import imp # for programmatic/dynamic import
 
 # from external modules
 # from Bio import SeqIO
@@ -66,6 +67,8 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
 
     #subparsers = parser.add_subparsers()
     #subparser = subparsers.add_parser("filter")
+    parser.add_argument("--codingFunctionClassFile", help="A python class file containing a function used to code each genotype as '1' and '0'. coding_function(current_value, reference_allele, alternate_allele, ancestral_allele)")
+    parser.add_argument("--multiAllelicMergeFunction", help=argparse.SUPPRESS, default="OR", choices=["OR","AND","XOR"])
     parser.add_argument("--sampleMembershipFile", help="The call sample file containing four columns: sample, pop, super_pop, gender")
     parser.add_argument('--filterPops', nargs='+',
         help='Populations to include in the calculation (ex. "FIN")')
@@ -91,25 +94,29 @@ def main_selscan_file_conversion(args):
 
     # Write JSON file containing metadata describing this TPED file
 
-    #def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
-    def coding_function(current_value, reference_allele, ancestral_allele):
-        """for a given genotype call, returns the proper tped/selscan encoding, such that the ancestral allele is 
-        always 1 and the reference allele is always 0. Collapses multiallelic sites to biallelic"""
-        #OLD: return "1" if current_value==val_representing_alt_allele else "0"
-        # as per Joe:
+    if args.codingFunctionClassFile is not None:
+        genoCoder = importPythonClassFromFile(args.codingFunctionClassFile)
+        coding_function = genoCoder.coding_function
+    else:
+        #def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
+        def coding_function(current_value, reference_allele, alternate_allele, ancestral_allele, value_of_current_allele):
+            """for a given genotype call, returns the proper tped/selscan encoding, such that the ancestral allele is 
+            always 1 and any derived allele is coded as 0. Collapses multiallelic sites to biallelic, whether on one
+            or two lines (??) together with bitwise row merge.
+            current_value: char, 0-3; the genotype call as printed in the VCF
+            reference_allele: char, ACGT; the allele that is coded as "0"
+            alternate_allele: char, ACGT; the allele 
+            """
 
-        #ref is always 0 in the VCF
-        if ancestral_allele == reference_allele: 
-            if current_value == "0":
-                return "1"
-            else:
-                return "0" #
+            if ancestral_allele == reference_allele: 
+                if current_value == "0":
+                    return "1"
 
-        else:
-            if current_value == "0":
-                return "0"
-            else:
-                return "1"
+            if ancestral_allele == alternate_allele:
+                if current_value == value_of_current_allele:
+                    return "1"
+            
+            return "0"
 
     tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file = args.inputVCF, 
                                     gen_map_file                              = args.genMap, 
@@ -122,7 +129,8 @@ def main_selscan_file_conversion(args):
                                     ploidy                                    = args.ploidy, 
                                     consider_multi_allelic                    = args.considerMultiAllelic, 
                                     include_variants_with_low_qual_ancestral  = args.includeLowQualAncestral,
-                                    coding_function                           = coding_function)
+                                    coding_function                           = coding_function,
+                                    multi_alleli_merge_function               = args.multiAllelicMergeFunction)
 
     outTpedFile = args.outLocation  + "/" + args.outPrefix + ".tped.gz"
     outMetadataFile = args.outLocation  + "/" + args.outPrefix + ".metadata.json"
@@ -466,6 +474,27 @@ def main_selscan_store_results_in_db(args):
     return 0
 
 __commands__.append(('store_selscan_results_in_db', parser_selscan_store_results_in_db))
+
+# ====== util ========
+
+def importPythonClassFromFile(uri, absl=False):
+    if not absl:
+        uri = os.path.normpath(os.path.join(os.path.dirname(__file__), uri))
+    filePath, fileName = os.path.split(uri)
+    fileNameSansExtension, ext = os.path.splitext(fileName)
+        
+    filePathSansExtension = os.path.join(filePath, fileNameSansExtension)
+        
+    if os.path.exists(filePathSansExtension + '.pyc'):
+        try:
+            return imp.load_compiled(fileNameSansExtension, filePathSansExtension + '.pyc')
+        except:
+            pass
+    if os.path.exists(filePathSansExtension + '.py'):
+        try:
+            return imp.load_source(fileNameSansExtension, filePathSansExtension + '.py')
+        except:
+            pass
 
 # === Parser setup ===
 
