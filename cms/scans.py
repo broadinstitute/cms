@@ -99,7 +99,7 @@ def main_selscan_file_conversion(args):
         coding_function = genoCoder.coding_function
     else:
         #def coding_function(current_value, val_representing_alt_allele, reference_allele, ancestral_allele, alt_allele):
-        def coding_function(current_value, reference_allele, alternate_allele, ancestral_allele):
+        def coding_function(current_value, reference_allele, alternate_allele, ancestral_allele, value_of_current_allele):
             """for a given genotype call, returns the proper tped/selscan encoding, such that the ancestral allele is 
             always 1 and any derived allele is coded as 0. Collapses multiallelic sites to biallelic, whether on one
             or two lines (??) together with bitwise row merge.
@@ -113,7 +113,7 @@ def main_selscan_file_conversion(args):
                     return "1"
 
             if ancestral_allele == alternate_allele:
-                if current_value == "1":
+                if current_value == value_of_current_allele:
                     return "1"
             
             return "0"

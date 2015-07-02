@@ -238,8 +238,8 @@ class SelscanFormatter(object):
                             if consider_multi_allelic:
                                 #coded_genotypes_for_selected_samples = GenoRecord(["1"] * len(genotypes_for_selected_samples))
                                 for idx, altAllele in enumerate(alternateAlleles):
-                                    #value_of_current_allele = str(idx+1)
-                                    coded_genotypes_for_selected_samples_for_allele = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele))
+                                    value_of_current_allele = str(idx+1)
+                                    coded_genotypes_for_selected_samples_for_allele = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, altAllele, ancestral_allele, value_of_current_allele))
                                     #coded_genotypes_for_selected_samples |= coded_genotypes_for_selected_samples_for_allele
                                     if idx==0:
                                         coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples_for_allele
