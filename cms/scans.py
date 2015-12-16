@@ -59,6 +59,8 @@ def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
 
     parser.add_argument('--considerMultiAllelic', default=False, action='store_true',
         help='Include multi-allelic variants in the output as separate records')
+    parser.add_argument('--rescaleGeneticDistance', default=False, action='store_true',
+        help='Genetic distance is rescaled to be out of 100.0 cM')
     parser.add_argument('--includeLowQualAncestral', default=False, action='store_true',
         help='Include variants where the ancestral information is low-quality ' + 
         '(as indicated by lower-case x for AA=x in the VCF info column) (default: %(default)s).')
@@ -128,6 +130,7 @@ def main_selscan_file_conversion(args):
                                     end_pos_bp                                = args.endBp, 
                                     ploidy                                    = args.ploidy, 
                                     consider_multi_allelic                    = args.considerMultiAllelic, 
+                                    rescale_genetic_distance                  = args.rescaleGeneticDistance, 
                                     include_variants_with_low_qual_ancestral  = args.includeLowQualAncestral,
                                     coding_function                           = coding_function,
                                     multi_alleli_merge_function               = args.multiAllelicMergeFunction)

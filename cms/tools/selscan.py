@@ -89,7 +89,7 @@ class SelscanFormatter(object):
     @classmethod
     def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
         outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, 
-        consider_multi_allelic=True, include_variants_with_low_qual_ancestral=False, coding_function=None, 
+        consider_multi_allelic=True, rescale_genetic_distance=False, include_variants_with_low_qual_ancestral=False, coding_function=None, 
         multi_alleli_merge_function="AND"):
         """
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
@@ -228,7 +228,7 @@ class SelscanFormatter(object):
 
                             recordLengths.add(len(genotypes_for_selected_samples))
 
-                            map_pos_cm = rm.physToMap(chromStr, record.pos)
+                            map_pos_cm = rm.physToMap(chromStr, record.pos, rescale=rescale_genetic_distance)
 
                             numberOfHaplotypes = float(len(genotypes_for_selected_samples))
                             

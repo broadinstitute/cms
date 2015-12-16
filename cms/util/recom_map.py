@@ -42,7 +42,7 @@ class RecomMap(object):
                     last_mp = map_p
                     self.chr_to_gmap[c].append((p, map_p))
                     self.chr_to_rate[c].append((p, rate))
-    def _interpolate(self, p, map_list, truncate=True):
+    def _interpolate(self, p, map_list, truncate=True, rescale=False):
         if p <= map_list[0][0]:
             # truncate to first seen value
             if truncate:
@@ -65,15 +65,19 @@ class RecomMap(object):
                 # interpolate
                 l,r = map_list[i-1:i+1]
                 val = l[1] + (r[1]-l[1]) * (p-l[0]) / (r[0]-l[0])
+
+        if val and rescale:
+            # if we are rescaling to be out of 100
+            val = val * (100.0 / map_list[-1][1])
         return val
-    def physToRate(self, c, pos, truncate=True):
+    def physToRate(self, c, pos, truncate=True, rescale=False):
         if c not in self.chr_to_rate:
             return None
-        return self._interpolate(pos, self.chr_to_rate[c], truncate=truncate)
-    def physToMap(self, c, pos, truncate=True):
+        return self._interpolate(pos, self.chr_to_rate[c], truncate=truncate, rescale=rescale)
+    def physToMap(self, c, pos, truncate=True, rescale=False):
         if c not in self.chr_to_gmap:
             return None
-        return self._interpolate(pos, self.chr_to_gmap[c], truncate=truncate)
+        return self._interpolate(pos, self.chr_to_gmap[c], truncate=truncate, rescale=rescale)
     def featuresBetween(self, chrom, mpos1, mpos2, features, fully=False):
         ''' Take an iterator of features and emit them as a filtered iterator
             where only the features that lie between two map positions are passed.
