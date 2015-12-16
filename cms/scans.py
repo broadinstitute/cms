@@ -90,9 +90,11 @@ def main_selscan_file_conversion(args):
 
     if (args.filterPops or args.filterSuperPops) and not args.sampleMembershipFile:
         raise argparse.ArgumentTypeError('Argument "--sampleMembershipFile" must be specifed if --filterPops or --filterSuperPops are used.')
-
-    csr = util.call_sample_reader.CallSampleReader(args.sampleMembershipFile)
-    samples_to_include = list(csr.filterSamples(pop=args.filterPops, super_pop=args.filterSuperPops))
+    
+    samples_to_include = None
+    if (args.filterPops or args.filterSuperPops) and args.sampleMembershipFile:
+        csr = util.call_sample_reader.CallSampleReader(args.sampleMembershipFile)
+        samples_to_include = list(csr.filterSamples(pop=args.filterPops, super_pop=args.filterSuperPops))
 
     # Write JSON file containing metadata describing this TPED file
 
