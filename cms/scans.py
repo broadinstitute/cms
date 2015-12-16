@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ''' This script contains command-line utilities for calculating EHH-based scans
     for positive selection in genomes, including EHH, iHS, and XP-EHH.
     '''
