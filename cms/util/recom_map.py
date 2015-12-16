@@ -28,7 +28,7 @@ class RecomMap(object):
                 else:
                     c,p,rate,map_p = (row[0], int(row[1]), float(row[2]), float(row[3]))
                     assert 0.0 <= map_p #<= 100.01, "map position out of bounds, %s cM (%s:%d)" %(map_p, c, p)
-                    map_p = min(100.0, map_p)
+                    # map_p = min(100.0, map_p) # commented out since the genetic distance in the map can be >100
                     assert c and p>0, "chr not specified or position non-positive %s:%d" % (c,p)
                     if last_c==c:
                         assert last_p<p, "non-monotonic increase in position at %s:%d" % (c,p)
