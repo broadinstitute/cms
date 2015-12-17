@@ -247,7 +247,7 @@ class SelscanFormatter(object):
                                         coded_genotypes_for_selected_samples = coded_genotypes_for_selected_samples.f[mergeOperatorString](coded_genotypes_for_selected_samples_for_allele)
                                     #coded_genotypes_for_selected_samples = np.array(list(str(bin(int("".join(coded_genotypes_for_selected_samples),2) | int("".join(coded_genotypes_for_selected_samples_for_allele),2)))[2:].zfill(len(coded_genotypes_for_selected_samples))))
                             else:
-                                coded_genotypes_for_selected_samples = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele))
+                                coded_genotypes_for_selected_samples = GenoRecord(codingFunc(genotypes_for_selected_samples, record.ref, record.alt, ancestral_allele, "1"))
 
                             # if this is the first record in the file, create an array filled with zeros for the previously coded alleles
                             if recordCount == 0:
