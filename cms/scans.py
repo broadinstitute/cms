@@ -287,6 +287,51 @@ def main_selscan_ihs(args):
     return 0
 __commands__.append(('selscan_ihs', parser_selscan_ihs))
 
+# === Selscan nSL
+
+def parser_selscan_nsl(parser=argparse.ArgumentParser()):
+    """
+        Perform selscan's calculation of nSL.
+    """
+    parser = parser_selscan_common(parser)
+
+    parser.add_argument('--truncOk', default=False, action='store_true',
+        help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
+        integrate the curve anyway.
+        Normal function is to disregard the score for that core. (default: %(default)s).""")
+    parser.add_argument('--maxExtendNsl', default=100, type=int,
+        help="""The maximum distance an nSL haplotype is allowed to extend from the core.
+        Set <= 0 for no restriction. (default: %(default)s).""")
+
+    #parser.epilog = """Output format: <locusID> <physicalPos_bp> <'1' freq> <ihh1> <ihh0> <unstandardized iHS> <derived_ihh_left> <derived_ihh_right> <ancestral_ihh_left> <ancestral_ihh_right>"""
+
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_nsl)
+    return parser
+
+def main_selscan_nsl(args):
+    if args.threads < 1:
+        raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % args.threads)
+
+    tools.selscan.SelscanTool().execute_nsl(
+        tped_file          = args.inputTped,
+        out_file           = args.outFile,
+        trunc_ok           = args.truncOk,
+        threads            = args.threads,
+        maf                = args.maf,
+        max_extend_nsl     = args.maxExtendNsl,
+        gap_scale          = args.gapScale   
+    )
+
+    metaData = {}
+    metaData["nsl"] = args.outFile+".nsl.out"
+    metaData["nsl_log"] = args.outFile+".nsl.log"
+    jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
+    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+
+    return 0
+__commands__.append(('selscan_nsl', parser_selscan_nsl))
+
 # === Selscan XPEHH ===
 
 def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
@@ -343,8 +388,8 @@ def parser_selscan_norm_common(parser=argparse.ArgumentParser()):
     """
 
     input_file_help_string = """A list of files delimited by whitespace for joint normalization.
-    Expected format for iHS files (no header):\n
-    <locus name> <physical pos> <freq> <ihh1> <ihh2> <ihs>
+    Expected format for iHS/nSL files (no header):\n
+    <locus name> <physical pos> <freq> <ihh1/sL1> <ihh2/sL0> <ihs/nsl>
     Expected format for XP-EHH files (one line header):
     <locus name> <physical pos> <genetic pos> <freq1> <ihh1> <freq2> <ihh2> <xpehh>"""
 
@@ -376,6 +421,33 @@ def parser_selscan_norm_common(parser=argparse.ArgumentParser()):
         help='If set, will use windows of a constant bp size with varying number of SNPs')
 
     return parser
+
+def parser_selscan_norm_nsl(parser=argparse.ArgumentParser()):
+    parser = parser_selscan_norm_common(parser)
+    
+    util.cmd.common_args(parser, (('loglevel', None), ('version', None), ('tmpDir', None)))
+    util.cmd.attach_main(parser, main_selscan_norm_nsl)
+
+    return parser
+
+def main_selscan_norm_nsl(args):
+    """
+        Normalize Selscan's nSL output
+    """
+    # impose sanity checks on values here, perhaps
+
+    tools.selscan.SelscanNormTool().execute_nsl_norm(
+        input_file_list = args.inputFiles,
+        bins            = args.bins,
+        crit_percent    = args.critPercent,
+        crit_val        = args.critValue,
+        min_snps        = args.minSNPs,
+        qbins           = args.qbins,
+        winsize         = args.winSize,
+        bp_win          = args.bpWin
+    )
+    return 0
+__commands__.append(('selscan_norm_nsl', parser_selscan_norm_nsl))
 
 def parser_selscan_norm_ihs(parser=argparse.ArgumentParser()):
     parser = parser_selscan_norm_common(parser)

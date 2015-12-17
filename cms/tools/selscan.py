@@ -495,6 +495,34 @@ class SelscanTool(SelscanBaseTool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
+    def execute_nsl(self, tped_file, out_file, threads, maf, max_extend_nsl, gap_scale, trunc_ok=False):
+        toolCmd = [self.install_and_get_path()]
+        toolCmd.append("--nsl")
+        toolCmd.append("--tped")
+        toolCmd.append(tped_file)
+        toolCmd.append("--out")
+        toolCmd.append(out_file)
+        if trunc_ok:
+            toolCmd.append("--trunc-ok")
+        if threads > 0:
+            toolCmd.append("--threads")
+            toolCmd.append((threads))
+        else:
+            raise argparse.ArgumentTypeError("You must specify more than 1 thread. %s threads given." % threads)
+        if maf:
+            toolCmd.append("--maf")
+            toolCmd.append("{:.6}".format(maf))
+        if max_extend_nsl:
+            toolCmd.append("--max-extend-nsl")
+            toolCmd.append("{}".format(max_extend_nsl))
+        if gap_scale:
+            toolCmd.append("--gap-scale")
+            toolCmd.append((gap_scale))
+
+        toolCmd = [str(x) for x in toolCmd]        
+        log.debug(' '.join(toolCmd))
+        subprocess.check_call( toolCmd )
+
     def execute_xpehh(self, tped_file, tped_ref_file, out_file, threads, maf, gap_scale, trunc_ok=False):
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--xpehh")
@@ -545,6 +573,9 @@ class SelscanNormTool(SelscanBaseTool):
             ])
 
         tools.Tool.__init__(self, install_methods = install_methods)
+
+    def execute_nsl_norm(self, input_file_list, bins, crit_percent, crit_val, min_snps, qbins, winsize, bp_win=False):
+        self.execute_ihs_norm(input_file_list=input_file_list, bins=bins, crit_percent=crit_percent, crit_val=crit_val, min_snps=min_snps, qbins=qbins, winsize=winsize, bp_win=bp_win)
 
     def execute_ihs_norm(self, input_file_list, bins, crit_percent, crit_val, min_snps, qbins, winsize, bp_win=False):
         toolCmd = [self.install_and_get_path()]
