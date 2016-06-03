@@ -11,3 +11,5 @@ More detailed documentation can be found at http://broad-cms.readthedocs.org/
 This includes installation instructions,
 usage instructions for the command line tools,
 and usage of the pipeline infrastructure.
+
+* Hello, world. I am not a robot. 
