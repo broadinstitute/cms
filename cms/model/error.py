@@ -5,6 +5,8 @@
 ## by default we up-weigh the importance of heterozygosity; this statistic has wide variance across simulates of a given model and can fail to inflate the error function while traversing unrealistic corners of parameter-space if not compensated for. [the 100x scale factor is pragmatic and can easily be toggled]
 ## last updated: 06.04.16 	vitti@broadinstitute.org
 
+#test
+
 piScaleFactor = 100
 
 import math
