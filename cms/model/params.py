@@ -1,8 +1,14 @@
-## AWS xp_run: ~/COSI_STATIC/
-## 12.04.15 #12.05.15 updating ranges; still allowing Ne changes to swap order (could partition monotonically)
+## {{POP GEN DATA --> DEM MODEL}}
+## this script contains functions pertaining to the specifics of a given demographic model being fit.
+## ideally, the user has some ballpark idea of the population's history -- within these functions, define parameters, ranges, etc.
+## currently configured to fit 1KG P3 African populations: {YRI, ESN, MSL, GWD, LWK}
+## last updated: 06.04.16	vitti@broadinstitute.org
 
 from itertools import izip
 
+##########################
+## DEFINE TREE TOPOLOGY ##
+##########################
 def generateParams():
 	############################
 	##DEFINE GLOBAL PARAMETERS##
@@ -89,7 +95,6 @@ def generateParams():
 	paramDict[('mig_time', '4->3')] = [0, 10, 100]
 
 	return paramDict
-
 def writeParamFile(paramfilename, paramDict):
 	#####################
 	### Global params ###
@@ -261,107 +266,6 @@ def writeParamFile(paramfilename, paramDict):
 	openfile.write('\n')
 	openfile.close()
 	return
-
-
-def getRanges():
-	paramDict = generateParams()
-	split2time = paramDict[('split', 2)][0]
-	split3time = paramDict[('split', 3)][0]
-	split4time = paramDict[('split', 4)][0]
-
-	rangeDict = {}
-	rangeDict[('split', 2)] = [[175, 500]]
-	rangeDict[('split', 3)] = [[100, 174]]
-	rangeDict[('split', 4)] = [[10, 99]]
-	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000], [100, 100000]]
-	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 199], [200, 1000], [500, 8000], [2000, 12000], [2500, 25000], [12000, 50000]]
-	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 200], [200, split2time]]
-	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 3)] = [[1, 5], [6, split3time], [10, split3time]]
-	rangeDict[('Ne', 4)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 4)] = [[1, 5], [6, split4time], [10, split4time]]
-	rangeDict[('bn', 1)] = [[1e-6, .5], [1e-6, .5],  [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 1)] = [[0,50000],[0,50000],[0,50000],[0,50000]]
-	rangeDict[('bn', 2)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 2)] = [[0,split2time],[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('bn', 3)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 3)] = [[0,split3time],[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('bn', 4)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 4)] = [[0,split4time],[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig', '1->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '1->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '1->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig_time', '1->2')] = [[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('mig_time', '1->3')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '1->4')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '2->1')] = [[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('mig_time', '2->3')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '2->4')] = [[0,split4time],[0,split4time],[0,split4time]]	
-	rangeDict[('mig_time', '3->1')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '3->2')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '3->4')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->1')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->2')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->3')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('Ne_change', 1)] = [[0,1] for i in rangeDict[('Ne', 1)]]
-	rangeDict[('Ne_change', 2)] = [[0,1] for i in rangeDict[('Ne', 2)]]
-	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
-	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
-	return rangeDict
-
-
-def getScaledValues():
-	ranges = defineRanges()
-	params = defineParams()
-	scaledParams = {}
-	for key in ranges.keys():
-		low, high = float(ranges[key][0]), float(ranges[key][1])
-		interval = high - low
-		value = params[key]
-		scaled = (value - low) / interval
-		scaledParams[key] = scaled
-	return scaledParams
-
-def getScaledValue(actualVal, low, high):
-	interval = high - low
-	return (actualVal - low) / interval
-
-def getRealValue(scaledVal, low, high):
-	interval = high - low
-	return low + (scaledVal * interval)
-
-def updateParams(paramDict, keys, indices, values):
-	"""paramDict: gets modified and returned.
-	keys: indicate which items in paramDict to be modified.
-	indices: parallel to keys; indicate which element in paramDict[key] to be modified.
-	values: parallel to above; indicate new value to substitute."""
-	assert len(keys) == len(indices) and len(keys) == len(values)
-	for i in range(len(keys)):
-		thisKey, thisIndex, thisValue = keys[i], indices[i], values[i]
-		paramDict[thisKey][thisIndex] = thisValue
-		#manually handle dependencies (better way to do this?)
-		#if thisKey == 'presentSizes':
-		#	pop = thisIndex + 1
-		#	paramDict[('Ne', pop)][0] = thisValue
-		if 'split' in thisKey:
-			bnkey = ('bn_times', thisKey[1])
-			nekey = ('Ne_times', thisKey[1])
-			paramDict[bnkey][0] = thisValue-1
-			paramDict[nekey][-1] = thisValue - 1
-
-	return paramDict
-
-
 def getDictFromParamFile(paramfilename):
 	#initialize empty lists so we can append from paramfile as we parse
 	paramDict = {'numPops':4,'labels':{1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}, 'singrate':.5, 'presentSizes':[], 'num_indivs_per_sample':200}
@@ -437,3 +341,98 @@ def getDictFromParamFile(paramfilename):
 	#print paramDict
 	return paramDict
 
+########################
+## SCALE/PERTURB TREE ##
+########################
+def getRanges():
+	paramDict = generateParams()
+	split2time = paramDict[('split', 2)][0]
+	split3time = paramDict[('split', 3)][0]
+	split4time = paramDict[('split', 4)][0]
+
+	rangeDict = {}
+	rangeDict[('split', 2)] = [[175, 500]]
+	rangeDict[('split', 3)] = [[100, 174]]
+	rangeDict[('split', 4)] = [[10, 99]]
+	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000], [100, 100000]]
+	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 199], [200, 1000], [500, 8000], [2000, 12000], [2500, 25000], [12000, 50000]]
+	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 200], [200, split2time]]
+	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 3)] = [[1, 5], [6, split3time], [10, split3time]]
+	rangeDict[('Ne', 4)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 4)] = [[1, 5], [6, split4time], [10, split4time]]
+	rangeDict[('bn', 1)] = [[1e-6, .5], [1e-6, .5],  [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 1)] = [[0,50000],[0,50000],[0,50000],[0,50000]]
+	rangeDict[('bn', 2)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 2)] = [[0,split2time],[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('bn', 3)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 3)] = [[0,split3time],[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('bn', 4)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 4)] = [[0,split4time],[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig', '1->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '1->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '1->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig_time', '1->2')] = [[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('mig_time', '1->3')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '1->4')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '2->1')] = [[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('mig_time', '2->3')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '2->4')] = [[0,split4time],[0,split4time],[0,split4time]]	
+	rangeDict[('mig_time', '3->1')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '3->2')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '3->4')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->1')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->2')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->3')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('Ne_change', 1)] = [[0,1] for i in rangeDict[('Ne', 1)]]
+	rangeDict[('Ne_change', 2)] = [[0,1] for i in rangeDict[('Ne', 2)]]
+	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
+	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
+	return rangeDict
+def updateParams(paramDict, keys, indices, values):
+	"""paramDict: gets modified and returned.
+	keys: indicate which items in paramDict to be modified.
+	indices: parallel to keys; indicate which element in paramDict[key] to be modified.
+	values: parallel to above; indicate new value to substitute."""
+	assert len(keys) == len(indices) and len(keys) == len(values)
+	for i in range(len(keys)):
+		thisKey, thisIndex, thisValue = keys[i], indices[i], values[i]
+		paramDict[thisKey][thisIndex] = thisValue
+		#manually handle dependencies (better way to do this?)
+		#if thisKey == 'presentSizes':
+		#	pop = thisIndex + 1
+		#	paramDict[('Ne', pop)][0] = thisValue
+		if 'split' in thisKey:
+			bnkey = ('bn_times', thisKey[1])
+			nekey = ('Ne_times', thisKey[1])
+			paramDict[bnkey][0] = thisValue-1
+			paramDict[nekey][-1] = thisValue - 1
+
+	return paramDict
+def getScaledValues():
+	ranges = defineRanges()
+	params = defineParams()
+	scaledParams = {}
+	for key in ranges.keys():
+		low, high = float(ranges[key][0]), float(ranges[key][1])
+		interval = high - low
+		value = params[key]
+		scaled = (value - low) / interval
+		scaledParams[key] = scaled
+	return scaledParams
+def getScaledValue(actualVal, low, high):
+	interval = high - low
+	return (actualVal - low) / interval
+def getRealValue(scaledVal, low, high):
+	interval = high - low
+	return low + (scaledVal * interval)
