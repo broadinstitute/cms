@@ -3,7 +3,8 @@ Description of the method
 
 *Composite of Multiple Signals (CMS)* refers to a family of tests applied to population genetic datasets in order to (i) identify genomic regions that may have been subject to strong recent positive selection (a 'sweep') and (ii) to narrow signals of selection within such regions, in order to identify tractable lists of candidate variants for experimental scrutiny. In both of these cases, CMS requires (a) phased variation data for several populations, along with (b) the identity of the ancestral allele for a majority of sites listed. It was developed with humans in mind (e.g., the 1000 Genomes Project) but could in principle be applied to any diploid species with data in VCF or TPED format. 
 
-In its current instantiation (**'CMS 2.0'**), it includes scripts to (i) calculate a variety of selection metrics for each population, (ii) model the demographic history of the dataset using an exploratory approach, (iii) generate probability distributions for each selection metric from data simulated from demographic models, (iv) generate composite scores and (v) visualize signals of selection in the UCSC Genome Browser.
+In its current instantiation (**'CMS 2.0'**), it includes scripts to (i) calculate a variety of selection metrics for each population, (ii) model the demographic history of the dataset using an exploratory approach, (iii) generate probability distributions for each selection metric from data simulated from demographic models, (iv) generate composite scores and (v) visualize signals of selection in the UCSC Genome Browser. For more information, contact `vitti |@| broadinstitute.org`_.
+.. _vitti |@| broadinstitute.org: vitti@broadinstitute.org
 
 .. image:: cms_2.0_pipeline.png
 
@@ -22,7 +23,10 @@ Grossman SR, Andersen KG, Shlyakhter I, Tabrizi S, Winnicki S, Yen A, Park DJ, G
 
 Coalescent simulations
 ==========================
-CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_
+CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_, but it would theoretically be straightforward to substitute e.g. Hudson's ms.
 
+`Cosi2: an efficient simulator of exact and approximate coalescent with selection. <http://www.ncbi.nlm.nih.gov/pubmed/25150247>`_ 
+Shlyakhter I, Sabeti PC, Schaffner SF.
+*Bioinformatics* 1 December 2014: **30** (23), 3427-9.Published online 22 August 2014 [DOI:10.1093/bioinformatics/btu562]
 
 .. sectionauthor:: Joseph Vitti <vitti@broadinstitute.org>
