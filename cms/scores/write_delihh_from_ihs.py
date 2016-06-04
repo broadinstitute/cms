@@ -7,22 +7,9 @@ suffix = "merged_121915"
 mask, runtime, vers = "strictMask", "062215_2pm_nomultialleles", "v5a" 
 chroms = range(1,23)
 
+from func_scores import *
 from math import fabs
 import sys
-
-def write_delIHH_file(readfilename, writefilename):
-	"""given a selscan iHS file, parses it and writes an analogous file with delIHH information"""
-	readfile = open(readfilename, 'r')
-	writefile = open(writefilename, 'w')
-	for line in readfile:
-		entries = line.split()
-		locus, phys, freq_1, ihh_1, ihh_0, ihs, ihh_0_l, ihh_0_r, ihh_1_l, ihh_1_r = entries #[0:10]
-					#ancestral - derived
-		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
-		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs) + "\t" + str(unstand_delIHH) +  "\n"
-		writefile.write(writeline)
-	writefile.close()
-	readfile.close()
 
 def main():
 	pop = sys.argv[1]
