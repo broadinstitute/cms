@@ -1,6 +1,7 @@
-// last updated: 04.24.16
+// {{COMPONENT SCORES + SCORE DISTRIBUTIONS FROM SIMULATED DATA --> COMPOSITE SCORES}}
 // for a putative selpop and an arbitrary number of comparison populations, pulls and collates all component score statistics for a region. (assuming uniform prior)
-// gcc -o combine_cms_scores_multiplepops_region -O0 -ggdb3 -lm -Wall combine_cms_scores_multiplepops_region.c cms_data.c
+// -->COMPILE: gcc -o combine_cms_scores_multiplepops_region -O0 -ggdb3 -lm -Wall combine_cms_scores_multiplepops_region.c cms_data.c
+// last updated: 06.04.15   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -11,12 +12,19 @@
 #include <time.h>
 #include "cms_data.h"
 
+ 
+ /* I SHOULD JUST MOVE THESE TO CMS_DATA BECAUSE THEY ARE SHARED NO NEED TO REDECLARE
+/* does it matter if it's region or nonregion? have i differentiated in the functions
+/* it might even be easier just to keep it here, s.t. we calculate CMS and CMS_GW separately...
+
+/*********************/
+/***DEFINE FUNCTIONS**/
+/*********************/
+
 float getProb(likes_data* data, double value);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);
-
-
 
 float getProb(likes_data* data, double value){
   int ibin;
@@ -29,7 +37,7 @@ float getProb(likes_data* data, double value){
   if (value > data->end_bin[data->nbins - 1]){return data->probs[data->nbins - 1];}
 
   return 0;
-}
+} //end function
 float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max val
   double xp;
   int iComp;
@@ -38,7 +46,7 @@ float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max va
     if (data->xp_normed[iComp][isnp] < xp){xp = data->xp_normed[iComp][isnp];}
   }
   return xp;
-}
+} //end function
 float compareFst(popComp_data_multiple* data, int isnp){//currently: takes max val
   double fst;
   int iComp;
@@ -50,7 +58,7 @@ float compareFst(popComp_data_multiple* data, int isnp){//currently: takes max v
   }
 
   return fst;
-}
+} //end function
 float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes max val
   double deldaf;
   int iComp;
@@ -59,7 +67,11 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes ma
     if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
   }
   return deldaf;
-}
+} //end function
+
+/**********/
+/***MAIN***/
+/**********/
 
 int main(int argc, char **argv) {
 	popComp_data_multiple data;
@@ -243,5 +255,4 @@ int main(int argc, char **argv) {
 	free_likes_data(&deldaf_miss);
 	free_popComp_data_multiple(&data);
 	return 0;
-}
-
+} // end main

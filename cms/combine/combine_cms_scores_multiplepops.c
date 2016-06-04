@@ -1,14 +1,9 @@
+// {{COMPONENT SCORES + SCORE DISTRIBUTIONS FROM SIMULATED DATA --> COMPOSITE SCORES}}
 // for a putative selpop and an arbitrary number of comparison populations, pulls and collates all component score statistics. 
-// gcc -o combine_cms_scores_multiplepops -O0 -ggdb3 -lm -Wall combine_cms_scores_multiplepops.c cms_data.c
-// adapted from /idi/sabeti-scratch/jvitti/cms_venv/ orig: 10.16.15
-// /idi/sabeti-scratch/jvitti/synth 01.14.16
+// --> COMPILE: gcc -o combine_cms_scores_multiplepops -O0 -ggdb3 -lm -Wall combine_cms_scores_multiplepops.c cms_data.c
+// last updated: 06.04.15   vitti@broadinstitute.org
 
-//04.10.16 let's do this. likes from p3 sims check~!
-
-//need to build in options to turn the knobs!
-//weighting of component scores
-//ways of handling comparisons
-
+//need to build in options to turn the knobs!, weighting of component scores, ways of handling comparisons
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -17,6 +12,14 @@
 #include <math.h>
 #include <time.h>
 #include "cms_data.h"
+ 
+ /* I SHOULD JUST MOVE THESE TO CMS_DATA BECAUSE THEY ARE SHARED NO NEED TO REDECLARE
+/* does it matter if it's region or nonregion? have i differentiated in the functions
+/* it might even be easier just to keep it here, s.t. we calculate CMS and CMS_GW separately...
+
+/*********************/
+/***DEFINE FUNCTIONS**/
+/*********************/
 
 float getProb(likes_data* data, double value);
 float compareXp(popComp_data_multiple* data, int isnp);
@@ -60,6 +63,10 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes ma
   }
   return deldaf;
 }
+
+/**********/
+/***MAIN***/
+/**********/
 
 int main(int argc, char **argv) {
 	popComp_data_multiple data;
@@ -121,7 +128,7 @@ int main(int argc, char **argv) {
 
 	sprintf(ihs_hit_filename, likeloc);
 		strcat(ihs_hit_filename, "ihs_default_112115_825am_");
-//	strcat(ihs_hit_filename, "iHS_hits_");
+	//strcat(ihs_hit_filename, "iHS_hits_");
 	strcat(ihs_hit_filename, argv[3]);
 	strcat(ihs_hit_filename, "_likes_causal.txt");
 
@@ -235,5 +242,4 @@ int main(int argc, char **argv) {
 	free_likes_data(&deldaf_miss);
 	free_popComp_data_multiple(&data);
 	return 0;
-}
-
+} // end main

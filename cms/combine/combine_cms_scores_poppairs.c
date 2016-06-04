@@ -1,7 +1,7 @@
+// {{COMPONENT SCORES + SCORE DISTRIBUTIONS FROM SIMULATED DATA --> COMPOSITE SCORES}}
 // for a given population pair, pulls and collates all component score statistics. 
-// gcc -o combine_cms_scores_poppairs -O0 -ggdb3 -lm -Wall combine_cms_scores_poppairs.c cms_data.c
-// adapted from /idi/sabeti-scratch/jvitti/cms_venv/ orig: 10.16.15
-// /idi/sabeti-scratch/jvitti/synth 01.14.16
+// --> COMPILE:  gcc -o combine_cms_scores_poppairs -O0 -ggdb3 -lm -Wall combine_cms_scores_poppairs.c cms_data.c
+// last updated: 06.04.15   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -131,35 +131,4 @@ int main(int argc, char **argv) {
 	free_fst_deldaf_data(&fst_deldaf);
 
 	return 0;
-}
-
-	/* //I ACTUALLY THINK I SHOULD DO THIS SEPARATELY; here I should just pool all score values...
-
-	fst_deldaf_data fst_deldaf;
-	likes_data delihh1_hit, delihh2_hit, delihh1_miss, delihh2_miss; 
-	likes_data ihs1_hit, ihs2_hit, ihs1_miss, ihs2_miss;
-	likes_data xpehh1_hit, xpehh2_hit, xpehh1_miss, xpehh2_miss;
-	likes_data fst_deldaf1_hit, fst_deldaf2_hit, fst_deldaf1_miss, fst_deldaf2_miss;
-
-	fprintf(stderr, "loading likes tables from /idi/sabeti-scratch/jvitti/cms_venv/likes_p1/ (!!!)\n");
-	fprintf(stderr, "loading neut dists from neut sims (CMS_GW)...\n");
-	get_likes_data(&delihh1_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_hits_1.likes");
-	get_likes_data(&delihh4_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_hits_4.likes");
-	get_likes_data(&delihh5_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_hits_5.likes");
-	get_likes_data(&delihh1_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_miss_1.likes");
-	get_likes_data(&delihh4_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_miss_4.likes");
-	get_likes_data(&delihh5_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/StdDiff_miss_5.likes");
-	get_likes_data(&ihs1_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_1.likes");
-	get_likes_data(&ihs4_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_4.likes");
-	get_likes_data(&ihs5_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_5.likes");
-	get_likes_data(&ihs1_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_1.likes");
-	get_likes_data(&ihs4_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_4.likes");
-	get_likes_data(&ihs5_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_5.likes");
-
-	get_likes_data(&ihs1_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_1.likes");
-	get_likes_data(&ihs4_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_4.likes");
-	get_likes_data(&ihs5_hit, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_hits_5.likes");
-	get_likes_data(&ihs1_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_1.likes");
-	get_likes_data(&ihs4_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_4.likes");
-	get_likes_data(&ihs5_miss, "/idi/sabeti-scratch/jvitti/cms_venv/likes_p1/iHS_miss_5.likes");
-	*/
+} // end main

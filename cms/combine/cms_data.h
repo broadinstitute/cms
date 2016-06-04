@@ -1,7 +1,10 @@
-// data structures for CMS component scores
-// adapted from /idi/sabeti-scratch/jvitti/cms_venv/ orig: 10.16.15
-// /idi/sabeti-scratch/jvitti/synth 01.14.16. 
+// {{COMPONENT SCORES + SCORE DISTRIBUTIONS FROM SIMULATED DATA --> COMPOSITE SCORES}}
+// datastructures and function declarations for handling cms component(+composite) score datastructures
+// last updated: 06.04.15   vitti@broadinstitute.org
 
+/**********************/
+/***COMPONENT SCORES***/
+/**********************/
 
 typedef struct xpehh_data {
     int nsnps;
@@ -14,11 +17,9 @@ typedef struct xpehh_data {
     double *xpehh_unnormed;
     double *xpehh_normed;
     int *lastcol;
-} xpehh_data;
-
+} xpehh_data; 
 void get_xpehh_data(xpehh_data* data, char filename[]);
 void free_xpehh_data(xpehh_data* data);
-
 
 typedef struct delihh_data {
     int nsnps;
@@ -29,10 +30,8 @@ typedef struct delihh_data {
     double *delihh_normed;
     int *lastcol;    
 } delihh_data;
-
 void get_delihh_data(delihh_data* data, char filename[]);
 void free_delihh_data(delihh_data* data);
-
 
 typedef struct ihs_data {
     int nsnps;
@@ -43,12 +42,9 @@ typedef struct ihs_data {
     double *ihh1;
     double *ihs_unnormed;
     double *ihs_normed; 
-
 } ihs_data;
-
 void get_ihs_data(ihs_data* data, char filename[]);
 void free_ihs_data(ihs_data* data);
-
 
 typedef struct fst_deldaf_data {
     int nsnps;
@@ -56,9 +52,12 @@ typedef struct fst_deldaf_data {
     double *fst;
     double *deldaf;
 } fst_deldaf_data;
-
 void get_fst_deldaf_data(fst_deldaf_data* data, char filename[]);
 void free_fst_deldaf_data(fst_deldaf_data* data);
+
+/*************************/
+/***SCORE DISTRIBUTIONS***/
+/*************************/
 
 typedef struct likes_data{
     int nbins;
@@ -88,6 +87,9 @@ void free_popComp_data(popComp_data* data);
 
 void get_popComp_data_region(popComp_data* data, char infilename[], int startBp, int endBp);
 
+/**********************/
+/***POP COMPARISONS****/
+/**********************/
 
 //VARIABLE ARGS FUNCTION
 typedef struct popComp_data_multiple{
@@ -102,9 +104,6 @@ typedef struct popComp_data_multiple{
     double **ihs_normed;
     double **delihh_normed;
 } popComp_data_multiple;
-
-
 void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv[]);
 void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
 void free_popComp_data_multiple(popComp_data_multiple* data);
-
