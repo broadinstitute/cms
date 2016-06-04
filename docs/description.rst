@@ -1,7 +1,11 @@
 Description of the method
 ==========================
 
-*Composite of Multiple Signals (CMS)* refers to a family of tests for (i) identify genomic regions that may have been subject to strong recent positive selection (a 'sweep') and (ii) narrowing signals within regions to experimentally tractable lists of candidate variants.
+*Composite of Multiple Signals (CMS)* refers to a family of tests applied to population genetic datasets in order to (i) identify genomic regions that may have been subject to strong recent positive selection (a 'sweep') and (ii) to narrow signals of selection within such regions to experimentally tractable lists of candidate variants.
+
+In its current instantiation ('CMS 2.0'), it includes:
+
+.. image:: cms_2.0_pipeline.png
 
 The method used in CMS is described in greater detail in the following paper:
 
