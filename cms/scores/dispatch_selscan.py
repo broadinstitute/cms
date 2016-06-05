@@ -1,7 +1,8 @@
 ## {{POP GEN DATA --> COMPONENT SCORES}}
 ## original: selscan/genloc_fixed/dispatch_selscan_cluster.py 12.30.15
 # JV: should call taskarg function properly and automate poppairs
-## last updated 06.04.16 	vitti@broadinstitute.org
+# particular to 1KG. this is a pretty basic and useless script, should probably just replace
+## last updated 06.05.16 	vitti@broadinstitute.org
 
 #############################################
 ## TOGGLE OPTIONS FOR THIS RUN OF PIPELINE ##
