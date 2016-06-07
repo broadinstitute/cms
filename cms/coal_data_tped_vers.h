@@ -4,18 +4,6 @@
 // last updated: 06.07.16   vitti@broadinstitute.org
 
 /************************/
-/***DECLARE FUNCTIONS****/
-/************************/
-/*helper methods*/
-double getGenDist(coal_data* data, int pos_i, int pos_j);
-int getIndexOfItem(int *values, int numVals, int itemToFind);
-int getLowerIndexOfItem(int *values, int numVals, int itemToFind);
-int getUpperIndexOfItem(int *values, int numVals, int itemToFind);
-/*manipulating datastrucutre*/
-void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]);
-void free_coal_data(coal_data* data);
-
-/************************/
 /**DEFINE DATASTRUCTURE**/
 /************************/
 typedef struct coal_data {
@@ -34,3 +22,15 @@ typedef struct coal_data {
     int *physPos; //parallel w above
     int nRecom; //# of lines in recombination file, as nsample or nsnp
 } coal_data;
+
+/************************/
+/***DECLARE FUNCTIONS****/
+/************************/
+/*helper methods*/
+double getGenDist(coal_data* data, int pos_i, int pos_j);
+int getIndexOfItem(int *values, int numVals, int itemToFind);
+int getLowerIndexOfItem(int *values, int numVals, int itemToFind);
+int getUpperIndexOfItem(int *values, int numVals, int itemToFind);
+/*manipulating datastrucutre*/
+void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]);
+void free_coal_data(coal_data* data);

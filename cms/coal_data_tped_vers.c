@@ -97,13 +97,10 @@ int getUpperIndexOfItem(int *values, int numVals, int itemToFind){
 void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]) {
 	const int line_size = 999999999; // upper limit
 	const int numRecomLines = 500000;
-	char filename[264];
-	char recombFile[100];
-	FILE *inf=NULL;
 	char *newLine, *token, *running;
-	char sampstring[20];
-	double genrate;
 	int isamp, isnp, itoken, iRecom;
+  double genrate;
+  FILE *inf=NULL;
 
 	/**************************
 	INITIALIZATION, ALLOCATION,
@@ -127,13 +124,12 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	data->physPos = NULL;
 	data->genloc = NULL;
 
-	fprintf(stderr, "Getting information from file: ");
-	fprintf(stderr, filename);
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "Getting information from file: %s\n", tpedfilename);
 
 	// Count number of SNPs in tped
-	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing TPED file: "); fprintf(stderr, filename);}
+	inf = fopen(tpedfilename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
+  assert (inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 		assert(strlen(newLine) < line_size);
 		data->nsnp++;
@@ -155,7 +151,7 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	// Count number of lines in recombination file
   inf = fopen(recomfilename, "r"); assert(inf != NULL);
 	fgets(newLine, line_size, inf); //header
-	if (inf == NULL) {fprintf(stderr, "Missing recombination file: "); fprintf(stderr, recomfilename);}
+	if (inf == NULL) {fprintf(stderr, "Missing recombination file: %s\n", recomfilename);}
 	while (fgets(newLine, line_size, inf) != NULL) {
 		assert(strlen(newLine) < line_size);
 		data->nRecom++;
@@ -192,15 +188,15 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	/*******************
 	GET DATA FROM TPED
 	*******************/
-	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing TPED file: "); fprintf(stderr, filename);}
+	inf = fopen(tpedfilename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
 	assert(inf != NULL);
 
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
 			if (itoken == 0) {
-				data->chrom[isnp] = chromosome;
+				//data->chrom[isnp] = chromosome;
 				data->nallele[isnp] = 2; //only biallelics in tped
 			}	
 			else if (itoken == 1) {
@@ -225,8 +221,8 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	/**************************
 	GET DATA FROM RECOMB FILE
 	**************************/
-	inf = fopen(recombFile, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing recombination file.");}
+	inf = fopen(recomfilename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing recombination file: %s\n", recomfilename);}
 	assert(inf != NULL);
 	fgets(newLine, line_size, inf); //header
 	iRecom = 0;
