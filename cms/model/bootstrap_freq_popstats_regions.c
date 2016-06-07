@@ -1,26 +1,25 @@
-// pwd: /idi/sabeti-scratch/jvitti/dem_model/target_vals/neutral/
-// gcc -o bootstrap_freq_popstats_1kg_regions_thinned -O0 -ggdb3 -lm -Wall bootstrap_freq_popstats_1kg_regions_thinned.c coal_data_1kg_autosome_tped_thinned.c
-// 11.09.15 update 12.03.15 soft-code nlimiting
+// {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
+// COMPILE: gcc -o bootstrap_freq_popstats_regions -O0 -ggdb3 -lm -Wall bootstrap_freq_popstats_regions.c coal_data_tped_vers.c
+// last updated: 06.07.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
-#include "coal_data_1kg_autosome_tped_thinned.h"
+#include "coal_data_tped_vers.h" 
 
 int main(int argc, char **argv){
+    const int line_size = 15000000; 
+    int chromosome, isnp, isamp, ns, nderiv, seqlen, startpos, endpos, itoken, nanc, npoly;
+    char recomfilename[264], tpedfilename[264], regionfilename[264], outfilename[264];
+    char *newLine, *token, *running;
+    double pi, pi_sum=0.;
+    FILE *outf=NULL, *inf=NULL;
 	coal_data data;
-	FILE *outf=NULL, *inf=NULL;
-	char filename[264], bedfilename[264], popstr[3], regionfilename[264];
-	int chromosome, isnp, isamp, ns, nderiv, seqlen, startpos, endpos, itoken, nanc, npoly;
-	double pi, pi_sum=0.;
-	char *newLine, *token, *running;
-	const int line_size = 15000000; 
-    int nlimiting;
     
 	if (argc != 5) {
-		fprintf(stderr, "Usage: bootstrap_freq_popstats_1kg_regions_thinned <pop> <chrom> <preprocessed bedfile from regions folder> <nlimiting>\n");
+		fprintf(stderr, "Usage: bootstrap_freq_popstats_regions <tpedfilename> <recomfilename> <regionfilename> <outfilename>\n");
 		exit(0);
 	}
 
@@ -32,41 +31,20 @@ int main(int argc, char **argv){
     seqlen = 0;
     npoly = 0;
 	
+    strcpy(tpedfilename, argv[1]);
+    strcpy(recomfilename, argv[2]);
+    strcpy(regionfilename, argv[3]);
+    strcpy(outfilename, argv[4]);
 
-	/************
-	 OUTFILE PREP
-	 ************/
+    get_coal_data_tped_vers(&data, tpedfilename, recomfilename);
 
-	strcpy(popstr, argv[1]);
-    chromosome = atoi(argv[2]);
-	strcpy(bedfilename, argv[3]);
-    nlimiting = atoi(argv[4]);
-
-    strcpy(regionfilename, "regions/");
-    strcat(regionfilename, bedfilename);
-    strcat(regionfilename, ".txt");
-	inf = fopen(regionfilename, "r");
+    inf = fopen(regionfilename, "r");
 	assert(inf != NULL);
-	fprintf(stderr, "Getting regions from file: ");
-	fprintf(stderr, regionfilename);
-	fprintf(stderr, "\n");
+	if (inf == NULL) {fprintf(stderr, "Missing regions file: %s\n", regionfilename);}
 
-	if (inf == NULL) {fprintf(stderr, "Missing regions file: "); fprintf(stderr, regionfilename);}
-
-    get_coal_data_1kg_autosome_tped_thinned(&data, popstr, "strictMask", chromosome, "062215_2pm_nomultialleles", nlimiting);
-
-    strcpy(filename,"bootstrap/thinned/");
-    strcat(filename, popstr);
-    strcat(filename, "_");
-     strcat(filename, argv[4]);
-    strcat(filename, "_");    
-    strcat(filename, bedfilename);
-    strcat(filename, "_freqs_by_snp.txt");
-    outf = fopen(filename, "w");
+    outf = fopen(outfilename, "w");
     assert(outf != NULL);
-    fprintf(stderr, "Writing to file: ");
-    fprintf(stderr, filename);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "Writing to file: %s\n", outfilename);
 
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, "\t")) != NULL; itoken++) {
@@ -81,7 +59,6 @@ int main(int argc, char **argv){
 
 		//augment seqlen
 		seqlen += (endpos-startpos);
-
 		
     	//loop over SNPs
     	for (isnp = 0; isnp < data.nsnp; isnp++) {
@@ -107,12 +84,10 @@ int main(int argc, char **argv){
     		}// end if polymorphic
     
         } // end loop over snps
-        fprintf(outf, "%d\n\n", endpos - startpos);
-            //must print region len
-     //mark off blocks with line break
+        fprintf(outf, "%d\n\n", endpos - startpos); //must print region len; mark off blocks with line break
 	} // end regions
 
-free_coal_data(&data);
-fclose(outf);
-return 0;
-}
+    free_coal_data(&data);
+    fclose(outf);
+    return 0;
+} //end main

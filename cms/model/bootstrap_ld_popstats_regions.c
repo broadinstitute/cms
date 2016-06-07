@@ -1,66 +1,56 @@
 // {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
-//## last updated: 06.04.16 	vitti@broadinstitute.org
-//# JV: a lot to do in terms of redirecting to correct files
-//(source:  /idi/sabeti-scratch/jvitti/dem_model/target_vals/neutral/bootstrap_ld_popstats_1kg_regions_thinned_gaps.c
-// gcc -o bootstrap_ld_popstats_1kg_regions_thinned_gaps -O0 -ggdb3 -lm -Wall bootstrap_ld_popstats_1kg_regions_thinned_gaps.c coal_data_1kg_autosome_tped_thinned.c
+// COMPILE: gcc -o bootstrap_ld_popstats_regions -O0 -ggdb3 -lm -Wall bootstrap_ld_popstats_regions.c coal_data_tped_vers.c
+// last updated: 06.07.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
-#include "coal_data_tped_vers.h" //**
+#include "coal_data_tped_vers.h" 
 
 int main(int argc, char **argv){
-	const int nhist = 6;
-	coal_data data;
-	FILE *outf=NULL, *inf=NULL;
-	char filename[264], bedfilename[264], basename[264], chromstring[32], popstr[3], regionfilename[264];
-	int chromosome, isnp, jsnp, isamp, ns, nderiv, seqlen, startpos, endpos, ibin, itoken, nanc, npoly;
-	int hap[2][2], dist, ai, aj, *nminor, *nmajor;
-	int *mafHist, *ancHist, *physDistHist, *start_distBins, *end_distBins, *compLDHist, *genDistHist;
-	double pi, pi_sum=0., dprime, ddenom, r2denom, r2, genDist;
-	double *start_fbin, *end_fbin, *start_genDistBins, *end_genDistBins, *r2sums, freq;
-	double d, freqi, freqj;
-	char *newLine, *token, *running, *token2;
-	const int line_size = 15000000; 
-	double p_a, p_b, q_a, q_b; //allele frequencies
-	double p_00, p_11, p_01, p_10; //haplotype frequencies
+	const double maxgendist = .017;
 	const int maxdist = 70000; //only calculate LD for 70kb
 	const int min_minor = 3; //don't calculate LD at singletons or doubletons
-	const double min_freq = .2; //only look at P(D'=1) above this freq // NB must filter downstream; 11.2015 bootstrap program does r2 and d' at once
-	const double maxgendist = .017;
-	int nregions = 0;
+	//const double min_freq = .2; //only look at P(D'=1) above this freq // NB must filter downstream; 11.2015 bootstrap program does r2 and d' at once
+	const int line_size = 15000000; 
+	int isnp, jsnp, isamp, ns, nderiv, seqlen, startpos, endpos, itoken, nanc, iregion;
+    char recomfilename[264], tpedfilename[264], regionfilename[264], outfilename[264];
+	int hap[2][2], dist, ai, aj, *nminor, *nmajor;
+	double dprime, ddenom, r2denom, r2, genDist;
+	double p_a, p_b, q_a, q_b; //allele frequencies
+	double p_00, p_11, p_01, p_10; //haplotype frequencies
+	char *newLine, *token, *running;
+	FILE *outf=NULL, *inf=NULL;
+	double d, freqi, freqj;
 	int *starts, *ends;
-	int iregion;
+	coal_data data;
+	int nregions = 0;
 	int neut; //BOOLEAN: 0 = False, 1 = True
-    int nlimiting;
+
 	if (argc != 5) {
-		fprintf(stderr, "Usage: bootstrap_ld_popstats_1kg_regions_thinned <pop> <chrom> <preprocessed bedfile from regions folder> <nlimiting>\n");
+		fprintf(stderr, "Usage: bootstrap_ld_popstats_regions <tpedfilename> <recomfilename> <regionfilename> <outfilename>\n");
 		exit(0);
 	}
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
+	
+    strcpy(tpedfilename, argv[1]);
+    strcpy(recomfilename, argv[2]);
+    strcpy(regionfilename, argv[3]);
+    strcpy(outfilename, argv[4]);
 
-	strcpy(popstr, argv[1]);
-    chromosome = atoi(argv[2]);
-	strcpy(bedfilename, argv[3]);
-    nlimiting = atoi(argv[4]);
+    get_coal_data_tped_vers(&data, tpedfilename, recomfilename);
 
     //////////////////////
     //// LOAD REGIONS ////
     //////////////////////
 
-	strcpy(regionfilename, "regions/");
-	strcat(regionfilename, bedfilename);
-	strcat(regionfilename, ".txt");
-	fprintf(stderr, "Getting information from file: ");
-	fprintf(stderr, regionfilename);
-	fprintf(stderr, "\n");
 	inf = fopen(regionfilename, "r");
 	assert(inf != NULL);
-	if (inf == NULL) {fprintf(stderr, "Missing regions file: "); fprintf(stderr, regionfilename);}
+	if (inf == NULL) {fprintf(stderr, "Missing regions file: %s\n", regionfilename);}
 	//first time through file: get # regions
 	while (fgets(newLine, line_size, inf) != NULL) {
 		nregions++;
@@ -88,7 +78,7 @@ int main(int argc, char **argv){
     //// LOAD GENOTYPES ////
     ////////////////////////
 
-    get_coal_data_1kg_autosome_tped_thinned(&data, popstr, "strictMask", chromosome, "062215_2pm_nomultialleles", nlimiting);
+    get_coal_data_tped_vers(&data, tpedfilename, recomfilename);
     nminor = calloc(data.nsnp, sizeof(int));
     nmajor = calloc(data.nsnp, sizeof(int));
     //loop over SNPs
@@ -112,19 +102,9 @@ int main(int argc, char **argv){
     //// OUTFILE PREP ///
     /////////////////////
 
-    strcpy(filename,"bootstrap/thinned/");
-    strcat(filename, popstr);
-    strcat(filename, "_");
-    strcat(filename, argv[4]);
-    strcat(filename, "_");    
-    strcat(filename, bedfilename);
-    strcat(filename, "_ld_by_snp_pair_gapped.txt");
-    outf = fopen(filename, "w");
+    outf = fopen(outfilename, "w");
     assert(outf != NULL);
-    fprintf(stderr, "Writing to file: ");
-    fprintf(stderr, filename);
-    fprintf(stderr, "\n");
-
+    fprintf(stderr, "Writing to file: %s\n", outfilename);
 
 	/**************************************
 	 DATA ANALYSIS - LINKAGE DISEQUILIBRIUM
