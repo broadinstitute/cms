@@ -12,7 +12,7 @@ import util.file, util.json_helpers
 # external
 import boltons.iterutils
 import peewee as pw
-from playhouse import shortcuts as plsc # from pip module "peewee"
+from playhouse import fields as plfields # from pip module "peewee"
 
 log = logging.getLogger(__name__)
 
@@ -61,9 +61,9 @@ class PopulationSet(ScanTable):
     '''
     name              = pw.CharField()
     description       = pw.CharField()
-    populations       = plsc.ManyToManyField(Population, 
+    populations       = plfields.ManyToManyField(Population, 
                                                 related_name='population_sets')
-    super_populations = plsc.ManyToManyField(SuperPopulation, 
+    super_populations = plfields.ManyToManyField(SuperPopulation, 
                                           related_name='super_population_sets')
 
     def __str__(self):
