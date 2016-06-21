@@ -7,32 +7,29 @@ System dependencies
 
 To be described in greater detail...
 
-Python dependencies
+Manual Installation
 -------------------
 
-The **command line tools** require Python >= 2.7. Required packages are listed in requirements.txt and can be
-installed the usual pip way::
 
-  pip install -r requirements.txt
+Step 1: Install Conda
 
-Additionally, in order to use the **pipeline infrastructure**, Python 3.4
-is required (Python 2 is not supported) and you must install snakemake
-as well::
+To use conda, you need to install the `Conda package manager <http://conda.pydata.org/miniconda.html>`_ which is most easily obtained via the Miniconda Python distribution. Miniconda can be installed to your home directory without admin priviledges. On Broad Institute systems, you can make use of the ".anaconda3-4.0.0" dotkit.
 
-  pip install -r requirements-pipes.txt
+Step 2: Configure Conda
 
-However, most of the real functionality is encapsulated in the command line
-tools, which can be used without any of the pipeline infrastructure.
+Software used by the cms project is distributed through the bioconda channel for the conda package manager. It is necessary to add this channel to the conda config::
 
-You should either sudo pip install or use a virtualenv (recommended).
+  conda config --add channels bioconda
 
+Step 3: Make a conda environment and install cms
 
-Tool dependencies
------------------
+It is recommended to install cms into its own conda directory. This ensures its dependencies do not interfere with other conda packages installed on your system. A new conda environment can be created with the following command, which will also install relevant cms dependencies::
 
-A lot of effort has gone into writing auto download/compile wrappers for
-most of the bioinformatic tools we rely on here. They will auto-download
-and install the first time they are needed by any command. If you want
-to pre-install all of the external tools, simply type this::
+  conda env create -f=conda-environment.yml -n cms-env
 
-  python -m unittest test.unit.test_tools.TestToolsInstallation -v
+Step 4: Activate the cms environment
+
+In order to use cms, you will need to activate its conda environment::
+
+  source activate cms-env
+
