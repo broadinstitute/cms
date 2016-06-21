@@ -28,7 +28,8 @@ import pysam
 from boltons.timeutils import relative_time
 import numpy as np
 
-tool_version = '1.1.0a'
+TOOL_NAME = 'selscan'
+TOOL_VERSION = '1.1.0b'
 url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
@@ -324,22 +325,16 @@ class SelscanBaseTool(tools.Tool):
             os_type                 = self.get_os_type()
             binaryPath              = self.get_selscan_binary_path( os_type )
             
-            target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=binaryPath)
+            target_rel_path = 'selscan-{ver}/{binPath}'.format(ver=TOOL_VERSION, binPath=binaryPath)
             verify_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
-                                                                                ver=tool_version, binPath=binaryPath) 
+                                                                                ver=TOOL_VERSION, binPath=binaryPath) 
 
-            install_methods.append(
-                    DownloadAndBuildSelscan(  url.format( ver=tool_version ),
-                                            target_rel_path = target_rel_path,
-                                            verifycmd       = verify_command,
-                                            verifycode      = 1 # selscan returns exit code of 1 for the help text...
-                    )
-            )
+            install_methods.append(tools.CondaPackage(TOOL_NAME, version=TOOL_VERSION))
 
-        tools.Tool.__init__(self, install_methods = install_methods)
+        super(SelscanBaseTool, self).__init__(install_methods=install_methods)
 
     def version(self):
-        return tool_version
+        return TOOL_VERSION
 
     @classmethod
     def uncomment_line(cls, line):
@@ -561,16 +556,11 @@ class SelscanNormTool(SelscanBaseTool):
             os_type                 = self.get_os_type()
             normBinaryPath          = self.get_selscan_binary_path( os_type, binaryName="norm" )
             
-            target_norm_rel_path = 'selscan-{ver}/{binPath}'.format(ver=tool_version, binPath=normBinaryPath)
+            target_norm_rel_path = 'selscan-{ver}/{binPath}'.format(ver=TOOL_VERSION, binPath=normBinaryPath)
             verify_norm_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
-                                                                                ver=tool_version, binPath=normBinaryPath) 
+                                                                                ver=TOOL_VERSION, binPath=normBinaryPath) 
 
-            install_methods.extend([
-                    tools.DownloadPackage( url.format( ver=tool_version ),
-                                            target_rel_path = target_norm_rel_path,
-                                            verifycmd       = verify_norm_command,
-                                            verifycode      = 1 ) # norm --help returns exit code of 1
-            ])
+            install_methods.append(tools.CondaPackage(TOOL_NAME, version=TOOL_VERSION))
 
         tools.Tool.__init__(self, install_methods = install_methods)
 
@@ -688,7 +678,7 @@ class GenoRecord(list):
 
 class DownloadAndBuildSelscan(tools.DownloadPackage) :
     def post_download(self) :
-        selscanDir = os.path.join(self.destination_dir, 'selscan-{ver}'.format(ver=tool_version))
+        selscanDir = os.path.join(self.destination_dir, 'selscan-{ver}'.format(ver=TOOL_VERSION))
         selscanSrcDir = os.path.join(selscanDir,'src')
         # In this version, comment/uncomment the appropriate build flags
         makeFilePath = os.path.join(selscanSrcDir, 'Makefile')
