@@ -1,3 +1,3 @@
 #!/bin/bash
 
-nosetests cms/test/unit/test_tools.py
+py.test cms/test/unit/test_tools.py
