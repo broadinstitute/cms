@@ -1,4 +1,4 @@
-Description of the method
+About CMS
 ==========================
 
 *Composite of Multiple Signals (CMS)* refers to a family of tests applied to population genetic datasets in order to (i) identify genomic regions that may have been subject to strong recent positive selection (a 'sweep') and (ii) to narrow signals of selection within such regions, in order to identify tractable lists of candidate variants for experimental scrutiny. In both of these cases, CMS requires (a) phased variation data for several populations, along with (b) the identity of the ancestral allele for a majority of sites listed. It was developed with humans in mind (e.g., the 1000 Genomes Project) but could in principle be applied to any diploid species with data in VCF or TPED format. 
@@ -8,8 +8,7 @@ In its current instantiation (**'CMS 2.0'**), it includes scripts to (i) calcula
 .. image:: cms_2.0_pipeline.png
 
 Background
-----------------
-
+-------------------
 The method used in CMS is described in greater detail in the following papers:
 
 `A Composite of Multiple Signals distinguishes causal variants in regions of positive selection <https://doi.org/10.1126/science.1183863>`_ 
@@ -21,7 +20,7 @@ Grossman SR, Andersen KG, Shlyakhter I, Tabrizi S, Winnicki S, Yen A, Park DJ, G
 *Cell* 14 February 2013: **152** (4), 883-886.Published online 7 January 2010 [DOI:10.1016/j.cell.2013.01.035]
 
 Coalescent simulations
-----------------
+-------------------
 CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_, but it would theoretically be straightforward to substitute e.g. Hudson's ms.
 
 `Cosi2: an efficient simulator of exact and approximate coalescent with selection. <http://www.ncbi.nlm.nih.gov/pubmed/25150247>`_ 

@@ -1,9 +1,17 @@
 Command line tools
-==================
+=============================================================
 
-.. Class documentation pages described below (indent three spaces):
-.. toctree::
-    scans
-    cms_modeller
-    likes_from_model
-    composite
+
+
+
+scans.py - scans for signals of selection and related file conversion
+-------------------
+
+.. argparse::
+    :module:  scans
+    :func:    full_parser
+    :prog:    scans.py
+
+
+cms_modeller.py - exploratory demographic modelling of a population genetic dataset
+-------------------
