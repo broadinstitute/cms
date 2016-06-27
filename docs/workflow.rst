@@ -36,12 +36,11 @@ Demographic modeling
 
 CMS combines several semi-independent component tests for selection in a Bayesian or Machine Learning framework. In the former case, a demographic model for the species in question is critical in order to furnish posterior distributions of scores for said component tests under alternate hypotheses of neutrality or selection. Put otherwise: a demographic model is a (conjectural) descriptive historical account of our dataset, including population sizes and migration rates across time, that can be used to generate simulated data that 'looks like' our original dataset. We then simulate many scenarios of selection in order and calculate the distributions of component scores for adaptive, linked, and neutral variants. These distributions form the basis of our Bayesian classifier. We can also circumvent the need to define posterior score distributions by using simulated data as training data for Machine Learning implementations of CMS {LINK}. 
 
-	model.py? use argparse?
-		define neutral regions
-		calculate target stats
-		fit model
-			define topology
+Our modeling framework is designed to accomodate an arbitrary number of populations in a tree of arbitrary complexity; as such, it is designed to be exploratory, allowing users to iteratively perform optimizations while visualizing the effect on model goodness-of-fit. For rigorous demographic inference (i.e., in the case of a model with known topology and tractably few parameters), users may consider programs such as `dadi <https://bitbucket.org/gutenkunstlab/dadi>`_ or `diCal <https://sourceforge.net/projects/dical2/>`_. 
 
+Following `Schaffner et al 2005 <http://www.ncbi.nlm.nih.gov/pubmed/16251467>`_ , our framework calculates a range of population summary statistics as target values, and defines error as the Root Mean Square discrepancy between target and simulated values. These summary statistics are calculated by bootstrap estimate from user-specified putative neutral regions. For human populations, the `Neutral Regions Explorer <http://nre.cb.bscb.cornell.edu/nre/>`_ is a useful resource.
+
+The user must specify tree topology and ranges for parameter values. These can be added and removed as desired through the script params.py (??!). After target values have been estimated and model topology defined, the user can iteratively search through subsets of parameter-space using models.py (?!?) with a masterfile specifying search input. 
 
 Combining scores
 -------------------
