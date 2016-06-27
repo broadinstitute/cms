@@ -12,7 +12,7 @@ cms_modeller.py
 --------
 .. argparse::
     :module:  cms_modeller
-    :func:    full_parser
+    :func:    parser_bootstrap
     :prog:    cms_modeller.py    
 
 likes_from_model.py
