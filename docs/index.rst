@@ -16,4 +16,6 @@ Contents
    description
    install
    cmdline
+   scans
+   cms_modeller
    workflow
