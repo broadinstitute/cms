@@ -22,7 +22,7 @@ def parser_bootstrap():
 	parser.add_argument('-out',type=str,default=None)
 	subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser
-__commands__.append('bootstrap', parser_bootstrap)
+__commands__.append(('bootstrap', parser_bootstrap))
 
 def full_parser():
     return util.cmd.make_parser(__commands__, __doc__)
