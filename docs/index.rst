@@ -13,8 +13,8 @@ Contents
    :maxdepth: 2
    :numbered:
 
-   description
    install
+   description
    cmdline
    scans
    cms_modeller

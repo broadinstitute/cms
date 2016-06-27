@@ -17,14 +17,17 @@ def cms_modeller_parser():
 def main():
 	parser = cms_modeller_parser()
 	parsed=parser.parse_args()
-	if not parsed.tped:
-	    print "Need input tped filename"
-	    sys.exit(1)
-	if not parsed.out:
-	    print "Need output filename"
-	    sys.exit(1)
+
 	if parsed.subcommand == "bootstrap":
 		print "bootstrap!"
+
+		if not parsed.tped:
+		    print "Need input tped filename"
+		    sys.exit(1)
+		if not parsed.out:
+		    print "Need output filename"
+		    sys.exit(1)
+
 	elif parsed.grid:
 		print "grid!"
 	else:
