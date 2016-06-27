@@ -1,4 +1,4 @@
-cms_modeller.py - tools for exploratory demographic modelling of a population genetic dataset
+cms_modeller.py - exploratory demographic modelling of a population genetic dataset
 =============================================================================
 
 .. argparse::

@@ -11,6 +11,11 @@ def cms_modeller_parser():
 	parser.add_argument('-recom',type=str,default=None)
 	parser.add_argument('-regions',type=str,default=None)
 	parser.add_argument('-out',type=str,default=None)
+	return parser
+
+
+def main():
+	parser = cms_modeller_parser()
 	parsed=parser.parse_args()
 	if not parsed.tped:
 	    print "Need input tped filename"
@@ -18,11 +23,6 @@ def cms_modeller_parser():
 	if not parsed.out:
 	    print "Need output filename"
 	    sys.exit(1)
-	return parsed
-
-
-def main():
-	parsed = cms_modeller_parser()
 	if parsed.subcommand == "bootstrap":
 		print "bootstrap!"
 	elif parsed.grid:
