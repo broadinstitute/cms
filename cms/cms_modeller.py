@@ -11,8 +11,8 @@ __commands__ = []
 
 
 def parser_bootstrap():
-	parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data")
-	parser.help = '''test test'''
+	parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data", help="test foobar apricots")
+	#parser.help = '''test test'''
 	parser.add_argument('subcommand', type=str, default="bootstrap", help="this is required")
 	parser.add_argument('-tped',type=str,default=None)
 	parser.add_argument('-recom',type=str,default=None)
