@@ -1,7 +1,6 @@
 Command line tools
 =============================================================
 
-
 scans.py - scans for signals of selection and related file conversion2
 -------------------
 .. argparse::
@@ -11,10 +10,7 @@ scans.py - scans for signals of selection and related file conversion2
 
 cms_modeller.py - exploratory demographic modelling of a population genetic dataset
 -------------------
-.. argparse::
-    :module:  cms_modeller
-    :func:    cms_modeller_parser
-    :prog:    cms_modeller.py
+
 
 likes_from_model.py - tools to generate probability distributions of CMS 2.0 component scores from a demographic model
 -------------------
