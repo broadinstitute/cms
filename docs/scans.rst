@@ -1,4 +1,4 @@
-scans.py - scans for signals of selection and related file conversion
+scans.py - scans for signals of selection and related file conversion1
 =============================================================
 
 .. argparse::
