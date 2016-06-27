@@ -16,7 +16,7 @@ def parser_bootstrap(parser):
 	if parser == None:
 		parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data as part of CMS 2.0 package.\nSource code and binaries can be found at https://github.com/broadinstitute/cms>")
 	#parser.help = '''test test'''
-	parser.add_argument('subcommand', type=str, default="bootstrap", help="also a test")
+	#parser.add_argument('subcommand', type=str, default="bootstrap", help="also a test")
 	parser.add_argument('-tped',type=str,default=None)
 	parser.add_argument('-recom',type=str,default=None)
 	parser.add_argument('-regions',type=str,default=None)
