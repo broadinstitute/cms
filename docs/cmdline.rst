@@ -1,14 +1,14 @@
 Command line tools
-=============================================================
+===============================
 
-scans.py - scans for signals of selection and related file conversion2
--------------------
+Contents
+--------
 
-cms_modeller.py - exploratory demographic modelling of a population genetic dataset
--------------------
+.. toctree::
+   :maxdepth: 2
+   :numbered:
 
-likes_from_model.py - tools to generate probability distributions of CMS 2.0 component scores from a demographic model
--------------------
-
-composite.py - tools for combining component scores in CMS 2.0 framework
--------------------
+   scans
+   cms_modeller
+   likes_from_model
+   composite
