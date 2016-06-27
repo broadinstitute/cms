@@ -20,8 +20,8 @@ def parser_bootstrap():
 	subparser = subparsers.add_parser('install', help='install help')
 	subparser.add_argument('ref', type=str, help='foo1 help')
 
-	parser.add_argument('-recom',type=str,default=None)
-	parser.add_argument('-regions',type=str,default=None)
-	parser.add_argument('-out',type=str,default=None)
-	subparsers = parser.add_subparsers(title='subcommands', dest='command')
+	#parser.add_argument('-recom',type=str,default=None)
+	#parser.add_argument('-regions',type=str,default=None)
+	#parser.add_argument('-out',type=str,default=None)
+	#subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser
