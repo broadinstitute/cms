@@ -21,7 +21,7 @@ def parser_bootstrap(parser):
 	parser.add_argument('-recom',type=str,default=None)
 	parser.add_argument('-regions',type=str,default=None)
 	parser.add_argument('-out',type=str,default=None)
-	subparsers = parser.add_subparsers(title='subcommands', dest='command')
+	#subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser
 __commands__.append(('bootstrap', parser_bootstrap))
 
