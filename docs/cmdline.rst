@@ -1,14 +1,11 @@
-Command line tools
+    Command line tools
 ===============================
 
-Contents
+scans.py
 --------
-
-.. toctree::
-   :maxdepth: 2
-   :numbered:
-
-   scans
-   cms_modeller
-   likes_from_model
-   composite
+    .. argparse::
+    :module:  scans
+    :func:    full_parser
+    :prog:    scans.py
+    
+    
