@@ -1,3 +1,5 @@
+''' test docstring hurrah ''' 
+
 ## experimental. //cd model_target_stats.c? last updated: 06.27.16 vitti@broadinstitute.org
 ## usage: python cms_modeller.py {bootstrap/grid} -tped {infile} ....
 
