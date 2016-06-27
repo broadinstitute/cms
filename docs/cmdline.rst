@@ -18,13 +18,13 @@ cms_modeller.py
 likes_from_model.py
 --------
 .. argparse::
-    :module:  scans
-    :func:    full_parser
+    :module:  likes_from_model
+    :func:    parser_likes
     :prog:    likes_from_model.py    
 
 composite.py
 --------
 .. argparse::
-    :module:  scans
+    :module:  composite
     :func:    full_parser
     :prog:    composite.py    
