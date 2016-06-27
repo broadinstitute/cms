@@ -16,7 +16,7 @@ def parser_bootstrap():
 	parser.add_argument('subcommand', type=str, default="bootstrap", help="this is required")
 	parser.add_argument('-tped',type=str,default=None)
 
-	subparsers = parser.add_subparsers
+	subparsers = parser.add_subparsers()
 	subparser = subparsers.add_parser('install', help='install help')
 	subparser.add_argument('ref', type=str, help='foo1 help')
 
