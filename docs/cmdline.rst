@@ -11,8 +11,8 @@ scans.py
 cms_modeller.py
 --------
 .. argparse::
-    :module:  scans
-    :func:    full_parser
+    :module:  cms_modeller
+    :func:    cms_modeller_parser
     :prog:    cms_modeller.py    
 
 likes_from_model.py
