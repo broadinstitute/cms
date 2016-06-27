@@ -26,5 +26,5 @@ composite.py
 --------
 .. argparse::
     :module:  composite
-    :func:    full_parser
+    :func:    parser_composite
     :prog:    composite.py    
