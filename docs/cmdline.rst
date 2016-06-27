@@ -8,9 +8,23 @@ scans.py
     :func:    full_parser
     :prog:    scans.py
     
-scans2.py
+cms_modeller.py
 --------
 .. argparse::
     :module:  scans
     :func:    full_parser
-    :prog:    scans22.py    
+    :prog:    cms_modeller.py    
+
+likes_from_model.py
+--------
+.. argparse::
+    :module:  scans
+    :func:    full_parser
+    :prog:    likes_from_model.py    
+
+composite.py
+--------
+.. argparse::
+    :module:  scans
+    :func:    full_parser
+    :prog:    composite.py    
