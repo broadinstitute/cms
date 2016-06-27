@@ -4,5 +4,6 @@ Command line tools
 .. Class documentation pages described below (indent three spaces):
 .. toctree::
     scans
-    cmd_modeller
-
+    cms_modeller
+    likes_from_model
+    composite

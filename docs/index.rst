@@ -13,9 +13,7 @@ Contents
    :maxdepth: 2
    :numbered:
 
-   install
    description
+   install
    cmdline
-   scans
-   cms_modeller
    workflow

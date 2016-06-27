@@ -8,7 +8,7 @@ In its current instantiation (**'CMS 2.0'**), it includes scripts to (i) calcula
 .. image:: cms_2.0_pipeline.png
 
 Background
-==========================
+----------------
 
 The method used in CMS is described in greater detail in the following papers:
 
@@ -21,7 +21,7 @@ Grossman SR, Andersen KG, Shlyakhter I, Tabrizi S, Winnicki S, Yen A, Park DJ, G
 *Cell* 14 February 2013: **152** (4), 883-886.Published online 7 January 2010 [DOI:10.1016/j.cell.2013.01.035]
 
 Coalescent simulations
-==========================
+----------------
 CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_, but it would theoretically be straightforward to substitute e.g. Hudson's ms.
 
 `Cosi2: an efficient simulator of exact and approximate coalescent with selection. <http://www.ncbi.nlm.nih.gov/pubmed/25150247>`_ 
