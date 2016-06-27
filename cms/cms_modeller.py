@@ -1,5 +1,3 @@
-"""This is a test; foobarxyz"""
-
 ## experimental. //cd model_target_stats.c? last updated: 06.27.16 vitti@broadinstitute.org
 ## usage: python cms_modeller.py {bootstrap/grid} -tped {infile} ....
 
@@ -24,14 +22,14 @@ def parser_bootstrap():
 	subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser
 
-__commands__.append(('bootstrap_pppp', parser_bootstrap))
+#__commands__.append(('bootstrap_pppp', parser_bootstrap))
 
-def full_parser():
-    return util.cmd.make_parser(__commands__, __doc__)
+#def full_parser():
+ #   return util.cmd.make_parser(__commands__, __doc__)
 
-def main():
+#def main():
 
-	util.cmd.main_argparse(__commands__, __doc__)
+#	util.cmd.main_argparse(__commands__, __doc__)
 
 	#parser = cms_modeller_parser()
 	#parsed=parser.parse_args()
