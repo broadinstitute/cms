@@ -51,4 +51,4 @@ def main():
 	#else:
 	#	print "foobar!"
 
-main()
+#main()
