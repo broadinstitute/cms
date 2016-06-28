@@ -1,22 +1,14 @@
-## experimental; one of CMS 2.0 suite top-level scripts. last updated: 06.27.16 vitti@broadinstitute.org
-## usage: python composite.py {model} {selpop} {altpops} {combination}
+## top-level script for combining scores into composite statistics as part of CMS 2.0.
+## last updated: 06.28.16 vitti@broadinstitute.org
 
-import sys
 import argparse
-import util.cmd
+import sys
 
-__author__   = "vitti@broadinstitute.org"
-__commands__ = []
+def full_parser_composite():
+	parser=argparse.ArgumentParser(description="This script contains command-line utilities for combining component statistics -- i.e., the final step of the CMS 2.0 pipeline.")
+	subparsers = parser.add_subparsers(help="sub-commands")
 
+	bayesian_parser = subparsers.add_parser('bayesian', help='default algorithm and weighting')
+	bayesian_parser.add_argument('inputparamfile', action='store', help='file with specifications for input')
 
-
-def parser_composite():
-	parser=argparse.ArgumentParser(description="composite of multiple signals")
-	parser.help = '''test test'''
-	parser.add_argument('subcommand', type=str, default="bootstrap", help="this is required")
-	#parser.add_argument('-tped',type=str,default=None)
-	#parser.add_argument('-recom',type=str,default=None)
-	#parser.add_argument('-regions',type=str,default=None)
-	parser.add_argument('-out',type=str,default=None)
-	subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser

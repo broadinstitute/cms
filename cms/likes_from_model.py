@@ -1,25 +1,14 @@
-## experimental; one of CMS 2.0 suite top-level scripts. last updated: 06.27.16 vitti@broadinstitute.org
-## usage: python likes_from_model.py {}
+## top-level script for generating probability distributions for component scores as part of CMS 2.0.
+## last updated: 06.28.16 vitti@broadinstitute.org
 
-## experimental. //cd model_target_stats.c? last updated: 06.27.16 vitti@broadinstitute.org
-## usage: python cms_modeller.py {bootstrap/grid} -tped {infile} ....
-
-import sys
 import argparse
-import util.cmd
+import sys
 
-__author__   = "vitti@broadinstitute.org"
-__commands__ = []
+def full_parser_likes_from_model():
+	parser=argparse.ArgumentParser(description="This script contains command-line utilities for generating probability distributions for component scores from pre-specified demographic model(s).")
+	subparsers = parser.add_subparsers(help="sub-commands")
 
+	run_sims_parser = subparsers.add_parser('run_sims', help='run simulations')
+	run_sims_parser.add_argument('inputparamfile', action='store', help='file with specifications for input')
 
-
-def parser_likes():
-	parser=argparse.ArgumentParser(description="generation of likelihood tables")
-	parser.help = '''test test wahoo'''
-	parser.add_argument('subcommand', type=str, default="bootstrap", help="this is required")
-	#parser.add_argument('-tped',type=str,default=None)
-	#parser.add_argument('-recom',type=str,default=None)
-	#parser.add_argument('-regions',type=str,default=None)
-	#parser.add_argument('-out',type=str,default=None)
-	subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser

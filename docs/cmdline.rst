@@ -19,12 +19,12 @@ likes_from_model.py
 --------
 .. argparse::
     :module:  likes_from_model
-    :func:    parser_likes
+    :func:    full_parser_likes_from_model
     :prog:    likes_from_model.py    
 
 composite.py
 --------
 .. argparse::
     :module:  composite
-    :func:    parser_composite
+    :func:    full_parser_composite
     :prog:    composite.py    
