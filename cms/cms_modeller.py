@@ -87,7 +87,7 @@ def execute_grid(args):
 #def main():
 print "halleloo"
 runparser = full_parser_cms_modeller()
-args = runparser.parse_args(sys.argv)
+#args = runparser.parse_args(sys.argv)
 subcommand = sys.argv[1]
 	#eval('execute_' + subcommand + "(args)") #points to functions defined above, which wrap other programs in the pipeline
 	
