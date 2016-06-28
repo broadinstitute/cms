@@ -36,7 +36,7 @@ def full_parser_likes_from_model():
 
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='get component score probability distributions from scores')
 	#input: inherited
-	return parse
+	return parser
 
 #####################
 ## AUX. FUNCTIONS ###
