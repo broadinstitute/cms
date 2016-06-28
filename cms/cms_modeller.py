@@ -18,17 +18,16 @@ def full_parser_cms_modeller():
 	## CALCULATE TARGET ##
 	#######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='perform per-site(/per-site-pair) calculations of population summary statistics for model target values')
-	target_stats_parser.add_argument('tpeds', action='store', help='comma-delimited list of input tped files (i.e., for all populations to jointly model)')
+	target_stats_parser.add_argument('tpeds', action='store', help='comma-delimited list of input tped files (i.e., for all populations to jointly model)',type=list)
 	target_stats_parser.add_argument('recom', action='store', help='recombination map') #check consistent with used to create tped
 	target_stats_parser.add_argument('regions', action='store', help='putative neutral regions') #make this optional and/or TSV
 	target_stats_parser.add_argument('out', action='store', help='outfile prefix') 
 	
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics in order to finalize model target values')
-	#bootstrap_parser.add_argument('n', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
-	#bootstrap_parser.add_argument('in', action='store', help='infile with per-site(/per-site-pair) calculations') 
-	#bootstrap_parser.add_argument('out', action='store', help='outfile prefix') 
-	#INPUT: nbootstrapreps, outputfile, -g-w- inputFILES from above, currently get_neutral_targetstats_from_bootstrap.py includes func to point to outfiles from above. rely on user to concatenate them manually?
-
+	bootstrap_parser.add_argument('n', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
+	bootstrap_parser.add_argument('ins', action='store', help='comma-delimited list of infiles with per-site(/per-site-pair) calculations. For bootstrap estimates of genome-wide values, should first concatenate per-chrom files)') 
+	bootstrap_parser.add_argument('out', action='store', help='outfile prefix') 
+	
 	######################
 	## VISUALIZE MODEL  ##
 	######################
@@ -57,23 +56,30 @@ def full_parser_cms_modeller():
 ######################
 
 def execute_target_stats(args):
-	npops = len(args.tpeds)
+	inputtpedstring = ''.join(args.tpeds)
+	inputtpeds = inputtpedstring.split(',')
+	npops = len(inputtpeds)
 	print "calculating summary statistics for " +  str(npops) + " populations..."
 	allCmds = []
 	for ipop in range(npops):
-		inputtped = args.tpeds[ipop]
+		inputtped = inputtpeds[ipop]
 		freqCmd = ['bootstrap_freq_popstats_regions ', inputtped, args.recom, args.regions, args.out + "_freqs_" + str(ipop)]
 		ldCmd = ['bootstrap_ld_popstats_regions ', inputtped, args.recom, args.regions, args.out + "_ld_" + str(ipop)]
 		allCmds.extend([freqCmd, ldCmd])
 		for jpop in range(ipop+1, npops):
-			inputtped2 = args.tpeds[jpop]
-			fstCmd = ['bootstrap_fst_popstats_regions ', inputtped1, inputtped2, args.recom, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
+			inputtped2 = inputtpeds[jpop]
+			fstCmd = ['bootstrap_fst_popstats_regions ', inputtped, inputtped2, args.recom, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
 			allCmds.append(fstCmd)
+	#print allCmds
 	for command in allCmds:
 		command = [str(x) for x in command]
 		subprocess.check_call( command )
 	return
 def execute_bootstrap(args):
+	inputestimatefilenames = ''.join(args.ins)
+	inputfilenames = inputestimatefilenames.split(',')
+	npops = len(inputfilenames)
+	print "estimating bootstrap values of summary statistics for " + str(npops) + " populations..."
 	return
 def execute_point(args):
 	return
@@ -85,11 +91,11 @@ def execute_grid(args):
 ##########
 
 if __name__ == '__main__':
-#def main():
-	print "halleloo"
+	#print "halleloo"
 	runparser = full_parser_cms_modeller()
-	#args = runparser.parse_args()
+	args = runparser.parse_args()
 	subcommand = sys.argv[1]
-	#eval('execute_' + subcommand + "(args)") #points to functions defined above, which wrap other programs in the pipeline
+	function_name = 'execute_' + subcommand + "(args)"
+	print function_name
+	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline
 	
-#main()
