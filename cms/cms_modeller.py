@@ -8,15 +8,13 @@ import sys
 #############################
 ## DEFINE ARGUMENT PARSER ###
 #############################
-
 def full_parser_cms_modeller():
-	"""parser execution/documentation for this script"""
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for exploratory fitting of demographic models to population genetic data.")
 	subparsers = parser.add_subparsers(help="sub-commands")
 
 	######################
 	## CALCULATE TARGET ##
-	#######################
+	######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='perform per-site(/per-site-pair) calculations of population summary statistics for model target values')
 	target_stats_parser.add_argument('tpeds', action='store', help='comma-delimited list of input tped files (i.e., for all populations to jointly model)',type=list)
 	target_stats_parser.add_argument('recom', action='store', help='recombination map') #check consistent with used to create tped
@@ -33,28 +31,26 @@ def full_parser_cms_modeller():
 	######################
 
 	point_parser = subparsers.add_parser('point', help='run simulates of a point in parameter-space')
-	#point_parser.add_argument('modelfile', help='demographic model in cosi format')
-	#point_parser.add_argument('recomfile', help='recombination map')
-	#point_parser.add_argument('targetvalsfile', help='targetvalsfile for model')	
-	#INPUT: modelfile, targetvalsfile, writelocation for graphics
-
+	point_parser.add_argument('n', help='num reps', type=int)
+	point_parser.add_argument('modelfile', help='demographic model in cosi format')
+	point_parser.add_argument('recomfile', help='recombination map')
+	point_parser.add_argument('targetvalsfile', help='targetvalsfile for model')	
+	
 	#########################
 	## FIT MODEL TO TARGET ##
 	#########################
 
 	grid_parser = subparsers.add_parser('grid', help='run grid search')
-	#grid_parser.add_argument('inputparamfile', action='store', help='file with specifications of grid search')
-	#do from command line? dimensions to vary etc?
+	grid_parser.add_argument('grid_inputdimensionsfile', action='store', help='file with specifications of grid search') #must be defined for each search 
 
-	#optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
-	#optimize_parser.add_argument('inputparamfile', action='store', help='file with specifications of optimization search to run')
+	optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
+	optimize_parser.add_argument('optimize_inputdimensionsfile', action='store', help='file with specifications of optimization search to run')
 
 	return parser
 
 #####################
 ## AUX. FUNCTIONS ###
 ######################
-
 def execute_target_stats(args):
 	inputtpedstring = ''.join(args.tpeds)
 	inputtpeds = inputtpedstring.split(',')
@@ -80,22 +76,27 @@ def execute_bootstrap(args):
 	inputfilenames = inputestimatefilenames.split(',')
 	npops = len(inputfilenames)
 	print "estimating bootstrap values of summary statistics for " + str(npops) + " populations..."
+	print "MUST CONNECT PIPELINE from cms_modeller.py TO get_neutral_targetstats_from_bootstrap.py"
 	return
 def execute_point(args):
+	print "generating " + str(n) + " simulations from model: " + args.modelfile
+	print "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
 	return
 def execute_grid(args):
+	print "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
+	print "MUST CONNECT PIPELINE from cms_modeller.py TO grid.py"
+	return
+def execute_optimize(args):
+	print "loading dimensions to search from: " + args.optimize_inputdimensionsfile
+	print "MUST CONNECT PIPELINE from cms_modeller.py TO optimize.py (; optimize_out.py...)"
 	return
 
 ##########
 ## MAIN ##
 ##########
-
 if __name__ == '__main__':
-	#print "halleloo"
 	runparser = full_parser_cms_modeller()
 	args = runparser.parse_args()
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
-	print function_name
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline
-	
