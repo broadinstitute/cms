@@ -7,7 +7,7 @@ import util.cmd
 
 def full_parser_cms_modeller():
 	parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data")
-	subparser = parser.add_subparsers(help="sub-commands")
+	subparsers = parser.add_subparsers(help="sub-commands")
 
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics for model target values')
 	bootstrap_parser.add_argument('tped', action='store', help='input tped file')
