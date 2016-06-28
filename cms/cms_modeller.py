@@ -1,29 +1,33 @@
-''' test docstring hurrah ''' 
-
-## experimental. //cd model_target_stats.c? last updated: 06.27.16 vitti@broadinstitute.org
-## usage: python cms_modeller.py {bootstrap/grid} -tped {infile} ....
+## experimental. last updated: 06.27.16 vitti@broadinstitute.org
+## usage: python cms_modeller.py {subcommand: bootstrap / grid / }
 
 import sys
 import argparse
 import util.cmd
 
-__author__   = "vitti@broadinstitute.org"
-__commands__ = []
+def full_parser_cms_modeller():
+	parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data")
+	subparser = parser.add_subparsers(help="sub-commands")
 
+	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics for model target values')
+	bootstrap_parser.add_argument('tped', action='store', help='input tped file')
 
+	grid_parser = subparsers.add_parser('grid', help='run grid search')
+	grid_parser.add_argument('inputparamfile', action='store', help='file with specifications of grid search')
+
+	return parser
 
 def parser_bootstrap():
-	parser=argparse.ArgumentParser(description="exploratory fitting of demographic models to population genetic data")
-	#parser.help = '''test test'''
-	parser.add_argument('subcommand', type=str, default="bootstrap", help="this is required")
+	
+	parser.add_argument('subcommand', type=str, default="bootstrap", help="subcommand: bootstrap / grid / gradient ...")
 	parser.add_argument('-tped',type=str,default=None)
 
-	subparsers = parser.add_subparsers()
-	subparser = subparsers.add_parser('install', help='install help')
-	subparser.add_argument('ref', type=str, help='foo1 help')
+	parser.add_argument("--verbose", help="increase output verbosity",
+                    action="store_true")
 
-	#parser.add_argument('-recom',type=str,default=None)
-	#parser.add_argument('-regions',type=str,default=None)
-	#parser.add_argument('-out',type=str,default=None)
-	#subparsers = parser.add_subparsers(title='subcommands', dest='command')
 	return parser
+
+
+#args = parser.parse_args()
+#if args.verbose:
+#    print("verbosity turned on")
