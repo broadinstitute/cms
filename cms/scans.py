@@ -27,12 +27,12 @@ class Selection(object):
 
 # File conversion parser to create selscan-compatible input, including population filtering
 
-def parser_selscan_file_conversion(parser=argparse.ArgumentParser(description="test foo bar")):
+def parser_selscan_file_conversion(parser=argparse.ArgumentParser()):
     """
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
             tped file of the sort expected by selscan. 
     """
-    parser.description = """This function converts an input VCF into a TPED file usable by selscan.
+    parser.help = """This function converts an input VCF into a TPED file usable by selscan.
                      It can optionally filter samples by population given a callsample file, and by ancestral call quality."""
 
     parser.add_argument("inputVCF", help="Input VCF file")
