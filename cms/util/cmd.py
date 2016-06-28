@@ -94,7 +94,7 @@ def make_parser(commands, description):
         parser.add_argument('--version', '-V', action='version', version=__version__, help=argparse.SUPPRESS)
         subparsers = parser.add_subparsers(title='subcommands', dest='command')
         for cmd_name, cmd_parser in commands:
-            p = subparsers.add_parser(cmd_name)
+            p = subparsers.add_parser(cmd_name, help=cmd_parser.__doc__)
             cmd_parser(p)
     return parser
 
