@@ -1,7 +1,7 @@
 ## top-level script for demographic modeling as part of CMS 2.0. (assumes C programs have been compiled in same directory)
 ## last updated: 06.28.16 vitti@broadinstitute.org
 
-import subcommand
+import subprocess
 import argparse
 import sys
 
