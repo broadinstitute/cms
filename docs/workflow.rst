@@ -1,7 +1,7 @@
 Sample workflow
 =============================================================
 
-CMS provides a computational framework to explore signals of natural selection in diploid organisms. This document describes how to do so at an abstract level. {LINK to a sample results paper?} For a more technical description, see {LINK? command line tools}.
+CMS provides a computational framework to explore signals of natural selection in diploid organisms. This section describes how to do so at an abstract level. 
 
 Preliminary considerations
 -------------------
@@ -23,14 +23,6 @@ CMS requires the user to provide population genetic (i.e., within-species) diver
 - In most cases, the user will want to provide a **genetic recombination map**. If this is unavailable, CMS will assume uniform recombination rates when calculating haplotype scores. Human recombination maps are available from the `HapMap Project <http://hapmap.ncbi.nlm.nih.gov/downloads/recombination/>`_.
 - CMS works with `TPED <http://varianttools.sourceforge.net/Format/Tped>`_ datafiles, and includes support to convert from `VCF <http://samtools.github.io/hts-specs/VCFv4.3.pdf>`_ using the command line tool scans.py. {LINK}
 
-
-Calculating selection statistics
--------------------
-
-CMS packages a number of previously described population genetic tests for recent positive selection. Haplotype scores are calculated using `selscan <https://github.com/szpiech/selscan/>`_. 
-	-> scans.py (should I build off of this or make new scripts?)
-
-
 Demographic modeling
 -------------------
 
@@ -41,6 +33,11 @@ Our modeling framework is designed to accomodate an arbitrary number of populati
 Following `Schaffner et al 2005 <http://www.ncbi.nlm.nih.gov/pubmed/16251467>`_ , our framework calculates a range of population summary statistics as target values, and defines error as the Root Mean Square discrepancy between target and simulated values. These summary statistics are calculated by bootstrap estimate from user-specified putative neutral regions. For human populations, the `Neutral Regions Explorer <http://nre.cb.bscb.cornell.edu/nre/>`_ is a useful resource.
 
 The user must specify tree topology and ranges for parameter values. These can be added and removed as desired through the script params.py (??!). After target values have been estimated and model topology defined, the user can iteratively search through subsets of parameter-space using models.py (?!?) with a masterfile specifying search input. 
+
+Calculating selection statistics
+-------------------
+
+CMS packages a number of previously described population genetic tests for recent positive selection. Haplotype scores are calculated using `selscan <https://github.com/szpiech/selscan/>`_. 
 
 Combining scores
 -------------------
@@ -54,3 +51,5 @@ CMS is motivated by the need to resolve signals of selection -- that is, to iden
 
 Localizing signals
 -------------------
+
+Once regions are defined, we can reapply our composite framework in order to thin our list of candidate variants for further scrutiny and prioritize those sites that have the strongest evidence of selection (or other compelling evidence, e.g. overlap with known or predicted functional elements).
