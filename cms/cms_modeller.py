@@ -90,4 +90,4 @@ def main():
 	subcommand = sys.argv[1]
 	eval('execute_' + subcommand + "(args)") #points to functions defined above, which wrap other programs in the pipeline
 	
-main()
+#main()
