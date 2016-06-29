@@ -5,7 +5,7 @@
 ## last updated: 06.04.16 	vitti@broadinstitute.org
 ## JV: MORE WORK NEEDED HERE; esp, checkFailed
 
-import params
+import params 
 import subprocess
 import math
 import sys
