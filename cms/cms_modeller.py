@@ -2,7 +2,7 @@
 #(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
 ## last updated: 06.29.16 vitti@broadinstitute.org
 
-import model.bootstrap_func, model.params, model.parse, model.error, model.draw_tree
+import model.bootstrap_func, model.params, model.parse, model.error
 import subprocess
 import argparse
 import sys
