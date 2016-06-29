@@ -2,7 +2,8 @@
 #(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
 ## last updated: 06.29.16 vitti@broadinstitute.org
 
-from model.bootstrap_func import *
+import model.bootstrap_func
+import model.parse
 import subprocess
 import argparse
 import sys
@@ -256,7 +257,7 @@ def execute_bootstrap(args):
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
 			print "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs for "".\n"
-			
+
 	writefile.close()
 	print "wrote to file: " + targetstats_filename
 	return
