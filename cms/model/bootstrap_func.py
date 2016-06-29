@@ -26,7 +26,7 @@ def checkFileExists(filename):
 		return False
 def readFreqsFile(filename):
 	"""returns parallel lists of lists, separated by region"""
-	print "reading from: " + filename
+	#print "reading from: " + filename
 	nregions, nsnps, totallen = 0, 0, 0
 	allpi, allnderiv, allnanc = [], [], []
 	seqlens = []
@@ -57,12 +57,12 @@ def readFreqsFile(filename):
 			pi, nderiv, nanc = [], [], []
 	openfile.close()
 	assert len(seqlens) == nregions
-	print "\tlogged frequency values for " + str(nsnps) + " SNPS across " + str(nregions) + " regions covering " + str(totallen) + " bp."
+	#print "\tlogged frequency values for " + str(nsnps) + " SNPS across " + str(nregions) + " regions covering " + str(totallen) + " bp."
 	return allpi, allnderiv, allnanc, nregions, seqlens
 def readLDFile(filename, dprimecutoff = .2):
 	"""returns parallel lists of lists, separated by region
 	D' filters on MAF > .2 for both loci. (r2 previously filtered sings/doubs)"""
-	print "reading from: " + filename
+	#print "reading from: " + filename
 	nregions, npairs = 0, 0
 	alldists, allr2 = [], []
 	allgendists, alldprime = [], []
@@ -108,8 +108,8 @@ def readLDFile(filename, dprimecutoff = .2):
 	alldprime.append(dprime)
 	openfile.close()
 
-	print "\tlogged r2 values for " + str(r2_snppairs) + " SNP pairs across " + str(r2_reg) + " regions."
-	print "\tlogged dprime values for " + str(dprime_snppairs) + " SNP pairs across " + str(dprime_reg) + " regions, using MAF cutoff of " + str(dprimecutoff) +"."
+	#print "\tlogged r2 values for " + str(r2_snppairs) + " SNP pairs across " + str(r2_reg) + " regions."
+	#print "\tlogged dprime values for " + str(dprime_snppairs) + " SNP pairs across " + str(dprime_reg) + " regions, using MAF cutoff of " + str(dprimecutoff) +"."
 	return alldists, allr2, allgendists, alldprime, r2_reg, dprime_reg
 def readFstFile(filename):
 	"""returns parallel lists of lists, separated by regions"""
@@ -130,7 +130,7 @@ def readFstFile(filename):
 				nsnps += len(fst)
 			fst = []
 	openfile.close()
-	print "\tlogged fst values for " + str(nsnps) + " snps across " + str(nregions) + " regions."
+	#print "\tlogged fst values for " + str(nsnps) + " snps across " + str(nregions) + " regions."
 	return allfst, nregions
 
 ####################################
