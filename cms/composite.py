@@ -1,5 +1,5 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 06.28.16 vitti@broadinstitute.org
+## last updated: 07.02.16 vitti@broadinstitute.org
 
 import subprocess
 import argparse
