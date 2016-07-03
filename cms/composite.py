@@ -12,6 +12,18 @@ def full_parser_composite():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for combining component statistics -- i.e., the final step of the CMS 2.0 pipeline.")
 	subparsers = parser.add_subparsers(help="sub-commands")
 
+	###############
+	## POP PAIRS ##
+	###############
+	poppair_parser = subparser.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
+	poppair_parser.add_argument('in_ihs_file1', help="file with normalized iHS values for putative selpop", action="store")
+	poppair_parser.add_argument('in_ihs_file2', help="file with normalized iHS values for altpop", action="store")
+	poppair_parser.add_argument('in_ihs_file1', help="file with normalized iHS values for putative selpop", action="store")
+	poppair_parser.add_argument('in_delihh_file2', help="file with normalized delIhh values for altpop", action="store")
+	poppair_parser.add_argument('in_delihh_file1', help="file with normalized delIhh values for putative selpop", action="store")	
+	poppair_parser.add_argument('in_xp_file', help="file with normalized XP-EHH values", action="store") #reversed? 0T 1F
+	poppair_parser.add_argument('in_fst_deldaf_file', help="file with Fst and delDAF values", action="store") #reversed? 0T 1F
+
 	#################
 	## GENOME-WIDE ##
 	#################
@@ -29,7 +41,12 @@ def full_parser_composite():
 
 #####################
 ## AUX. FUNCTIONS ###
-######################
+#####################
+def execute_poppair(args):
+	cmd = "./combine_cms_scores_poppairs "
+	#<chrom> <selpop> <otherpop> <ihs1filename> <delihh1filename> <xpfilename> <xp reversed? 0T 1F> <fst_deldaffilename> <deldaf reversed? 0T 1F>\n");
+	print "must finalize connection to combine_cms_scores_poppairs"
+	return
 def execute_bayesian_gw(args):
 	print "must connect composite.py to combine_cms framework"
 	return

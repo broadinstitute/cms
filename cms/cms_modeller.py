@@ -263,14 +263,16 @@ def execute_bootstrap(args):
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
 	print "generating " + str(n) + " simulations from model: " + args.modelfile
-	print "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
+	#calls to samplePoint from error.py
+	#print "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
 	return
 def execute_grid(args):
-	''' '''
+	'''run points in parameter-space according to specified grid'''
 	print "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
 	print "MUST CONNECT PIPELINE from cms_modeller.py TO grid.py"
 	return
 def execute_optimize(args):
+	'''run scipy.optimize module according to specified parameters'''
 	print "loading dimensions to search from: " + args.optimize_inputdimensionsfile
 	print "MUST CONNECT PIPELINE from cms_modeller.py TO optimize.py (; optimize_out.py...)"
 	return

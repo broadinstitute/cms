@@ -173,7 +173,7 @@ def readOutfile(outfilename, cosi_build = "cosi_coalescent-2.0/coalescent"):
 		return pointParamss, errors, numIters, errorDict, keys, indices, descentmethod, stepsize, beststat, bestparam, firststat, firstparam, modifications, pops, stats
 	else:
 		return False
-def readIScustomstatfile(statfilename, numPops):
+def readcustomstatfile(statfilename, numPops):
 	stats = {}
 	openfile = open(statfilename, 'r')
 	for ipop in range(1, numPops+1): 
