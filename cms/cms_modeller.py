@@ -1,12 +1,12 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
 #(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
-## last updated: 07.03.16 vitti@broadinstitute.org
+## last updated: 07.04.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 from model.bootstrap_func import *
-from model.params import *
-from model.parse import * 
-from model.error import *
+from model.params import getTargetValues, generateParams, writeParamFile, getDictFromParamFile, getRanges, updateParams, getScaledValues, getScaledValue, getRealValue
+from model.parse import givecommand, readlines, checkFailed, readParameterValues, readGlobalArgFile, readOutfile, readcustomstatfile
+from model.error import RMSE, calcError, samplePoint
 
 import subprocess
 import argparse
