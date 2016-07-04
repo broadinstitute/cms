@@ -1,8 +1,13 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
 #(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
-## last updated: 06.29.16 vitti@broadinstitute.org
+## last updated: 07.03.16 vitti@broadinstitute.org
 
-import model.bootstrap_func, model.params, model.parse, model.error
+prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
+from model.bootstrap_func import *
+from model.params import *
+from model.parse import * 
+from model.error import *
+
 import subprocess
 import argparse
 import sys
@@ -61,7 +66,7 @@ def execute_target_stats(args):
 	inputtpedstring = ''.join(args.tpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
-	print "calculating summary statistics for " +  str(npops) + " populations..."
+	print prefixstring + "calculating summary statistics for " +  str(npops) + " populations..."
 	allCmds = []
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
@@ -79,12 +84,12 @@ def execute_target_stats(args):
 	for command in allCmds:
 		command = [str(x) for x in command]
 		#subprocess.check_call( command )
-		print command
+		print prefixstring + command
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
 	nbootstraprep = args.n
-	print "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."
+	print prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
 
@@ -97,11 +102,11 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print "reading allele frequency statistics from: " + inputfilename
+			print prefixstring + "reading allele frequency statistics from: " + inputfilename
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
-			print "TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n"
+			print prefixstring + "TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n"
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -165,10 +170,10 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print "reading linkage disequilibrium statistics from: " + inputfilename
+			print prefixstring + "reading linkage disequilibrium statistics from: " + inputfilename
 			writefile.write(str(ipop) + '\n')
 			alldists, allr2, allgendists, alldprime, nr2regions, ndprimeregions = readLDFile(ldfilename, dprimecutoff = mafcutoffdprime)
-			print "TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n"
+			print prefixstring + "TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n"
 
 			###################################
 			### r2: MEAN ACROSS ALL REGIONS ###
@@ -249,32 +254,33 @@ def execute_bootstrap(args):
 		npopcomp = len(inputfilenames)
 		for icomp in range(len(npopcomp)):
 			fstfilename	= inputfilenames[icomp]
-			print "reading Fst values from: " + fstfilename	
+			print prefixstring + "reading Fst values from: " + fstfilename	
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allRegionValues, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
-			print "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs for "".\n"
+			print prefixstring + "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs for "".\n"
 
 	writefile.close()
-	print "wrote to file: " + targetstats_filename
+	print prefixstring + "wrote to file: " + targetstats_filename
 	return
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
-	print "generating " + str(n) + " simulations from model: " + args.modelfile
+	print prefixstring + "generating " + str(n) + " simulations from model: " + args.modelfile
 	#calls to samplePoint from error.py
-	#print "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
+	#print prefixstring + "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
-	print "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
-	print "MUST CONNECT PIPELINE from cms_modeller.py TO grid.py"
+	print prefixstring + "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
+
+	print prefixstring + "MUST CONNECT PIPELINE from cms_modeller.py TO grid.py"
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
-	print "loading dimensions to search from: " + args.optimize_inputdimensionsfile
-	print "MUST CONNECT PIPELINE from cms_modeller.py TO optimize.py (; optimize_out.py...)"
+	print prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile
+	print prefixstring + "MUST CONNECT PIPELINE from cms_modeller.py TO optimize.py (; optimize_out.py...)"
 	return
 
 ##########

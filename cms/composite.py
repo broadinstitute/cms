@@ -1,6 +1,7 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 06.28.16 vitti@broadinstitute.org
+## last updated: 07.03.16 vitti@broadinstitute.org
 
+prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 import subprocess
 import argparse
 import sys
@@ -36,6 +37,14 @@ def full_parser_composite():
 	bayesian_region_parser = subparsers.add_parser('bayesian_region', help='default algorithm and weighting, within-region')
 	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 
+	for region_parser in [bayesian_region_parser, ml_region_parser]:
+		region_parser.add_argument('chrom', type=str, help="chromosome containing region")
+		region_parser.add_argument('startBp', type=int, help="start location of region in basepairs")
+		region_parser.add_argument('endBp', type=int, help="end location of region in basepairs")
+		region_parser.add_argument('selPop', help="") #must point to all pairwise files
+		region_parser.add_argument('altPops', help="comma-delimited")
+		region_parser.add_argument('demModel', help="") #need to figure out how best to point to likes; keep algorithm flexible.
+
 	return parser
 
 
@@ -45,16 +54,25 @@ def full_parser_composite():
 def execute_poppair(args):
 	cmd = "./combine_cms_scores_poppairs "
 	#<chrom> <selpop> <otherpop> <ihs1filename> <delihh1filename> <xpfilename> <xp reversed? 0T 1F> <fst_deldaffilename> <deldaf reversed? 0T 1F>\n");
-	print "must finalize connection to combine_cms_scores_poppairs"
+
+	print prefixstring + "must finalize connection to combine_cms_scores_poppairs"
 	return
 def execute_bayesian_gw(args):
-	print "must connect composite.py to combine_cms framework"
+	print prefixstring + "must connect composite.py to combine_cms framework"
 	return
 def execute_bayesian_region(args):
-	print "must connect composite.py to combine_cms_regions framework"
+	chrom, startBp, endBp, selPop = args.chrom, args.startBp, args.endBp, args.selPop
+	altPops = args.altPops.split(',')
+	print prefixstring + "selpop: " + selPop
+	print prefixstring + "comparing to " + str(len(altPops)) + " alt pops..."
+	print prefixstring + "must connect composite.py to combine_cms_regions framework"
 	return
 def execute_ml_region(args):
-	print "must connect composite.py to cms_ml framework"
+	chrom, startBp, endBp, selPop = args.chrom, args.startBp, args.endBp, args.selPop
+	altPops = args.altPops.split(',')
+	print prefixstring + "selpop: " + selPop
+	print prefixstring + "comparing to " + str(len(altPops)) + " alt pops..."
+	print prefixstring + "must connect composite.py to combine_cms_regions framework"
 	return
 
 ##########
