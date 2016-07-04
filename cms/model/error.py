@@ -3,15 +3,13 @@
 ## by default, we use the root mean square error statistic (cf Schaffner 2005) for all statistics and populations. 
 ## this can be toggled in order to fit certain parts of the model: e.g., we might explore parameter-space by letting ancient migration rates vary (and no other parameters) and focus our error function on the effects on Fst
 ## by default we up-weigh the importance of heterozygosity; this statistic has wide variance across simulates of a given model and can fail to inflate the error function while traversing unrealistic corners of parameter-space if not compensated for. [the 100x scale factor is pragmatic and can easily be toggled]
-## last updated: 06.04.16 	vitti@broadinstitute.org
-
-
+## last updated: 07.04.16 	vitti@broadinstitute.org
 
 import math
-from params import getTargetValues, generateParams, updateParams, writeParamFile
-from parse import readcustomstatfile
+from params import get_target_values
+from parse import read_custom_statsfile
 
-def RMSE(output, target, target_var, verbose = False):
+def root_mean_square_error(output, target, target_var, verbose = False):
 	#each of these arguments is a list of the same length (num bins)
 	n = int(len(output))
 	sum_bins = 0
@@ -25,19 +23,20 @@ def RMSE(output, target, target_var, verbose = False):
 			print partialsum
 		sum_bins += partialsum
 	return (sum_bins/n)**.5
-def calcError(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'], pops = [1, 2, 3, 4], piScaleFactor = 100, verbose=False): 
+def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'], pops = [1, 2, 3, 4], piScaleFactor = 100, verbose=False): 
 	"""takes in an array of target values (y). extracts y' values (i.e. model
 	outputs) from statfile and compares to get root mean square error."""
 	targetStats = getTargetValues() 
 	simStats = readcustomstatfile(statfilename, len(pops))
-	print "getting statfile from " + statfilename
+	if verbose:
+		print "getting statfile from " + statfilename
 	popPairs = []
 	for i in range(len(pops)):
 		for j in range(i, len(pops)):
 			if i != j:
 				popPair = (pops[i], pops[j])
 				popPairs.append(popPair)
-	if verbose == True:
+	if verbose:
 		print "pop pairs: "
 		print popPairs
 	tot = 0
@@ -52,8 +51,9 @@ def calcError(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'],
 				sim_var = simStats[varkey]
 				target_var = targetStats[varkey]
 
-				RMS = RMSE(sim_val, target_val, target_var)
-				print "RMS, " + str(item) + ": " + str(RMS) + "\t"
+				RMS = root_mean_square_error(sim_val, target_val, target_var)
+				if verbose:
+					print "RMS, " + str(item) + ": " + str(RMS) + "\t"
 				tot += (RMS ** 2)
 				counter +=1
 		else:
@@ -65,31 +65,22 @@ def calcError(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'],
 				sim_var = simStats[varkey]
 				target_var = targetStats[varkey]
 
-				RMS = RMSE(sim_val, target_val, target_var)
+				RMS = root_mean_square_error(sim_val, target_val, target_var)
 				if stat == "pi": 
 					RMS *= piScaleFactor
-				print "RMS, " + str(item) + ": " + str(RMS) + "\t"
+				if verbose:
+					print "RMS, " + str(item) + ": " + str(RMS) + "\t"
 				tot += (RMS ** 2)
 				counter +=1
 
 	ave = tot / counter
 	return ave**.5
-def samplePoint(nRep, scenario, values, keys, indices, cosi_build = "cosi_coalescent-2.0/coalescent"):
-	"""values, keys, indices are as described in updateParams()"""
-	print "running sample point in parameter space..."
-	paramfilename = "points/" + scenario + ".par"
-	paramDict = generateParams()
-	paramDict_updated = updateParams(paramDict, keys, indices, values)
-	writeParamFile(paramfilename, paramDict)
-	statfilename = "points/" + scenario + ".stat"
-	errorfilename = "points/" + scenario + ".err"
-	runstatscommand = cosi_build + " -p " + paramfilename + " -n " + str(nRep) + " --drop-singletons " + str(paramDict['singrate']) + " --custom-stats --genmapRandomRegions > " + statfilename
-	print runstatscommand
-	subprocess.call(runstatscommand, shell=True)
-	print "calculating error with " + statfilename
-	error = calcError(statfilename, stats, pops)
-	print "error: " + str(error)
-	errorfile = open(errorfilename, 'w')
-	errorfile.write(str(error))
-	errorfile.close()
-	return error
+def read_error_dimensionsfile(filename):
+	''' passes parameters for error function. '''
+	openfile = open(filename, 'r')
+	statline = openfile.readline().strip('\n')
+	stats = statline.split(',')
+	popline = openfile.readline().strip('\n')
+	pops = openfile.split(',')
+	openfile.close()
+	return stats, pops

@@ -3,10 +3,11 @@
 ## last updated: 07.04.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
-from model.bootstrap_func import *
-from model.params import getTargetValues, generateParams, writeParamFile, getDictFromParamFile, getRanges, updateParams, getScaledValues, getScaledValue, getRealValue
-from model.parse import givecommand, readlines, checkFailed, readParameterValues, readGlobalArgFile, readOutfile, readcustomstatfile
-from model.error import RMSE, calcError, samplePoint
+from model.bootstrap_func import flattenlist, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_snp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
+#from model.params import getTargetValues, generateParams, writeParamFile, getDictFromParamFile, getRanges, updateParams, getScaledValues, getScaledValue, getRealValue
+#from model.parse import , readlines, checkFailed, readParameterValues, readGlobalArgFile, readOutfile, readcustomstatfile
+from model.error import calc_error, read_error_dimensionsfile
+from model.search import read_grid_dimensionsfile
 
 import subprocess
 import argparse
@@ -43,19 +44,31 @@ def full_parser_cms_modeller():
 	######################
 	point_parser = subparsers.add_parser('point', help='run simulates of a point in parameter-space')
 	point_parser.add_argument('n', help='num reps', type=int)
-	point_parser.add_argument('modelfile', help='demographic model in cosi format')
-	point_parser.add_argument('recomfile', help='recombination map')
-	point_parser.add_argument('targetvalsfile', help='targetvalsfile for model')	
-	
+	point_parser.add_argument('recomFile', help='recombination map')
+	point_parser.add_argument('targetvalsFile', help='targetvalsfile for model')	
+	point_parser.add_argument('--calcError', action='store', help='file specifying dimensions of error function to use. if unspecified, defaults to all. first line = stats, second line = pops')
+	point_parser.add_argument('--plotStats', action='store_true', help='visualize goodness-of-fit to model targets')
+	#point_parser.add_argument('--cleanUp', action='store_true', help='remove simulated data') we obviated the need for this step with --custom-stats in cosi2
+	#point_parser.add_argument('--perturb', action='store', help='file specifying parameters of demographic model to adjust)	
+
 	#########################
 	## FIT MODEL TO TARGET ##
 	#########################
 	grid_parser = subparsers.add_parser('grid', help='run grid search')
+	grid_parser = subparsers.add_parser()
 	grid_parser.add_argument('grid_inputdimensionsfile', action='store', help='file with specifications of grid search') #must be defined for each search 
-
 	optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
 	optimize_parser.add_argument('optimize_inputdimensionsfile', action='store', help='file with specifications of optimization search to run')
 
+	##########################
+	### COSI - SHARED ARGS  ##
+	##########################
+	for cosi_parser in [point_parser, grid_parser, optimize_parser]:
+		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
+		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
+		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
+		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 	return parser
 
 #####################
@@ -267,15 +280,37 @@ def execute_bootstrap(args):
 	return
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
-	print prefixstring + "generating " + str(n) + " simulations from model: " + args.modelfile
-	#calls to samplePoint from error.py
-	#print prefixstring + "MUST CONNECT PIPELINE from cms_modeller.py TO grid_point.py"
+	print prefixstring + "generating " + str(args.n) + " simulations from model: " + args.inputParamFile
+	statfilename = args.outputDir + "n" + str(args.n) + "stats.txt"
+	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.n) 
+	if args.dropSings is not None:
+		runStatsCommand += " --drop-singletons " + str(args.dropSings)
+	if args.genmapRandomRegions:
+		runStatsCommand += " --genmapRandomRegions"
+	runStatsCommand += "--custom-stats > " + statfilename
+	print runStatsCommand
+	#subprocess.check_call(runStatsCommand)
+	if args.calcError is not None:
+		if args.calcError == '': #no error dimension file given
+			error = calcError(statfilename)
+		else:
+			stats, pops = read_error_dimensionsfile(args.calcError) 
+			error = calc_error(statfilename, stats, pops)
+		print prefixstring + " error: " + str(error) #record?
+	if args.plotStats:
+		print prefixstring + " must connect to plotting infrastructure, ensure consistency wrt matplotlib"
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
 	print prefixstring + "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
-
-	print prefixstring + "MUST CONNECT PIPELINE from cms_modeller.py TO grid.py"
+	gridname, keys, indices, values = read_grid_dimensionsfile(args.grid_inputdimensionsfile)
+	assert len(keys) == len(indices) and len(indices) == len(values)
+	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
+	##NEED TO PARALLELIZE AT THIS POINT. ASSUME UGER? SYSTEM-INDEPENDENT 
+	#for combo in combos:
+		#argstring = combo + "\n"
+		#write new parameter file?
+		#or just create a --perturb function?
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''

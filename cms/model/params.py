@@ -1,15 +1,15 @@
 ## {{POP GEN DATA --> DEM MODEL}}
-## this script contains functions pertaining to the specifics of a given demographic model being fit.
+## this file contains functions pertaining to the specifics of a given demographic model being fit.
 ## ideally, the user has some ballpark idea of the population's history -- within these functions, define parameters, ranges, etc.
 ## currently configured to fit 1KG P3 African populations: {YRI, ESN, MSL, GWD, LWK}
-## last updated: 06.04.16	vitti@broadinstitute.org
+## last updated: 07.04.16	vitti@broadinstitute.org
 
 from itertools import izip
 
 ##########################
 ## DEFINE TARGET VALUES ##
 ##########################
-def getTargetValues(bootstrap_targetval_filename):
+def get_target_values(bootstrap_targetval_filename):
 	#print "MUST CONFIG FOR AWS: currently just sfs"
 	popDict = {'LWK': 1, 'GWD': 2, 'MSL': 3, 'YRI':4, 'ESN':5}
 	stats = {}
@@ -79,7 +79,7 @@ def getTargetValues(bootstrap_targetval_filename):
 ##########################
 ## DEFINE TREE TOPOLOGY ##
 ##########################
-def generateParams():
+def generate_params():
 	############################
 	##DEFINE GLOBAL PARAMETERS##
 	############################
@@ -165,7 +165,7 @@ def generateParams():
 	paramDict[('mig_time', '4->3')] = [0, 10, 100]
 
 	return paramDict
-def writeParamFile(paramfilename, paramDict):
+def write_paramfile(paramfilename, paramDict):
 	#####################
 	### Global params ###
 	#####################
@@ -336,7 +336,7 @@ def writeParamFile(paramfilename, paramDict):
 	openfile.write('\n')
 	openfile.close()
 	return
-def getDictFromParamFile(paramfilename):
+def get_dict_from_paramfile(paramfilename):
 	#initialize empty lists so we can append from paramfile as we parse
 	paramDict = {'numPops':4,'labels':{1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}, 'singrate':.5, 'presentSizes':[], 'num_indivs_per_sample':200}
 	for pop in range(1,5):
@@ -414,7 +414,7 @@ def getDictFromParamFile(paramfilename):
 ########################
 ## SCALE/PERTURB TREE ##
 ########################
-def getRanges():
+def get_ranges():
 	paramDict = generateParams()
 	split2time = paramDict[('split', 2)][0]
 	split3time = paramDict[('split', 3)][0]
@@ -469,7 +469,7 @@ def getRanges():
 	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
 	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
 	return rangeDict
-def updateParams(paramDict, keys, indices, values):
+def update_params(paramDict, keys, indices, values):
 	"""paramDict: gets modified and returned.
 	keys: indicate which items in paramDict to be modified.
 	indices: parallel to keys; indicate which element in paramDict[key] to be modified.
@@ -489,7 +489,7 @@ def updateParams(paramDict, keys, indices, values):
 			paramDict[nekey][-1] = thisValue - 1
 
 	return paramDict
-def getScaledValues():
+def get_scaled_values():
 	ranges = defineRanges()
 	params = defineParams()
 	scaledParams = {}
@@ -500,9 +500,9 @@ def getScaledValues():
 		scaled = (value - low) / interval
 		scaledParams[key] = scaled
 	return scaledParams
-def getScaledValue(actualVal, low, high):
+def get_scaled_value(actualVal, low, high):
 	interval = high - low
 	return (actualVal - low) / interval
-def getRealValue(scaledVal, low, high):
+def get_real_value(scaledVal, low, high):
 	interval = high - low
 	return low + (scaledVal * interval)

@@ -37,6 +37,7 @@ def full_parser_likes_from_model():
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
 		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
+		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 
 	################################
 	## CALCULATE SCORES FROM SIMS ## I'm not sure if we even want to include this. It just wraps infrastructure that already exists elsewhere. leave as exercise for the user?
@@ -92,7 +93,9 @@ def execute_run_neut_sims(args):
 	runDir += "/"
 	print prefixstring + "running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile
 	print prefixstring + "writing to: " + runDir
-	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile +  " --genmapRandomRegions --output-gen-map " #allow user to pass these?
+	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile + " --output-gen-map " 
+	if args.genmapRandomRegions:
+		runStatsCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " -o " + runDir + "rep"
@@ -109,7 +112,9 @@ def execute_get_sel_trajs(args):
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 	print prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile
 	print prefixstring + "outputting to " + runDir
-	selSimCommand_base = args.cosiBuild + " -p " + args.inputParamFile +  " --genmapRandomRegions --output-gen-map " #allow user to pass these?
+	selSimCommand_base = args.cosiBuild + " -p " + args.inputParamFile +  " --output-gen-map " 
+	if args.genmapRandomRegions:
+		selSimCommand_base += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		selSimCommand_base += " --drop-singletons " + args.dropSings
 	for ibin in range(args.nBins):
