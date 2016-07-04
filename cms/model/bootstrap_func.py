@@ -1,6 +1,6 @@
 ## {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
-## this script contains functions called by script: get_neutral_targetstats_from_bootstrap.py
-## last updated: 06.14.16 	vitti@broadinstitute.org
+## this script contains functions called by execute_bootstrap in cms_modeller.py
+## last updated: 07.04.16 	vitti@broadinstitute.org
 
 import numpy as np
 import random
