@@ -73,7 +73,7 @@ def calcError(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'],
 				counter +=1
 
 	ave = tot / counter
-	return ave**.
+	return ave**.5
 def samplePoint(nRep, scenario, values, keys, indices, cosi_build = "cosi_coalescent-2.0/coalescent"):
 	"""values, keys, indices are as described in updateParams()"""
 	print "running sample point in parameter space..."
@@ -92,4 +92,4 @@ def samplePoint(nRep, scenario, values, keys, indices, cosi_build = "cosi_coales
 	errorfile = open(errorfilename, 'w')
 	errorfile.write(str(error))
 	errorfile.close()
-	return erro
+	return error
