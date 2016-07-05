@@ -1,10 +1,15 @@
-## {{POP GEN DATA --> DEM MODEL}}
-## this file contains functions pertaining to the specifics of a given demographic model being fit.
-## ideally, the user has some ballpark idea of the population's history -- within these functions, define parameters, ranges, etc.
-## currently configured to fit 1KG P3 African populations: {YRI, ESN, MSL, GWD, LWK}
-## last updated: 07.04.16	vitti@broadinstitute.org
+## !!-----this is where the user specifies the INPUT PARAMETERS for the demographic model to be fit-------!!
+## By way of example, currently configured to fit African populations from 1000 Genomes. (YRI, LWK, MSL, ESN)
+## User should duplicate/adapt this file to reflect the populations being modeled. 
+## See http://broad-cms.readthedocs.io/en/latest/workflow.html 		last updated: 07.05.16		vitti@broadinstitute.org
+
 
 from itertools import izip
+
+def read_lines(openfile, numlines):
+	for i in range(numlines):
+		line = openfile.readline()
+	return line
 
 ##########################
 ## DEFINE TARGET VALUES ##
@@ -16,47 +21,47 @@ def get_target_values(bootstrap_targetval_filename):
 	openfile = open(bootstrap_targetval_filename, 'r')
 	for ipop in range(1,5):
 
-		popline = readlines(openfile, 1)
+		popline = read_lines(openfile, 1)
 		popline = popline.strip('\n')
 		ipop = popDict[popline]
 		
-		piline = readlines(openfile, 1)
+		piline = read_lines(openfile, 1)
 		entries = piline.split()
 		pi_mean, pi_se = float(entries[0]), float(entries[1])
 		stats[('pi', ipop)] = [pi_mean]
 		stats[('pi_var', ipop)] = [pi_se ** 2]
 
-		sfs_mean_line = readlines(openfile, 1)
+		sfs_mean_line = read_lines(openfile, 1)
 		entries = sfs_mean_line.split()
 		sfs_mean = eval(sfs_mean_line)
 		stats[('sfs', ipop)] = sfs_mean
-		sfs_se_line = readlines(openfile, 1)
+		sfs_se_line = read_lines(openfile, 1)
 		sfs_se = eval(sfs_se_line)
 		sfs_var = [float(x)**2 for x in sfs_se]
 		stats[('sfs_var', ipop)] = sfs_var
 
-		anc_mean_line = readlines(openfile, 1)
+		anc_mean_line = read_lines(openfile, 1)
 		anc_mean = eval(anc_mean_line)
 		stats[('anc', ipop)] = anc_mean
-		anc_se_line = readlines(openfile, 1)
+		anc_se_line = read_lines(openfile, 1)
 		anc_se = eval(anc_se_line)
 		anc_var = [float(x)**2 for x in anc_se]
 		stats[('anc_var', ipop)] = anc_var
 
 
 	for ipop in range(1, 5):
-		r2_mean_line = readlines(openfile, 1)
+		r2_mean_line = read_lines(openfile, 1)
 		r2_mean = eval(r2_mean_line)
 		stats[('r2', ipop)] = r2_mean
-		r2_se_line = readlines(openfile, 1)
+		r2_se_line = read_lines(openfile, 1)
 		r2_se = eval(r2_se_line)
 		r2_var = [float(x)**2 for x in r2_se]
 		stats[('r2_var', ipop)] = r2_var
 
-		dprime_mean_line = readlines(openfile, 1)
+		dprime_mean_line = read_lines(openfile, 1)
 		dprime_mean = eval(dprime_mean_line)
 		stats[('dprime', ipop)] = dprime_mean
-		dprime_se_line = readlines(openfile, 1)
+		dprime_se_line = read_lines(openfile, 1)
 		dprime_se = eval(dprime_se_line)
 		dprime_var = [float(x)**2 for x in dprime_se]
 		stats[('dprime_var', ipop)] = dprime_var
@@ -68,7 +73,7 @@ def get_target_values(bootstrap_targetval_filename):
 				popPairs.append((ipop, jpop))
 
 	for popPair in popPairs:
-		fstline = readlines(openfile, 1)
+		fstline = read_lines(openfile, 1)
 		entries = fstline.split()
 		fst, fst_se = float(entries[2]), float(entries[3])
 		stats[("fst", popPair)] = [fst]
@@ -165,11 +170,69 @@ def generate_params():
 	paramDict[('mig_time', '4->3')] = [0, 10, 100]
 
 	return paramDict
+def get_ranges():
+	paramDict = generateParams()
+	split2time = paramDict[('split', 2)][0]
+	split3time = paramDict[('split', 3)][0]
+	split4time = paramDict[('split', 4)][0]
+
+	rangeDict = {}
+	rangeDict[('split', 2)] = [[175, 500]]
+	rangeDict[('split', 3)] = [[100, 174]]
+	rangeDict[('split', 4)] = [[10, 99]]
+	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000], [100, 100000]]
+	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 199], [200, 1000], [500, 8000], [2000, 12000], [2500, 25000], [12000, 50000]]
+	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 200], [200, split2time]]
+	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 3)] = [[1, 5], [6, split3time], [10, split3time]]
+	rangeDict[('Ne', 4)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
+	rangeDict[('Ne_times', 4)] = [[1, 5], [6, split4time], [10, split4time]]
+	rangeDict[('bn', 1)] = [[1e-6, .5], [1e-6, .5],  [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 1)] = [[0,50000],[0,50000],[0,50000],[0,50000]]
+	rangeDict[('bn', 2)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 2)] = [[0,split2time],[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('bn', 3)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 3)] = [[0,split3time],[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('bn', 4)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
+	rangeDict[('bn_times', 4)] = [[0,split4time],[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig', '1->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '1->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '1->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '2->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '3->4')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->1')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->2')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig', '4->3')] = [[0,.1],[0,.1], [0,.1]]
+	rangeDict[('mig_time', '1->2')] = [[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('mig_time', '1->3')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '1->4')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '2->1')] = [[0,split2time],[0,split2time],[0,split2time]]
+	rangeDict[('mig_time', '2->3')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '2->4')] = [[0,split4time],[0,split4time],[0,split4time]]	
+	rangeDict[('mig_time', '3->1')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '3->2')] = [[0,split3time],[0,split3time],[0,split3time]]
+	rangeDict[('mig_time', '3->4')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->1')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->2')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('mig_time', '4->3')] = [[0,split4time],[0,split4time],[0,split4time]]
+	rangeDict[('Ne_change', 1)] = [[0,1] for i in rangeDict[('Ne', 1)]]
+	rangeDict[('Ne_change', 2)] = [[0,1] for i in rangeDict[('Ne', 2)]]
+	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
+	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
+	return rangeDict
+
+############################################
+## INPUTFILE <-model params-> PYTHON DICT ##
+############################################
 def write_paramfile(paramfilename, paramDict):
 	#####################
 	### Global params ###
 	#####################
-
 	openfile = open(paramfilename, 'w')
 	openfile.write('length ' + str(paramDict['chromlength']) + '\n')
 	openfile.write('mutation_rate ' + str(paramDict['mutation_rate']) + '\n')
@@ -410,65 +473,6 @@ def get_dict_from_paramfile(paramfilename):
 	openfile.close()
 	#print paramDict
 	return paramDict
-
-########################
-## SCALE/PERTURB TREE ##
-########################
-def get_ranges():
-	paramDict = generateParams()
-	split2time = paramDict[('split', 2)][0]
-	split3time = paramDict[('split', 3)][0]
-	split4time = paramDict[('split', 4)][0]
-
-	rangeDict = {}
-	rangeDict[('split', 2)] = [[175, 500]]
-	rangeDict[('split', 3)] = [[100, 174]]
-	rangeDict[('split', 4)] = [[10, 99]]
-	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000], [100, 100000]]
-	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 199], [200, 1000], [500, 8000], [2000, 12000], [2500, 25000], [12000, 50000]]
-	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 200], [200, split2time]]
-	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 3)] = [[1, 5], [6, split3time], [10, split3time]]
-	rangeDict[('Ne', 4)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 4)] = [[1, 5], [6, split4time], [10, split4time]]
-	rangeDict[('bn', 1)] = [[1e-6, .5], [1e-6, .5],  [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 1)] = [[0,50000],[0,50000],[0,50000],[0,50000]]
-	rangeDict[('bn', 2)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 2)] = [[0,split2time],[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('bn', 3)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 3)] = [[0,split3time],[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('bn', 4)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
-	rangeDict[('bn_times', 4)] = [[0,split4time],[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig', '1->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '1->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '1->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '2->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '3->4')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->1')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->2')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig', '4->3')] = [[0,.1],[0,.1], [0,.1]]
-	rangeDict[('mig_time', '1->2')] = [[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('mig_time', '1->3')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '1->4')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '2->1')] = [[0,split2time],[0,split2time],[0,split2time]]
-	rangeDict[('mig_time', '2->3')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '2->4')] = [[0,split4time],[0,split4time],[0,split4time]]	
-	rangeDict[('mig_time', '3->1')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '3->2')] = [[0,split3time],[0,split3time],[0,split3time]]
-	rangeDict[('mig_time', '3->4')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->1')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->2')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('mig_time', '4->3')] = [[0,split4time],[0,split4time],[0,split4time]]
-	rangeDict[('Ne_change', 1)] = [[0,1] for i in rangeDict[('Ne', 1)]]
-	rangeDict[('Ne_change', 2)] = [[0,1] for i in rangeDict[('Ne', 2)]]
-	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
-	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
-	return rangeDict
 def update_params(paramDict, keys, indices, values):
 	"""paramDict: gets modified and returned.
 	keys: indicate which items in paramDict to be modified.
@@ -487,22 +491,4 @@ def update_params(paramDict, keys, indices, values):
 			nekey = ('Ne_times', thisKey[1])
 			paramDict[bnkey][0] = thisValue-1
 			paramDict[nekey][-1] = thisValue - 1
-
 	return paramDict
-def get_scaled_values():
-	ranges = defineRanges()
-	params = defineParams()
-	scaledParams = {}
-	for key in ranges.keys():
-		low, high = float(ranges[key][0]), float(ranges[key][1])
-		interval = high - low
-		value = params[key]
-		scaled = (value - low) / interval
-		scaledParams[key] = scaled
-	return scaledParams
-def get_scaled_value(actualVal, low, high):
-	interval = high - low
-	return (actualVal - low) / interval
-def get_real_value(scaledVal, low, high):
-	interval = high - low
-	return low + (scaledVal * interval)
