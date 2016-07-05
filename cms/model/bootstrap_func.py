@@ -1,5 +1,4 @@
-## {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
-## this script contains functions called by execute_bootstrap in cms_modeller.py
+## this file contains functions called by execute_bootstrap in cms_modeller.py
 ## last updated: 07.04.16 	vitti@broadinstitute.org
 
 import numpy as np
@@ -9,7 +8,6 @@ import os
 #######################
 ## VERSATILE / PARSE ##
 #######################
-
 def flattenList(list3d):
 	if type(list3d[0]) == list:
 		flat = []
@@ -136,7 +134,6 @@ def readFstFile(filename):
 ####################################
 ## CALCULATE BOOTSTRAP ESTIMATES ###
 ####################################
-
 def estimateFstByBootstrap(allRegionValues, nrep = 100):
 	numRegions = len(allRegionValues)
 	allValues = flattenList(allRegionValues)

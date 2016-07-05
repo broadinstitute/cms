@@ -1,14 +1,41 @@
-## {{POP GEN DATA --> DEM MODEL}}
-## this script contains functions pertaining to the error function used to evaluate the goodness-of-fit of a model to the specified dataset.
+## !!-----this is where the user specifies the ERROR FUNCTION to quantify model goodness-of-fit-------!!
 ## by default, we use the root mean square error statistic (cf Schaffner 2005) for all statistics and populations. 
 ## this can be toggled in order to fit certain parts of the model: e.g., we might explore parameter-space by letting ancient migration rates vary (and no other parameters) and focus our error function on the effects on Fst
 ## by default we up-weigh the importance of heterozygosity; this statistic has wide variance across simulates of a given model and can fail to inflate the error function while traversing unrealistic corners of parameter-space if not compensated for. [the 100x scale factor is pragmatic and can easily be toggled]
 ## last updated: 07.04.16 	vitti@broadinstitute.org
 
 import math
-from params import get_target_values
-from parse import read_custom_statsfile
+from params_func import get_target_values
 
+def read_custom_statsfile(statfilename, numPops):
+	stats = {}
+	openfile = open(statfilename, 'r')
+	for ipop in range(1, numPops+1): 
+		openfile.readline() #pop label
+		stats[('pi', ipop)] = [float(openfile.readline())]
+		stats[('sfs', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('anc', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('r2', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('dprime', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('pi_var', ipop)] = [float(openfile.readline())]
+		stats[('sfs_var', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('anc_var', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('r2_var', ipop)]  = [float(x) for x in openfile.readline().split()]
+		stats[('dprime_var', ipop)]  = [float(x) for x in openfile.readline().split()]
+	popPairs = []
+	for ipop in range(1, numPops+1):
+		for jpop in range(ipop, numPops+1):
+			if ipop != jpop: 
+				popPairs.append((ipop, jpop))
+	for i in range(len(popPairs)):
+		line = openfile.readline()
+		entries = line.split('\t')
+		fst, fst_var = float(entries[1]), float(entries[2])
+		stats[('fst', popPairs[i])] = [fst]
+		stats[('fst_var', popPairs[i])] = [fst_var]
+	openfile.close()
+	#print stats
+	return stats
 def root_mean_square_error(output, target, target_var, verbose = False):
 	#each of these arguments is a list of the same length (num bins)
 	n = int(len(output))
@@ -27,7 +54,7 @@ def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
 	"""takes in an array of target values (y). extracts y' values (i.e. model
 	outputs) from statfile and compares to get root mean square error."""
 	targetStats = getTargetValues() 
-	simStats = readcustomstatfile(statfilename, len(pops))
+	simStats = read_custom_statsfile(statfilename, len(pops))
 	if verbose:
 		print "getting statfile from " + statfilename
 	popPairs = []
