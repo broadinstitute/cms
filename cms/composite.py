@@ -47,7 +47,6 @@ def full_parser_composite():
 
 	return parser
 
-
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
