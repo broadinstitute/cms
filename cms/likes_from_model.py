@@ -80,9 +80,9 @@ def full_parser_likes_from_model():
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 	return parser
 
-#####################
-## AUX. FUNCTIONS ###
-######################
+############################
+## DEFINE EXEC FUNCTIONS ###
+############################
 def execute_run_neut_sims(args):
 	'''adapted from JV run_sims_from_model_vers.py; previously wrote to ms and ran via UGER taskarrays. adjust per new cosi tped output option'''
 	neutRunDir = args.outputDir

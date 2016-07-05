@@ -1,11 +1,10 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
 #(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
-## last updated: 07.04.16 vitti@broadinstitute.org
+## last updated: 07.05.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
 from model.bootstrap_func import flattenlist, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_snp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
-#from model.parse import , readlines, readParameterValues, readGlobalArgFile, readOutfile, readcustomstatfile
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
 from model.search_func import read_grid_dimensionsfile, sample_point, get_real_value, get_scaled_value

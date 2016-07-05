@@ -48,9 +48,9 @@ def full_parser_composite():
 	return parser
 
 
-#####################
-## AUX. FUNCTIONS ###
-#####################
+############################
+## DEFINE EXEC FUNCTIONS ###
+############################
 def execute_poppair(args):
 	cmd = "./combine_cms_scores_poppairs "
 	#<chrom> <selpop> <otherpop> <ihs1filename> <delihh1filename> <xpfilename> <xp reversed? 0T 1F> <fst_deldaffilename> <deldaf reversed? 0T 1F>\n");
