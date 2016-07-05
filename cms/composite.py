@@ -16,7 +16,7 @@ def full_parser_composite():
 	###############
 	## POP PAIRS ##
 	###############
-	poppair_parser = subparser.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
+	poppair_parser = subparsers.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
 	poppair_parser.add_argument('in_ihs_file1', help="file with normalized iHS values for putative selpop", action="store")
 	poppair_parser.add_argument('in_ihs_file2', help="file with normalized iHS values for altpop", action="store")
 	poppair_parser.add_argument('in_ihs_file1', help="file with normalized iHS values for putative selpop", action="store")
