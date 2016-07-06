@@ -7,7 +7,7 @@ prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
-from model.search_func import read_grid_dimensionsfile, sample_point, get_real_value, get_scaled_value
+from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
 from scipy import optimize
 import subprocess
 import argparse
