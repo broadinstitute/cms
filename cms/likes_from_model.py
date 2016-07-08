@@ -128,10 +128,10 @@ def execute_get_sel_trajs(args):
  	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		runDir = check_make_dir(populateDir)
-		bounds = bin_starts[ibin], bin_ends[ibin]
+		#bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
   		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		run_sel_trajs_snakemake(bounds, runDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
+		run_sel_trajs_snakemake(runDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
@@ -232,8 +232,8 @@ def execute_likes_from_scores(args):
 	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	# SELFREQ BINS! NEED TO VALIDATE THIS PROCEDURE
-	neut_der_freq = [1. - x for float(x) in neut_anc_freq]
-	sel_der_freq = [1. - x for float(x) in sel_anc_freq]
+	neut_der_freq = [1. - float(x) for x in neut_anc_freq]
+	sel_der_freq = [1. - float(x) for x in sel_anc_freq]
 	for ibin in range(len(bin_starts)):
 		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]]
 		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]] 

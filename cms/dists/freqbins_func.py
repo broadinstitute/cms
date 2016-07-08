@@ -8,7 +8,7 @@ def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDi
 	#dispatch as sel_trajs. (parallelize? relaunch if fail)?
 	print "mada shinakereba ikenai"
 	return
-def run_sel_trajs_snakemake(bounds, outputdir, cosibuild, paramfile, numSims, maxAttempts=100000):
+def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000):
 	if outputdir [-1] != "/":
 		outputdir += "/"
 	writefilename = outputdir + "Snakefile"
