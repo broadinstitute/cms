@@ -1,80 +1,10 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.03.16 vitti@broadinstitute.org
+## last updated: 07.08.16 vitti@broadinstitute.org
 
 import subprocess
+import numpy as np
 import sys
 import os
-
-##################
-### BOOKKEEPING ##
-##################
-def give_command(commandstr):
-	commands = commandstr.split(' ')
-	subprocess.check_output(commands)
-def check_make_dir(dirpath):
-	"""function to handle creation of (sub)folders, avoiding duplication.
-	"""
-	if os.path.exists(dirpath):
-		contents = os.listdir(dirpath)
-		if len(contents) == 0:
-			return dirpath
-		else:
-			alt, iAlt = False, 1
-			while alt == False:			
-				altpath = dirpath.strip('/') + "_alt" + str(iAlt) #best way to avoid recursive issues?
-				if os.path.exists(altpath):
-					iAlt +=1
-				else:
-					alt = True
-			mkdircommand = "mkdir " + altpath
-			give_command(mkdircommand)
-			return altpath
-	else:
-		mkdircommand = "mkdir " + dirpath
-		give_command(mkdircommand)
-	return dirpath
-def check_file_len(filename):
-	'''counts number of lines in file'''
-	if os.path.isfile(filename) and os.path.getsize(filename) > 0:
-		openfile = open(filename, 'r')
-		iline = 0
-		for line in openfile:
-			iline +=1
-		openfile.close()
-		return iline
-	else:
-		return 0
-
-###################
-### SELFREQ BINS ##
-###################
-def get_bin_strings(bin_medians):
-	'''given input bin medians, returns minimal len strs needed to create unique bin labels'''
-	stringlen = 3 #minimum is '0.x' -- not necessarily the most descriptive way to round these, but it's functional.
-	unique = False
-	while unique == False:
-		labels = [str(x)[:stringlen] for x in bin_medians]
-		if len(labels) == len(set(labels)):
-			unique = True
-		else:
-			stringlen +=1
-	return labels
-def get_bins(freqRange=".05-.95", numbins=9):
-	fullrange = [float (x) for x in freqRange.split('-')]
-	binlen = (fullrange[1] - fullrange[0]) / float(numbins)
-	bin_starts = [fullrange[0] + binlen*i for i in range(numbins)]
-	bin_ends = [fullrange[0] + binlen*i for i in range(1,numbins+1)]
-	bin_medians = [(float(bin_starts[i]) + float(bin_ends[i]))/2. for i in range(len(bin_starts))]
-	bin_medians_str = get_bin_strings(bin_medians)
-	return fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str	
-def check_bin_filled(directory, numsims):
-	'''counts all non-empty files in directory, returns True if >= numsims'''
-	filenames = os.listdir(directory)
-	nonempty = [x for x in filenames if check_file_len(x) !=0]
-	if len(filenames) < numsims:
-		return False
-	else:
-		return True
 
 #####################
 ## CALCS FROM SIMS ## ## gratuitous. should probably nix (?)
@@ -177,7 +107,7 @@ def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
 	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName
 	print cmdStr
 	return
-def norm_sel_xpehh(inputScoreFile, neutNormfilename, bin_bounds):
+def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 	''' from normalize_Xp_manually in func_scores.py'''
 	num, mean, var = read_neut_normfile(neutNormfilename, scoretype = 'xp')
 	normfilename = inputScoreFile + ".norm"
@@ -195,7 +125,7 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename, bin_bounds):
 	openfile.close()
 	normfile.close()
 	print "wrote to: " + normfilename
-	retur
+	return
 
 ##################
 ## HISTOGRAMS ###
@@ -221,27 +151,27 @@ def get_hist_bins(score,numBins):
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
 	return bins, scorerange, ylims
 def get_indices(score, dem_scenario):
-	"""CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype"""
+	"""CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype. also returns anc_freq_index"""
 	if score == "ihs":
 		physpos_index, freq_anc_index = 1, 2
 		if "sel" in dem_scenario:
 			ihs_unnormed_index, ihs_normed_index, expectedlen = 9, 10, 11 #these files have 11 columns
 		else: #neutral
 			ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 8 #these files have 8 columns; last one is binary variable
-		indices = [physpos_index, ihs_normed_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
+		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
 	elif score == "delihh":
 		expectedlen = 8
 		physpos_index, freq_anc_index = 1, 2
 		delihh_unnormed_index, delihh_normed_index = 5, 6
-		indices = [physpos_index, delihh_normed_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
-	elif score == "fst":
-		expectedlen = 2
-		physpos_index, scoreindex = 0, 1
-		indices = [physpos_index, scoreindex]
+		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
+	elif score == "fst": #must validate******
+		expectedlen = 3#2
+		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+		indices = [physpos_index, scoreindex, freq_anc_index]
 	elif score == "deldaf":
-		expectedlen = 2
-		physpos_index, scoreindex = 0, 1
-		indices = [physpos_index, scoreindex]
+		expectedlen = 3#2
+		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+		indices = [physpos_index, scoreindex, freq_anc_index]
 	elif score == "xp":
 		physpos_index, freq_anc_index = 1, 2
 		xp_unnormed_index, xp_normed_index, = 7, 8
@@ -249,8 +179,7 @@ def get_indices(score, dem_scenario):
 			expectedlen = 9
 		else:
 			expectedlen = 10
-		indices = [physpos_index, xp_normed_index]
-		#[physpos_index, freq_anc_index, xp_unnormed_index, xp_normed_index]
+		indices = [physpos_index, xp_normed_index, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	''' from func_clean.py '''
@@ -269,3 +198,44 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 			toreturn[iIndex].append(thisValue)
 	openfile.close()
 	return toreturn
+def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thinToSize = False):
+	if thinToSize:
+		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
+		print "Thinning data to " + str(limiting) + " SNPs..."
+		short_causal, short_linked, short_neut = [], [], []
+
+		for parentlist in ['causal', 'linked', 'neut']:
+			shortlist = eval('short_' + parentlist)
+			takenindices = []
+			while len(takenindices) < limiting:
+				chosenIndex = randint(0, limiting-1)
+				if chosenIndex not in takenindices:
+					shortlist.append(eval(parentlist + "_scores")[chosenIndex])
+					takenindices.append(chosenIndex)
+
+		causal_scores, linked_scores, neut_scores = short_causal, short_linked, short_neut
+
+	#get weights to plot pdf from hist
+	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
+	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
+	weights_neut = np.ones_like(neut_scores)/len(neut_scores)
+
+	causal_scores = np.clip(causal_scores, xlims[0], xlims[1])
+	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
+	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
+
+	n_causal, bins_causal = np.hist(causal_scores, bins=givenBins, weights = weights_causal)
+	n_linked, bins_linked = np.hist(linked_scores, bins=givenBins, weights = weights_linked)
+	n_neut, bins_neut = np.hist(neut_scores, bins=givenBins, weights = weights_neut)
+
+	return n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut
+def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
+	for status in ['causal', 'linked', 'neutral']:
+		writefilename = writePrefix + "_" + status + ".txt"
+		writefile = open(writefilename, 'w')
+		n_scores = eval('n_' + status)
+		for index in range(len(n_scores)):
+			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
+			writefile.write(towritestring)
+		writefile.close()
+	return

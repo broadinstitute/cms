@@ -1,9 +1,12 @@
-## top-level script for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.03.16 vitti@broadinstitute.org
+## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
+## last updated: 07.08.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
-from dists.func import get_bins, check_make_dir, give_command, check_bin_filled
+
+from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake
+from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_sel_delihh, calc_hist_from_scores, write_hists_to_files
 import argparse
+import subprocess
 import sys, os
 
 #############################
@@ -12,7 +15,7 @@ import sys, os
 def full_parser_likes_from_model():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for generating probability distributions for component scores from pre-specified demographic model(s).")
 	subparsers = parser.add_subparsers(help="sub-commands")
-
+	
 	#############################
 	## RUN NEUTRAL SIMULATIONS ##
 	#############################
@@ -24,7 +27,9 @@ def full_parser_likes_from_model():
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample')
 	get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
-	
+	get_sel_trajs_parser.add_argument('maxSteps', type=int, default = 100000, help="number of attempts to generate a selection trajectory before re-sampling selection coefficient and start time.")
+	#get_sel_trajs_parser.add_argument('nThreads', type=int, help="number of cores to pass to snakemake")
+
 	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='run sel. simulations')	
 	run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
 	run_sel_sims_parser.add_argument('trajDir', action='store', type=int, help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
@@ -44,7 +49,11 @@ def full_parser_likes_from_model():
 	################################
 	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='get scores from simulations')
 	#PER POP:
-	scores_from_sims_parser.add_argument('inputTped', help='tped from which to calculate score')
+	scores_from_sims_parser.add_argument('--inputTped', action='store', help='tped from which to calculate score')
+	scores_from_sims_parser.add_argument('--inputIhs', action='store', help='iHS from which to calculate delihh')
+	scores_from_sims_parser.add_argument('--inputdelIhh', action='store', help='delIhh from which to calculate norm')
+	scores_from_sims_parser.add_argument('--inputXpehh', action='store', help='Xp-ehh from which to calculate norm')
+
 	scores_from_sims_parser.add_argument('outputFilename', help='where to write scorefile')		
 	scores_from_sims_parser.add_argument('--ihs', action='store_true')
 	scores_from_sims_parser.add_argument('--delIhh', action='store_true')
@@ -56,16 +65,18 @@ def full_parser_likes_from_model():
 	scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
 	scores_from_sims_parser.add_argument('--normalizeXpehh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
 
-
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
 	##################################################
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='get component score probability distributions from scores')
-	likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
-	likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
+	#likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
+	#likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
 	likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
-	likes_from_scores_parser.add_argument('selFile', action='store', help='')#THIS GONNA HAVE TO BE A DIRECTORY for all the selfreqs? #file with scores for selected scenarios (normalized if necessary)')
+	likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
 	likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
+	likes_from_scores_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
+	likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
+	likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
 	likes_from_scores_parser.add_argument('--ihs', action='store_true', help='')	
 	likes_from_scores_parser.add_argument('--delihh', action='store_true', help='')	
 	likes_from_scores_parser.add_argument('--xp', action='store_true', help='')	
@@ -100,7 +111,7 @@ def execute_run_neut_sims(args):
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " -o " + runDir + "rep"
 	print prefixstring + neutSimCommand
-	give_command(neutSimCommand)
+	subprocess.check_output(n=eutSimCommand.split())
 	return
 def execute_get_sel_trajs(args):
 	'''adapted from JV run_sims_from_model_vers.py'''
@@ -110,30 +121,17 @@ def execute_get_sel_trajs(args):
 	selTrajDir += "sel_trajs/"
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+
 	print prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile
 	print prefixstring + "outputting to " + runDir
-	selSimCommand_base = args.cosiBuild + " -p " + args.inputParamFile +  " --output-gen-map " 
-	if args.genmapRandomRegions:
-		selSimCommand_base += " --genmapRandomRegions"
-	if args.dropSings is not None:
-		selSimCommand_base += " --drop-singletons " + args.dropSings
-	for ibin in range(args.nBins):
-		populateDir = runDir + "seltraj_" + bin_medians_str[ibin]
-		check_make_dir(populateDir)
-		unfilled = True 
-		iRep = 1
-		while unfilled == True:
-			trajectoryname = populateDir + "/rep" + str(iRep) + ".traj"
-			commandstring = "env COSI_NEWSIM=1 COSI_SAVE_TRAJ=" + trajectoryname
-			fullcommand = commandstring + " " + selSimCommand_base 
-			print prefixstring + fullcommand
-			give_command(fullcommand)
-			#give this command until we get a succesful one?
-			#unfilled = False #FOR DEBUG; just loop once
-			print "JV: must optimize use of cosi here for rejection sampling!"
-			#automatically catch [cosi::tag_error_msg*] = no trajectory found within given number of attempts
-			if check_bin_filled(populateDir, args.nSimsPerBin):
-				unfilled = False
+
+ 	for ibin in range(args.nBins):
+		populateDir = runDir + "sel_" + bin_medians_str[ibin]
+		runDir = check_make_dir(populateDir)
+		#bounds = bin_starts[ibin], bin_ends[ibin]
+		paramfilename = populateDir + "/params"
+  		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
+		run_sel_trajs_snakemake(runDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
@@ -146,26 +144,20 @@ def execute_run_sel_sims(args):
 	print prefixstring + "outputting to " + runDir
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 	for ibin in range(args.nBins):
-		trajDir = runDir + "seltraj_" + bin_medians_str[ibin]
+		populateDir = runDir + "sel_" + bin_medians_str[ibin]
+		runDir = check_make_dir(populateDir)
 		trajectoryFilenames = os.listdir(trajDir)
-		print "JV: loaded " + str(len(trajectoryfilenames)) + " files ..."
-		print "JV: how best to parallelize this step? use same infrastructure as execute_run_neut?"
+		paramfilename = trajDir + "/params"
+		assert os.path.isfile(paramfilename)
+		run_sel_sims_snakemake(args.trajDir, args.cosiBuild, paramfilename, args.nSimsPerBin, runDir)
 	return
 def execute_scores_from_sims(args):
-	''' adapted from JV scores_from_tped_vers.py. points to scans.py '''
-	#inputs = os.listdir(args.inputTpedDir)
-	#print prefixstring + "calculating from " + str(len(inputs)) + " simulates: " + args.inputTpedDir
-	#print prefixstring + "writing scores to: " + args.outputScoreDir
+	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
 	inputTped, outputFilename = args.inputTped, args.outputFilename
 	if args.ihs:
 		calc_ihs(inputTped, outputFilename)
-		#for inputTped in inputs:
-			#outfilename = args.outputScoreDir + "_ihs"
-			#calc_ihs(inputTped, outfilename) #parallelize? 
 	if args.delIhh:
-		#get ihs file!
-		print "get concatenated ihs file..."
-		ihsfilename = ""
+		ihsfilename = args.inputIhs
 		calc_delihh(ihsfilename, outputFilename)
 	if args.xpehh is not None:
 		altinputTped = args.xpehh
@@ -175,70 +167,105 @@ def execute_scores_from_sims(args):
 		calc_fst_deldaf(inputTped, altinputTped, outputFilename)
 	if args.normalizeIhs is not None:
 		#if the normargfile exists, use it. otherwise, just pipe to scans.py
-		pass
+		if args.normalizeIhs == "":
+			norm_neut_ihs(args.inputIhs, args.inputIhs + ".norm")
+		else:
+			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+			norm_sel_ihs(args.inputIhs, args.normalizeIhs, bin_ends)
+			#print prefixstring + "loading normalization parameters from " + args.normalizeIhs + " ..."
 	if args.normalizeDelIhh is not None:
-		pass
+		if args.normalizeDelIhh == "":
+			#can reuse iHS func
+			norm_neut_ihs(args.inputDelihh, args.inputDelihh + ".norm")
+			#norm_neut_delihh
+		else:
+			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+			norm_sel_ihs(args.inputDelihh, args.normalizeDelihh, bin_ends)
 	if args.normalizeXpehh is not None:
-		pass
+		if args.normalizeXpehh == "":
+			norm_neut_xpehh(args.inputXpehh, args.inputXpehh + ".norm")
+		else:
+			norm_sel_xpehh(args.inputXpehh, args.normalizeXpehh)
 	return
 def execute_likes_from_scores(args):
 	'''adapted from likes_from_scores_vers.py'''
-	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
+	numLikesBins = args.nLikesBins #histogram bins
+	datatypes = []
+	for status in ['causal', 'linked', 'neutral']:
+		for dpoint in ['positions', 'score_final']:
+			datatypes.append(status + "_" + dpoint)
+
+	#################
+	## LOAD SCORES ##
+	#################
 	data = {}
 	if args.ihs:
 		comparison, stripHeader = False, False
 		expectedlen_neut, indices_sel = get_indices(args.neutFile, "ihs_neut")
 		expectedlen_sel, indices_sel = get_indices(args.selFile, "ihs_sel")
+		histBins,scoreRange,yLims = get_hist_bins('ihs', numLikesBins)
 	if args.delihh:
 		comparison, stripHeader = False, False
 		expectedlen_neut, indices_sel = get_indices(args.neutFile, "delihh_neut")
 		expectedlen_sel, indices_sel = get_indices(args.selFile, "delihh_sel")
-		pass
+		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
 	if args.xp:
 		comparison, stripHeader = True, True
 		expectedlen_neut, indices_sel = get_indices(args.neutFile, "xp_neut")
 		expectedlen_sel, indices_sel = get_indices(args.selFile, "xp_sel")
+		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
 	if args.deldaf:
 		comparison, stripHeader = True, False
 		expectedlen_neut, indices_sel = get_indices(args.neutFile, "deldaf_neut")
 		expectedlen_sel, indices_sel = get_indices(args.selFile, "deldaf_sel")
+		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
 	if args.fst:
 		comparison, stripHeader = True, False
 		expectedlen_neut, indices_sel = get_indices(args.neutFile, "fst_neut")
 		expectedlen_sel, indices_sel = get_indices(args.selFile, "fst_sel")
-		pass
-				#MUST DO THIS FOR EACH FREQBIN
-		# OR DO I? CAN I ASSUME USER HAS CONCATENATED IN ORDER TO NORMALIZE...?
-
+		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
+		
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader, verbose)		
-	neut_positions, neut_score_final = val_array[0], val_array[1]
+	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader, verbose)		
-	sel_positions, sel_score_final = val_array[0], val_array[1]
-	# BINS! 
+	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
-	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
-	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 
+	# SELFREQ BINS! NEED TO VALIDATE THIS PROCEDURE
+	neut_der_freq = [1. - float(x) for x in neut_anc_freq]
+	sel_der_freq = [1. - float(x) for x in sel_anc_freq]
+	for ibin in range(len(bin_starts)):
+		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]]
+		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]] 
+		neutral_indices = [i for i, x in enumerate(neut_positions) if neut_der_freq[i]>=bin_starts[ibin] and neut_der_freq[i]<bin_ends[ibin]] 
 
-	causal_positions = [sel_positions[variant] for variant in causal_indices]
-	causal_score_final = [sel_score_final[variant] for variant in causal_indices]
+		causal_positions = [sel_positions[variant] for variant in causal_indices]
+		causal_score_final = [sel_score_final[variant] for variant in causal_indices]
+		
+		linked_positions = [sel_positions[variant] for variant in linked_indices]
+		linked_score_final = [sel_score_final[variant] for variant in linked_indices]
+
+		neutral_positions = [neut_positions[variant] for variant in neutral_indices]
+		neutral_score_final = [neut_score_final[variant] for variant in neutral_indices]
+		
+		for datatype in datatypes:
+			key = (bin_medians_str[ibin], datatype) #BINS!
+			data[key] = eval(datatype)
 	
-	linked_positions = [sel_positions[variant] for variant in linked_indices]
-	linked_score_final = [sel_score_final[variant] for variant in linked_indices]
-	datatypes = []
-	for status in ['causal', 'linked', 'neut']:
-		for dpoint in ['positions', 'score_final']:
-			datatypes.append(status + "_" + dpoint)
-	for datatype in datatypes:
-		key = (score, dem_scenario, selpop, altpop, datatype, selfreq) #BINS!
-		data[key] = eval(datatype)
-	#if args.write:
-	#	pass
-	if args.plot:
-		if comparison: #fst, xpehh, deldaf
-			pass
-		else: #ihs, delihh
-			pass
-	print prefixstring + "MUST CONNECT likes_from_model.py to likes_from_scores_vers.py"
+	#################
+	## BIN SCORES ##
+	#################		
+	#build in option to merge bins here?
+	for ibin in range(len(bin_starts)):
+		xlims = scoreRange
+		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_scores_final')], data[(bin_medians_str[ibin], 'linked_scores_final')], data[(bin_medians_str[ibin], 'neut_scores_final')]
+		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, args.thinToSize)
+		write_hist_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
+	#if args.plot:
+	#	if comparison: #fst, xpehh, deldaf
+	#		pass
+	#	else: #ihs, delihh
+	#		pass
 	return
 
 ##########
