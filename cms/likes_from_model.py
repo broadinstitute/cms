@@ -4,7 +4,7 @@
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake
-from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_sel_delihh, calc_hist_from_scores, write_hists_to_files
+from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
 import argparse
 import subprocess
 import sys, os
