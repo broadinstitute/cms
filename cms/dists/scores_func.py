@@ -32,10 +32,10 @@ def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThrea
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
 	print cmdStr
 	return	
-def calc_fst_deldaf(inputTped, inputTped2, outputFile):
+def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile):
 	print "assumes C program compiled "
 	commandstring = "./calc_fst_deldaf_tped"
-	argstring = inputTped1 + " " + inputTped2 + " " + outputFile
+	argstring = inputTped1 + " " + inputTped2 + " " + recomFile + " " + outputFile
 	print commandstring + " " + argstring
 	return
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
