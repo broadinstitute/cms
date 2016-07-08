@@ -3,7 +3,7 @@
 ## last updated: 07.08.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
-from likes.func import get_likesfiles_frommaster
+from combine.likes_func import get_likesfiles_frommaster
 import subprocess
 import argparse
 import sys

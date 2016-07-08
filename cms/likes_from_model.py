@@ -164,7 +164,7 @@ def execute_scores_from_sims(args):
 		calc_xpehh(inputTped, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputTped, altinputTped, outputFilename)
+		calc_fst_deldaf(inputTped, altinputTped, outputFilename) #RECOM FILE?
 	if args.normalizeIhs is not None:
 		#if the normargfile exists, use it. otherwise, just pipe to scans.py
 		if args.normalizeIhs == "":
