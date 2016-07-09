@@ -342,7 +342,7 @@ def execute_grid(args):
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
 	print prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile
-	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, type='optimize')
+	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
 
 	rangeDict = get_ranges()
 	paramDict = generate_params()
