@@ -77,7 +77,7 @@ def full_parser_cms_modeller():
 ############################
 def execute_target_stats(args):
 	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values; these programs currently have hard-coded arg input -- JV consider switching to getopt'''
-	inputtpedstring = ''.join(args.tpeds)
+	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
 	print prefixstring + "calculating summary statistics for " +  str(npops) + " populations..."
@@ -102,7 +102,7 @@ def execute_target_stats(args):
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
-	nbootstraprep = args.n
+	nbootstraprep = args.nBootstrapReps
 	print prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
@@ -284,16 +284,16 @@ def execute_point(args):
 	################
 	## FILE PREP ###
 	################
-	print prefixstring + "generating " + str(args.n) + " simulations from model: " + args.inputParamFile
+	print prefixstring + "generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
-	statfilename += "n" + str(args.n) + "stats.txt"
+	statfilename += "n" + str(args.nCoalescentReps) + "stats.txt"
 
 	###############
 	## RUN SIMS ###
 	###############
-	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.n) 
+	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.nCoalescentReps) 
 	if args.dropSings is not None:
 		runStatsCommand += " --drop-singletons " + str(args.dropSings)
 	if args.genmapRandomRegions:
@@ -342,7 +342,7 @@ def execute_grid(args):
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
 	print prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile
-	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, type='optimize')
+	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
 
 	rangeDict = get_ranges()
 	paramDict = generate_params()
