@@ -102,7 +102,7 @@ def execute_target_stats(args):
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
-	nbootstraprep = args.n
+	nbootstraprep = args.nBootstrapReps
 	print prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
@@ -284,16 +284,16 @@ def execute_point(args):
 	################
 	## FILE PREP ###
 	################
-	print prefixstring + "generating " + str(args.n) + " simulations from model: " + args.inputParamFile
+	print prefixstring + "generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
-	statfilename += "n" + str(args.n) + "stats.txt"
+	statfilename += "n" + str(args.nCoalescentReps) + "stats.txt"
 
 	###############
 	## RUN SIMS ###
 	###############
-	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.n) 
+	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.nCoalescentReps) 
 	if args.dropSings is not None:
 		runStatsCommand += " --drop-singletons " + str(args.dropSings)
 	if args.genmapRandomRegions:
