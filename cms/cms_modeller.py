@@ -85,15 +85,15 @@ def execute_target_stats(args):
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
 		if args.freqs:
-			freqCmd = ['bootstrap_freq_popstats_regions ', inputtped, args.recom, args.regions, args.out + "_freqs_" + str(ipop)]
+			freqCmd = ['bootstrap_freq_popstats_regions ', inputtped, args.recomFile, args.regions, args.out + "_freqs_" + str(ipop)]
 			allCmds.append(freqCmd)
 		if args.ld:
-			ldCmd = ['bootstrap_ld_popstats_regions ', inputtped, args.recom, args.regions, args.out + "_ld_" + str(ipop)]
+			ldCmd = ['bootstrap_ld_popstats_regions ', inputtped, args.recomFile, args.regions, args.out + "_ld_" + str(ipop)]
 			allCmds.append(ldCmd)
 		if args.fst:
 			for jpop in range(ipop+1, npops):
 				inputtped2 = inputtpeds[jpop]
-				fstCmd = ['bootstrap_fst_popstats_regions ', inputtped, inputtped2, args.recom, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
+				fstCmd = ['bootstrap_fst_popstats_regions ', inputtped, inputtped2, args.recomFile, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
 				allCmds.append(fstCmd)
 	for command in allCmds:
 		command = [str(x) for x in command]
