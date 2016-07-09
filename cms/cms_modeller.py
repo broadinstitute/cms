@@ -77,7 +77,7 @@ def full_parser_cms_modeller():
 ############################
 def execute_target_stats(args):
 	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values; these programs currently have hard-coded arg input -- JV consider switching to getopt'''
-	inputtpedstring = ''.join(args.tpeds)
+	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
 	print prefixstring + "calculating summary statistics for " +  str(npops) + " populations..."
