@@ -21,7 +21,9 @@ def full_parser_composite():
 	poppair_parser = subparsers.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
 	poppair_parser.add_argument('in_ihs_file', help="file with normalized iHS values for putative selpop", action="store")
 	poppair_parser.add_argument('in_delihh_file', help="file with normalized delIhh values for putative selpop", action="store")	
-	poppair_parser.add_argument('in_xp_file', help="file with normalized XP-EHH values", action="store") #reversed? 0T 1F
+	poppair_parser.add_argument('in_xp_file', help="file with normalized XP-EHH values", action="store")
+	poppair_parser.add_argument('in_fst_deldaf_file', help="file with Fst, delDaf values for poppair", action="store")
+
 	poppair_parser.add_argument('--xp_reverse_pops', help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)", action="store_true")	
 	poppair_parser.add_argument('--deldaf_reverse_pops', help="finclude if the putative selpop for outcome is the altpop in delDAF (and vice versa)", action="store_true") #reversed? 0T 1F
 	poppair_parser.add_argument('outfile', help="file to write with collated scores", action="store") 
@@ -69,7 +71,7 @@ def execute_poppair(args):
 		deldaf_reversed = 0
 	else:
 		deldaf_reversed = 1
-	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.fst_deldaffilename + " " + str(deldaf_reversed) + " " + args.outfile 
+	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
 	print argstring
 	#subprocess.check_output(argstring.split())
 	return
