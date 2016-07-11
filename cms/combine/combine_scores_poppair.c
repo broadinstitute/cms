@@ -1,6 +1,6 @@
 // for a given population pair, pulls and collates all component score statistics. 
-// --> COMPILE:  gcc -o combine_scores_poppair -O0 -ggdb3 -lm -Wall combine_scores_poppair.c cms_data.c
-// last updated: 07.08.16   vitti@broadinstitute.org
+// --> COMPILE:  gcc -o combine/combine_scores_poppair -O0 -ggdb3 -lm -Wall /combine/combine_scores_poppair.c /combine/cms_data.c
+// last updated: 07.11.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
