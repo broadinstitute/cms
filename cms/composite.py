@@ -1,6 +1,6 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## assumes C programs compiled; JV must create Makefile
-## last updated: 07.08.16 vitti@broadinstitute.org
+## assumes C programs compiled in subfolder combine; JV must create Makefile
+## last updated: 07.11.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 from combine.likes_func import get_likesfiles_frommaster
@@ -47,7 +47,6 @@ def full_parser_composite():
 	###################
 	bayesian_region_parser = subparsers.add_parser('bayesian_region', help='default algorithm and weighting, within-region')
 	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
-
 	for region_parser in [bayesian_region_parser, ml_region_parser]:
 		region_parser.add_argument('chrom', type=str, help="chromosome containing region")
 		region_parser.add_argument('startBp', type=int, help="start location of region in basepairs")
@@ -62,7 +61,7 @@ def full_parser_composite():
 ## DEFINE EXEC FUNCTIONS ###
 ############################
 def execute_poppair(args):
-	cmd = "./combine_scores_poppair "
+	cmd = "/combine/combine_scores_poppair "
 	if args.xp_reverse_pops is not None:
 		xp_reversed = 0
 	else:
@@ -72,16 +71,18 @@ def execute_poppair(args):
 	else:
 		deldaf_reversed = 1
 	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
-	print argstring
+	cmdstring = cmd + argstring
+	print cmdstring
 	#subprocess.check_output(argstring.split())
 	return
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
-	cmd = "./combine_scores_multiplepops"
+	cmd = "/combine/combine_scores_multiplepops"
 	argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	for pairfile in args.infiles:
 		argstring += " " + pairfile
-	print argstring
+	cmdstring = cmd + argstring
+	print cmdstring
 	#subprocess.check_output(argstring.split())
 	return
 def execute_bayesian_gw(args):
