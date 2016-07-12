@@ -1,5 +1,5 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
-#(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile; assumes python in $PATH)
+#(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile)
 ## last updated: 07.05.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
