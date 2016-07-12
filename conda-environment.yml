@@ -19,9 +19,9 @@ dependencies:
 - docutils=0.12=py35_2
 - ecdsa=0.13=py35_0
 - gcc=4.8.5=3
-- gmp=5.1.2=6
+- gmp=5.1.2
 - imagesize=0.7.1=py35_0
-- isl=0.12.2=1
+- isl=0.12.2
 - jinja2=2.8=py35_1
 - libgcc=4.8.5=1
 - markupsafe=0.23=py35_2
