@@ -3,6 +3,9 @@
 # cache depending on whether we're on the master branch or not.
 set -e
 
+pwd 
+ls
+
 # Only sometimes cache the tools/build directory
 if [ -z "$TRAVIS_TAG" ]; then
     echo "Travis docker caches allowed for branch $TRAVIS_BRANCH"
@@ -11,9 +14,8 @@ if [ -z "$TRAVIS_TAG" ]; then
     ln -s $CACHE_DIR/tools_build tools/build
 else
     echo "Travis docker cache disabled for tools/build on tag: $TRAVIS_TAG"
-
 fi
 
 # Report how big things are
 echo "Docker cache space usage:"
-du -hs $MINICONDA_DIR $PIP_DIR $CACHE_DIR/*
+du -hs $MINICONDA_DIR $CACHE_DIR/*
