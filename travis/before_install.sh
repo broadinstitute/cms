@@ -3,15 +3,12 @@
 # cache depending on whether we're on the master branch or not.
 set -e
 
-pwd 
-ls
-
 # Only sometimes cache the tools/build directory
 if [ -z "$TRAVIS_TAG" ]; then
     echo "Travis docker caches allowed for branch $TRAVIS_BRANCH"
-    rm -rf tools/build
+    rm -rf cms/tools/build
     mkdir -p $CACHE_DIR/tools_build $CACHE_DIR/conda-tools $CACHE_DIR/conda-cache
-    ln -s $CACHE_DIR/tools_build tools/build
+    ln -s $CACHE_DIR/tools_build cms/tools/build
 else
     echo "Travis docker cache disabled for tools/build on tag: $TRAVIS_TAG"
 fi
