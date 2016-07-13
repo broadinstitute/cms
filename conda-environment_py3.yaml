@@ -1,4 +1,4 @@
-name: cms-env
+name: cms-env3
 channels:
 - bioconda
 - defaults
