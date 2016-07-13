@@ -25,7 +25,6 @@ dependencies:
 - isl=0.12.2
 - jinja2=2.8
 - libgcc=4.8.5
-- libgfortran=3.0.0
 - markupsafe=0.23
 - mkl=11.3.3
 - mpc=1.0.1
