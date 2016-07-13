@@ -1,24 +1,23 @@
-/// gcc -o calc_fst_deldaf -O0 -ggdb3 -lm -Wall calc_fst_deldaf.c coal_data_tped_vers.c 
-// last updated 07.08.16 	vitti@broadinstitute.org
+// last updated 07.14.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
-#include "coal_data_tped_vers.h"
+#include "model/coal_data_tped_vers.h"
 
 int main(int argc, char **argv) {
     coal_data data;
     char filename[264];
     FILE *outf=NULL;
-    char pop0[3], pop1[3];
-    char mask[25];
+    //char pop0[3], pop1[3];
+    //char mask[25];
     char inTped1[264], inTped2[264], inRecomfile[264];
-    char chromstr[3];
-    int chrom;
-    int *nall0[POPSIZE]={NULL}, *nall1[POPSIZE]={NULL};
-    int isamp, isnp, ichrom, nsnp;
+    //char chromstr[3];
+   // int chrom;
+    int *nall0[2]={NULL}, *nall1[2]={NULL};
+    int isamp, isnp;//, ichrom, nsnp;
     int nai[2], naj[2], na_both[2];
     int samp0, samp1;
     char runtime[264];
