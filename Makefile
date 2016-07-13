@@ -12,13 +12,13 @@ CCFLAG = -O0 -ggdb3 -lm -Wall
 ## DEFINE RULES ##
 ##################
 
-all : cms/model/calc_fst_deldaf, cms/composite/combine_scores_poppair
+#all : 
 
 model :
 	cd cms/model && $(MAKE)
 
 composite :
-	cd cms/composite && $(MAKE)
+	cd cms/combine && $(MAKE)
 	
 clean :
 	rm *.o
