@@ -25,6 +25,7 @@ dependencies:
 - isl=0.12.2
 - jinja2=2.8
 - libgcc=4.8.5
+- libgfortran=3.0.0
 - markupsafe=0.23
 - mkl=11.3.3
 - mpc=1.0.1
@@ -40,7 +41,7 @@ dependencies:
 - python=2.7.12
 - pytz=2016.4
 - readline=6.2
-- scipy=0.16.1
+- scipy=0.17.0
 - setuptools=23.0.0
 - six=1.10.0
 - snowballstemmer=1.2.1
