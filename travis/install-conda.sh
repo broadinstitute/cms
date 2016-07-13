@@ -36,7 +36,7 @@ else # if it does not exist, we need to install miniconda
     conda config --set always_yes yes --set changeps1 no
     conda config --add channels bioconda
     conda config --add channels r
-    conda update -q conda
 fi
 
+conda update -q conda
 conda info -a # for debugging

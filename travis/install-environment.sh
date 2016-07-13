@@ -1,8 +1,10 @@
 #!/bin/bash
 
-if [[ "$TRAVIS_PYTHON_VERSION" == 2* ]]; then
+if [[ "$(python -c 'import sys; print(sys.version[0])')" == 2* ]]; then
+    echo "Creating conda environment using Py2 environment file"
     conda env create -f conda-environment_py2.yml -p $HOME/cms-env
 else
+    echo "Creating conda environment using Py3 environment file"
     conda env create -f conda-environment_py3.yml -p $HOME/cms-env
 fi
 
