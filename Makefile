@@ -1,5 +1,5 @@
 ## top-level Makefile for cms2.0
-## last updated 07.13.16 	vitti@broadinstitute.org
+## last updated 07.14.16 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
@@ -12,7 +12,7 @@ CCFLAG = -O0 -ggdb3 -lm -Wall
 ## DEFINE RULES ##
 ##################
 
-#all : 
+all : model composite
 
 model :
 	cd cms/model && $(MAKE)
