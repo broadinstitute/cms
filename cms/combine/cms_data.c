@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 07.08.16 	vitti@broadinstitute.org
+// last updated: 07.14.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +30,7 @@ void get_fst_deldaf_data(fst_deldaf_data* data, char filename[]) {
 	data->deldaf = NULL;
 
 	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing file: "); fprintf(stderr, filename);}
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
@@ -94,7 +94,7 @@ void get_delihh_data(delihh_data* data, char filename[]) {
 	data->lastcol = NULL;
 
 	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing file: "); fprintf(stderr, filename);}
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
@@ -175,7 +175,7 @@ void get_xpehh_data(xpehh_data* data, char filename[]) {
 	data->lastcol = NULL;
 
 	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing file: "); fprintf(stderr, filename);}
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
@@ -270,7 +270,7 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	data->lastcol = NULL; //not sure what information this field contains, selscan documentation is sparse. 0/1
 
 	inf = fopen(filename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing file: "); fprintf(stderr, filename);}
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
@@ -352,9 +352,7 @@ void get_likes_data(likes_data* data, char filename[]){
 	data->start_bin = NULL; 
 	data->end_bin = NULL;
 	data->probs = NULL;
-	fprintf(stderr, "\tloading likes tables from ");
-	fprintf(stderr, filename);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\tloading likes tables from %s\n", filename);
 
 	inf = fopen(filename, "r");
 	assert(inf != NULL);
@@ -426,8 +424,7 @@ void get_popComp_data(popComp_data* data, char filename[]){
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 
-	fprintf(stderr, "\tloading from ");
-	fprintf(stderr, filename);
+	fprintf(stderr, "\tloading from %s\n", filename);
 
 	inf = fopen(filename, "r");
 	assert(inf != NULL);
@@ -545,8 +542,7 @@ void get_popComp_data_region(popComp_data* data, char filename[], int startBp, i
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 
-	fprintf(stderr, "\tloading from ");
-	fprintf(stderr, filename);
+	fprintf(stderr, "\tloading from %s\n", filename);
 
 	inf = fopen(filename, "r");
 	assert(inf != NULL);
