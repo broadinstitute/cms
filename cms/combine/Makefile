@@ -12,7 +12,7 @@ CCFLAG = -O0 -ggdb3 -lm -Wall
 ## DEFINE RULES ##
 ##################
 
-all : combine_scores_poppair, combine_scores_multiplepops 
+all : combine_scores_poppair combine_scores_multiplepops 
 
 combine_scores_poppair.o : combine_scores_poppair.c
 	$(CC) $(CCFLAG) -c combine_scores_poppair.c
@@ -29,5 +29,6 @@ combine_scores_multiplepops : combine_scores_multiplepops.o cms_data.c cms_data.
 clean :
 	rm *.o
 
-
+install:
+	cp combine_scores_poppair /usr/local/ && cp combine_scores_multiplepops /usr/local
 

@@ -1,5 +1,6 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 07.11.16   vitti@broadinstitute.org
+// last updated: 07.14.16   vitti@broadinstitute.org
+// STILL NEED TO HANDLE ARGS PROPERLY; combine_scores_multiplepops.c:39:48: error: expected ']'
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -42,9 +43,7 @@ int main(int argc, char **argv) {
 	strcpy(outfilename, argv[1]);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
-	fprintf(stderr, "writing to: ");
-	fprintf(stderr, outfilename);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "writing to: %s\n", outfilename);
 	strcpy(delihh_hit_filename, argv[2]);
 	strcpy(delihh_miss_filename, argv[3]);
 	strcpy(ihs_hit_filename, argv[4]);

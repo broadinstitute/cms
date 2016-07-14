@@ -1,6 +1,4 @@
-// {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
-// COMPILE: gcc -o bootstrap_ld_popstats_regions -O0 -ggdb3 -lm -Wall bootstrap_ld_popstats_regions.c coal_data_tped_vers.c
-// last updated: 06.14.16 	vitti@broadinstitute.org
+// last updated: 07.14.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
