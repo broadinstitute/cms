@@ -1,5 +1,4 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// --> COMPILE: gcc -o combine/combine_cms_scores_multiplepops -O0 -ggdb3 -lm -Wall combine/combine_cms_scores_multiplepops.c combine/cms_data.c
 // last updated: 07.11.16   vitti@broadinstitute.org
 
 #include <stdio.h>

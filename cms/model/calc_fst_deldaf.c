@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     char inTped1[264], inTped2[264], inRecomfile[264];
     char chromstr[3];
     int chrom;
-    int *nall0[POPSIZE]={NULL}, *nall1[POPSIZE]={NULL};
+    int *nall0[2]={NULL}, *nall1[2]={NULL};
     int isamp, isnp, ichrom, nsnp;
     int nai[2], naj[2], na_both[2];
     int samp0, samp1;
