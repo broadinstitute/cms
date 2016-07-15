@@ -34,9 +34,9 @@ def full_parser_composite():
 	outgroups_parser.add_argument('likesfile', help="text file where probability distributions are specified for component scores", action="store")
 	outgroups_parser.add_argument('outfile', help="file to write with finalized scores", action="store") 
 	outgroups_parser.add_argument('--region', help="for within-region (rather than genome-wide) CMS", action="store_true") 
-	outgroups_parser.add_argument('--chrom', type=str, help="chromosome containing region") #FOR WITHIN-REGION CMS
-	outgroups_parser.add_argument('--startBp', type=int, help="start location of region in basepairs")
-	outgroups_parser.add_argument('--endBp', type=int, help="end location of region in basepairs")
+	outgroups_parser.add_argument('--chrom', type=str, help="chromosome containing region", action="store") #FOR WITHIN-REGION CMS
+	outgroups_parser.add_argument('--startBp', type=int, help="start location of region in basepairs", action="store")
+	outgroups_parser.add_argument('--endBp', type=int, help="end location of region in basepairs", action="store")
 
 	#ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 	return parser

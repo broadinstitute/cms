@@ -1,5 +1,5 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 07.05.16 vitti@broadinstitute.org
+## last updated: 07.15.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
@@ -270,10 +270,10 @@ def execute_bootstrap(args):
 			print(prefixstring + "reading Fst values from: " + fstfilename)
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
-			target_mean, target_se = estimateFstByBootstrap_bysnp(allRegionValues, nrep = nbootstraprep)
+			target_mean, target_se = estimateFstByBootstrap_bysnp(allfst, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
-			print(prefixstring + "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs.\n")
+			print(prefixstring + "TOTAL: logged Fst values for " + str(len(allfst)) + " SNPs.\n")
 
 	writefile.close()
 	print(prefixstring + "wrote to file: " + targetstats_filename)
