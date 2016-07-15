@@ -1,5 +1,4 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
-#(CURRENTLY: assumes C programs have been compiled in same directory -- JV must provide Makefile)
 ## last updated: 07.05.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
@@ -80,7 +79,7 @@ def execute_target_stats(args):
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
-	print prefixstring + "calculating summary statistics for " +  str(npops) + " populations..."
+	print(prefixstring + "calculating summary statistics for " +  str(npops) + " populations...")
 	allCmds = []
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
@@ -103,7 +102,7 @@ def execute_target_stats(args):
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
 	nbootstraprep = args.nBootstrapReps
-	print prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."
+	print(prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics...")
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
 
@@ -116,11 +115,11 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print prefixstring + "reading allele frequency statistics from: " + inputfilename
+			print(prefixstring + "reading allele frequency statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
-			print prefixstring + "TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n"
+			print(prefixstring + "TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -184,10 +183,10 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print prefixstring + "reading linkage disequilibrium statistics from: " + inputfilename
+			print(prefixstring + "reading linkage disequilibrium statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			alldists, allr2, allgendists, alldprime, nr2regions, ndprimeregions = readLDFile(ldfilename, dprimecutoff = mafcutoffdprime)
-			print prefixstring + "TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n"
+			print(prefixstring + "TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n")
 
 			###################################
 			### r2: MEAN ACROSS ALL REGIONS ###
@@ -268,23 +267,23 @@ def execute_bootstrap(args):
 		npopcomp = len(inputfilenames)
 		for icomp in range(len(npopcomp)):
 			fstfilename	= inputfilenames[icomp]
-			print prefixstring + "reading Fst values from: " + fstfilename	
+			print(prefixstring + "reading Fst values from: " + fstfilename)
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allRegionValues, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
-			print prefixstring + "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs for "".\n"
+			print(prefixstring + "TOTAL: logged Fst values for " + str(len(allRegionValues)) + " SNPs.\n")
 
 	writefile.close()
-	print prefixstring + "wrote to file: " + targetstats_filename
+	print(prefixstring + "wrote to file: " + targetstats_filename)
 	return
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
 	################
 	## FILE PREP ###
 	################
-	print prefixstring + "generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile
+	print(prefixstring + "generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
@@ -301,7 +300,7 @@ def execute_point(args):
 	if args.stopAfterMinutes is not None:
 		runStatsCommand += " --stop-after-minutes " + str(args.stopAfterMinutes)
 	runStatsCommand += "--custom-stats > " + statfilename
-	print runStatsCommand
+	print(runStatsCommand)
 	#subprocess.check_call(runStatsCommand)
 
 	#################
@@ -313,17 +312,17 @@ def execute_point(args):
 		else:
 			stats, pops = read_error_dimensionsfile(args.calcError) 
 			error = calc_error(statfilename, stats, pops)
-		print prefixstring + " error: " + str(error) #record?
+		print(prefixstring + " error: " + str(error)) #record?
 
 	################
 	## VISUALIZE ###
 	################		
 	if args.plotStats:
-		print prefixstring + " must connect to plotting infrastructure, ensure consistency wrt matplotlib"
+		print(prefixstring + " must connect to plotting infrastructure, ensure consistency wrt matplotlib")
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
-	print prefixstring + "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile
+	print(prefixstring + "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile)
 	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid')
 	assert len(keys) == len(indices) 
 	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
@@ -341,7 +340,7 @@ def execute_grid(args):
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
-	print prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile
+	print(prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile)
 	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
 
 	rangeDict = get_ranges()
@@ -361,9 +360,9 @@ def execute_optimize(args):
 	x0 = np.array(x0)
 	stepdict = {'eps':float(args.stepSize)}
 	result = optimize.minimize(samplePoint_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
-	print result
+	print(result)
 
-	print prefixstring +  "******************"
+	print(prefixstring +  "******************")
 	#translate back to changes to model
 	bestparams = []
 	assert len(keys) == len(result.x)
@@ -374,7 +373,7 @@ def execute_optimize(args):
 		low, high = float(interval[0]), float(interval[1])
 		realVal = get_real_value(result.x[i], low, high)
 		bestparams.append(result.x[i])
-		print prefixstring + "best " + str(key) + "|" + str(index) + "|" + str(realVal)
+		print(prefixstring + "best " + str(key) + "|" + str(index) + "|" + str(realVal))
 	return
 
 ##########
