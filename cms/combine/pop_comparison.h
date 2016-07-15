@@ -26,3 +26,5 @@ float getProb(likes_data* data, double value);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);
+
+

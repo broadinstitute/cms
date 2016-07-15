@@ -1,6 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 07.14.16   vitti@broadinstitute.org
-// STILL NEED TO HANDLE ARGS PROPERLY; combine_scores_multiplepops.c:39:48: error: expected ']'
+// last updated: 07.15.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -19,7 +18,7 @@
 int main(int argc, char **argv) {
 	popComp_data_multiple data;
 	FILE *outf=NULL;
-	int nComparisons, iComp, isnp;
+	int iComp, isnp; //
 	char outfilename[256]; 
 	double thisihs, thisihh; // per-pop
 	double thisfst, thisxpehh, thisdelDaf;
@@ -33,21 +32,25 @@ int main(int argc, char **argv) {
 	char deldaf_hit_filename[256], deldaf_miss_filename[256];
 
 	if (argc < 13) {
-		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <delihh_hit_filename> <delihh_miss_filename> <ihs_hit_filename> <ihs_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
+		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
 		exit(0);
 	}
 	fprintf(stderr, "Preparing to load component scores...\n");
-	get_popComp_data_multiple(&data, argc, argv[12:]); //argv[12:] or thereabouts, need to configure function. #possibly define likes in one file? 
+	//fprintf(stderr, argv);
+	
+
+	get_popComp_data_multiple(&data, argc, argv); 
 	fprintf(stderr, "nsnps: %d\n", data.nsnps);
 
 	strcpy(outfilename, argv[1]);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	fprintf(stderr, "writing to: %s\n", outfilename);
-	strcpy(delihh_hit_filename, argv[2]);
-	strcpy(delihh_miss_filename, argv[3]);
-	strcpy(ihs_hit_filename, argv[4]);
-	strcpy(ihs_miss_filename, argv[5]);
+	strcpy(ihs_hit_filename, argv[2]);
+	strcpy(ihs_miss_filename, argv[3]);
+	strcpy(delihh_hit_filename, argv[4]);
+	strcpy(delihh_miss_filename, argv[5]);
+
 	strcpy(xpehh_hit_filename, argv[6]);
 	strcpy(xpehh_miss_filename, argv[7]);
 	strcpy(fst_hit_filename, argv[8]);
@@ -69,7 +72,7 @@ int main(int argc, char **argv) {
 	// ITERATE OVER SNPS ///
 	////////////////////////
 
-	nComparisons = data.ncomp;
+	//nComparisons = data.ncomp;
 	for (isnp = 0; isnp < data.nsnps; isnp++){
 
 		//////////////////////////////////
