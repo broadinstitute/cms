@@ -1,5 +1,5 @@
 // for a given population pair, pulls and collates all component score statistics. 
-// last updated: 07.14.16   vitti@broadinstitute.org
+// last updated: 07.15.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -28,30 +28,31 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 
-	printf(ihs1filename, "%s", argv[4]);
-	printf(delihh1filename, "%s", argv[5]);	
-	printf(xpfilename, "%s", argv[6]);
-	xp_rev = atoi(argv[7]);
-	printf(fst_deldaffilename, "%s", argv[8]);
-	deldaf_rev = atoi(argv[9]);
+	sprintf(ihs1filename, "%s", argv[1]);
+	sprintf(delihh1filename, "%s", argv[2]);	
+	sprintf(xpfilename, "%s", argv[3]);
+	xp_rev = atoi(argv[4]);
+	sprintf(fst_deldaffilename, "%s", argv[5]);
+	deldaf_rev = atoi(argv[6]);
 
+	fprintf(stderr, "\n"); //include some global CMS2.0 prefix?
+	fprintf(stderr, "loading data from: %s\n", ihs1filename);
 	get_ihs_data(&ihs1, ihs1filename);
-	fprintf(stderr, "loading data from: %s", ihs1filename);
-	fprintf(stderr, "\t\n nsnps: %d\n", ihs1.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", ihs1.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", delihh1filename);
 	get_delihh_data(&delihh1, delihh1filename);
-	fprintf(stderr, "loading data from: %s", delihh1filename);
-	fprintf(stderr, "\t\n nsnps: %d\n", delihh1.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", delihh1.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", xpfilename);
 	get_xpehh_data(&xp, xpfilename);
-	fprintf(stderr, "loading data from: %s", xpfilename);
-	fprintf(stderr, "\t\n nsnps: %d\n", xp.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", xp.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", fst_deldaffilename);
 	get_fst_deldaf_data(&fst_deldaf, fst_deldaffilename);
-	fprintf(stderr, "loading data from: %s", fst_deldaffilename);
-	fprintf(stderr, "\t\n nsnps: %d\n", fst_deldaf.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", fst_deldaf.nsnps);
 
-	printf(outfilename, "%s", argv[10]);
+	sprintf(outfilename, "%s", argv[7]);
 
 	////////////////////////
 	// ITERATE OVER SNPS ///

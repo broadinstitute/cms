@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 07.14.16 	vitti@broadinstitute.org
+// last updated: 07.15.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -8,7 +8,6 @@
 #include <zlib.h>
 #include "cms_data.h"
 
-int intcmp(const void *v1, const void *v2);
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
 
 /**********************/
@@ -352,7 +351,7 @@ void get_likes_data(likes_data* data, char filename[]){
 	data->start_bin = NULL; 
 	data->end_bin = NULL;
 	data->probs = NULL;
-	fprintf(stderr, "\tloading likes tables from %s\n", filename);
+	//fprintf(stderr, "\tloading likes tables from %s\n", filename);
 
 	inf = fopen(filename, "r");
 	assert(inf != NULL);
@@ -360,6 +359,7 @@ void get_likes_data(likes_data* data, char filename[]){
 	while (fgets(newLine, line_size, inf) != NULL){
 		data->nbins++;
 	}
+	data->nbins++; //one extra because 50 bins can be represented with 49 bounds
 
 	data->start_bin = malloc(data->nbins * sizeof(double));
 	data->end_bin = malloc(data->nbins * sizeof(double));
@@ -370,7 +370,7 @@ void get_likes_data(likes_data* data, char filename[]){
 	assert(inf != NULL);
 	ibin = 0;
 	while (fgets(newLine, line_size, inf) != NULL){
-		for (running = newLine, itoken = 0; (token = strsep(&running, "\t")) != NULL; itoken++) {
+		for (running = newLine, itoken = 0; (token = strsep(&running, "\t ")) != NULL; itoken++) {
 			//fprintf(stderr, token);
 		 // fprintf(stderr, "\n%d\n", itoken);
 			if (itoken == 0) {
@@ -385,8 +385,8 @@ void get_likes_data(likes_data* data, char filename[]){
 			} 
 		} // end for loop
 		ibin++;
+		//fprintf(stderr, "ibin is now %d\n", ibin);
 	} // end while loop
-
 	fclose(inf);
 	free(newLine);
 } //end method
@@ -627,4 +627,9 @@ void get_popComp_data_region(popComp_data* data, char filename[], int startBp, i
 		fclose(inf);
 		free(newLine);
 } //end method
+
+
+
+
+
 
