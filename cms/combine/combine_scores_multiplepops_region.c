@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 07.15.16   vitti@broadinstitute.org
+// last updated: 07.17.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -39,24 +39,24 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, argv);
 	
 
-	get_popComp_data_multiple_region(&data, argc, argv); 
+	get_popComp_data_multiple_region(&data, argc, argv); //DEBUG FUNCTION
 	fprintf(stderr, "nsnps: %d\n", data.nsnps);
 
-	strcpy(outfilename, argv[1]);
+	strcpy(outfilename, argv[3]);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	fprintf(stderr, "writing to: %s\n", outfilename);
-	strcpy(ihs_hit_filename, argv[2]);
-	strcpy(ihs_miss_filename, argv[3]);
-	strcpy(delihh_hit_filename, argv[4]);
-	strcpy(delihh_miss_filename, argv[5]);
+	strcpy(ihs_hit_filename, argv[4]);
+	strcpy(ihs_miss_filename, argv[5]);
+	strcpy(delihh_hit_filename, argv[6]);
+	strcpy(delihh_miss_filename, argv[7]);
 
-	strcpy(xpehh_hit_filename, argv[6]);
-	strcpy(xpehh_miss_filename, argv[7]);
-	strcpy(fst_hit_filename, argv[8]);
-	strcpy(fst_miss_filename, argv[9]);
-	strcpy(deldaf_hit_filename, argv[10]);
-	strcpy(deldaf_miss_filename, argv[11]);
+	strcpy(xpehh_hit_filename, argv[8]);
+	strcpy(xpehh_miss_filename, argv[9]);
+	strcpy(fst_hit_filename, argv[10]);
+	strcpy(fst_miss_filename, argv[11]);
+	strcpy(deldaf_hit_filename, argv[12]);
+	strcpy(deldaf_miss_filename, argv[13]);
 	get_likes_data(&delihh_hit, delihh_hit_filename);
 	get_likes_data(&delihh_miss, delihh_miss_filename);
 	get_likes_data(&ihs_hit, ihs_hit_filename);
@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
 	////////////////////////
 	prior = 1. / data.nsnps;
 	for (isnp = 0; isnp < data.nsnps; isnp++){
+		fprintf(stderr, "%d\t", data.physpos[0][isnp]);
 
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -81,8 +82,8 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < data.ncomp; iComp++){
 			if (data.physpos[iComp][isnp] != 0){break;}
 		}
-
-
+		if (iComp == 2){continue;} //??
+		//fprintf(stderr, "ICOMP: %d\t", iComp);
 		thisihs = data.ihs_normed[iComp][isnp];
 		thisihh = data.delihh_normed[iComp][isnp];
 
@@ -107,7 +108,7 @@ int main(int argc, char **argv) {
 		
 	compLike = numerator / denominator;
 
-	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLike);
+	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLike);
 	}
 
 	fclose(outf);

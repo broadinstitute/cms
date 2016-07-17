@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 		
 	compLikeRatio = numerator / denominator;
 
-	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 	}
 
 	fclose(outf);

@@ -1,5 +1,5 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 07.15.16 vitti@broadinstitute.org
+## last updated: 07.17.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 from combine.likes_func import get_likesfiles_frommaster
@@ -23,7 +23,7 @@ def full_parser_composite():
 	poppair_parser.add_argument('in_xp_file', help="file with normalized XP-EHH values", action="store")
 	poppair_parser.add_argument('in_fst_deldaf_file', help="file with Fst, delDaf values for poppair", action="store")
 	poppair_parser.add_argument('--xp_reverse_pops', help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)", action="store_true")	
-	poppair_parser.add_argument('--deldaf_reverse_pops', help="finclude if the putative selpop for outcome is the altpop in delDAF (and vice versa)", action="store_true") #reversed? 0T 1F
+	poppair_parser.add_argument('--fst_deldaf_reverse_pops', help="finclude if the putative selpop for outcome is the altpop in delDAF (and vice versa)", action="store_true") #reversed? 0T 1F
 	poppair_parser.add_argument('outfile', help="file to write with collated scores", action="store") 
 
 	########################
@@ -46,11 +46,11 @@ def full_parser_composite():
 ############################
 def execute_poppair(args):
 	cmd = "/combine/combine_scores_poppair"
-	if args.xp_reverse_pops is not None:
+	if args.xp_reverse_pops:
 		xp_reversed = 0
 	else:
 		xp_reversed = 1
-	if args.deldaf_reverse_pops is not None:
+	if args.fst_deldaf_reverse_pops:
 		deldaf_reversed = 0
 	else:
 		deldaf_reversed = 1
@@ -66,7 +66,7 @@ def execute_outgroups(args):
 		argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	else:	#WITHIN REGION
 		cmd = "/combine/combine_scores_multiplepops_region"
-		argstring = str(args.startBp) + " " + str(args.endBp) + " " + 	argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
+		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
 	cmdstring = cmd + " " + argstring
