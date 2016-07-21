@@ -31,6 +31,13 @@ int main(int argc, char **argv) {
 	char fst_hit_filename[256], fst_miss_filename[256];
 	char deldaf_hit_filename[256], deldaf_miss_filename[256];
 
+
+	float delihh_hitprob, delihh_missprob;
+	float ihs_hitprob, ihs_missprob;
+	float xpehh_hitprob, xpehh_missprob;
+	float fst_hitprob, fst_missprob;
+	float deldaf_hitprob, deldaf_missprob;
+
 	if (argc < 15) {
 		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops_region <startbp> <endbp> <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
 		exit(0);
@@ -73,7 +80,7 @@ int main(int argc, char **argv) {
 	////////////////////////
 	prior = 1. / data.nsnps;
 	for (isnp = 0; isnp < data.nsnps; isnp++){
-		fprintf(stderr, "%d\t", data.physpos[0][isnp]);
+		//fprintf(stderr, "%d\t", data.physpos[0][isnp]);
 
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -91,6 +98,34 @@ int main(int argc, char **argv) {
 		thisfst = compareFst(&data, isnp);
 		thisdelDaf = comparedelDaf(&data, isnp);
 
+
+
+	delihh_hitprob = getProb(&delihh_hit, thisihh);
+	ihs_hitprob = getProb(&ihs_hit, thisihs);
+	fst_hitprob = getProb(&fst_hit, thisfst);
+	deldaf_hitprob = getProb(&deldaf_hit, thisdelDaf);
+	xpehh_hitprob = getProb(&xpehh_hit, thisxpehh);
+	//denominator = 1;
+	delihh_missprob = getProb(&delihh_miss, thisihh); 
+	ihs_missprob = getProb(&ihs_miss, thisihs);
+	fst_missprob = getProb(&fst_miss, thisfst);
+	deldaf_missprob = getProb(&deldaf_miss, thisdelDaf);
+	xpehh_missprob = getProb(&xpehh_miss, thisxpehh);
+
+	//debug
+	if (data.physpos[iComp][isnp] == 136608646){
+		fprintf(stderr, "found causal snp at pos 136608646:\n");
+	fprintf(stderr, "delihh: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisihh, delihh_hitprob, delihh_missprob);
+	fprintf(stderr, "ihs: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisihs, ihs_hitprob, ihs_missprob);
+	fprintf(stderr, "fst: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisfst, fst_hitprob, fst_missprob);	
+	fprintf(stderr, "deldaf: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisdelDaf, deldaf_hitprob, deldaf_missprob);
+	fprintf(stderr, "xpehh: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisxpehh, xpehh_hitprob, xpehh_missprob);
+}
+
+
+
+
+
 	compLike = 1;
 	numerator = 1.;
 	numerator *= getProb(&delihh_hit, thisihh) * prior;
@@ -105,6 +140,10 @@ int main(int argc, char **argv) {
 	denominator *= ((getProb(&deldaf_miss, thisdelDaf)* (1-prior)) + (getProb(&deldaf_hit, thisdelDaf) * prior));
 	denominator *= ((getProb(&xpehh_miss, thisxpehh)* (1-prior)) + (getProb(&xpehh_hit, thisxpehh) * prior));
 		
+
+
+
+
 		
 	compLike = numerator / denominator;
 

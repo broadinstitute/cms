@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 07.15.16 	vitti@broadinstitute.org
+// last updated 07.21.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -86,7 +86,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	nComparisons = argc - numLikesFiles; //MUST CHECK THIS IS BEING PASSED CORRECTLY
 	totNsnp = 0;
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+(numLikesFiles)]);
+		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
 		//fprintf(stderr, infilename);
 		inf = fopen(infilename, "r");
 		assert(inf != NULL);
@@ -100,7 +100,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	allSnps = malloc(totNsnp * sizeof(int));
 	isnp = 0;
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+(numLikesFiles)]);
+		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
 		inf = fopen(infilename,"r");
 		assert(inf != NULL);
 		fgets(newLine, line_size, inf); // header
@@ -189,7 +189,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 
 	fprintf(stderr, "Loading all component scores...\n");
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+numLikesFiles]);
+		sprintf(infilename, "%s", argv[iComp+numLikesFiles]);
 		//fprintf(stderr, infilename);
 		get_popComp_data(&data_sing, infilename);
 		jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
@@ -251,8 +251,9 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	numLikesFiles = 14; 
 	nComparisons = argc - numLikesFiles; //MUST CHECK THIS IS BEING PASSED CORRECTLY
 	totNsnp = 0;
+	//fprintf(stderr, "numcomparisons: %d\n", nComparisons);
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+(numLikesFiles)]);
+		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
 		//fprintf(stderr, infilename);
 		inf = fopen(infilename, "r");
 		assert(inf != NULL);
@@ -266,7 +267,7 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	allSnps = malloc(totNsnp * sizeof(int));
 	isnp = 0;
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+(numLikesFiles)]);
+		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
 		inf = fopen(infilename,"r");
 		assert(inf != NULL);
 		fgets(newLine, line_size, inf); // header
@@ -359,26 +360,37 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 
 	fprintf(stderr, "Loading all component scores...\n");
 	for (iComp = 0; iComp < nComparisons; iComp++){
-		sprintf(infilename, argv[iComp+numLikesFiles]);
+		sprintf(infilename, "%s", argv[iComp+numLikesFiles]);
 		//fprintf(stderr, infilename);
 		get_popComp_data(&data_sing, infilename);
-		jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
+		//fprintf(stderr, "\n\tloaded data for one population comparison; nSnps: %d\n", data_sing.nsnps);
+		//jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
+
+		//let's try a nested loop.
 		for (isnp = 0; isnp < nunique; isnp++){
-			//fprintf(stderr, "%d\t%d\t%d\t%d\n", isnp, jsnp, allUniqueSnps[isnp], data_sing.physpos[jsnp]);
-			if (allUniqueSnps[isnp] == data_sing.physpos[jsnp]){ // the snp matches; load all data
-				data->physpos[iComp][isnp] = data_sing.physpos[jsnp];	
-				data->genpos[iComp][isnp] = data_sing.genpos[jsnp];	 
-				data->daf_selpop[iComp][isnp] = data_sing.daf_selpop[jsnp];	 
-				data->delDAF[iComp][isnp] = data_sing.delDAF[jsnp];	
-				data->fst[iComp][isnp] = data_sing.fst[jsnp];	 
-				data->xp_normed[iComp][isnp] = data_sing.xp_normed[jsnp];							 
-				data->ihs_normed[iComp][isnp] = data_sing.ihs_normed[jsnp];	 
-				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];			 
-				jsnp++; //assert(jsnp<=data_sing.nsnps);
-				if (jsnp >= data_sing.nsnps){break;}
-			}
-			else if (allUniqueSnps[isnp] > data_sing.physpos[jsnp]){jsnp++; if (jsnp >= data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
-			//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){pass;}
+			for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
+
+				//fprintf(stderr, "%d\t%d\t%d\t%d\n", isnp, jsnp, allUniqueSnps[isnp], data_sing.physpos[jsnp]);
+				if (allUniqueSnps[isnp] == data_sing.physpos[jsnp]){ // the snp matches; load all data
+					//printf(stderr, "foobar!");
+					data->physpos[iComp][isnp] = data_sing.physpos[jsnp];	
+					data->genpos[iComp][isnp] = data_sing.genpos[jsnp];	 
+					data->daf_selpop[iComp][isnp] = data_sing.daf_selpop[jsnp];	 
+					data->delDAF[iComp][isnp] = data_sing.delDAF[jsnp];	
+					data->fst[iComp][isnp] = data_sing.fst[jsnp];	 
+					data->xp_normed[iComp][isnp] = data_sing.xp_normed[jsnp];							 
+					data->ihs_normed[iComp][isnp] = data_sing.ihs_normed[jsnp];	 
+					data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];			 
+					break;
+					//jsnp++; //assert(jsnp<=data_sing.nsnps);
+					//if (jsnp >= data_sing.nsnps){break;}
+				}
+				//else {pass;}
+				//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){jsnp++; if (jsnp >= data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
+				//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){pass;}
+
+				} //end for jsnp loop
+
 		}// end for isnp loop
 
 		free_popComp_data(&data_sing); 
