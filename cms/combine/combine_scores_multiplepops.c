@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
 	fst_bf = fst_hitprob / fst_missprob;
 	deldaf_bf = deldaf_hitprob / deldaf_missprob;
 	xpehh_bf = xpehh_hitprob / xpehh_missprob;
-	if (data.physpos[iComp][isnp] > 136600000 && data.physpos[iComp][isnp] < 136700000){fprintf(stderr, "%9f\t%9f\t%9f\t%9f\t%9f\n", delihh_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf);}
+	//if (data.physpos[iComp][isnp] > 136600000 && data.physpos[iComp][isnp] < 136700000){fprintf(stderr, "%9f\t%9f\t%9f\t%9f\t%9f\n", delihh_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf);}
 	//DEBUG
 
 	compLikeRatio = delihh_bf * ihs_bf * fst_bf * deldaf_bf * xpehh_bf;
