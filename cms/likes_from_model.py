@@ -102,15 +102,15 @@ def execute_run_neut_sims(args):
 	neutRunDir += "run_neut_sims"
 	runDir = check_make_dir(neutRunDir)
 	runDir += "/"
-	print prefixstring + "running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile
-	print prefixstring + "writing to: " + runDir
+	print(prefixstring + "running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
+	print(prefixstring + "writing to: " + runDir)
 	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile + " --output-gen-map " 
 	if args.genmapRandomRegions:
 		runStatsCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " -o " + runDir + "rep"
-	print prefixstring + neutSimCommand
+	print(prefixstring + neutSimCommand)
 	subprocess.check_output(n=eutSimCommand.split())
 	return
 def execute_get_sel_trajs(args):
@@ -122,8 +122,8 @@ def execute_get_sel_trajs(args):
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	print prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile
-	print prefixstring + "outputting to " + runDir
+	print(prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
+	print(prefixstring + "outputting to " + runDir)
 
  	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
@@ -140,8 +140,8 @@ def execute_run_sel_sims(args):
 		selSimDir += "/"
 	selSimDir += "sel_sims/"
 	runDir = check_make_dir(selSimDir)
-	print prefixstring + "loading trajectories from " + args.trajDir
-	print prefixstring + "outputting to " + runDir
+	print(prefixstring + "loading trajectories from " + args.trajDir)
+	print(prefixstring + "outputting to " + runDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
@@ -172,7 +172,7 @@ def execute_scores_from_sims(args):
 		else:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 			norm_sel_ihs(args.inputIhs, args.normalizeIhs, bin_ends)
-			#print prefixstring + "loading normalization parameters from " + args.normalizeIhs + " ..."
+			#print(prefixstring + "loading normalization parameters from " + args.normalizeIhs + " ...")
 	if args.normalizeDelIhh is not None:
 		if args.normalizeDelIhh == "":
 			#can reuse iHS func

@@ -1,5 +1,7 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 07.08.16   vitti@broadinstitute.org
+// last updated: 07.15.16   vitti@broadinstitute.org
+
+int intcmp(const void *v1, const void *v2);
 
 /**********************/
 /***COMPONENT SCORES***/
@@ -67,6 +69,11 @@ typedef struct likes_data{
 void get_likes_data(likes_data* data, char filename[]);
 void free_likes_data(likes_data* data);
 
+
+/*************************/
+/***TWO-POP COMPARISON***/
+/*************************/
+
 typedef struct popComp_data{
     int nsnps;
     char **locus_id;
@@ -80,9 +87,6 @@ typedef struct popComp_data{
     double *delihh_normed;
 } popComp_data;
 
-void get_popComp_data(popComp_data* data, char filename[]); //_multiple?
-//void get_popComp_data_region(popComp_data* data, char filename[], int startBp, int endBp);
+void get_popComp_data(popComp_data* data, char filename[]); 
 void free_popComp_data(popComp_data* data);
-
 void get_popComp_data_region(popComp_data* data, char infilename[], int startBp, int endBp);
-

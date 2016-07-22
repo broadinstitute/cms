@@ -1,6 +1,5 @@
 // for a given population pair, pulls and collates all component score statistics. 
-// --> COMPILE:  gcc -o combine/combine_scores_poppair -O0 -ggdb3 -lm -Wall /combine/combine_scores_poppair.c /combine/cms_data.c
-// last updated: 07.11.16   vitti@broadinstitute.org
+// last updated: 07.15.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -29,34 +28,31 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 
-	sprintf(ihs1filename, argv[4]);
-	sprintf(delihh1filename, argv[5]);	
-	sprintf(xpfilename, argv[6]);
-	xp_rev = atoi(argv[7]);
-	sprintf(fst_deldaffilename, argv[8]);
-	deldaf_rev = atoi(argv[9]);
+	sprintf(ihs1filename, "%s", argv[1]);
+	sprintf(delihh1filename, "%s", argv[2]);	
+	sprintf(xpfilename, "%s", argv[3]);
+	xp_rev = atoi(argv[4]);
+	sprintf(fst_deldaffilename, "%s", argv[5]);
+	deldaf_rev = atoi(argv[6]);
 
+	fprintf(stderr, "\n"); //include some global CMS2.0 prefix?
+	fprintf(stderr, "loading data from: %s\n", ihs1filename);
 	get_ihs_data(&ihs1, ihs1filename);
-	fprintf(stderr, "loading data from: ");
-	fprintf(stderr, ihs1filename);
-	fprintf(stderr, "\t\n nsnps: %d\n", ihs1.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", ihs1.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", delihh1filename);
 	get_delihh_data(&delihh1, delihh1filename);
-	fprintf(stderr, "loading data from: ");
-	fprintf(stderr, delihh1filename);
-	fprintf(stderr, "\t\n nsnps: %d\n", delihh1.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", delihh1.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", xpfilename);
 	get_xpehh_data(&xp, xpfilename);
-	fprintf(stderr, "loading data from: ");
-	fprintf(stderr, xpfilename);
-	fprintf(stderr, "\t\n nsnps: %d\n", xp.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", xp.nsnps);
 
+	fprintf(stderr, "loading data from: %s\n", fst_deldaffilename);
 	get_fst_deldaf_data(&fst_deldaf, fst_deldaffilename);
-	fprintf(stderr, "loading data from: ");
-	fprintf(stderr, fst_deldaffilename);
-	fprintf(stderr, "\t\n nsnps: %d\n", fst_deldaf.nsnps);
+	fprintf(stderr, "\t nsnps: %d\n", fst_deldaf.nsnps);
 
-	sprintf(outfilename, argv[10]);
+	sprintf(outfilename, "%s", argv[7]);
 
 	////////////////////////
 	// ITERATE OVER SNPS ///
@@ -68,9 +64,7 @@ int main(int argc, char **argv) {
 
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
-	fprintf(stderr, "writing to: ");
-	fprintf(stderr, outfilename);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "writing to: %s\n", outfilename);
 
 	fprintf(outf, "locus\tphyspos\tgenpos\tDAF_selpop\tdelDAF\tfst\txp_normed\tihs1_normed\tdelihh1_normed\n");//header
 	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && fst_deldaf_index < fst_deldaf.nsnps)
@@ -86,9 +80,7 @@ int main(int argc, char **argv) {
 			if(xp_rev == 0){thisXp*=-1;}
 			if(deldaf_rev == 0){thisDeldaf*=-1;}
 
-			fprintf(outf, "chr");
-			fprintf(outf, argv[1]);
-			fprintf(outf, "_");
+			//fprintf(outf, "chr%s_", argv[1]);
 			fprintf(outf, "%d\t%d\t", ihs1pos, ihs1pos);
 			fprintf(outf, "%f\t", xp.genpos[xp_index]);
 			fprintf(outf, "%f\t", 1 - ihs1.freq1[ihs1_index]);

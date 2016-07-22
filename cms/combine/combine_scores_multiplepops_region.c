@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
 	char outfilename[256]; 
 	double thisihs, thisihh; // per-pop
 	double thisfst, thisxpehh, thisdelDaf;
-	double compLikeRatio, numerator, denominator;
-
+	double compLike, numerator, denominator;
+	double prior;
 	likes_data delihh_hit, delihh_miss, ihs_hit, ihs_miss, xpehh_hit, xpehh_miss, fst_hit, fst_miss, deldaf_hit, deldaf_miss;
 	char delihh_hit_filename[256], delihh_miss_filename[256]; // LIKES
 	char ihs_hit_filename[256], ihs_miss_filename[256];
@@ -31,15 +31,15 @@ int main(int argc, char **argv) {
 	char fst_hit_filename[256], fst_miss_filename[256];
 	char deldaf_hit_filename[256], deldaf_miss_filename[256];
 
-	if (argc < 13) {
-		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
+	if (argc < 15) {
+		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops_region <startbp> <endbp> <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
 		exit(0);
 	}
 	fprintf(stderr, "Preparing to load component scores...\n");
 	//fprintf(stderr, argv);
 	
 
-	get_popComp_data_multiple(&data, argc, argv); 
+	get_popComp_data_multiple_region(&data, argc, argv); 
 	fprintf(stderr, "nsnps: %d\n", data.nsnps);
 
 	strcpy(outfilename, argv[1]);
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 	////////////////////////
 	// ITERATE OVER SNPS ///
 	////////////////////////
-
+	prior = 1. / data.nsnps;
 	for (isnp = 0; isnp < data.nsnps; isnp++){
 
 		//////////////////////////////////
@@ -90,23 +90,24 @@ int main(int argc, char **argv) {
 		thisfst = compareFst(&data, isnp);
 		thisdelDaf = comparedelDaf(&data, isnp);
 
-	compLikeRatio = 1;
-	numerator = 1;
-	numerator *= getProb(&delihh_hit, thisihh);
-	numerator *= getProb(&ihs_hit, thisihs);
-	numerator *= getProb(&fst_hit, thisfst);
-	numerator *= getProb(&deldaf_hit, thisdelDaf);
-	numerator *= getProb(&xpehh_hit, thisxpehh);
-	denominator = 1;
-	denominator *= getProb(&delihh_miss, thisihh);
-	denominator *= getProb(&ihs_miss, thisihs);
-	denominator *= getProb(&fst_miss, thisfst);
-	denominator *= getProb(&deldaf_miss, thisdelDaf);
-	denominator *= getProb(&xpehh_miss, thisxpehh);
+	compLike = 1;
+	numerator = 1.;
+	numerator *= getProb(&delihh_hit, thisihh) * prior;
+	numerator *= getProb(&ihs_hit, thisihs) * prior;
+	numerator *= getProb(&fst_hit, thisfst)* prior;
+	numerator *= getProb(&deldaf_hit, thisdelDaf) * prior;
+	numerator *= getProb(&xpehh_hit, thisxpehh) * prior;
+	denominator = 1.;
+	denominator *= ((getProb(&delihh_miss, thisihh) * (1-prior)) + (getProb(&delihh_hit, thisihh) * prior));
+	denominator *= ((getProb(&ihs_miss, thisihs)* (1-prior)) + (getProb(&ihs_hit, thisihh) * prior));
+	denominator *= ((getProb(&fst_miss, thisfst)* (1-prior)) + (getProb(&fst_hit, thisfst) * prior));
+	denominator *= ((getProb(&deldaf_miss, thisdelDaf)* (1-prior)) + (getProb(&deldaf_hit, thisdelDaf) * prior));
+	denominator *= ((getProb(&xpehh_miss, thisxpehh)* (1-prior)) + (getProb(&xpehh_hit, thisxpehh) * prior));
 		
-	compLikeRatio = numerator / denominator;
+		
+	compLike = numerator / denominator;
 
-	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLike);
 	}
 
 	fclose(outf);
