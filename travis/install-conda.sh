@@ -38,5 +38,5 @@ else # if it does not exist, we need to install miniconda
     conda config --add channels r
 fi
 
-conda update -q conda
+conda update -q -y conda
 conda info -a # for debugging
