@@ -33,7 +33,6 @@ def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThrea
 	print cmdStr
 	return	
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile):
-	print "assumes C program compiled "
 	commandstring = "./calc_fst_deldaf_tped"
 	argstring = inputTped1 + " " + inputTped2 + " " + recomFile + " " + outputFile
 	print commandstring + " " + argstring

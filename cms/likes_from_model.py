@@ -1,8 +1,9 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
-## last updated: 07.08.16 vitti@broadinstitute.org
+## last updated: 07.23.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
+from dists.likes_func import get_old_likes, read_likes_file, plot_likes 
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake
 from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
 import argparse
@@ -89,6 +90,10 @@ def full_parser_likes_from_model():
 	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, likes_from_scores_parser]:
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
+
+	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='visualize likelihood tables')
+	#visualize_likes_parser.add_argument('')
+
 	return parser
 
 ############################
@@ -125,12 +130,12 @@ def execute_get_sel_trajs(args):
 	print(prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
 	print(prefixstring + "outputting to " + runDir)
 
- 	for ibin in range(args.nBins):
+	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		runDir = check_make_dir(populateDir)
 		#bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
-  		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
+		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
 		run_sel_trajs_snakemake(runDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
 	return
 def execute_run_sel_sims(args):
@@ -267,7 +272,41 @@ def execute_likes_from_scores(args):
 	#	else: #ihs, delihh
 	#		pass
 	return
+def execute_visualize_likes(args):
+	'''currently hard-wired to view all'''
+	old_likes = get_old_likes()
+	scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
+	pops = range(1,5)
+	models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best', 'nulldefault', 'nulldefault_constantsize']
+	dists = ['causal', 'linked', 'neut']
+	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
+	
+	for score in scores: #each score gets its own figure
+		#fig = plt.figure()
+		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
+		bins, scorerange, ylims = get_hist_bins(score, 50)
+		f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7 ,ax8), (ax9, ax10, ax11, ax12), (ax13, ax14, ax15, ax16), (ax17, ax18,ax19, ax20)) = plt.subplots(5, 4, sharex='col', sharey='row')
+		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
+		iAxis = 1
 
+		for imodel in range(len(models)): #rows
+			model = models[imodel]
+			for ipop in range(len(pops)): #columns
+				ax = eval('ax' + str(iAxis))
+				pop = pops[ipop]
+				#ax = fig.add_subplot(111)#111)	
+				#print (str(imodel)  + "\t" + str(ipop))
+				#ax = axarr[imodel, ipop]			
+				starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
+				starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
+				starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
+				assert starts_causal == starts_neut and starts_neut == starts_linked
+				plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
+				plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
+				plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
+				iAxis +=1
+		plt.show()
+	return
 ##########
 ## MAIN ##
 ##########

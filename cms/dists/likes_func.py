@@ -1,13 +1,13 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 07.21.16 vitti@broadinstitute.org
+## last updated: 07.23.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TkAgg') #set backend
 import matplotlib.pyplot as plt
 from random import choice
+import numpy as np
 import os
-#from likes_func import get_hists_bins #maybe?
-"""def get_hist_bins(score,numBins):
+def get_hist_bins(score,numBins):
 	if score == "ihs":
 		scorerange = [-4., 4.]
 		ylims = [0, .25]
@@ -25,8 +25,7 @@ import os
 		ylims = [0, .25]
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
-	return bins, scorerange, ylims"""
-
+	return bins, scorerange, ylims
 def read_likes_file(likesfilename):
 	'''parses a file from e.g. write_hists_to_files'''
 	starts, ends, vals = [], [], []
@@ -57,18 +56,11 @@ def get_old_likes():
 					starts, ends, vals = read_likes_file(likesfilename)
 					likesdict[key] = [starts, ends, vals]
 	return likesdict
-def plot_likes(starts, ends, vals, ax):
-	ax.scatter(starts, vals)
-	plt.show()
-	print("I did it!")
+def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
+	assert len(starts) == len(ends)
+	midpoints = [(starts[i] + ends[i])/2 for i in range(len(starts))]
+	ax.scatter(midpoints, vals, color=color)
+	ax.set_xlim(xlims)
+	ax.set_ylim(ylims)
 	return ax
 
-def main(): #for debug
-	old_likes = get_old_likes()
-	starts, ends, vals = old_likes[('gradient_101915_treebase_6_best', 'delihh', 'causal', 1)]
-
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	plot_likes(starts, ends, vals, ax)
-	fig.show()
-main()
