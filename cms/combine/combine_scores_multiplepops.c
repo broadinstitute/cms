@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 07.15.16   vitti@broadinstitute.org
+// last updated: 07.20.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 	char outfilename[256]; 
 	double thisihs, thisihh; // per-pop
 	double thisfst, thisxpehh, thisdelDaf;
-	double compLikeRatio, numerator, denominator;
+	double compLikeRatio;//, numerator, denominator;
 
 	likes_data delihh_hit, delihh_miss, ihs_hit, ihs_miss, xpehh_hit, xpehh_miss, fst_hit, fst_miss, deldaf_hit, deldaf_miss;
 	char delihh_hit_filename[256], delihh_miss_filename[256]; // LIKES
@@ -30,6 +30,12 @@ int main(int argc, char **argv) {
 	char xpehh_hit_filename[256], xpehh_miss_filename[256];
 	char fst_hit_filename[256], fst_miss_filename[256];
 	char deldaf_hit_filename[256], deldaf_miss_filename[256];
+
+	float delihh_hitprob, delihh_missprob, delihh_bf; //bayes factor
+	float ihs_hitprob, ihs_missprob, ihs_bf;
+	float xpehh_hitprob, xpehh_missprob, xpehh_bf;
+	float fst_hitprob, fst_missprob, fst_bf;
+	float deldaf_hitprob, deldaf_missprob, deldaf_bf;
 
 	if (argc < 13) {
 		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
@@ -91,22 +97,38 @@ int main(int argc, char **argv) {
 		thisdelDaf = comparedelDaf(&data, isnp);
 
 	compLikeRatio = 1;
-	numerator = 1;
-	numerator *= getProb(&delihh_hit, thisihh);
-	numerator *= getProb(&ihs_hit, thisihs);
-	numerator *= getProb(&fst_hit, thisfst);
-	numerator *= getProb(&deldaf_hit, thisdelDaf);
-	numerator *= getProb(&xpehh_hit, thisxpehh);
-	denominator = 1;
-	denominator *= getProb(&delihh_miss, thisihh);
-	denominator *= getProb(&ihs_miss, thisihs);
-	denominator *= getProb(&fst_miss, thisfst);
-	denominator *= getProb(&deldaf_miss, thisdelDaf);
-	denominator *= getProb(&xpehh_miss, thisxpehh);
-		
-	compLikeRatio = numerator / denominator;
+	//numerator = 1;
+	delihh_hitprob = getProb(&delihh_hit, thisihh);
+	ihs_hitprob = getProb(&ihs_hit, thisihs);
+	fst_hitprob = getProb(&fst_hit, thisfst);
+	deldaf_hitprob = getProb(&deldaf_hit, thisdelDaf);
+	xpehh_hitprob = getProb(&xpehh_hit, thisxpehh);
+	//denominator = 1;
+	delihh_missprob = getProb(&delihh_miss, thisihh); 
+	ihs_missprob = getProb(&ihs_miss, thisihs);
+	fst_missprob = getProb(&fst_miss, thisfst);
+	deldaf_missprob = getProb(&deldaf_miss, thisdelDaf);
+	xpehh_missprob = getProb(&xpehh_miss, thisxpehh);
 
-	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+	//debug
+	//fprintf(stderr, "delihh: %f\thitprob: %9f\tmissprob: %9f\n", thisihh, delihh_hitprob, delihh_missprob);
+	//fprintf(stderr, "ihs: %f\thitprob: %f\tmissprob: %f\n", thisihs, ihs_hitprob, ihs_missprob);
+	//fprintf(stderr, "fst: %f\thitprob: %f\tmissprob: %f\n", thisfst, fst_hitprob, fst_missprob);	
+	//fprintf(stderr, "deldaf: %f\thitprob: %f\tmissprob: %f\n", thisdelDaf, deldaf_hitprob, deldaf_missprob);
+	//fprintf(stderr, "xpehh: %f\thitprob: %f\tmissprob: %f\n", thisxpehh, xpehh_hitprob, xpehh_missprob);
+
+	delihh_bf = delihh_hitprob / delihh_missprob;
+	ihs_bf = ihs_hitprob / ihs_missprob;
+	fst_bf = fst_hitprob / fst_missprob;
+	deldaf_bf = deldaf_hitprob / deldaf_missprob;
+	xpehh_bf = xpehh_hitprob / xpehh_missprob;
+	//if (data.physpos[iComp][isnp] > 136600000 && data.physpos[iComp][isnp] < 136700000){fprintf(stderr, "%9f\t%9f\t%9f\t%9f\t%9f\n", delihh_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf);}
+	//DEBUG
+
+	compLikeRatio = delihh_bf * ihs_bf * fst_bf * deldaf_bf * xpehh_bf;
+	//(numerator / denominator);
+
+	fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 	}
 
 	fclose(outf);

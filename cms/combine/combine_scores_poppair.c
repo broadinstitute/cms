@@ -1,5 +1,5 @@
 // for a given population pair, pulls and collates all component score statistics. 
-// last updated: 07.15.16   vitti@broadinstitute.org
+// last updated: 07.17.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	xpehh_data xp;
 	fst_deldaf_data fst_deldaf;
 	FILE *outf=NULL;
-	int xp_rev, deldaf_rev; // {}_rev are Booleans 0T 1F to track putative selpop. passed from getFileNames()
+	int xp_rev, deldaf_rev; // {}_rev are Booleans 0T 1F to track putative selpop. 
 	char ihs1filename[528], delihh1filename[528];
 	char xpfilename[528], fst_deldaffilename[528], outfilename[528];
 	int ihs1_index, delihh1_index, xp_index, fst_deldaf_index;
