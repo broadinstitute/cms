@@ -266,11 +266,6 @@ def execute_likes_from_scores(args):
 		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_scores_final')], data[(bin_medians_str[ibin], 'linked_scores_final')], data[(bin_medians_str[ibin], 'neut_scores_final')]
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, args.thinToSize)
 		write_hist_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
-	#if args.plot:
-	#	if comparison: #fst, xpehh, deldaf
-	#		pass
-	#	else: #ihs, delihh
-	#		pass
 	return
 def execute_visualize_likes(args):
 	'''currently hard-wired to view all'''
