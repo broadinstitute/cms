@@ -1,5 +1,5 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
-## last updated: 07.23.16 vitti@broadinstitute.org
+## last updated: 07.26.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
@@ -114,9 +114,9 @@ def execute_run_neut_sims(args):
 		runStatsCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
-	neutSimCommand += " -n "  + str(args.n) + " -o " + runDir + "rep"
+	neutSimCommand += " -n "  + str(args.n) + " --tped -o " + runDir + "rep"
 	print(prefixstring + neutSimCommand)
-	subprocess.check_output(n=eutSimCommand.split())
+	subprocess.check_output(neutSimCommand.split())
 	return
 def execute_get_sel_trajs(args):
 	'''adapted from JV run_sims_from_model_vers.py'''
