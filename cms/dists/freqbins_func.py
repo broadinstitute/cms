@@ -1,13 +1,8 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.08.16 vitti@broadinstitute.org
+## last updated: 07.26.16 vitti@broadinstitute.org
 
 import os, subprocess
 
-def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDir):
-	#use cosi->tped direct option
-	#dispatch as sel_trajs. (parallelize? relaunch if fail)?
-	print "mada shinakereba ikenai"
-	return
 def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000):
 	if outputdir [-1] != "/":
 		outputdir += "/"
@@ -21,8 +16,26 @@ def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempt
 	writefile.write('\tshell:\n\t\t\'python run_traj.py {output} ' + cosibuild + ' ' + paramfile + ' ' + str(maxAttempts)+ '\'\n')
 	writefile.close()
 	snakemake_command = "snakemake -s " + writefilename
-	subprocess.check_output(snakemake_command.split())
-	print snakemake_command
+	print(snakemake_command)
+	#subprocess.check_output(snakemake_command.split())
+	return
+def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDir, genmapRandomRegions=False, dropSings=None):
+	#use cosi->tped direct option
+	#dispatch as sel_trajs. (parallelize? relaunch if fail)?
+	if outputdir [-1] != "/":
+		outputdir += "/"
+	#################
+	## RUN ONE SIM ##
+	argumentstring = "-p " + paramfilename + " --output-gen-map "
+	if genmapRandomRegions:
+		argumentstring += " --genmapRandomRegions"
+	if dropSings is not None:
+		argumentstring += " --drop-singletons " + str(dropSings)
+	argumentstring += " --tped -o " + runDir + "rep"
+	cmdstring = cosibuild + argumentstring
+	print(cmdstring)
+	#subprocess.check_output(cmdstring.split())	
+	return
 def write_bin_paramfile(readfilename, writefilename, bounds):
 	'''given an inclusive cosi sweep parameter file, writes another with stricter final frequency rejection criteria'''
 	readfile = open(readfilename, 'r')
@@ -39,6 +52,7 @@ def write_bin_paramfile(readfilename, writefilename, bounds):
 			writefile.write(writestring)
 	readfile.close()
 	writefile.close()
+	return
 
 ###################
 ### SELFREQ BINS ##
