@@ -99,7 +99,7 @@ def check_make_dir(dirpath):
 			print(dirpath + " ALREADY EXISTS; creating alt folder...")
 			alt, iAlt = False, 1
 			while alt == False:			
-				altpath = dirpath.strip('/') + "_alt" + str(iAlt) #best way to avoid recursive issues?
+				altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
 				if os.path.exists(altpath):
 					iAlt +=1
 				else:

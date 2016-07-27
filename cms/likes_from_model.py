@@ -1,5 +1,5 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
-## last updated: 07.26.16 vitti@broadinstitute.org
+## last updated: 07.27.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
@@ -114,7 +114,7 @@ def execute_run_neut_sims(args):
 		runStatsCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
-	neutSimCommand += " -n "  + str(args.n) + " --tped -o " + runDir + "rep"
+	neutSimCommand += " -n "  + str(args.n) + " --tped " + runDir + "rep"
 	print(prefixstring + neutSimCommand)
 	subprocess.check_output(neutSimCommand.split())
 	return
@@ -132,11 +132,11 @@ def execute_get_sel_trajs(args):
 
 	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		runDir = check_make_dir(populateDir)
-		#bounds = bin_starts[ibin], bin_ends[ibin]
+		binDir = check_make_dir(populateDir)
+		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		run_sel_trajs_snakemake(runDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
+		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
