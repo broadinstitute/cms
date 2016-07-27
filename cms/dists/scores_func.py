@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.08.16 vitti@broadinstitute.org
+## last updated: 07.27.16 vitti@broadinstitute.org
 
 import subprocess
 import numpy as np
@@ -12,7 +12,7 @@ import os
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_ihs " + inputTped + " " + outputFile + " --threads " + str(numThreads)
-	print cmdStr
+	print(cmdStr)
 	return
 def calc_delihh(readfilename, writefilename):
 	"""given a selscan iHS file, parses it and writes an analogous file with delIHH information"""
@@ -30,12 +30,12 @@ def calc_delihh(readfilename, writefilename):
 def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
-	print cmdStr
+	print(cmdStr)
 	return	
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile):
 	commandstring = "./calc_fst_deldaf_tped"
 	argstring = inputTped1 + " " + inputTped2 + " " + recomFile + " " + outputFile
-	print commandstring + " " + argstring
+	print(commandstring + " " + argstring)
 	return
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 	"""pulls means and vars so that we can normalize sel scenarios with the same parameters. pulled from func_clean.py"""
@@ -66,8 +66,7 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		dataline = openfile.readline()
 		entries = dataline.split()
 		num, mean, var = int(entries[0]), float(entries[1]), float(entries[2])
-		#print str(num)
-		#print str(nsnp)
+		#print(str(num) + "\t" +  str(nsnp))
 		#assert num == nsnp
 		return num, mean, var
 	openfile.close()
@@ -75,13 +74,11 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_ihs " + inputScoreFile + " > " + outfileName
-	print cmdStr
+	print(cmdStr)
 	return
 def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 	''' from normalize_Ihs_manually() in func_scores.py''' 
-	print "normalizing selection simulates to neutral: " 
-	print inputScoreFile
-	print neutNormfilename
+	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
 	nsnps = 0
 	normfilename = inputScoreFile + ".norm"	
@@ -99,12 +96,12 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 		normfile.write(writeline)		
 	openfile.close()
 	normfile.close()
-	print "wrote to: " + normfilename
-	retur
+	print("wrote to: " + normfilename)
+	return
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName
-	print cmdStr
+	print(cmdStr)
 	return
 def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 	''' from normalize_Xp_manually in func_scores.py'''
@@ -123,7 +120,7 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 		normfile.write(writeline)
 	openfile.close()
 	normfile.close()
-	print "wrote to: " + normfilename
+	print("wrote to: " + normfilename)
 	return
 
 ##################
@@ -189,7 +186,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	for line in openfile:
 		entries = line.split()
 		if len(entries) != numCols:
-			print "ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename
+			print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 			incompleteData +=1
 		for iIndex in range(len(takeindices)):
 			index = takeindices[iIndex]
@@ -200,7 +197,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
-		print "Thinning data to " + str(limiting) + " SNPs..."
+		print("Thinning data to " + str(limiting) + " SNPs...")
 		short_causal, short_linked, short_neut = [], [], []
 
 		for parentlist in ['causal', 'linked', 'neut']:
