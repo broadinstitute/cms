@@ -1,8 +1,8 @@
 ## this file contains functions for cms_modeller
-## last updated: 07.04.16	vitti@broadinstitute.org
+## last updated: 07.27.16	vitti@broadinstitute.org
 
-from error_func import calc_error
-from params_func import get_ranges, generate_params, update_params, write_paramfile
+from model.error_func import calc_error
+from model.params_func import get_ranges, generate_params, update_params, write_paramfile
 
 ########################
 ## PERTURBING A MODEL ##
@@ -31,7 +31,7 @@ def sample_point(nRep, keys, indices, values, writeparamfilename = "/tmp/point.p
 
 	singrate = paramDict_updated['singrate']
 	runstatscommand = cosi_build + " -p " + writeparamfilename + " -n " + str(nRep) + " --drop-singletons " + str(singrate) + "  --custom-stats --genmapRandomRegions > " + statfilename
-	print runstatscommand
+	print(runstatscommand)
 	#subprocess.check_output(runstatscommand, shell=True)
 	error = calc_error(statfilename, stats, pops)
 	return error

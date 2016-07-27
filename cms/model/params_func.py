@@ -3,9 +3,6 @@
 ## User should duplicate/adapt this file to reflect the populations being modeled. 
 ## See http://broad-cms.readthedocs.io/en/latest/workflow.html 		last updated: 07.05.16		vitti@broadinstitute.org
 
-
-from itertools import izip
-
 def read_lines(openfile, numlines):
 	for i in range(numlines):
 		line = openfile.readline()
@@ -375,7 +372,10 @@ def write_paramfile(paramfilename, paramDict):
 	### Sort and record demography ####
 	###################################
 
-	sorted_lines = sorted(izip(towriteAges, towriteLines))
+	#####PYTHON 2:
+	#from itertools import izip
+	#sorted_lines = sorted(izip(towriteAges, towriteLines))
+	sorted_lines = sorted(zip(towriteAges, towriteLines))
 	for line in sorted_lines:
 		openfile.write(line[1])
 	openfile.write('\n')

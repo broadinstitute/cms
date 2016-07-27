@@ -308,6 +308,9 @@ def execute_visualize_likes(args):
 if __name__ == '__main__':
 	runparser = full_parser_likes_from_model()
 	args = runparser.parse_args()
+	if len(sys.argv) < 2:
+		print(prefixstring + "{likes_from_model.py}>>\t\t Run with flag -h to view script options.")
+		sys.exit()	
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline

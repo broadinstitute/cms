@@ -87,7 +87,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 	for line in openfile:
 		entries = line.split()
 		freq_allele1 = float(entries[2]) #1 is ancestral, 0 is derived in tped
- 		unnormed_ihs_val = float(entries[5]) #locus           phys-pos        1_freq          ihh_1           ihh_0           ihs             derived_ihh_left     derived_ihh_right    ancestral_ihh_left      ancestral_ihh_right
+		unnormed_ihs_val = float(entries[5]) #locus/phys-pos/1_freq/ihh_1/ihh_0/ihs/derived_ihh_left/derived_ihh_right/ancestral_ihh_left/ancestral_ihh_right
 		for ibin in range(len(bin_bounds)):
 			if freq_allele1 <= bin_bounds[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means_bin[ibin])/sqrt(vars_bin[ibin])
