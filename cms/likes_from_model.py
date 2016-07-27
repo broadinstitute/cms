@@ -153,8 +153,8 @@ def execute_run_sel_sims(args):
 		runDir = check_make_dir(populateDir)
 		trajectoryFilenames = os.listdir(trajDir)
 		paramfilename = trajDir + "/params"
-		assert os.path.isfile(paramfilename)
-		run_sel_sims_snakemake(args.trajDir, args.cosiBuild, paramfilename, args.nSimsPerBin, runDir)
+		assert os.path.isfile(paramfilename)	
+		run_sel_sims_snakemake(args.trajDir, args.cosiBuild, paramfilename, args.nSimsPerBin, runDir, args.genmapRandomRegions, args.dropSings)
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
@@ -290,7 +290,7 @@ def execute_visualize_likes(args):
 				ax = eval('ax' + str(iAxis))
 				pop = pops[ipop]
 				#ax = fig.add_subplot(111)#111)	
-				#print (str(imodel)  + "\t" + str(ipop))
+				#print(str(imodel)  + "\t" + str(ipop))
 				#ax = axarr[imodel, ipop]			
 				starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
 				starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]

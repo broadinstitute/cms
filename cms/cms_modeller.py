@@ -97,7 +97,7 @@ def execute_target_stats(args):
 	for command in allCmds:
 		command = [str(x) for x in command]
 		#subprocess.check_call( command )
-		print prefixstring + command
+		print(prefixstring + command)
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
@@ -336,7 +336,7 @@ def execute_grid(args):
 
 	##NEED TO GIVE FLEXIBLE WAY TO SEARCH THRU RESULTS
 	for icombo in range(len(combos)):
-		print combo[icombo] + "\t" + errors[icombo] + "\n"
+		print(combo[icombo] + "\t" + errors[icombo] + "\n")
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
