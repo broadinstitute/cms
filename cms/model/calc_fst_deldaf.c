@@ -1,4 +1,4 @@
-// last updated 07.14.16 	vitti@broadinstitute.org
+// last updated 07.27.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -78,8 +78,7 @@ int main(int argc, char **argv) {
     
     fprintf(outf, "pos\tfst\tdelDAF\n");
 
-    //DEBUGGING
-    for (isnp = 0; isnp < 8000; isnp++) {
+    for (isnp = 0; isnp < nsnp; isnp++) {
         fprintf(stderr, "snp: %d\n", isnp);
         if (nall0[0] == NULL) {continue;}
         nai[0] = nall0[0][isnp]; //number of 0 alleles in pop 0

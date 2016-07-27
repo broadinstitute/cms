@@ -1,4 +1,4 @@
-// last updated: 07.14.16   vitti@broadinstitute.org
+// last updated: 07.27.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -12,7 +12,7 @@ int main(int argc, char **argv){
     int chromosome, isnp, isamp, ns, nderiv, seqlen, startpos, endpos, itoken, nanc, npoly;
     char recomfilename[264], tpedfilename[264], regionfilename[264], outfilename[264];
     char *newLine, *token, *running;
-    double pi, pi_sum=0.;
+    double pi;//, pi_sum=0.;
     FILE *outf=NULL, *inf=NULL;
 	coal_data data;
     
@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 	assert(newLine != NULL); 
 
 	//initialize sums to zero
-	pi_sum = 0;
+	//pi_sum = 0;
     seqlen = 0;
     npoly = 0;
 	

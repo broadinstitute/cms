@@ -1,4 +1,4 @@
-// last updated: 07.14.16 	vitti@broadinstitute.org
+// last updated: 07.27.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv) {
 	const int line_size = 15000000; 
-	int nai[2], naj[2], na_both[2], ni, nj, startpos, endpos, seqlen, chromosome, itoken, isamp, isnp, jsnp;
+	int nai[2], naj[2], ni, nj, startpos, endpos, seqlen, chromosome, itoken, isamp, isnp, jsnp; //na_both[2];
 	int *nall0[2]={NULL}, *nall1[2]={NULL}; // count 'zero' alleles; count 'one' alleles
 	double p[2], pmean, nic, njc, nc, msp, msg, num, denom;
 	char recomfilename[264], tped1filename[264], tped2filename[264], regionfilename[264], outfilename[264];
@@ -107,8 +107,8 @@ int main(int argc, char **argv) {
 				nj = naj[0] + naj[1]; //number of alleles, pop_j
 				p[1] = (double) naj[0] / nj; //frequency of allele 0 in pop_j
 
-				na_both[0] = nai[0] + naj[0]; //combined number of 0 alleles
-				na_both[1] = nai[1] + naj[1]; //combined number of 1 alleles
+				//na_both[0] = nai[0] + naj[0]; //combined number of 0 alleles
+				//na_both[1] = nai[1] + naj[1]; //combined number of 1 alleles
 
 				//fixed in both pop
 				if ((nai[0] == 0 && naj[0] == 0) || (nai[1] == 0 && naj[1] == 0)) {isnp++; jsnp++; continue;}
