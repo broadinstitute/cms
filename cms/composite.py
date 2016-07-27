@@ -107,7 +107,7 @@ def execute_xp_from_ihh(args):
 	cmd = "/dists/write_xpehh_fromihh"
 	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
 	cmdstring = cmd + " " + argstring
-	print cmdstring
+	print(cmdstring)
 	#subproces.check_output(cmdstring.split())
 	return
 def execute_poppair(args):
