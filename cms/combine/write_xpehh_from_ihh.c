@@ -1,6 +1,5 @@
 // for a given pop pair, parse genome-wide iHH to calculate and record XP-EHH files.
-// lifted from cms_venv : // gcc -o write_xpehh_fromihh -O0 -ggdb3 -lm -Wall write_xpehh_fromihh.c pop_ihh_data.c
-// last updated: 07.26.16 	vitti@broadinstitute.org
+// last updated: 07.27.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -28,9 +27,9 @@ int main(int argc, char **argv) {
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
-	sprintf(infilename1,argvs[1]);
-	sprintf(infilename2,argvs[2]);
-	sprintf(outfilename,argvs[3]);
+	sprintf(infilename1,argv[1]);
+	sprintf(infilename2,argv[2]);
+	sprintf(outfilename,argv[3]);
 	fprintf(stderr, "writing to: ");
 	fprintf(stderr, outfilename);
 	outf = fopen(outfilename, "w");
@@ -78,8 +77,8 @@ int main(int argc, char **argv) {
 			if (ihh1 == 0){ihh1 = 1e-08;}
 			if (ihh2 == 0){ihh2 = 1e-08;}
 			xpehh = log(ihh1/ihh2) * -1;
-			fprintf(outf, chromstr);
-			fprintf(outf, "_");
+			//fprintf(outf, chromstr);
+			//fprintf(outf, "_");
 			fprintf(outf, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, ihh1, p1, ihh2, p2, xpehh);
 		     index_1++;
              index_2++;
