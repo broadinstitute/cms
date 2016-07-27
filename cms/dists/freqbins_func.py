@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.26.16 vitti@broadinstitute.org
+## last updated: 07.27.16 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -96,7 +96,7 @@ def check_make_dir(dirpath):
 		if len(contents) == 0:
 			return dirpath
 		else:
-			print dirpath + " ALREADY EXISTS; creating alt folder..."
+			print(dirpath + " ALREADY EXISTS; creating alt folder...")
 			alt, iAlt = False, 1
 			while alt == False:			
 				altpath = dirpath.strip('/') + "_alt" + str(iAlt) #best way to avoid recursive issues?
