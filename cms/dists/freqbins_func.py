@@ -3,7 +3,8 @@
 
 import os, subprocess
 
-def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000):
+def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000, qsub=False, waitSec = 1000):
+	"""if qsub == True, dispatches each freq bin to UGER"""
 	if outputdir [-1] != "/":
 		outputdir += "/"
 	writefilename = outputdir + "Snakefile"
@@ -15,9 +16,13 @@ def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempt
 	writefile.write('rule make_traj:\n\toutput:\n\t\t\'' + outputdir + 'rep{sample}.txt\'\n')
 	writefile.write('\tshell:\n\t\t\'python run_traj.py {output} ' + cosibuild + ' ' + paramfile + ' ' + str(maxAttempts)+ '\'\n')
 	writefile.close()
-	snakemake_command = "snakemake -s " + writefilename
+	if qsub == True:
+		snakemake_command = "qsub "
+	else:
+		snakemake_command = ""
+	snakemake_command += "snakemake -s " + writefilename + " --output-wait " + str(waitSec) + " --jobs " + str(numSims) + " --cluster qsub"
 	print(snakemake_command)
-	#subprocess.check_output(snakemake_command.split())
+	subprocess.check_output(snakemake_command.split())
 	return
 def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDir, genmapRandomRegions=False, dropSings=None):
 	#use cosi->tped direct option
@@ -40,9 +45,11 @@ def write_bin_paramfile(readfilename, writefilename, bounds):
 	'''given an inclusive cosi sweep parameter file, writes another with stricter final frequency rejection criteria'''
 	readfile = open(readfilename, 'r')
 	writefile = open(writefilename, 'w')
+	foundSweep = False
 	for line in readfile:
 		if "sweep_mult" not in line:
 			writefile.write(line)
+			foundSweep = True
 		else:
 			writestring = ""
 			entries = line.split()
@@ -52,6 +59,8 @@ def write_bin_paramfile(readfilename, writefilename, bounds):
 			writefile.write(writestring)
 	readfile.close()
 	writefile.close()
+	if foundSweep == False:
+		print("ERROR: did not find sweep parameters in inputfile.")
 	return
 
 ###################
@@ -61,13 +70,18 @@ def get_bin_strings(bin_medians):
 	'''given input bin medians, returns minimal len strs needed to create unique bin labels'''
 	stringlen = 3 #minimum is '0.x' -- not necessarily the most descriptive way to round these, but it's functional.
 	unique = False
-	while unique == False:
-		labels = [str(x)[:stringlen] for x in bin_medians]
-		if len(labels) == len(set(labels)):
-			unique = True
-		else:
-			stringlen +=1
-	return labels
+	bin_medians_rewritten = ["%.2f" % a for a in bin_medians]
+	#print('foobar!')
+	#print(bin_medians_rewritten)
+	#while unique == False:
+	#	labels = ["%.2f" % a for a in bin_medians]
+	#	[str(x)[:stringlen] for x in bin_medians]
+	#	if len(labels) == len(set(labels)):
+	#		unique = True
+	#	else:
+	#		stringlen +=1
+	#return labels
+	return bin_medians_rewritten
 def get_bins(freqRange=".05-.95", numbins=9):
 	fullrange = [float (x) for x in freqRange.split('-')]
 	binlen = (fullrange[1] - fullrange[0]) / float(numbins)
@@ -98,10 +112,11 @@ def check_make_dir(dirpath):
 		else:
 			print(dirpath + " ALREADY EXISTS; creating alt folder...")
 			alt, iAlt = False, 1
+			altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
 			while alt == False:			
-				altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
 				if os.path.exists(altpath):
 					iAlt +=1
+					altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
 				else:
 					alt = True
 			mkdircommand = "mkdir " + altpath
