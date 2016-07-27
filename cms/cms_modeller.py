@@ -1,5 +1,5 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 07.15.16 vitti@broadinstitute.org
+## last updated: 07.27.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
@@ -382,6 +382,9 @@ def execute_optimize(args):
 if __name__ == '__main__':
 	runparser = full_parser_cms_modeller()
 	args = runparser.parse_args()
+	if len(sys.argv) < 2:
+		print(prefixstring + "{cms_modeller.py}>>\t\t Run with flag -h to view script options.")
+		sys.exit()		
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline
