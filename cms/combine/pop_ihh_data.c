@@ -1,6 +1,6 @@
 // data structure to facilitate parsing of pop ihh files
-// /idi/sabeti-scratch/jvitti/cms_venv
-// 10.12.15
+// orig 10.12.15 /idi/sabeti-scratch/jvitti/cms_venv
+// last updated: 08.10.16
 
 #include <stdio.h>
 #include <string.h>
@@ -11,14 +11,14 @@
 
 void get_pop_ihh_data(ihh_data* data, char filename[]) {
   const int line_size = 15000000; //max nsnp is 6476203 SNPs in chrom2, so we this is our upper limit
-  const int numRecomLines = 500000;
-  char recombFile[100];
+  //const int numRecomLines = 500000;
+  //char recombFile[100];
   FILE *inf=NULL;
   char *newLine, *token, *running;
-  char sampstring[20];
-  double genrate;
-  int isamp, isnp, itoken, iRecom;
-  int i; //for debug
+  //char sampstring[20];
+  //double genrate;
+  int isnp, itoken; //isamp, iRecom;
+  //int i; //for debug
     
   newLine = malloc((line_size+1) * sizeof(char));
   assert(newLine != NULL); 
