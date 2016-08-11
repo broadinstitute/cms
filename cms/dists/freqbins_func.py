@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.27.16 vitti@broadinstitute.org
+## last updated: 08.11.16 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -21,7 +21,7 @@ def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempt
 		snakemake_command = "qsub "
 	else:
 		snakemake_command = ""
-	snakemake_command += "snakemake -s " + writefilename + " " + cores_string + " --output-wait " + str(waitSec) #+ " --jobs " + str(numSims) + " --cluster qsub"
+	snakemake_command += "snakemake -s " + writefilename + " " + cores_string + " --output-wait " + str(waitSec) + " --unlock"#+ " --jobs " + str(numSims) + " --cluster qsub"
 	print(snakemake_command)
 	subprocess.check_output(snakemake_command.split())
 	return
