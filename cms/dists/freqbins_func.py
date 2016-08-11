@@ -5,6 +5,7 @@ import os, subprocess
 
 def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000, qsub=False, waitSec = 1000):
 	"""if qsub == True, dispatches each freq bin to UGER"""
+	cores_string = "-j 999"
 	if outputdir [-1] != "/":
 		outputdir += "/"
 	writefilename = outputdir + "Snakefile"
@@ -20,7 +21,7 @@ def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempt
 		snakemake_command = "qsub "
 	else:
 		snakemake_command = ""
-	snakemake_command += "snakemake -s " + writefilename + " --output-wait " + str(waitSec) + " --jobs " + str(numSims) + " --cluster qsub"
+	snakemake_command += "snakemake -s " + writefilename + " " + cores_string + " --output-wait " + str(waitSec) #+ " --jobs " + str(numSims) + " --cluster qsub"
 	print(snakemake_command)
 	subprocess.check_output(snakemake_command.split())
 	return
@@ -104,24 +105,25 @@ def check_bin_filled(directory, numsims):
 ##################
 def check_make_dir(dirpath):
 	"""function to handle creation of (sub)folders, avoiding duplication.
-	"""
+	** COME BACK TO THIS JV 	"""
 	if os.path.exists(dirpath):
-		contents = os.listdir(dirpath)
-		if len(contents) == 0:
-			return dirpath
-		else:
-			print(dirpath + " ALREADY EXISTS; creating alt folder...")
-			alt, iAlt = False, 1
-			altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
-			while alt == False:			
-				if os.path.exists(altpath):
-					iAlt +=1
-					altpath = dirpath + "_alt" + str(iAlt) #best way to avoid recursive issues?
-				else:
-					alt = True
-			mkdircommand = "mkdir " + altpath
-			subprocess.check_output(mkdircommand.split())
-			return altpath
+		return dirpath
+		#contents = os.listdir(dirpath)
+		#if len(contents) == 0:
+		#	return dirpath
+		#else:
+		#	print(dirpath + " ALREADY EXISTS; creating alt folder...")
+		#	alt, iAlt = False, 1
+		#	altpath = dirpath + "alt" + str(iAlt) #best way to avoid recursive issues?
+		#	while alt == False:			
+		#		if os.path.exists(altpath):
+		#			iAlt +=1
+		#			altpath = dirpath + "alt" + str(iAlt) #best way to avoid recursive issues?
+		#		else:
+		#			alt = True
+		#	mkdircommand = "mkdir " + altpath
+		#	subprocess.check_output(mkdircommand.split())
+		#	return altpath
 	else:
 		mkdircommand = "mkdir " + dirpath
 		subprocess.check_output(mkdircommand.split())
