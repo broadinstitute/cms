@@ -1,11 +1,14 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 08.11.16 vitti@broadinstitute.org
+## last updated: 08.15.16 vitti@broadinstitute.org
 
 import os, subprocess
 
-def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempts=100000, qsub=False, waitSec = 1000):
-	"""if qsub == True, dispatches each freq bin to UGER"""
-	cores_string = "-j 999"
+def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, cluster="", maxAttempts=100000, waitSec = 1000, scriptDir = "/home/users/vitti/cms/cms/"):
+	'''this happens in each folder to be populated'''
+	
+	#####################
+	## WRITE SNAKEFILE ##
+	#####################
 	if outputdir [-1] != "/":
 		outputdir += "/"
 	writefilename = outputdir + "Snakefile"
@@ -15,31 +18,58 @@ def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, maxAttempt
 	writefile.write('rule all:\n\tinput:\n\t\texpand(\'' + outputdir + 'rep{sample}.txt\', sample=SAMPLES)\n\n')
 	#run replicate
 	writefile.write('rule make_traj:\n\toutput:\n\t\t\'' + outputdir + 'rep{sample}.txt\'\n')
-	writefile.write('\tshell:\n\t\t\'python run_traj.py {output} ' + cosibuild + ' ' + paramfile + ' ' + str(maxAttempts)+ '\'\n')
+	make_traj_cmd = '\tshell:\n\t\t\'env COSI_NEWSIM=1 COSI_MAXATTEMPTS=' + str(maxAttempts) + " COSI_SAVE_TRAJ=" + output + " " + cosibuild + " -p " + params + "\n"
+	writefile.write(make_traj_cmd)
+	#writefile.write('\tshell:\n\t\t\'python ' + scriptDir + 'run_traj.py {output} ' + cosibuild + ' ' + paramfile + ' ' + str(maxAttempts)+ '\'\n')
 	writefile.close()
-	if qsub == True:
-		snakemake_command = "qsub "
-	else:
-		snakemake_command = ""
-	snakemake_command += "snakemake -s " + writefilename + " " + cores_string + " --output-wait " + str(waitSec) + " --unlock"#+ " --jobs " + str(numSims) + " --cluster qsub"
-	print(snakemake_command)
-	subprocess.check_output(snakemake_command.split())
+	
+	#############################
+	## WRITE SNAKEMAKE COMMAND ##
+	#############################
+	snakemake_command1 = "snakemake -s " + writefilename + " --directory " + outputdir + " --unlock\n"	
+	subprocess.check_output(snakemake_command1.split())
+
+	snakemake_command2 = "snakemake -s " + writefilename 
+	if cluster is not "":
+		snakemake_command2 += " --cluster " + cluster
+	#cores_string = "-j 999"
+	#+ " " + cores_string + " --output-wait " + str(waitSec) + " --rerun-incomplete "  --cluster qsub"
+	print(snakemake_command2)
+	subprocess.check_output(snakemake_command2.split())
 	return
-def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDir, genmapRandomRegions=False, dropSings=None):
+
+def run_sel_sims_snakemake(trajDir, cosibuild, paramfilename, nSimsPerBin, runDir, genmapRandomRegions=False, dropSings=None, waitSec = 5000):
+	cores_string = "-j 999"
+
 	#use cosi->tped direct option
 	#dispatch as sel_trajs. (parallelize? relaunch if fail)?
-	if outputdir [-1] != "/":
-		outputdir += "/"
-	#################
-	## RUN ONE SIM ##
-	argumentstring = "-p " + paramfilename + " --output-gen-map "
+	if runDir [-1] != "/":
+		runDir += "/"
+	writefilename = runDir + "Snakefile"
+	writefile = open(writefilename, 'w')	
+	writefile.write('SAMPLES = range(1,' + str(nSimsPerBin+1) + ')\n\n')
+	#top-level condition
+	writefile.write('rule all:\n\tinput:\n\t\texpand(\'' + runDir + 'rep{sample}.pos-1\', sample=SAMPLES)\n\n')
+	#run replicate
+	writefile.write('rule run_rep:\n\toutput:\n\t\t\'' + runDir + 'rep{sample}.pos-1\'\n')
+	
+	commandstring = "env COSI_LOAD_TRAJ=" + trajDir + "/rep{sample}.txt " + cosibuild
+	argumentstring = " -p " + paramfilename + " --output-gen-map"
 	if genmapRandomRegions:
 		argumentstring += " --genmapRandomRegions"
 	if dropSings is not None:
 		argumentstring += " --drop-singletons " + str(dropSings)
-	argumentstring += " --tped -o " + runDir + "rep"
-	cmdstring = cosibuild + argumentstring
-	print(cmdstring)
+	argumentstring += " --tped " + runDir + "rep{sample}"
+	writefile.write('\tshell:\n\t\t' + commandstring + argumentstring+"\n")
+	#writefile.write('\tshell:\n\t\t\'python ' + scriptDir + 'run_traj.py {output} ' + cosibuild + ' ' + paramfile + ' ' + str(maxAttempts)+ '\'\n')
+	writefile.close()
+	snakemake_command1 = "snakemake -s " + writefilename + " --unlock\n"
+	subprocess.check_output(snakemake_command1.split())
+	snakemake_command2 = "snakemake -s " + writefilename + " " + cores_string + " --output-wait " + str(waitSec)# + " --unlock"#+ " --jobs " + str(numSims) + " --cluster qsub"
+	print(snakemake_command2)
+
+	#cmdstring = cosibuild + argumentstring
+	#print(cmdstring)
 	#subprocess.check_output(cmdstring.split())	
 	return
 def write_bin_paramfile(readfilename, writefilename, bounds):

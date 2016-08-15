@@ -1,11 +1,10 @@
-## relaunches cosi command until a selection trajectory is created successully
-#IS THERE A WAY TO SILENCE COSI OUTPUT?
-## last updated: 07.07.16 	vitti@broadinstitute.org
+## relaunches cosi command until a selection trajectory is created successully (i.e., resampling selection coefficients/sweep start times from specified distributions)
+## last updated: 08.15.16 	vitti@broadinstitute.org; phasing this out (redundant with Snakemake)
 
 import sys
 import subprocess
-output, cosibuild, params, maxAttempts = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 
+output, cosibuild, params, maxAttempts = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 commandstring = "env COSI_NEWSIM=1 COSI_MAXATTEMPTS=" + str(maxAttempts) + " COSI_SAVE_TRAJ=" + output + " " + cosibuild + " -p " + params 
 
 itWorked = False
@@ -19,4 +18,4 @@ while itWorked == False:
 		continue
 	itWorked = True	
 
-#print("found a trajectory in " + str(nAttempts) + " attempts.")
+print("found a trajectory in " + str(nAttempts) + " attempts.")
