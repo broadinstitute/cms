@@ -1,10 +1,10 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
-## last updated: 08.15.16 vitti@broadinstitute.org
+## last updated: 08.16.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
-from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake
+from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake, run_seltraj_arrays, run_selsim_arrays
 from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
 import argparse
 import subprocess
@@ -39,6 +39,7 @@ def full_parser_likes_from_model():
 	#############################
 	for snakemake_parser in [get_sel_trajs_parser, run_sel_sims_parser]:
 		snakemake_parser.add_argument('--cluster', action='store', help='if included: dispatch Snakemake to cluster to parallelize generation of replicates using supplied argument (e.g. qsub, sbatch)')
+		snakemake_parser.add_argument('--jobs', action='store', help='use at most this many cores in parallel')
 		snakemake_parser.add_argument('n', action='store', type=int, help='num replicates to run') #figure out where to store
 
 	##########################
@@ -47,7 +48,7 @@ def full_parser_likes_from_model():
 	for cosi_parser in [run_neut_sims_parser, get_sel_trajs_parser, run_sel_sims_parser]:
 		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/home/users/vitti/cms/cosi-2.0/coalescent")#"/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 
@@ -131,13 +132,28 @@ def execute_get_sel_trajs(args):
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
-	selTrajDir += "sel_trajs/"
+	#selTrajDir += "sel_trajs/"
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	print(prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
+	print(prefixstring + "running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
 	print(prefixstring + "outputting to " + runDir)
 
+	for ibin in range(args.nBins):
+		populateDir = runDir + "sel_" + bin_medians_str[ibin]
+		binDir = check_make_dir(populateDir)
+		bounds = bin_starts[ibin], bin_ends[ibin]
+		paramfilename = populateDir + "/params"
+		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
+		run_seltraj_arrays(binDir, args.cosiBuild, paramfilename, args.n)
+
+	'''
+
+	#DEBUG SNAKEMAKE
+	run_sel_trajs_allbins(bin_starts, bin_ends, bin_medians_str, args.cosiBuild,)
+	'''
+
+	"""
 	for ibin in range(args.nBins): ### DEBUG ##### !!!!
 		#print('\n\n' + str(ibin)+'\n') ## DBEUG
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
@@ -147,7 +163,8 @@ def execute_get_sel_trajs(args):
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
 		#print("wrote bin paramfile\n")
-		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps, args.cluster) #ISSUE HERE
+		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.n, cluster=args.cluster, jobs=args.jobs) #ISSUE HERE args.maxSteps, 
+	"""
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
@@ -159,6 +176,10 @@ def execute_run_sel_sims(args):
 	print(prefixstring + "loading trajectories from " + args.trajDir)
 	print(prefixstring + "outputting to " + runDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+
+	run_selsim_arrays(args.trajDir, args.cosiBuild,  args.inputParamFile, args.n, runDir, dropSings=args.dropSings) #scriptDir = "/home/users/vitti/cms/cms/", taskIndexStr = "$SLURM_ARRAY_TASK_ID", maxAttempts = 1000, genmapRandomRegions
+
+	"""
 	for ibin in range(args.nBins):
 		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
@@ -166,7 +187,9 @@ def execute_run_sel_sims(args):
 		trajectoryFilenames = os.listdir(binTrajDir)
 		paramfilename = binTrajDir + "/params"
 		assert os.path.isfile(paramfilename)	
+		#print(paramfilename)
 		run_sel_sims_snakemake(binTrajDir, args.cosiBuild, paramfilename, args.n, populateDir, args.genmapRandomRegions, args.dropSings)
+	"""
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
