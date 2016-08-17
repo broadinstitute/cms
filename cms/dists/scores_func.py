@@ -216,7 +216,7 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thin
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
 	weights_neut = np.ones_like(neut_scores)/len(neut_scores)
 
-	causal_scores = np.clip(causal_scores, xlims[0], xlims[1])
+	causal_scores = np.clip(causal_scores, xlims[0], xlims[1]) #np.clip
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 

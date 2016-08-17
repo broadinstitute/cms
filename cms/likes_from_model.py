@@ -1,10 +1,10 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
-## last updated: 08.12.16 vitti@broadinstitute.org
+## last updated: 08.16.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
-from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake
+from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake, run_seltraj_arrays, run_selsim_arrays
 from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
 import argparse
 import subprocess
@@ -28,21 +28,27 @@ def full_parser_likes_from_model():
 	## RUN SELECTION SIMULATIONS ##
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample')
-	get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
-	get_sel_trajs_parser.add_argument('maxSteps', type=int, default = 100000, help="number of attempts to generate a selection trajectory before re-sampling selection coefficient and start time.")
-	#get_sel_trajs_parser.add_argument('nThreads', type=int, help="number of cores to pass to snakemake")
+	#get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
 
 	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='run sel. simulations')	
-	run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
-	run_sel_sims_parser.add_argument('trajDir', action='store', type=int, help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
+	#run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
+	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
 	
+	#############################
+	## SNAKEMAKE - SHARED ARGS ##
+	#############################
+	for snakemake_parser in [get_sel_trajs_parser, run_sel_sims_parser]:
+		snakemake_parser.add_argument('--cluster', action='store', help='if included: dispatch Snakemake to cluster to parallelize generation of replicates using supplied argument (e.g. qsub, sbatch)')
+		snakemake_parser.add_argument('--jobs', action='store', help='use at most this many cores in parallel')
+		snakemake_parser.add_argument('n', action='store', type=int, help='num replicates to run') #figure out where to store
+
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
 	for cosi_parser in [run_neut_sims_parser, get_sel_trajs_parser, run_sel_sims_parser]:
 		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/home/users/vitti/cms/cosi-2.0/coalescent")#"/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 
@@ -50,40 +56,42 @@ def full_parser_likes_from_model():
 	## CALCULATE SCORES FROM SIMS ## I'm not sure if we even want to include this. It just wraps infrastructure that already exists elsewhere. leave as exercise for the user?
 	################################
 	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='get scores from simulations')
-	#PER POP:
-	scores_from_sims_parser.add_argument('--inputTped', action='store', help='tped from which to calculate score')
-	scores_from_sims_parser.add_argument('--inputIhs', action='store', help='iHS from which to calculate delihh')
-	scores_from_sims_parser.add_argument('--inputdelIhh', action='store', help='delIhh from which to calculate norm')
-	scores_from_sims_parser.add_argument('--inputXpehh', action='store', help='Xp-ehh from which to calculate norm')
+	if True:
+		#PER POP:
+		scores_from_sims_parser.add_argument('--inputTped', action='store', help='tped from which to calculate score')
+		scores_from_sims_parser.add_argument('--inputIhs', action='store', help='iHS from which to calculate delihh')
+		scores_from_sims_parser.add_argument('--inputdelIhh', action='store', help='delIhh from which to calculate norm')
+		scores_from_sims_parser.add_argument('--inputXpehh', action='store', help='Xp-ehh from which to calculate norm')
 
-	scores_from_sims_parser.add_argument('outputFilename', help='where to write scorefile')		
-	scores_from_sims_parser.add_argument('--ihs', action='store_true')
-	scores_from_sims_parser.add_argument('--delIhh', action='store_true')
-	#POP COMPARISONS:
-	scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
-	scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
-	#NORMALIZE: 
-	scores_from_sims_parser.add_argument('--normalizeIhs', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")	
-	scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
-	scores_from_sims_parser.add_argument('--normalizeXpehh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
+		scores_from_sims_parser.add_argument('outputFilename', help='where to write scorefile')		
+		scores_from_sims_parser.add_argument('--ihs', action='store_true')
+		scores_from_sims_parser.add_argument('--delIhh', action='store_true')
+		#POP COMPARISONS:
+		scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
+		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
+		#NORMALIZE: 
+		scores_from_sims_parser.add_argument('--normalizeIhs', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")	
+		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
+		scores_from_sims_parser.add_argument('--normalizeXpehh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
 	##################################################
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='get component score probability distributions from scores')
-	#likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
-	#likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
-	likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
-	likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
-	likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
-	likes_from_scores_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
-	likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
-	likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
-	likes_from_scores_parser.add_argument('--ihs', action='store_true', help='')	
-	likes_from_scores_parser.add_argument('--delihh', action='store_true', help='')	
-	likes_from_scores_parser.add_argument('--xp', action='store_true', help='')	
-	likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='')	
-	likes_from_scores_parser.add_argument('--fst', action='store_true', help='')	
+	if True:
+		#likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
+		#likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
+		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
+		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
+		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
+		likes_from_scores_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
+		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
+		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
+		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='')	
+		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='')	
+		likes_from_scores_parser.add_argument('--xp', action='store_true', help='')	
+		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='')	
+		likes_from_scores_parser.add_argument('--fst', action='store_true', help='')	
 
 	##############
 	## SEL BINS ##
@@ -124,11 +132,11 @@ def execute_get_sel_trajs(args):
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
-	selTrajDir += "sel_trajs/"
+	#selTrajDir += "sel_trajs/"
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	print(prefixstring + "running " + str(args.nSimsPerBin) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
+	print(prefixstring + "running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
 	print(prefixstring + "outputting to " + runDir)
 
 	for ibin in range(args.nBins):
@@ -137,7 +145,26 @@ def execute_get_sel_trajs(args):
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.nSimsPerBin, args.maxSteps)
+		run_seltraj_arrays(binDir, args.cosiBuild, paramfilename, args.n)
+
+	'''
+
+	#DEBUG SNAKEMAKE
+	run_sel_trajs_allbins(bin_starts, bin_ends, bin_medians_str, args.cosiBuild,)
+	'''
+
+	"""
+	for ibin in range(args.nBins): ### DEBUG ##### !!!!
+		#print('\n\n' + str(ibin)+'\n') ## DBEUG
+		populateDir = runDir + "sel_" + bin_medians_str[ibin]
+		binDir = check_make_dir(populateDir)
+		#print("BINDIR\t" + binDir) #DEBUG?????
+		bounds = bin_starts[ibin], bin_ends[ibin]
+		paramfilename = populateDir + "/params"
+		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
+		#print("wrote bin paramfile\n")
+		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.n, cluster=args.cluster, jobs=args.jobs) #ISSUE HERE args.maxSteps, 
+	"""
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
@@ -149,13 +176,20 @@ def execute_run_sel_sims(args):
 	print(prefixstring + "loading trajectories from " + args.trajDir)
 	print(prefixstring + "outputting to " + runDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
+
+	run_selsim_arrays(args.trajDir, args.cosiBuild,  args.inputParamFile, args.n, runDir, dropSings=args.dropSings) #scriptDir = "/home/users/vitti/cms/cms/", taskIndexStr = "$SLURM_ARRAY_TASK_ID", maxAttempts = 1000, genmapRandomRegions
+
+	"""
 	for ibin in range(args.nBins):
+		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		runDir = check_make_dir(populateDir)
-		trajectoryFilenames = os.listdir(trajDir)
-		paramfilename = trajDir + "/params"
+		populateDir = check_make_dir(populateDir)
+		trajectoryFilenames = os.listdir(binTrajDir)
+		paramfilename = binTrajDir + "/params"
 		assert os.path.isfile(paramfilename)	
-		run_sel_sims_snakemake(args.trajDir, args.cosiBuild, paramfilename, args.nSimsPerBin, runDir, args.genmapRandomRegions, args.dropSings)
+		#print(paramfilename)
+		run_sel_sims_snakemake(binTrajDir, args.cosiBuild, paramfilename, args.n, populateDir, args.genmapRandomRegions, args.dropSings)
+	"""
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
