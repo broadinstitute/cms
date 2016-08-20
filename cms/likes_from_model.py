@@ -29,7 +29,8 @@ def full_parser_likes_from_model():
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample')
 	#get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
-
+	get_sel_trajs_parser.add_argument('--maxSteps', action='store', help='')
+	
 	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='run sel. simulations')	
 	#run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
 	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
@@ -132,29 +133,29 @@ def execute_get_sel_trajs(args):
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
-	#selTrajDir += "sel_trajs/"
+	selTrajDir += "sel_trajs/"
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
 	print(prefixstring + "running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
 	print(prefixstring + "outputting to " + runDir)
 
+	######################
+	## USE SLURM ARRAYS ##
+	######################
 	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		binDir = check_make_dir(populateDir)
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		run_seltraj_arrays(binDir, args.cosiBuild, paramfilename, args.n)
-
-	'''
-
-	#DEBUG SNAKEMAKE
-	run_sel_trajs_allbins(bin_starts, bin_ends, bin_medians_str, args.cosiBuild,)
-	'''
+		run_seltraj_arrays(binDir, args.cosiBuild, paramfilename, args.n, maxAttempts = args.maxSteps)
 
 	"""
 	for ibin in range(args.nBins): ### DEBUG ##### !!!!
+		###################
+		## USE SNAKEMAKE ##
+		###################
 		#print('\n\n' + str(ibin)+'\n') ## DBEUG
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		binDir = check_make_dir(populateDir)
@@ -164,6 +165,10 @@ def execute_get_sel_trajs(args):
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
 		#print("wrote bin paramfile\n")
 		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.n, cluster=args.cluster, jobs=args.jobs) #ISSUE HERE args.maxSteps, 
+		'''
+		#DEBUG SNAKEMAKE- use this instead??
+		run_sel_trajs_allbins(bin_starts, bin_ends, bin_medians_str, args.cosiBuild,)
+		'''
 	"""
 	return
 def execute_run_sel_sims(args):
@@ -173,14 +178,28 @@ def execute_run_sel_sims(args):
 		selSimDir += "/"
 	selSimDir += "sel_sims/"
 	runDir = check_make_dir(selSimDir)
-	print(prefixstring + "loading trajectories from " + args.trajDir)
-	print(prefixstring + "outputting to " + runDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	run_selsim_arrays(args.trajDir, args.cosiBuild,  args.inputParamFile, args.n, runDir, dropSings=args.dropSings) #scriptDir = "/home/users/vitti/cms/cms/", taskIndexStr = "$SLURM_ARRAY_TASK_ID", maxAttempts = 1000, genmapRandomRegions
+	print(prefixstring + "loading trajectories from " + args.trajDir)
+	print(prefixstring + "outputting to " + runDir)
+
+	######################
+	## USE SLURM ARRAYS ##
+	######################
+	for ibin in range(args.nBins):
+		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
+		populateDir = runDir + "sel_" + bin_medians_str[ibin]
+		populateDir = check_make_dir(populateDir)
+		trajectoryFilenames = os.listdir(binTrajDir)
+		paramfilename = binTrajDir + "/params"
+		assert os.path.isfile(paramfilename)			
+		run_selsim_arrays(binTrajDir, args.cosiBuild,  paramfilename, args.n, populateDir, dropSings=args.dropSings) 
 
 	"""
 	for ibin in range(args.nBins):
+		###################
+		## USE SNAKEMAKE ##
+		###################
 		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		populateDir = check_make_dir(populateDir)
