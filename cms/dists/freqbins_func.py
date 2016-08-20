@@ -10,16 +10,13 @@ def write_slurm_array(writefilename = "slurm_array.sh", arrayCmd = "./my_process
 	writefile.write(arrayCmd)
 	writefile.write('\n')
 	writefile.close()
-
 	subcommand = "sbatch --array=1-" + str(numTasks) + " " + writefilename
 	print(subcommand)
 	if dispatch:
 		subprocess.check_output(subcommand.split())
 	#print('wrote to: ' + writefilename)
 	return
-
 def run_seltraj_arrays(trajdir, cosibuild, paramfile, numSims, scriptDir = "/home/users/vitti/cms/cms/", taskIndexStr = "$SLURM_ARRAY_TASK_ID", maxAttempts = 1000):
-	'''I think I may be over-complicating things with Snakemake.'''
 	if trajdir [-1] != "/":
 		trajdir += "/"
 	traj_outputname = trajdir + 'rep' + taskIndexStr + '.txt'
@@ -31,14 +28,13 @@ def run_selsim_arrays(trajdir, cosibuild, paramfile, numSims, runDir, scriptDir 
 	#traj_outputname = trajdir + 'rep' + taskIndexStr + '.txt'
 	if runDir [-1] != "/":
 		runDir += "/"
-
-	sim_cmd = "env COSI_LOAD_TRAJ=" + trajdir + "/rep" + taskIndexStr + ".txt " + cosibuild + " -p " + paramfile + " --output-gen-map " 
+	sim_cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajdir + "/rep" + taskIndexStr + ".txt " + cosibuild + " -p " + paramfile + " --output-gen-map " 
 	if genmapRandomRegions:
 		sim_cmd += " --genmapRandomRegions"
 	if dropSings is not None:
 		sim_cmd += " --drop-singletons " + str(dropSings)
 	sim_cmd += " --tped " + runDir + 'rep' + taskIndexStr
-	write_slurm_array(runDir + "run_sel_sims.sh", sim_cmd, numSims)
+	write_slurm_array(runDir + "run_sel_sims.sh", sim_cmd, numSims, dispatch=True)
 	return
 def run_sel_trajs_snakemake(outputdir, cosibuild, paramfile, numSims, cluster="", jobs=1, maxAttempts=10000, waitSec = 1000, scriptDir = "/home/users/vitti/cms/cms/"):
 	'''this happens in each folder to be populated'''
