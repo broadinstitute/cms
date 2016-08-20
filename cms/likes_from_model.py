@@ -1,4 +1,4 @@
-## top-level script for generating probability distributions for component scores as part of CMS 2.0. Assumes snakemake
+## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
 ## last updated: 08.16.16 vitti@broadinstitute.org
 
 prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
@@ -49,7 +49,7 @@ def full_parser_likes_from_model():
 	for cosi_parser in [run_neut_sims_parser, get_sel_trajs_parser, run_sel_sims_parser]:
 		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/home/users/vitti/cms/cosi-2.0/coalescent")#"/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")#"/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 
