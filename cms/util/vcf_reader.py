@@ -35,6 +35,7 @@ class VCFReader(object):
     def contig_lengths(self):
         clens = []
         for line in self.tabix_file.header:
+            line = str(line)
             if line.startswith('##contig=<ID=') and line.endswith('>'):
                 matches = self.contigLengthRegex.match(line)
                 c = matches.group("contig_id")
@@ -74,16 +75,17 @@ class VCFReader(object):
             Returns a string of the VCF file line containing the CHROM line.
         '''
 
-        elem = None
+        line = None
         headerIter = self.tabix_file.header
-        while True:
-            try:
-                elem = headerIter.next()
-                if str(elem).find("CHROM", 1) > 0:
+        try:
+            for line in headerIter:
+                line = str(line)
+                print(line)
+                if line.find("CHROM", 1) > 0:
                     break
-            except StopIteration:
-                raise ValueError("Header not found in VCF file: {}".format(self.vcf_file_path))
-        return str(elem)
+        except StopIteration:
+            raise ValueError("Header not found in VCF file: {}".format(self.vcf_file_path))
+        return str(line)
 
     def read_sample_names(self):
         '''
