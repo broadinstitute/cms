@@ -35,7 +35,7 @@ class VCFReader(object):
     def contig_lengths(self):
         clens = []
         for line in self.tabix_file.header:
-            line = str(line)
+            line = str(line.decode("utf-8"))
             if line.startswith('##contig=<ID=') and line.endswith('>'):
                 matches = self.contigLengthRegex.match(line)
                 c = matches.group("contig_id")
@@ -79,8 +79,7 @@ class VCFReader(object):
         headerIter = self.tabix_file.header
         try:
             for line in headerIter:
-                line = str(line)
-                print(line)
+                line = str(line.decode("utf-8"))
                 if line.find("CHROM", 1) > 0:
                     break
         except StopIteration:
