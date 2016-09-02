@@ -132,7 +132,7 @@ class SelscanFormatter(object):
         sec_remaining_avg = 0
         current_pos_bp = 1
 
-        with util.file.open_or_gzopen(outTpedFile, 'w') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w') as of2:
+        with util.file.open_or_gzopen(outTpedFile, 'wt') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'wt') as of2:
             # WRITE header for metadata file here with selected subset of sample_names
             headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
             of2.write(headerString)

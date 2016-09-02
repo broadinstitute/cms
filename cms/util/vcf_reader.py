@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# built-ins
+# built-ins 
 import re
 
 try:
@@ -30,7 +30,7 @@ class VCFReader(object):
         self.tabix_file    = pysam.TabixFile(file_path, parser=parser)
         self.sample_names  = self.read_sample_names()
         self.clens         = self.contig_lengths()
-        self.indexDelta    = -1 if tuple(map(int, pysam.__version__.split('.'))) > (0,5) else 0
+        self.indexDelta    = -1 if tuple(map(int, pysam.__version__.split('.'))) > (0,5,0) else 0
 
     def contig_lengths(self):
         clens = []
@@ -85,7 +85,6 @@ class VCFReader(object):
         except StopIteration:
             raise ValueError("Header not found in VCF file: {}".format(self.vcf_file_path))
         return str(line)
-
     def read_sample_names(self):
         '''
             Returns a list of the sample names described in the VCF file
@@ -106,7 +105,7 @@ class VCFReader(object):
         end_pos_bp = self.clens[str(chromosome_num)] if end_pos_bp is None else end_pos_bp
 
         # subtract one since pysam uses incorrect 0-indexed positions
-        records = self.tabix_file.fetch( str(chromosome_num), start_pos_bp+self.indexDelta, end_pos_bp+self.indexDelta, parser)
+        records = self.tabix_file.fetch( str(chromosome_num), start=start_pos_bp+self.indexDelta, end=end_pos_bp+self.indexDelta, parser=parser)
 
         return records
 
@@ -476,3 +475,4 @@ class VCFReader(object):
     #print vcf.count_iter_items(records)
 
     #test()
+
