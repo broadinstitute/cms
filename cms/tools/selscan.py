@@ -132,7 +132,7 @@ class SelscanFormatter(object):
         sec_remaining_avg = 0
         current_pos_bp = 1
 
-        with util.file.open_or_gzopen(outTpedFile, 'w') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'w') as of2:
+        with util.file.open_or_gzopen(outTpedFile, 'wt') as of1, util.file.open_or_gzopen(outTpedMetaFile, 'wt') as of2:
             # WRITE header for metadata file here with selected subset of sample_names
             headerString = "CHROM VARIANT_ID POS_BP MAP_POS_CM REF_ALLELE ALT_ALLELE ANCESTRAL_CALL ALLELE_FREQ_IN_POP\n".replace(" ","\t")
             of2.write(headerString)
@@ -220,7 +220,15 @@ class SelscanFormatter(object):
                             if chromosome_num.upper() != "X":
                                 try:
                                     genotypes_for_selected_samples = operator.itemgetter(*indices_of_matching_genotypes)(genos)
+                                except IndexError:
+                                    # if something about this locus makes the genotype line incomplete
+                                    # we can continue to the next record. This can happen if '.' is incorrectly used in place of '.|.' in phased VCFs.
+                                    # anything that causes the genotype line length to mismatch with the number of genotypes
+                                    print("\ngenotype line length appears to be off:")
+                                    print(record)
+                                    continue
                                 except Exception: # if this is a record of mixed ploidy, that is to say the X chromosome
+                                    # raise an exception
                                     raise
                             else:
                                 matching_genotypes = np.array(record[:len(record)])[indices_of_matching_samples]
