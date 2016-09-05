@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
 ## last updated: 09.05.16 vitti@broadinstitute.org
 

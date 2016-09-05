@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
 ## last updated: 09.05.16 vitti@broadinstitute.org
 
@@ -21,51 +22,51 @@ def full_parser_cms_modeller():
 	## CALCULATE TARGET ##
 	######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='perform per-site(/per-site-pair) calculations of population summary statistics for model target values')
-	target_stats_parser.add_argument('inputTpeds', action='store', help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)',type=list)
-	target_stats_parser.add_argument('recomFile', action='store', help='recombination map') #check consistent with used to create tped
-	target_stats_parser.add_argument('regions', action='store', help='tab-separated file with putative neutral regions') #make this optional? and/or TSV
+	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
+	target_stats_parser.add_argument('recomFile', action='store', type=str, help='file defining recombination map for input') 
+	target_stats_parser.add_argument('regions', action='store', type=str, help='tab-separated file with putative neutral regions') #OPTIONAL?
 	target_stats_parser.add_argument('--freqs', action='store_true', help='calculate summary statistics from within-population allele frequencies') 
 	target_stats_parser.add_argument('--ld', action='store_true', help='calculate summary statistics from within-population linkage disequilibrium') 
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
-	target_stats_parser.add_argument('out', action='store', help='outfile prefix')  #could add option for block bootstrap
+	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics in order to finalize model target values')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
 	bootstrap_parser.add_argument('--in_ld', action='store', help='comma-delimited list of infiles with per-site-pair calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
 	bootstrap_parser.add_argument('--in_fst', action='store', help='comma-delimited list of infiles with per-site calculations for population pair. One file per population-pair -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 	
-	bootstrap_parser.add_argument('out', action='store', help='outfile prefix') 
+	bootstrap_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
 	point_parser = subparsers.add_parser('point', help='run simulates of a point in parameter-space')
-	grid_parser = subparsers.add_parser('grid', help='run grid search')
+	grid_parser = subparsers.add_parser('grid', help='run grid search through parameter-space to fit model parameters')
 	optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
 
 	for cosi_parser in [point_parser, grid_parser, optimize_parser]:
-		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
-		cosi_parser.add_argument('nCoalescentReps', help='num reps', type=int)
-		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent") 
+		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
+		cosi_parser.add_argument('nCoalescentReps', type=int, help='number of coalescent replicates to run per point in parameter-space')
+		cosi_parser.add_argument('outputDir', type=str, action='store', help='location in which to write cosi output')
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run?')  #NIX THIS
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset (i.e., to model ascertainment bias)')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 		cosi_parser.add_argument('--stopAfterMinutes', action='store', help='cosi option to terminate simulations')
-		cosi_parser.add_argument('--calcError', action='store', help='file specifying dimensions of error function to use. if unspecified, defaults to all. first line = stats, second line = pops')
+		cosi_parser.add_argument('--calcError', type=str, action='store', help='file specifying dimensions of error function to use. if unspecified, defaults to all. first line = stats, second line = pops')
 
 	######################
 	## VISUALIZE MODEL  ##
 	######################
-	point_parser.add_argument('--targetvalsFile', help='targetvalsfile for model')	
+	point_parser.add_argument('--targetvalsFile', action='store', type=str, help='file containing target values for model')	
 	point_parser.add_argument('--plotStats', action='store_true', help='visualize goodness-of-fit to model targets')
 
 	#########################
 	## FIT MODEL TO TARGET ##
 	#########################
-	grid_parser.add_argument('grid_inputdimensionsfile', action='store', help='file with specifications of grid search. each parameter to vary is indicated: KEY\tINDEX\t[VALUES]') #must be defined for each search 	
-	optimize_parser.add_argument('optimize_inputdimensionsfile', action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
-	optimize_parser.add_argument('--stepSize', action='store', help='scaled step size (i.e. whole range = 1)')
-	optimize_parser.add_argument('--method', action='store', default='SLSQP', help='algorithm to pass to scipy.optimize')
+	grid_parser.add_argument('grid_inputdimensionsfile', type=str, action='store', help='file with specifications of grid search. each parameter to vary is indicated: KEY\tINDEX\t[VALUES]') #must be defined for each search 	
+	optimize_parser.add_argument('optimize_inputdimensionsfile', type=str, action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
+	optimize_parser.add_argument('--stepSize', action='store', type=float, help='scaled step size (i.e. whole range = 1)')
+	optimize_parser.add_argument('--method', action='store', type=str, default='SLSQP', help='algorithm to pass to scipy.optimize')
 
 	return parser
 

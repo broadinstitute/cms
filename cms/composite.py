@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
 ## last updated: 09.05.16 vitti@broadinstitute.org
 
@@ -15,58 +16,58 @@ def full_parser_composite():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for manipulating and combining component statistics")
 	subparsers = parser.add_subparsers(help="sub-commands")
 
-	freqscores_parser = subparsers.add_parser('freqscores', help="calculate Fst and delDAF") #arguably, this (and some of the below?) should live in scans.py.
-	freqscores_parser.add_argument('inTped1', help="input tped 1", action="store")			 #trying to avoid desecrating CT's code for now. 
-	freqscores_parser.add_argument('inTped2', help="input tped 2", action="store")
-	freqscores_parser.add_argument('recomFile', help="input recombination file", action="store")			 #trying to avoid desecrating CT's code for now. 
-	freqscores_parser.add_argument('outfile', help="file to write", action="store")
+	freqscores_parser = subparsers.add_parser('freqscores', help="calculate Fst and delDAF") 
+	freqscores_parser.add_argument('inTped1', type=str, action="store", help="input tped 1")			
+	freqscores_parser.add_argument('inTped2', type=str, action="store", help="input tped 2")
+	freqscores_parser.add_argument('recomFile', type=str, action="store", help="input recombination file")			 
+	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 
 	win_haps_parser = subparsers.add_parser('win_haps', help='perform window-based calculation of haplotype scores')
-	win_haps_parser.add_argument('infilename', action='store')
-	win_haps_parser.add_argument('writefilename', action='store')
-	win_haps_parser.add_argument('--windowsize', default=30, type=int)
-	win_haps_parser.add_argument('--jumplen', default=15, type=int)
+	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
+	win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
+	win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
+	win_haps_parser.add_argument('--jumplen', default=15, type=int, help='number of SNPs to distance windows')
 	#win_haps_parser.add_argument('--ihs', action='store_true')
 	#win_haps_parser.add_argument('--delihh', action='store_true')
 
 	interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="fill haplotype vals at low-freq sites based on sliding window averages")
-	interpolate_hapscores_parser.add_argument('intpedfilename', action='store')
-	interpolate_hapscores_parser.add_argument('inihsfilename', action='store')
-	interpolate_hapscores_parser.add_argument('inwinihsfilename', action='store')
-	interpolate_hapscores_parser.add_argument('outfilename', action='store')			
+	interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
+	interpolate_hapscores_parser.add_argument('inihsfilename', type=str, action='store', help="input per-site score file")
+	interpolate_hapscores_parser.add_argument('inwinihsfilename', type=str, action='store', help="input window score file")
+	interpolate_hapscores_parser.add_argument('outfilename', type=str, action='store', help="file to write")			
 
 	delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs')
-	delihh_from_ihs_parser.add_argument('readfile', help='input ihs file', action='store')
-	delihh_from_ihs_parser.add_argument('writefile', help='delihh file to write', action='store')
+	delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
+	delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
 
 	xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="calculate XP-EHH based on two per-pop iHH files (ie for computational efficiency)")
-	xp_from_ihh_parser.add_argument('inIhh1', help="input ihh file 1", action="store")
-	xp_from_ihh_parser.add_argument('inIhh2', help="input ihh file 2", action="store")
-	xp_from_ihh_parser.add_argument('outfilename', help="write to file", action="store")
+	xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
+	xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
+	xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
 
 	###############
 	## POP PAIRS ##
 	###############
 	poppair_parser = subparsers.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
-	poppair_parser.add_argument('in_ihs_file', help="file with normalized iHS values for putative selpop", action="store")
-	poppair_parser.add_argument('in_delihh_file', help="file with normalized delIhh values for putative selpop", action="store")	
-	poppair_parser.add_argument('in_xp_file', help="file with normalized XP-EHH values", action="store")
-	poppair_parser.add_argument('in_fst_deldaf_file', help="file with Fst, delDaf values for poppair", action="store")
-	poppair_parser.add_argument('--xp_reverse_pops', help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)", action="store_true")	
-	poppair_parser.add_argument('--fst_deldaf_reverse_pops', help="finclude if the putative selpop for outcome is the altpop in delDAF (and vice versa)", action="store_true") #reversed? 0T 1F
-	poppair_parser.add_argument('outfile', help="file to write with collated scores", action="store") 
+	poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
+	poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
+	poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
+	poppair_parser.add_argument('in_fst_deldaf_file', type=str, action='store', help="file with Fst, delDaf values for poppair")
+	poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
+	poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
+	poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
 
 	########################
 	## LARGER COMPARISONS ##
 	########################
 	outgroups_parser = subparsers.add_parser('outgroups', help='combine scores from comparisons of a putative selected pop to 2+ outgroups.')
-	outgroups_parser.add_argument('infiles', help="comma-delimited set of pop-pair comparisons", action="store")
-	outgroups_parser.add_argument('likesfile', help="text file where probability distributions are specified for component scores", action="store")
-	outgroups_parser.add_argument('outfile', help="file to write with finalized scores", action="store") 
-	outgroups_parser.add_argument('--region', help="for within-region (rather than genome-wide) CMS", action="store_true") 
-	outgroups_parser.add_argument('--chrom', type=str, help="chromosome containing region", action="store") #FOR WITHIN-REGION CMS
-	outgroups_parser.add_argument('--startBp', type=int, help="start location of region in basepairs", action="store")
-	outgroups_parser.add_argument('--endBp', type=int, help="end location of region in basepairs", action="store")
+	outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
+	outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
+	outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
+	outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
+	outgroups_parser.add_argument('--chrom', type=str, action="store", help="chromosome containing region") #FOR WITHIN-REGION CMS
+	outgroups_parser.add_argument('--startBp', type=int, action="store", help="start location of region in basepairs")
+	outgroups_parser.add_argument('--endBp', type=int, action="store", help="end location of region in basepairs")
 
 	#ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 	return parser
@@ -75,11 +76,6 @@ def full_parser_composite():
 ## DEFINE EXEC FUNCTIONS ###
 ############################
 def execute_freqscores(args):
-	#cmd = "/model/calc_fst_deldaf"
-	#argstring = inputTped1 + " " + inputTped2 + " " + recomFile + " " + outputFile
-	#cmdstring = cmd + " " + argstring
-	#print(cmdstring)
-	#subprocess.check_output(argstring.split())
 	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile)
 	return
 def execute_win_haps(args):
