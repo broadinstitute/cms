@@ -107,8 +107,8 @@ def execute_xp_from_ihh(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_poppair(args):
 	cmd = "/combine/combine_scores_poppair"
@@ -124,8 +124,8 @@ def execute_poppair(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
@@ -140,8 +140,8 @@ def execute_outgroups(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_ml_region(args):
 	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
