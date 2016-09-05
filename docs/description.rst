@@ -21,7 +21,7 @@ Grossman SR, Andersen KG, Shlyakhter I, Tabrizi S, Winnicki S, Yen A, Park DJ, G
 
 Coalescent simulations
 -------------------
-CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_, but it would theoretically be straightforward to substitute e.g. Hudson's ms.
+CMS uses simulated population genetic data for a variety of purposes. For the purpose of flexibility, this pipeline is optimized for use with `cosi 2 <http://broadinstitute.org/mpg/cosi2>`_, but it would theoretically be straightforward to substitute other simulators supporting selection.
 
 `Cosi2: an efficient simulator of exact and approximate coalescent with selection. <http://www.ncbi.nlm.nih.gov/pubmed/25150247>`_ 
 Shlyakhter I, Sabeti PC, Schaffner SF.

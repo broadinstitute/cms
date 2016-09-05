@@ -12,7 +12,7 @@ import sys
 ## DEFINE ARGUMENT PARSER ###
 #############################
 def full_parser_composite():
-	parser=argparse.ArgumentParser(description="This script contains command-line utilities for combining component statistics -- i.e., the final step of the CMS 2.0 pipeline.")
+	parser=argparse.ArgumentParser(description="This script contains command-line utilities for manipulating and combining component statistics")
 	subparsers = parser.add_subparsers(help="sub-commands")
 
 	freqscores_parser = subparsers.add_parser('freqscores', help="calculate Fst and delDAF") #arguably, this (and some of the below?) should live in scans.py.
