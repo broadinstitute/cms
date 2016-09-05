@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
 ## last updated: 09.05.16 vitti@broadinstitute.org
 
@@ -21,51 +22,54 @@ def full_parser_cms_modeller():
 	## CALCULATE TARGET ##
 	######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='perform per-site(/per-site-pair) calculations of population summary statistics for model target values')
-	target_stats_parser.add_argument('inputTpeds', action='store', help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)',type=list)
-	target_stats_parser.add_argument('recomFile', action='store', help='recombination map') #check consistent with used to create tped
-	target_stats_parser.add_argument('regions', action='store', help='tab-separated file with putative neutral regions') #make this optional? and/or TSV
+	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
+	target_stats_parser.add_argument('recomFile', action='store', type=str, help='file defining recombination map for input') 
+	target_stats_parser.add_argument('regions', action='store', type=str, help='tab-separated file with putative neutral regions') #OPTIONAL?
 	target_stats_parser.add_argument('--freqs', action='store_true', help='calculate summary statistics from within-population allele frequencies') 
 	target_stats_parser.add_argument('--ld', action='store_true', help='calculate summary statistics from within-population linkage disequilibrium') 
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
-	target_stats_parser.add_argument('out', action='store', help='outfile prefix')  #could add option for block bootstrap
+	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics in order to finalize model target values')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
 	bootstrap_parser.add_argument('--in_ld', action='store', help='comma-delimited list of infiles with per-site-pair calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
 	bootstrap_parser.add_argument('--in_fst', action='store', help='comma-delimited list of infiles with per-site calculations for population pair. One file per population-pair -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 	
-	bootstrap_parser.add_argument('out', action='store', help='outfile prefix') 
+	bootstrap_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
 	point_parser = subparsers.add_parser('point', help='run simulates of a point in parameter-space')
-	grid_parser = subparsers.add_parser('grid', help='run grid search')
+	grid_parser = subparsers.add_parser('grid', help='run grid search through parameter-space to fit model parameters')
 	optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
 
 	for cosi_parser in [point_parser, grid_parser, optimize_parser]:
-		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
-		cosi_parser.add_argument('nCoalescentReps', help='num reps', type=int)
-		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run? (*automate installation)', default="/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent") 
+		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
+		cosi_parser.add_argument('nCoalescentReps', type=int, help='number of coalescent replicates to run per point in parameter-space')
+		cosi_parser.add_argument('outputDir', type=str, action='store', help='location in which to write cosi output')
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run?')  #NIX THIS
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset (i.e., to model ascertainment bias)')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 		cosi_parser.add_argument('--stopAfterMinutes', action='store', help='cosi option to terminate simulations')
-		cosi_parser.add_argument('--calcError', action='store', help='file specifying dimensions of error function to use. if unspecified, defaults to all. first line = stats, second line = pops')
+		cosi_parser.add_argument('--calcError', type=str, action='store', help='file specifying dimensions of error function to use. if unspecified, defaults to all. first line = stats, second line = pops')
 
 	######################
 	## VISUALIZE MODEL  ##
 	######################
-	point_parser.add_argument('--targetvalsFile', help='targetvalsfile for model')	
+	point_parser.add_argument('--targetvalsFile', action='store', type=str, help='file containing target values for model')	
 	point_parser.add_argument('--plotStats', action='store_true', help='visualize goodness-of-fit to model targets')
 
 	#########################
 	## FIT MODEL TO TARGET ##
 	#########################
-	grid_parser.add_argument('grid_inputdimensionsfile', action='store', help='file with specifications of grid search. each parameter to vary is indicated: KEY\tINDEX\t[VALUES]') #must be defined for each search 	
-	optimize_parser.add_argument('optimize_inputdimensionsfile', action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
-	optimize_parser.add_argument('--stepSize', action='store', help='scaled step size (i.e. whole range = 1)')
-	optimize_parser.add_argument('--method', action='store', default='SLSQP', help='algorithm to pass to scipy.optimize')
+	grid_parser.add_argument('grid_inputdimensionsfile', type=str, action='store', help='file with specifications of grid search. each parameter to vary is indicated: KEY\tINDEX\t[VALUES]') #must be defined for each search 	
+	optimize_parser.add_argument('optimize_inputdimensionsfile', type=str, action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
+	optimize_parser.add_argument('--stepSize', action='store', type=float, help='scaled step size (i.e. whole range = 1)')
+	optimize_parser.add_argument('--method', action='store', type=str, default='SLSQP', help='algorithm to pass to scipy.optimize')
+
+	for common_parser in [target_stats_parser, point_parser]:#[bootstrap_parser, grid_parser, optimize_parser]:
+		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 
 	return parser
 
@@ -77,7 +81,7 @@ def execute_target_stats(args):
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
-	print(prefixstring + "calculating summary statistics for " +  str(npops) + " populations...")
+	print("calculating summary statistics for " +  str(npops) + " populations...")
 	allCmds = []
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
@@ -94,13 +98,15 @@ def execute_target_stats(args):
 				allCmds.append(fstCmd)
 	for command in allCmds:
 		command = [str(x) for x in command]
-		#subprocess.check_call( command )
-		print(prefixstring + command)
+		if args.printOnly:
+			print(command)
+		else:
+			subprocess.check_call( command )
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
 	nbootstraprep = args.nBootstrapReps
-	print(prefixstring + "running " + str(nbootstraprep) + " bootstrap estimates of summary statistics...")
+	print("running " + str(nbootstraprep) + " bootstrap estimates of summary statistics...")
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
 
@@ -113,11 +119,11 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print(prefixstring + "reading allele frequency statistics from: " + inputfilename)
+			print("reading allele frequency statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
-			print(prefixstring + "TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
+			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -181,10 +187,10 @@ def execute_bootstrap(args):
 		npops = len(inputfilenames)
 		for ipop in range(npops):
 			inputfilename = inputfilenames[i]
-			print(prefixstring + "reading linkage disequilibrium statistics from: " + inputfilename)
+			print("reading linkage disequilibrium statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			alldists, allr2, allgendists, alldprime, nr2regions, ndprimeregions = readLDFile(ldfilename, dprimecutoff = mafcutoffdprime)
-			print(prefixstring + "TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n")
+			print("TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n")
 
 			###################################
 			### r2: MEAN ACROSS ALL REGIONS ###
@@ -265,23 +271,23 @@ def execute_bootstrap(args):
 		npopcomp = len(inputfilenames)
 		for icomp in range(len(npopcomp)):
 			fstfilename	= inputfilenames[icomp]
-			print(prefixstring + "reading Fst values from: " + fstfilename)
+			print("reading Fst values from: " + fstfilename)
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allfst, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
-			print(prefixstring + "TOTAL: logged Fst values for " + str(len(allfst)) + " SNPs.\n")
+			print("TOTAL: logged Fst values for " + str(len(allfst)) + " SNPs.\n")
 
 	writefile.close()
-	print(prefixstring + "wrote to file: " + targetstats_filename)
+	print("wrote to file: " + targetstats_filename)
 	return
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
 	################
 	## FILE PREP ###
 	################
-	print(prefixstring + "generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
+	print("generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
@@ -298,7 +304,11 @@ def execute_point(args):
 	if args.stopAfterMinutes is not None:
 		runStatsCommand += " --stop-after-minutes " + str(args.stopAfterMinutes)
 	runStatsCommand += "--custom-stats > " + statfilename
-	print(runStatsCommand)
+
+	if args.printOnly:
+			print(runStatsCommand)
+		else:
+			subprocess.check_call( runStatsCommand )
 	#subprocess.check_call(runStatsCommand)
 
 	#################
@@ -310,17 +320,17 @@ def execute_point(args):
 		else:
 			stats, pops = read_error_dimensionsfile(args.calcError) 
 			error = calc_error(statfilename, stats, pops)
-		print(prefixstring + " error: " + str(error)) #record?
+		print(" error: " + str(error)) #record?
 
 	################
 	## VISUALIZE ###
 	################		
 	if args.plotStats:
-		print(prefixstring + " must connect to plotting infrastructure, ensure consistency wrt matplotlib")
+		print(" must connect to plotting infrastructure, ensure consistency wrt matplotlib")
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
-	print(prefixstring + "loading dimensions of grid to search from: " + args.grid_inputdimensionsfile)
+	print("loading dimensions of grid to search from: " + args.grid_inputdimensionsfile)
 	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid')
 	assert len(keys) == len(indices) 
 	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
@@ -338,7 +348,7 @@ def execute_grid(args):
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
-	print(prefixstring + "loading dimensions to search from: " + args.optimize_inputdimensionsfile)
+	print("loading dimensions to search from: " + args.optimize_inputdimensionsfile)
 	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
 
 	rangeDict = get_ranges()
@@ -360,7 +370,7 @@ def execute_optimize(args):
 	result = optimize.minimize(samplePoint_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
 	print(result)
 
-	print(prefixstring +  "******************")
+	print( "******************")
 	#translate back to changes to model
 	bestparams = []
 	assert len(keys) == len(result.x)
@@ -371,7 +381,7 @@ def execute_optimize(args):
 		low, high = float(interval[0]), float(interval[1])
 		realVal = get_real_value(result.x[i], low, high)
 		bestparams.append(result.x[i])
-		print(prefixstring + "best " + str(key) + "|" + str(index) + "|" + str(realVal))
+		print("best " + str(key) + "|" + str(index) + "|" + str(realVal))
 	return
 
 ##########
@@ -384,7 +394,7 @@ if __name__ == '__main__':
 	# if called with no arguments, print help
 	if len(sys.argv)==1:
 		runparser.parse_args(['--help'])
-	elif len(sys.argv)==2 and (len(commands)>1 or commands[0][0]!=None):
+	elif len(sys.argv)==2:
 		runparser.parse_args([sys.argv[1], '--help'])
 
 	subcommand = sys.argv[1]

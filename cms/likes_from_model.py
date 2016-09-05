@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
 ## last updated: 09.05.16 vitti@broadinstitute.org
 
@@ -102,6 +103,9 @@ def full_parser_likes_from_model():
 	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='visualize likelihood tables')
 	#visualize_likes_parser.add_argument('')
 
+	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
+		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+
 	return parser
 
 ############################
@@ -115,16 +119,19 @@ def execute_run_neut_sims(args):
 	neutRunDir += "run_neut_sims"
 	runDir = check_make_dir(neutRunDir)
 	runDir += "/"
-	print(prefixstring + "running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
-	print(prefixstring + "writing to: " + runDir)
+	print("running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
+	print("writing to: " + runDir)
 	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile + " --output-gen-map " 
 	if args.genmapRandomRegions:
 		runStatsCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " --tped " + runDir + "rep"
-	print(prefixstring + neutSimCommand)
-	subprocess.check_output(neutSimCommand.split())
+
+	if args.printOnly:
+		print(command)
+	else:
+		subprocess.check_output(neutSimCommand.split())
 	return
 def execute_get_sel_trajs(args):
 	'''adapted from JV run_sims_from_model_vers.py'''
@@ -135,8 +142,8 @@ def execute_get_sel_trajs(args):
 	runDir = check_make_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	print(prefixstring + "running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
-	print(prefixstring + "outputting to " + runDir)
+	print("running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
+	print("outputting to " + runDir)
 
 	######################
 	## USE SLURM ARRAYS ##
@@ -178,8 +185,8 @@ def execute_run_sel_sims(args):
 	runDir = check_make_dir(selSimDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
-	print(prefixstring + "loading trajectories from " + args.trajDir)
-	print(prefixstring + "outputting to " + runDir)
+	print("loading trajectories from " + args.trajDir)
+	print("outputting to " + runDir)
 
 	######################
 	## USE SLURM ARRAYS ##
@@ -229,7 +236,7 @@ def execute_scores_from_sims(args):
 		else:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 			norm_sel_ihs(args.inputIhs, args.normalizeIhs, bin_ends)
-			#print(prefixstring + "loading normalization parameters from " + args.normalizeIhs + " ...")
+			#print("loading normalization parameters from " + args.normalizeIhs + " ...")
 	if args.normalizeDelIhh is not None:
 		if args.normalizeDelIhh == "":
 			#can reuse iHS func
