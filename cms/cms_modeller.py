@@ -307,8 +307,8 @@ def execute_point(args):
 
 	if args.printOnly:
 			print(runStatsCommand)
-		else:
-			subprocess.check_call( runStatsCommand )
+	else:
+		subprocess.check_call( runStatsCommand )
 	#subprocess.check_call(runStatsCommand)
 
 	#################
