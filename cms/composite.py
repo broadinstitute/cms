@@ -69,6 +69,9 @@ def full_parser_composite():
 	outgroups_parser.add_argument('--startBp', type=int, action="store", help="start location of region in basepairs")
 	outgroups_parser.add_argument('--endBp', type=int, action="store", help="end location of region in basepairs")
 
+	for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
+		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+
 	#ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 	return parser
 
@@ -102,8 +105,10 @@ def execute_xp_from_ihh(args):
 	cmd = "/dists/write_xpehh_fromihh"
 	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
 	cmdstring = cmd + " " + argstring
-	print(cmdstring)
-	#subproces.check_output(cmdstring.split())
+	if args.printOnly:
+			print(command)
+		else:
+			subprocess.check_call( cmdstring )	
 	return
 def execute_poppair(args):
 	cmd = "/combine/combine_scores_poppair"
@@ -117,8 +122,10 @@ def execute_poppair(args):
 		deldaf_reversed = 1
 	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
 	cmdstring = cmd + " " + argstring
-	print(cmdstring)
-	#subprocess.check_output(argstring.split())
+	if args.printOnly:
+			print(command)
+		else:
+			subprocess.check_call( cmdstring )	
 	return
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
@@ -131,12 +138,14 @@ def execute_outgroups(args):
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
 	cmdstring = cmd + " " + argstring
-	print(cmdstring)
-	#subprocess.check_output(argstring.split())
+	if args.printOnly:
+			print(command)
+		else:
+			subprocess.check_call( cmdstring )	
 	return
 def execute_ml_region(args):
 	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
-	print(prefixstring + "must connect composite.py to combine_cms_regions framework")
+	print("must connect composite.py to combine_cms_regions framework")
 	return
 
 ##########
