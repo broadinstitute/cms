@@ -21,7 +21,7 @@ def full_parser_cms_modeller():
 	######################
 	## CALCULATE TARGET ##
 	######################
-	target_stats_parser = subparsers.add_parser('target_stats', help='perform per-site(/per-site-pair) calculations of population summary statistics for model target values')
+	target_stats_parser = subparsers.add_parser('target_stats', help='Perform per-site(/per-site-pair) calculations of population summary statistics for model target values.')
 	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
 	target_stats_parser.add_argument('recomFile', action='store', type=str, help='file defining recombination map for input') 
 	target_stats_parser.add_argument('regions', action='store', type=str, help='tab-separated file with putative neutral regions') #OPTIONAL?
@@ -30,7 +30,7 @@ def full_parser_cms_modeller():
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
 	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
-	bootstrap_parser = subparsers.add_parser('bootstrap', help='perform bootstrap estimates of population summary statistics in order to finalize model target values')
+	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
 	bootstrap_parser.add_argument('--in_ld', action='store', help='comma-delimited list of infiles with per-site-pair calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
@@ -40,9 +40,9 @@ def full_parser_cms_modeller():
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
-	point_parser = subparsers.add_parser('point', help='run simulates of a point in parameter-space')
-	grid_parser = subparsers.add_parser('grid', help='run grid search through parameter-space to fit model parameters')
-	optimize_parser = subparsers.add_parser('optimize', help='run optimization algorithm to fit model parameters')
+	point_parser = subparsers.add_parser('point', help='Run simulates of a point in parameter-space.')
+	grid_parser = subparsers.add_parser('grid', help='Perform grid search: for specified parameters and intervals, define points in parameter-space to sample and compare.')
+	optimize_parser = subparsers.add_parser('optimize', help='Perform optimization algorithm (scipy.optimize) to fit model parameters robustly.')
 
 	for cosi_parser in [point_parser, grid_parser, optimize_parser]:
 		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
@@ -77,7 +77,7 @@ def full_parser_cms_modeller():
 ## DEFINE EXEC FUNCTIONS ###
 ############################
 def execute_target_stats(args):
-	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values; these programs currently have hard-coded arg input -- JV consider switching to getopt'''
+	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values'''
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
@@ -104,7 +104,7 @@ def execute_target_stats(args):
 			subprocess.check_call( command )
 	return
 def execute_bootstrap(args):
-	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates. adapted from JV experimental: get_neutral_targetstats_from_bootstrap.py'''
+	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates.'''
 	nbootstraprep = args.nBootstrapReps
 	print("running " + str(nbootstraprep) + " bootstrap estimates of summary statistics...")
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
@@ -283,7 +283,7 @@ def execute_bootstrap(args):
 	print("wrote to file: " + targetstats_filename)
 	return
 def execute_point(args):
-	'''runs simulates of a point in parameter-space, comparing to specified target. adapted from JV experimental: grid_point.py'''
+	'''runs simulates of a point in parameter-space, comparing to specified target'''
 	################
 	## FILE PREP ###
 	################
@@ -307,8 +307,8 @@ def execute_point(args):
 
 	if args.printOnly:
 			print(runStatsCommand)
-		else:
-			subprocess.check_call( runStatsCommand )
+	else:
+		subprocess.check_call( runStatsCommand )
 	#subprocess.check_call(runStatsCommand)
 
 	#################

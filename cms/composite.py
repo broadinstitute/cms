@@ -16,13 +16,13 @@ def full_parser_composite():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for manipulating and combining component statistics")
 	subparsers = parser.add_subparsers(help="sub-commands")
 
-	freqscores_parser = subparsers.add_parser('freqscores', help="calculate Fst and delDAF") 
+	freqscores_parser = subparsers.add_parser('freqscores', help="Calculate allele frequency-based scores (Fst and delDAF) for a pair of populations.") 
 	freqscores_parser.add_argument('inTped1', type=str, action="store", help="input tped 1")			
 	freqscores_parser.add_argument('inTped2', type=str, action="store", help="input tped 2")
 	freqscores_parser.add_argument('recomFile', type=str, action="store", help="input recombination file")			 
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 
-	win_haps_parser = subparsers.add_parser('win_haps', help='perform window-based calculation of haplotype scores')
+	win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
 	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
 	win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
 	win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
@@ -30,17 +30,17 @@ def full_parser_composite():
 	#win_haps_parser.add_argument('--ihs', action='store_true')
 	#win_haps_parser.add_argument('--delihh', action='store_true')
 
-	interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="fill haplotype vals at low-freq sites based on sliding window averages")
+	interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="Fill (otherwise omitted) iHS values at low-freq sites based on sliding window averages.")
 	interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
 	interpolate_hapscores_parser.add_argument('inihsfilename', type=str, action='store', help="input per-site score file")
 	interpolate_hapscores_parser.add_argument('inwinihsfilename', type=str, action='store', help="input window score file")
 	interpolate_hapscores_parser.add_argument('outfilename', type=str, action='store', help="file to write")			
 
-	delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs')
+	delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs', help="Calculate delIHH values from iHS output files.")
 	delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
 	delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
 
-	xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="calculate XP-EHH based on two per-pop iHH files (ie for computational efficiency)")
+	xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="Calculate XP-EHH based on two per-pop iHH files.")
 	xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
 	xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
 	xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
@@ -48,7 +48,7 @@ def full_parser_composite():
 	###############
 	## POP PAIRS ##
 	###############
-	poppair_parser = subparsers.add_parser('poppair', help='collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons')
+	poppair_parser = subparsers.add_parser('poppair', help='Collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons).')
 	poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
 	poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
 	poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
@@ -60,7 +60,7 @@ def full_parser_composite():
 	########################
 	## LARGER COMPARISONS ##
 	########################
-	outgroups_parser = subparsers.add_parser('outgroups', help='combine scores from comparisons of a putative selected pop to 2+ outgroups.')
+	outgroups_parser = subparsers.add_parser('outgroups', help='Combine scores from comparisons of a putative selected pop to 2+ outgroups.')
 	outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
 	outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
 	outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
@@ -107,8 +107,8 @@ def execute_xp_from_ihh(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_poppair(args):
 	cmd = "/combine/combine_scores_poppair"
@@ -124,8 +124,8 @@ def execute_poppair(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
@@ -140,8 +140,8 @@ def execute_outgroups(args):
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(command)
-		else:
-			subprocess.check_call( cmdstring )	
+	else:
+		subprocess.check_call( cmdstring )	
 	return
 def execute_ml_region(args):
 	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
