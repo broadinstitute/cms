@@ -1,16 +1,23 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 08.16.16 vitti@broadinstitute.org
+## last updated: 08.21.16 vitti@broadinstitute.org adding slurm -t
 
 import os, subprocess
 
-def write_slurm_array(writefilename = "slurm_array.sh", arrayCmd = "./my_process $SLURM_ARRAY_TASK_ID", numTasks=1, dispatch=False):
+def write_slurm_array(writefilename = "slurm_array.sh", arrayCmd = "./my_process $SLURM_ARRAY_TASK_ID", numTasks=1, dispatch=False, limit=5):
 	writefile = open(writefilename, 'w')
 	writefile.write('#!/bin/bash\n')
 	writefile.write('#SBATCH --array=1-' + str(numTasks) + "\n")
+	if limit is not None: #in minutes
+		writefile.write('#SBATCH --time=' + str(limit) + "\n")
+	
 	writefile.write(arrayCmd)
 	writefile.write('\n')
 	writefile.close()
-	subcommand = "sbatch --array=1-" + str(numTasks) + " " + writefilename
+	subcommand = "sbatch --array=1-" + str(numTasks) 
+	if limit is not None: #in minutes
+		subcommand += " --time=" + str(limit)
+		#" -t 0-00:"+str(limit)+":00"
+	subcommand += " " + writefilename
 	print(subcommand)
 	if dispatch:
 		subprocess.check_output(subcommand.split())
