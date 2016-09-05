@@ -20,17 +20,17 @@ def full_parser_likes_from_model():
 	#############################
 	## RUN NEUTRAL SIMULATIONS ##
 	#############################
-	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='run neutral simulations')
+	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='Run neutral simulations from a demographic model.')
 	run_neut_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run')
 	
 	###############################
 	## RUN SELECTION SIMULATIONS ##
 	###############################
-	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample')
+	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
 	#get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
 	get_sel_trajs_parser.add_argument('--maxSteps', action='store', help='')
 	
-	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='run sel. simulations')	
+	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='Run simulations of selection from demographic model and selection trajectories.')	
 	#run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
 	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
 	
@@ -55,7 +55,7 @@ def full_parser_likes_from_model():
 	################################
 	## CALCULATE SCORES FROM SIMS ## I'm not sure if we even want to include this. It just wraps infrastructure that already exists elsewhere. leave as exercise for the user?
 	################################
-	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='get scores from simulations')
+	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='Calculate scores from simulated data.')
 	if True:
 		#PER POP:
 		scores_from_sims_parser.add_argument('--inputTped', action='store', help='tped from which to calculate score')
@@ -77,7 +77,7 @@ def full_parser_likes_from_model():
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
 	##################################################
-	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='get component score probability distributions from scores')
+	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
 	if True:
 		#likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
 		#likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
@@ -100,7 +100,7 @@ def full_parser_likes_from_model():
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
-	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='visualize likelihood tables')
+	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='Visualize likelihood tables generated from simulated data.')
 	#visualize_likes_parser.add_argument('')
 
 	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
@@ -112,11 +112,11 @@ def full_parser_likes_from_model():
 ## DEFINE EXEC FUNCTIONS ###
 ############################
 def execute_run_neut_sims(args):
-	'''adapted from JV run_sims_from_model_vers.py; previously wrote to ms and ran via UGER taskarrays. adjust per new cosi tped output option'''
+	'''run neutral simulations from model'''
 	neutRunDir = args.outputDir
 	if args.outputDir[-1] != "/":
 		neutRunDir += "/"
-	neutRunDir += "run_neut_sims"
+	neutRunDir += "run_nexut_sims"
 	runDir = check_make_dir(neutRunDir)
 	runDir += "/"
 	print("running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
@@ -134,7 +134,7 @@ def execute_run_neut_sims(args):
 		subprocess.check_output(neutSimCommand.split())
 	return
 def execute_get_sel_trajs(args):
-	'''adapted from JV run_sims_from_model_vers.py'''
+	'''generate selection trajectories as needed'''
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
