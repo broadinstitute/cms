@@ -14,7 +14,8 @@ Software used by the cms project is distributed through the bioconda channel for
 Step 3: Make a conda environment and install cms
 
 It is recommended to install cms into its own conda directory. This ensures its dependencies do not interfere with other conda packages installed on your system. First clone the source repository from Github::
-	git clone git@github.com:broadinstitute/cms.git
+
+  git clone git@github.com:broadinstitute/cms.git
 
 A new conda environment can be created with the following command, which will also install relevant cms dependencies. It is recommended to use the Python3 version of the environment file::
 
