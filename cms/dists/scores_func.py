@@ -34,7 +34,7 @@ def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThrea
 	return	
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile):
 	commandstring = "./calc_fst_deldaf_tped"
-	argstring = inputTped1 + " " + inputTped2 + " " + recomFile + " " + outputFile
+	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
 	print(commandstring + " " + argstring)
 	return
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):

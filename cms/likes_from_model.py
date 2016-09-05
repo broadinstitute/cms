@@ -1,7 +1,5 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 08.16.16 vitti@broadinstitute.org
-
-prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
+## last updated: 09.05.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake, run_seltraj_arrays, run_selsim_arrays
@@ -362,9 +360,13 @@ def execute_visualize_likes(args):
 if __name__ == '__main__':
 	runparser = full_parser_likes_from_model()
 	args = runparser.parse_args()
-	if len(sys.argv) < 2:
-		print(prefixstring + "{likes_from_model.py}>>\t\t Run with flag -h to view script options.")
-		sys.exit()	
+
+	# if called with no arguments, print help
+	if len(sys.argv)==1:
+		runparser.parse_args(['--help'])
+	elif len(sys.argv)==2 and (len(commands)>1 or commands[0][0]!=None):
+		runparser.parse_args([sys.argv[1], '--help'])
+
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline

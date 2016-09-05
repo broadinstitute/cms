@@ -1,7 +1,6 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 07.24.16 vitti@broadinstitute.org
+## last updated: 09.05.16 vitti@broadinstitute.org
 
-prefixstring = "{CMS2.0}>>\t\t" #for stderr (make global?)
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
 from dists.scores_func import calc_fst_deldaf 
@@ -150,9 +149,13 @@ def execute_ml_region(args):
 if __name__ == '__main__':
 	runparser = full_parser_composite()
 	args = runparser.parse_args()
-	if len(sys.argv) < 2:
-		print(prefixstring + "{composite.py}>>\t\t Run with flag -h to view script options.")
-		sys.exit()
+
+	# if called with no arguments, print help
+	if len(sys.argv)==1:
+		runparser.parse_args(['--help'])
+	elif len(sys.argv)==2 and (len(commands)>1 or commands[0][0]!=None):
+		runparser.parse_args([sys.argv[1], '--help'])
+
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline
