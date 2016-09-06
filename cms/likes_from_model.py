@@ -3,8 +3,9 @@
 ## last updated: 09.05.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
-from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, run_sel_trajs_snakemake, write_bin_paramfile, run_sel_sims_snakemake, run_seltraj_arrays, run_selsim_arrays
+from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
 from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
+from util.parallel import slurm_array
 import argparse
 import subprocess
 import sys, os
@@ -26,12 +27,10 @@ def full_parser_likes_from_model():
 	###############################
 	## RUN SELECTION SIMULATIONS ##
 	###############################
-	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories and perform rejection sampling to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
-	#get_sel_trajs_parser.add_argument('nSimsPerBin', type=int, help="number of selection trajectories to generate per allele frequency bin")	
-	get_sel_trajs_parser.add_argument('--maxSteps', action='store', help='')
+	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
+	get_sel_trajs_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time')
 	
 	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='Run simulations of selection from demographic model and selection trajectories.')	
-	#run_sel_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run per sel scenario')
 	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
 	
 	#############################
@@ -48,7 +47,7 @@ def full_parser_likes_from_model():
 	for cosi_parser in [run_neut_sims_parser, get_sel_trajs_parser, run_sel_sims_parser]:
 		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")#"/Users/vitti/Desktop/COSI_DEBUG_TEST/cosi-2.0/coalescent")
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 
@@ -64,8 +63,8 @@ def full_parser_likes_from_model():
 		scores_from_sims_parser.add_argument('--inputXpehh', action='store', help='Xp-ehh from which to calculate norm')
 
 		scores_from_sims_parser.add_argument('outputFilename', help='where to write scorefile')		
-		scores_from_sims_parser.add_argument('--ihs', action='store_true')
-		scores_from_sims_parser.add_argument('--delIhh', action='store_true')
+		scores_from_sims_parser.add_argument('--ihs', action='store_true', help="calculate iHS from simulates")
+		scores_from_sims_parser.add_argument('--delIhh', action='store_true', help="calculate delIHH from simulates")
 		#POP COMPARISONS:
 		scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
@@ -87,11 +86,11 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
-		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='')	
-		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='')	
-		likes_from_scores_parser.add_argument('--xp', action='store_true', help='')	
-		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='')	
-		likes_from_scores_parser.add_argument('--fst', action='store_true', help='')	
+		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
+		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='define probability distribution for delIHH')	
+		likes_from_scores_parser.add_argument('--xp', action='store_true', help='define probability distribution for XP-EHH')	
+		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='define probability distribution for delDAF')	
+		likes_from_scores_parser.add_argument('--fst', action='store_true', help='define probability distribution for Fst')	
 
 	##############
 	## SEL BINS ##
@@ -116,7 +115,7 @@ def execute_run_neut_sims(args):
 	neutRunDir = args.outputDir
 	if args.outputDir[-1] != "/":
 		neutRunDir += "/"
-	neutRunDir += "run_nexut_sims"
+	neutRunDir += "run_neut_sims"
 	runDir = check_make_dir(neutRunDir)
 	runDir += "/"
 	print("running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
@@ -145,36 +144,22 @@ def execute_get_sel_trajs(args):
 	print("running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
 	print("outputting to " + runDir)
 
-	######################
-	## USE SLURM ARRAYS ##
-	######################
 	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		binDir = check_make_dir(populateDir)
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		run_seltraj_arrays(binDir, args.cosiBuild, paramfilename, args.n, maxAttempts = args.maxSteps)
+		if binDir[-1] != "/":
+			binDir += "/"
+		traj_outputname = trajdir + 'rep' + taskIndexStr + '.txt'
+		traj_cmd = "python " + scriptDir + "run_traj.py " + traj_outputname + " " + args.cosiBuild + " " + paramfilename + " " + str(args.maxAttempts) +'\n'#
+		if args.printOnly:
+			dispatch = False
+		else:
+			dispatch = True
+		slurm_array(binDir + "run_sel_traj.sh", traj_cmd, args.n, dispatch=dispatch)
 
-	"""
-	for ibin in range(args.nBins): ### DEBUG ##### !!!!
-		###################
-		## USE SNAKEMAKE ##
-		###################
-		#print('\n\n' + str(ibin)+'\n') ## DBEUG
-		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		binDir = check_make_dir(populateDir)
-		#print("BINDIR\t" + binDir) #DEBUG?????
-		bounds = bin_starts[ibin], bin_ends[ibin]
-		paramfilename = populateDir + "/params"
-		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		#print("wrote bin paramfile\n")
-		run_sel_trajs_snakemake(binDir, args.cosiBuild, paramfilename, args.n, cluster=args.cluster, jobs=args.jobs) #ISSUE HERE args.maxSteps, 
-		'''
-		#DEBUG SNAKEMAKE- use this instead??
-		run_sel_trajs_allbins(bin_starts, bin_ends, bin_medians_str, args.cosiBuild,)
-		'''
-	"""
 	return
 def execute_run_sel_sims(args):
 	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
@@ -188,9 +173,6 @@ def execute_run_sel_sims(args):
 	print("loading trajectories from " + args.trajDir)
 	print("outputting to " + runDir)
 
-	######################
-	## USE SLURM ARRAYS ##
-	######################
 	for ibin in range(args.nBins):
 		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
@@ -198,22 +180,19 @@ def execute_run_sel_sims(args):
 		trajectoryFilenames = os.listdir(binTrajDir)
 		paramfilename = binTrajDir + "/params"
 		assert os.path.isfile(paramfilename)			
-		run_selsim_arrays(binTrajDir, args.cosiBuild,  paramfilename, args.n, populateDir, dropSings=args.dropSings) 
-
-	"""
-	for ibin in range(args.nBins):
-		###################
-		## USE SNAKEMAKE ##
-		###################
-		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
-		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		populateDir = check_make_dir(populateDir)
-		trajectoryFilenames = os.listdir(binTrajDir)
-		paramfilename = binTrajDir + "/params"
-		assert os.path.isfile(paramfilename)	
-		#print(paramfilename)
-		run_sel_sims_snakemake(binTrajDir, args.cosiBuild, paramfilename, args.n, populateDir, args.genmapRandomRegions, args.dropSings)
-	"""
+		if binTrajDir [-1] != "/":
+			binTrajDir += "/"
+		sim_cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajdir + "/rep" + taskIndexStr + ".txt " + args.cosiBuild, + " -p " + paramfilename + " --output-gen-map " 
+		if genmapRandomRegions:
+			sim_cmd += " --genmapRandomRegions"
+		if dropSings is not None:
+			sim_cmd += " --drop-singletons " + str(dropSings)
+		sim_cmd += " --tped " + populateDir + 'rep' + taskIndexStr
+		if args.printOnly:
+			dispatch = False
+		else:
+			dispatch = True
+		slurm_array(runDir + "run_sel_sims.sh", sim_cmd, numSims, dispatch=dispatch)
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
@@ -295,7 +274,6 @@ def execute_likes_from_scores(args):
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader, verbose)		
 	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
-	# SELFREQ BINS! NEED TO VALIDATE THIS PROCEDURE
 	neut_der_freq = [1. - float(x) for x in neut_anc_freq]
 	sel_der_freq = [1. - float(x) for x in sel_anc_freq]
 	for ibin in range(len(bin_starts)):
