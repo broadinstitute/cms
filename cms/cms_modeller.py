@@ -6,6 +6,7 @@ from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, re
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
 from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
+#from util.parallel import uger_array
 from scipy import optimize
 import subprocess
 import argparse
@@ -64,6 +65,7 @@ def full_parser_cms_modeller():
 	## FIT MODEL TO TARGET ##
 	#########################
 	grid_parser.add_argument('grid_inputdimensionsfile', type=str, action='store', help='file with specifications of grid search. each parameter to vary is indicated: KEY\tINDEX\t[VALUES]') #must be defined for each search 	
+	#grid_parser.add_argument('--parallel', type=str, action='store', default="uger", help='if specified, launch points of grid search as tasks on a scheduler')
 	optimize_parser.add_argument('optimize_inputdimensionsfile', type=str, action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
 	optimize_parser.add_argument('--stepSize', action='store', type=float, help='scaled step size (i.e. whole range = 1)')
 	optimize_parser.add_argument('--method', action='store', type=str, default='SLSQP', help='algorithm to pass to scipy.optimize')
@@ -309,7 +311,6 @@ def execute_point(args):
 			print(runStatsCommand)
 	else:
 		subprocess.check_call( runStatsCommand )
-	#subprocess.check_call(runStatsCommand)
 
 	#################
 	## CALC ERROR ###
@@ -334,15 +335,12 @@ def execute_grid(args):
 	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid')
 	assert len(keys) == len(indices) 
 	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
-	##NEED TO PARALLELIZE AT THIS POINT. ASSUME UGER? SYSTEM-INDEPENDENT 
 	errors = []
 	for combo in combos:
 		argstring = combo + "\n"
 		theseValues = eval(combo) #list of values
 		error = sample_point(args.nCoalescentReps, keys, indices, theseValues)
 		errors.append(error)
-
-	##NEED TO GIVE FLEXIBLE WAY TO SEARCH THRU RESULTS
 	for icombo in range(len(combos)):
 		print(combo[icombo] + "\t" + errors[icombo] + "\n")
 	return

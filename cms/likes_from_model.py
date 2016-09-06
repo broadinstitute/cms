@@ -305,7 +305,7 @@ def execute_likes_from_scores(args):
 		write_hist_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 	return
 def execute_visualize_likes(args):
-	'''currently hard-wired to view all'''
+	'''currently: view all'''
 	old_likes = get_old_likes()
 	scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
 	pops = range(1,5)
