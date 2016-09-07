@@ -1,5 +1,5 @@
 // for a given pop pair, parse genome-wide iHH to calculate and record XP-EHH files.
-// last updated: 07.27.16 	vitti@broadinstitute.org
+// last updated: 09.07.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -27,23 +27,17 @@ int main(int argc, char **argv) {
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
-	sprintf(infilename1,argv[1]);
-	sprintf(infilename2,argv[2]);
-	sprintf(outfilename,argv[3]);
-	fprintf(stderr, "writing to: ");
-	fprintf(stderr, outfilename);
+	strcpy(infilename1,argv[1]);
+	strcpy(infilename2,argv[2]);
+	strcpy(outfilename,argv[3]);
+	fprintf(stderr, "writing to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL);
 
-    fprintf(stderr, "getting data from: ");
-    fprintf(stderr, "\n");
-    fprintf(stderr, infilename1);
-    fprintf(stderr, "\n");
-    fprintf(stderr, infilename2);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "getting data from: %s and %s\n", infilename1, infilename2);
 	
 	////////////////
 	// LOAD SCORES//

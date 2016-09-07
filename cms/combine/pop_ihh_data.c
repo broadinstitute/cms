@@ -1,6 +1,5 @@
 // data structure to facilitate parsing of pop ihh files
-// orig 10.12.15 /idi/sabeti-scratch/jvitti/cms_venv
-// last updated: 08.10.16
+// last updated: 09.07.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -10,15 +9,10 @@
 #include "pop_ihh_data.h"
 
 void get_pop_ihh_data(ihh_data* data, char filename[]) {
-  const int line_size = 15000000; //max nsnp is 6476203 SNPs in chrom2, so we this is our upper limit
-  //const int numRecomLines = 500000;
-  //char recombFile[100];
+  const int line_size = 15000000;
   FILE *inf=NULL;
   char *newLine, *token, *running;
-  //char sampstring[20];
-  //double genrate;
-  int isnp, itoken; //isamp, iRecom;
-  //int i; //for debug
+  int isnp, itoken;
     
   newLine = malloc((line_size+1) * sizeof(char));
   assert(newLine != NULL); 
@@ -30,7 +24,7 @@ void get_pop_ihh_data(ihh_data* data, char filename[]) {
   data->ihh = NULL;
 
   inf = fopen(filename, "r");
-  if (inf == NULL) {fprintf(stderr, "Missing file: "); fprintf(stderr, filename);}
+  if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
   assert(inf != NULL);
   while (fgets(newLine, line_size, inf) != NULL) {
       assert(strlen(newLine) < line_size);
@@ -38,7 +32,6 @@ void get_pop_ihh_data(ihh_data* data, char filename[]) {
     }
   fclose(inf);
 
-    
   // Allocate memory; initialize
   data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
   data->genpos = malloc(data->nsnps * sizeof(double*)); assert(data->genpos != NULL);
