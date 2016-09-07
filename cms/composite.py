@@ -27,8 +27,6 @@ def full_parser_composite():
 	win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
 	win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
 	win_haps_parser.add_argument('--jumplen', default=15, type=int, help='number of SNPs to distance windows')
-	#win_haps_parser.add_argument('--ihs', action='store_true')
-	#win_haps_parser.add_argument('--delihh', action='store_true')
 
 	interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="Fill (otherwise omitted) iHS values at low-freq sites based on sliding window averages.")
 	interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
@@ -72,7 +70,15 @@ def full_parser_composite():
 	for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 
-	#ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
+	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
+	
+	ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
+	ucsc_viz_parser.add_argument('infile_prefix', type=str, action="store", help="prefix of file containing scores to be reformatted (e.g. 'score_chr' for files named scores_chr#.txt)")
+	ucsc_viz_parser.add_argument('outfile', type=str, action="store", help="file to write")
+	ucsc_viz_parser.add_argument('--posIndex', type=int, action="store", default=1, help="index for column of datafile containing physical position (zero-indexed)")
+	ucsc_viz_parser.add_argument('--scoreIndex', type=str, action="store", default=-2, help="index for column of datafile containing score (zero-indexed)")
+	ucsc_viz_parser.add_argument('--strip_header', action="store_true", help="if input files include header line")
+
 	return parser
 
 ############################
@@ -145,7 +151,30 @@ def execute_outgroups(args):
 	return
 def execute_ml_region(args):
 	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
-	print("must connect composite.py to combine_cms_regions framework")
+	#IN PROGRESS
+	return
+def execute_ucsc_viz(args):
+	#convertBedGraph
+	inprefix = args.infile_prefix
+	outfile = open(args.outfile, 'w')
+	#MUST BE CASE-SENSITIVE SORTED
+	for chrom in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 3, 4, 5, 6, 7, 8, 9]:
+		chromfile = inprefix + ".chr" + str(chrom) + ".txt"
+		assert os.path.isfile(chromfile)
+		infile = open(chromfile, 'r')
+		if args.strip_header:
+			infile.readline()
+		for line in infile:
+			entries = line.strip('\n').split()
+			startPos = int(entries[args.posIndex])
+			score = float(entries[args.scoreIndex]) #use normalized value
+			writestring = "chr" + str(chrom) + "\t" + str(startPos) + "\t" + str(startPos + 1) + "\t" + str(score) + "\n"
+			outfile.write(writestring)
+		infile.close()
+	outfile.close()
+	print("wrote to: " + outfilename)
+	#convertBedGraphtoBigWig:
+	print("for large datasets, convert to BigWig format: http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig\n")
 	return
 
 ##########

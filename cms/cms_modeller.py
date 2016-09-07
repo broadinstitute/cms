@@ -49,7 +49,7 @@ def full_parser_cms_modeller():
 		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('nCoalescentReps', type=int, help='number of coalescent replicates to run per point in parameter-space')
 		cosi_parser.add_argument('outputDir', type=str, action='store', help='location in which to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run?')  #NIX THIS
+		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run?')  
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset (i.e., to model ascertainment bias)')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 		cosi_parser.add_argument('--stopAfterMinutes', action='store', help='cosi option to terminate simulations')
