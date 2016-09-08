@@ -24,7 +24,7 @@ def full_parser_cms_modeller():
 	## CALCULATE TARGET ##
 	######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='Perform per-site(/per-site-pair) calculations of population summary statistics for model target values.')
-	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
+	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of unzipped input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
 	target_stats_parser.add_argument('recomFile', action='store', type=str, help='file defining recombination map for input') 
 	target_stats_parser.add_argument('regions', action='store', type=str, help='tab-separated file with putative neutral regions') #OPTIONAL?
 	target_stats_parser.add_argument('--freqs', action='store_true', help='calculate summary statistics from within-population allele frequencies') 
