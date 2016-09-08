@@ -1,7 +1,4 @@
-// {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
-// {{POP GEN DATA --> COMPONENT SCORES}}
-//sourcefile: coal_data_1kg_autosome_tped_thinned.c // 11.09.15: added genloc to datastructure
-// last updated: 06.14.16 	vitti@broadinstitute.org recom map parsed incorrectly
+// last updated 09.08.16	vitti@broadinstitute.org 
 
 #include <stdio.h>
 #include <string.h>
@@ -97,6 +94,7 @@ int getUpperIndexOfItem(int *values, int numVals, int itemToFind){
 void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]) {
 	const int line_size = 999999999; // upper limit
 	const int numRecomLines = 500000;
+	char cmd[600];
 	char *newLine, *token, *running;
 	int isamp, isnp, itoken, iRecom;
   double genrate;
@@ -127,9 +125,14 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	//fprintf(stderr, "Getting information from file: %s\n", tpedfilename);
 
 	// Count number of SNPs in tped
-	inf = fopen(tpedfilename, "r");
+	//inf = fopen(tpedfilename, "r");
+
+	//handle zipped
+	sprintf(cmd, "gunzip -c %s", tpedfilename);
+	inf = popen(cmd, "r");
+
 	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
-  assert (inf != NULL);
+	assert (inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
 		assert(strlen(newLine) < line_size);
 		data->nsnp++;
@@ -188,7 +191,10 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	/*******************
 	GET DATA FROM TPED
 	*******************/
-	inf = fopen(tpedfilename, "r");
+	//handle zipped
+	sprintf(cmd, "gunzip -c %s", tpedfilename);
+	inf = popen(cmd, "r");
+///	inf = fopen(tpedfilename, "r");
 	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
 	assert(inf != NULL);
 

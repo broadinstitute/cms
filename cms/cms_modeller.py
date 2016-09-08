@@ -31,7 +31,8 @@ def full_parser_cms_modeller():
 	target_stats_parser.add_argument('--ld', action='store_true', help='calculate summary statistics from within-population linkage disequilibrium') 
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
 	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
-	
+	target_stats_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
+
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
@@ -81,6 +82,8 @@ def full_parser_cms_modeller():
 ############################
 def execute_target_stats(args):
 	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values'''
+	#pathcmd = "export PATH=" + args.modelpath + ":$PATH"
+	#subprocess.check_call(pathcmd.split())
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
@@ -89,22 +92,22 @@ def execute_target_stats(args):
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
 		if args.freqs:
-			freqCmd = ['bootstrap_freq_popstats_regions ', inputtped, args.recomFile, args.regions, args.out + "_freqs_" + str(ipop)]
+			freqCmd = [args.modelpath + 'bootstrap_freq_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_freqs_" + str(ipop)]
 			allCmds.append(freqCmd)
 		if args.ld:
-			ldCmd = ['bootstrap_ld_popstats_regions ', inputtped, args.recomFile, args.regions, args.out + "_ld_" + str(ipop)]
+			ldCmd = [args.modelpath + 'bootstrap_ld_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_ld_" + str(ipop)]
 			allCmds.append(ldCmd)
 		if args.fst:
 			for jpop in range(ipop+1, npops):
 				inputtped2 = inputtpeds[jpop]
-				fstCmd = ['bootstrap_fst_popstats_regions ', inputtped, inputtped2, args.recomFile, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
+				fstCmd = [args.modelpath + 'bootstrap_fst_popstats_regions', inputtped, inputtped2, args.recomFile, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
 				allCmds.append(fstCmd)
 	for command in allCmds:
 		command = [str(x) for x in command]
 		if args.printOnly:
 			print(command)
 		else:
-			subprocess.check_call( command.split() )
+			subprocess.check_call( command )
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates.'''
