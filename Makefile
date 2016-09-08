@@ -1,5 +1,5 @@
 ## top-level Makefile for cms2.0
-## last updated 07.14.16 	vitti@broadinstitute.org
+## last updated 09.08.16 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
@@ -21,7 +21,7 @@ composite :
 	cd cms/combine && $(MAKE)
 	
 clean :
-	rm *.o
+	cd cms/combine && rm *.o && cd ../model && rm *.o
 
 
 
