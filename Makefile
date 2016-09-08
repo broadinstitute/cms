@@ -21,7 +21,7 @@ composite :
 	cd cms/combine && $(MAKE)
 	
 clean :
-	cd cms/combine && rm *.o && cd ../model && rm *.o
+	cd cms/combine && rm *.o && rm -R *.dSYM && cd ../model && rm *.o && rm -R *.dSYM
 
 
 
