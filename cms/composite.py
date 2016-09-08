@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 09.05.16 vitti@broadinstitute.org
+## last updated: 09.08.16 vitti@broadinstitute.org
 
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
@@ -114,7 +114,7 @@ def execute_xp_from_ihh(args):
 	if args.printOnly:
 			print(command)
 	else:
-		subprocess.check_call( cmdstring )	
+		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_poppair(args):
 	cmd = "/combine/combine_scores_poppair"
@@ -131,7 +131,7 @@ def execute_poppair(args):
 	if args.printOnly:
 			print(command)
 	else:
-		subprocess.check_call( cmdstring )	
+		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
@@ -147,7 +147,7 @@ def execute_outgroups(args):
 	if args.printOnly:
 			print(command)
 	else:
-		subprocess.check_call( cmdstring )	
+		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_ml_region(args):
 	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp

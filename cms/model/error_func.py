@@ -4,8 +4,8 @@
 ## by default we up-weigh the importance of heterozygosity; this statistic has wide variance across simulates of a given model and can fail to inflate the error function while traversing unrealistic corners of parameter-space if not compensated for. [the 100x scale factor is pragmatic and can easily be toggled]
 ## last updated: 07.04.16 	vitti@broadinstitute.org
 
-import math
 from model.params_func import get_target_values
+import math
 
 def read_custom_statsfile(statfilename, numPops):
 	stats = {}
@@ -53,7 +53,7 @@ def root_mean_square_error(output, target, target_var, verbose = False):
 def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'], pops = [1, 2, 3, 4], piScaleFactor = 100, verbose=False): 
 	"""takes in an array of target values (y). extracts y' values (i.e. model
 	outputs) from statfile and compares to get root mean square error."""
-	targetStats = getTargetValues() 
+	targetStats = get_target_values() 
 	simStats = read_custom_statsfile(statfilename, len(pops))
 	if verbose:
 		print("getting statfile from " + statfilename)

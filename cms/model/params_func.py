@@ -3,6 +3,10 @@
 ## User should duplicate/adapt this file to reflect the populations being modeled. 
 ## See http://broad-cms.readthedocs.io/en/latest/workflow.html 		last updated: 07.05.16		vitti@broadinstitute.org
 
+#generated for dataset using cms_modeller.py, e.g.
+bootstrap_targetval_filename = "/Users/vitti/n2stats.txt"
+#"results_inclusive_targetstats_thinned_bootstrap_bysnp_2reps_120915_3pm_chr21-22.txt"
+
 def read_lines(openfile, numlines):
 	for i in range(numlines):
 		line = openfile.readline()
@@ -11,9 +15,9 @@ def read_lines(openfile, numlines):
 ##########################
 ## DEFINE TARGET VALUES ##
 ##########################
-def get_target_values(bootstrap_targetval_filename):
-	#print "MUST CONFIG FOR AWS: currently just sfs"
-	popDict = {'LWK': 1, 'GWD': 2, 'MSL': 3, 'YRI':4, 'ESN':5}
+def get_target_values():
+	popDict = {'1': 1, '2': 2, '3': 3, '4':4, 'ESN':5}
+	#popDict = {'LWK': 1, 'GWD': 2, 'MSL': 3, 'YRI':4, 'ESN':5}
 	stats = {}
 	openfile = open(bootstrap_targetval_filename, 'r')
 	for ipop in range(1,5):
@@ -278,7 +282,6 @@ def write_paramfile(paramfilename, paramDict):
 		towriteAges.append(timeSplit)
 
 	# changes in pop size
-
 	for i in range(1, numPops+1):
 		Ne = paramDict[('Ne', i)]
 		Ne_times = paramDict[('Ne_times', i)]
@@ -314,7 +317,6 @@ def write_paramfile(paramfilename, paramDict):
 			towriteAges.append(Ne_times[j])
 
 		#bottlenecks
-
 		bn = paramDict[('bn', i)]
 		bn_times = paramDict[('bn_times', i)]
 		assert len(bn) == len(bn_times)
@@ -330,7 +332,6 @@ def write_paramfile(paramfilename, paramDict):
 
 
 	#migration
-
 	for popPair in popPairs:
 		oneDir = str(popPair[0]) + "->" + str(popPair[1])
 		otherDir = str(popPair[1]) + "->" + str(popPair[0])
@@ -371,17 +372,12 @@ def write_paramfile(paramfilename, paramDict):
 	###################################
 	### Sort and record demography ####
 	###################################
-
-	#####PYTHON 2:
-	#from itertools import izip
-	#sorted_lines = sorted(izip(towriteAges, towriteLines))
 	sorted_lines = sorted(zip(towriteAges, towriteLines))
 	for line in sorted_lines:
 		openfile.write(line[1])
 	openfile.write('\n')
 
 	#migration automatically is set to zero when populations coalesce
-
 	nomiglines = ["pop_event migration_rate \"no mig YRI->GWD\" 1 2 " + str(split2time -1) + " 0\n",
 	"pop_event migration_rate \"no mig GWD->YRI\" 2 1 " + str(split2time -1) + " 0\n",
 	"pop_event migration_rate \"no mig YRI->MSL\" 1 3 " + str(split2time -1) + " 0\n",
@@ -471,7 +467,6 @@ def get_dict_from_paramfile(paramfilename):
 			paramDict['admix_rate'] = [rate]
 			paramDict['admix_time'] = [time]
 	openfile.close()
-	#print paramDict
 	return paramDict
 def update_params(paramDict, keys, indices, values):
 	"""paramDict: gets modified and returned.
@@ -482,10 +477,6 @@ def update_params(paramDict, keys, indices, values):
 	for i in range(len(keys)):
 		thisKey, thisIndex, thisValue = keys[i], indices[i], values[i]
 		paramDict[thisKey][thisIndex] = thisValue
-		#manually handle dependencies (better way to do this?)
-		#if thisKey == 'presentSizes':
-		#	pop = thisIndex + 1
-		#	paramDict[('Ne', pop)][0] = thisValue
 		if 'split' in thisKey:
 			bnkey = ('bn_times', thisKey[1])
 			nekey = ('Ne_times', thisKey[1])

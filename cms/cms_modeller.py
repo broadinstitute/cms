@@ -6,6 +6,7 @@ from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, re
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
 from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
+from model.plot_func import plot_comparison
 #from util.parallel import uger_array
 from scipy import optimize
 import subprocess
@@ -49,7 +50,7 @@ def full_parser_cms_modeller():
 		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('nCoalescentReps', type=int, help='number of coalescent replicates to run per point in parameter-space')
 		cosi_parser.add_argument('outputDir', type=str, action='store', help='location in which to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run?')  
+		cosi_parser.add_argument('--cosiBuild', action='store', default="coalescent", help='which version of cosi to run?')  
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset (i.e., to model ascertainment bias)')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 		cosi_parser.add_argument('--stopAfterMinutes', action='store', help='cosi option to terminate simulations')
@@ -59,7 +60,7 @@ def full_parser_cms_modeller():
 	## VISUALIZE MODEL  ##
 	######################
 	point_parser.add_argument('--targetvalsFile', action='store', type=str, help='file containing target values for model')	
-	point_parser.add_argument('--plotStats', action='store_true', help='visualize goodness-of-fit to model targets')
+	point_parser.add_argument('--plotStats', action='store_true', default=False, help='visualize goodness-of-fit to model targets')
 
 	#########################
 	## FIT MODEL TO TARGET ##
@@ -103,7 +104,7 @@ def execute_target_stats(args):
 		if args.printOnly:
 			print(command)
 		else:
-			subprocess.check_call( command )
+			subprocess.check_call( command.split() )
 	return
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates.'''
@@ -305,12 +306,12 @@ def execute_point(args):
 		runStatsCommand += " --genmapRandomRegions"
 	if args.stopAfterMinutes is not None:
 		runStatsCommand += " --stop-after-minutes " + str(args.stopAfterMinutes)
-	runStatsCommand += "--custom-stats > " + statfilename
+	runStatsCommand += " --custom-stats > " + statfilename
 
 	if args.printOnly:
 			print(runStatsCommand)
 	else:
-		subprocess.check_call( runStatsCommand )
+		subprocess.check_call( runStatsCommand.split() )
 
 	#################
 	## CALC ERROR ###
@@ -327,7 +328,9 @@ def execute_point(args):
 	## VISUALIZE ###
 	################		
 	if args.plotStats:
-		print(" must connect to plotting infrastructure, ensure consistency wrt matplotlib")
+		plot_comparison(statfilename, args.nCoalescentReps)
+
+
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
