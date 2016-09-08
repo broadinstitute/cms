@@ -38,7 +38,7 @@ def read_likes_file(likesfilename):
 	openfile.close()
 	return starts, ends, vals
 def get_old_likes():
-	likesloc = "/Users/vitti/Desktop/070916/likes/"
+	likesloc = "combine/old_likes/"
 	scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
 	pops = range(1,5)
 	models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best', 'nulldefault', 'nulldefault_constantsize']
