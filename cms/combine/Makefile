@@ -8,11 +8,12 @@
 CC = gcc
 CCFLAG = -O0 -ggdb3 -lm -Wall 
 
+
 ##################
 ## DEFINE RULES ##
 ##################
 
-all : combine_scores_poppair combine_scores_multiplepops combine_scores_multiplepops_region write_xpehh_from_ihh
+all : combine_scores_poppair combine_scores_multiplepops combine_scores_multiplepops_region write_xpehh_from_ihh #install
 
 combine_scores_poppair.o : combine_scores_poppair.c
 	$(CC) -c combine_scores_poppair.c
@@ -39,6 +40,9 @@ write_xpehh_from_ihh.o :
 
 write_xpehh_from_ihh : write_xpehh_from_ihh.o cms_data.c pop_ihh_data.h  pop_ihh_data.c 
 	$(CC) $(CCFLAG) -o write_xpehh_from_ihh write_xpehh_from_ihh.o pop_ihh_data.c 
+
+#$(phony install): all
+#	install -m 0755 combine_scores_poppair /usr/local/bin/
 
 
 clean :

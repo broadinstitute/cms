@@ -7,7 +7,7 @@ import sys
 import os
 
 #####################
-## CALCS FROM SIMS ## ## gratuitous. should probably nix (?)
+## CALCS FROM SIMS ## 
 #####################
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
@@ -35,7 +35,7 @@ def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThrea
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
 	if modelpath[-1] != "/":
 		modelpath += "/"
-	commandstring = modelpath + "calc_fst_deldaf_tped"
+	commandstring = modelpath + "calc_fst_deldaf"
 	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
 	fullcommand = commandstring + " " + argstring
 	print(fullcommand)
