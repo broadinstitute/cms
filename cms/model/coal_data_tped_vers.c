@@ -94,7 +94,7 @@ int getUpperIndexOfItem(int *values, int numVals, int itemToFind){
 void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]) {
 	const int line_size = 999999999; // upper limit
 	const int numRecomLines = 500000;
-	char cmd[600];
+	//char cmd[600];
 	char *newLine, *token, *running;
 	int isamp, isnp, itoken, iRecom;
   double genrate;
