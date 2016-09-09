@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 07.27.16 vitti@broadinstitute.org
+## last updated: 09.09.16 vitti@broadinstitute.org
 
 import subprocess
 import numpy as np
@@ -32,10 +32,14 @@ def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThrea
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
 	print(cmdStr)
 	return	
-def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile):
-	commandstring = "./calc_fst_deldaf_tped"
+def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
+	if modelpath[-1] != "/":
+		modelpath += "/"
+	commandstring = modelpath + "calc_fst_deldaf_tped"
 	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
-	print(commandstring + " " + argstring)
+	fullcommand = commandstring + " " + argstring
+	print(fullcommand)
+	subprocess.check_call( fullcommand.split() )
 	return
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 	"""pulls means and vars so that we can normalize sel scenarios with the same parameters. pulled from func_clean.py"""

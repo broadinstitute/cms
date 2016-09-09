@@ -24,7 +24,7 @@ def full_parser_cms_modeller():
 	## CALCULATE TARGET ##
 	######################
 	target_stats_parser = subparsers.add_parser('target_stats', help='Perform per-site(/per-site-pair) calculations of population summary statistics for model target values.')
-	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
+	target_stats_parser.add_argument('inputTpeds', action='store', type=list, help='comma-delimited list of unzipped input tped files (only one file per pop being modelled; must run chroms separately or concatenate)')
 	target_stats_parser.add_argument('recomFile', action='store', type=str, help='file defining recombination map for input') 
 	target_stats_parser.add_argument('regions', action='store', type=str, help='tab-separated file with putative neutral regions') #OPTIONAL?
 	target_stats_parser.add_argument('--freqs', action='store_true', help='calculate summary statistics from within-population allele frequencies') 
@@ -84,6 +84,9 @@ def execute_target_stats(args):
 	'''calls bootstrap_*_popstats_regions to get per-snp/per-snp-pair values'''
 	#pathcmd = "export PATH=" + args.modelpath + ":$PATH"
 	#subprocess.check_call(pathcmd.split())
+	modelpath = args.modelpath
+	if modelpath[-1] != "/":
+		modelpath += "/"
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
@@ -92,20 +95,23 @@ def execute_target_stats(args):
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
 		if args.freqs:
-			freqCmd = [args.modelpath + 'bootstrap_freq_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_freqs_" + str(ipop)]
+			freqCmd = [modelpath + 'bootstrap_freq_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_freqs_" + str(ipop)]
 			allCmds.append(freqCmd)
 		if args.ld:
-			ldCmd = [args.modelpath + 'bootstrap_ld_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_ld_" + str(ipop)]
+			ldCmd = [modelpath + 'bootstrap_ld_popstats_regions', inputtped, args.recomFile, args.regions, args.out + "_ld_" + str(ipop)]
 			allCmds.append(ldCmd)
 		if args.fst:
 			for jpop in range(ipop+1, npops):
 				inputtped2 = inputtpeds[jpop]
-				fstCmd = [args.modelpath + 'bootstrap_fst_popstats_regions', inputtped, inputtped2, args.recomFile, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
+				fstCmd = [modelpath + 'bootstrap_fst_popstats_regions', inputtped, inputtped2, args.recomFile, args.regions, args.out + "_fst_" + str(ipop) + "_" + str(jpop)]
 				allCmds.append(fstCmd)
 	for command in allCmds:
 		command = [str(x) for x in command]
 		if args.printOnly:
-			print(command)
+			commandstring = ""
+			for item in command:
+				commandstring += item + " "
+			print(commandstring)
 		else:
 			subprocess.check_call( command )
 	return

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 09.08.16 vitti@broadinstitute.org
+## last updated: 09.09.16 vitti@broadinstitute.org
 
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
@@ -21,6 +21,8 @@ def full_parser_composite():
 	freqscores_parser.add_argument('inTped2', type=str, action="store", help="input tped 2")
 	freqscores_parser.add_argument('recomFile', type=str, action="store", help="input recombination file")			 
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
+	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
+
 
 	win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
 	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
@@ -85,7 +87,7 @@ def full_parser_composite():
 ## DEFINE EXEC FUNCTIONS ###
 ############################
 def execute_freqscores(args):
-	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile)
+	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath)
 	return
 def execute_win_haps(args):
 	windowsize = args.windowsize

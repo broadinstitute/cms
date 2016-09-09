@@ -125,11 +125,11 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	//fprintf(stderr, "Getting information from file: %s\n", tpedfilename);
 
 	// Count number of SNPs in tped
-	//inf = fopen(tpedfilename, "r");
+	inf = fopen(tpedfilename, "r");
 
 	//handle zipped
-	sprintf(cmd, "gunzip -c %s", tpedfilename);
-	inf = popen(cmd, "r");
+	//sprintf(cmd, "gunzip -c %s", tpedfilename);
+	//inf = popen(cmd, "r");
 
 	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
 	assert (inf != NULL);
@@ -192,9 +192,9 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	GET DATA FROM TPED
 	*******************/
 	//handle zipped
-	sprintf(cmd, "gunzip -c %s", tpedfilename);
-	inf = popen(cmd, "r");
-///	inf = fopen(tpedfilename, "r");
+	//sprintf(cmd, "gunzip -c %s", tpedfilename);
+	///inf = popen(cmd, "r");
+	inf = fopen(tpedfilename, "r");
 	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
 	assert(inf != NULL);
 

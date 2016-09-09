@@ -54,10 +54,12 @@ def check_bin_filled(directory, numsims):
 ##################
 ### BOOKKEEPING ##
 ##################
-def check_make_dir(dirpath):
+def check_make_dir(dirpath, warn=False):
 	"""function to handle creation of (sub)folders, avoiding duplication.
 	** COME BACK TO THIS JV 	"""
 	if os.path.exists(dirpath):
+		if warn:
+			print(dirpath + " already exists")
 		return dirpath
 		#contents = os.listdir(dirpath)
 		#if len(contents) == 0:

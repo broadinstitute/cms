@@ -51,9 +51,9 @@ int main(int argc, char **argv){
 			if (itoken == 2) {endpos = atoi(token);}
 		}
 		
-    	fprintf(stderr, "chrom: %d\t", chromosome);
-		fprintf(stderr, "start: \t%d\t", startpos);
-		fprintf(stderr, "end: \t%d\n", endpos);
+    	//fprintf(stderr, "chrom: %d\t", chromosome);
+		//fprintf(stderr, "start: \t%d\t", startpos);
+		//fprintf(stderr, "end: \t%d\n", endpos);
 
 		//augment seqlen
 		seqlen += (endpos-startpos);
