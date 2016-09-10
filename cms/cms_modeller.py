@@ -33,7 +33,7 @@ def full_parser_cms_modeller():
 	target_stats_parser.add_argument('--ld', action='store_true', help='calculate summary statistics from within-population linkage disequilibrium') 
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
 	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
-	target_stats_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
+	target_stats_parser.add_argument('--modelpath', action='store', type=str, default='cms/model/', help="path to model directory containing executables")
 
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')

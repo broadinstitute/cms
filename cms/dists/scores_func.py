@@ -29,7 +29,7 @@ def calc_delihh(readfilename, writefilename):
 		writefile.write(writeline)
 	writefile.close()
 	readfile.close()
-def calc_xp(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
+def calc_xpehh(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
 	print(cmdStr)

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.05.16 vitti@broadinstitute.org
+## last updated: 09.10.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
-from dists.scores_func import calc_ihs, calc_delihh, calc_xp, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, calc_hist_from_scores, write_hists_to_files
+from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files
 from util.parallel import slurm_array
 import argparse
 import subprocess
@@ -122,13 +122,13 @@ def execute_run_neut_sims(args):
 	print("writing to: " + runDir)
 	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile + " --output-gen-map " 
 	if args.genmapRandomRegions:
-		runStatsCommand += " --genmapRandomRegions"
+		neutSimCommand += " --genmapRandomRegions"
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " --tped " + runDir + "rep"
 
 	if args.printOnly:
-		print(command)
+		print(neutSimCommand)
 	else:
 		subprocess.check_output(neutSimCommand.split())
 	return
@@ -152,8 +152,8 @@ def execute_get_sel_trajs(args):
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
 		if binDir[-1] != "/":
 			binDir += "/"
-		traj_outputname = trajdir + 'rep' + taskIndexStr + '.txt'
-		traj_cmd = "python " + scriptDir + "run_traj.py " + traj_outputname + " " + args.cosiBuild + " " + paramfilename + " " + str(args.maxAttempts) +'\n'#
+		traj_outputname = binDir + 'rep' + taskIndexStr + '.txt'
+		traj_cmd = "python cms/run_traj.py " + traj_outputname + " " + args.cosiBuild + " " + paramfilename + " " + str(args.maxAttempts) +'\n'#
 		if args.printOnly:
 			dispatch = False
 		else:
@@ -182,17 +182,17 @@ def execute_run_sel_sims(args):
 		assert os.path.isfile(paramfilename)			
 		if binTrajDir [-1] != "/":
 			binTrajDir += "/"
-		sim_cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajdir + "/rep" + taskIndexStr + ".txt " + args.cosiBuild, + " -p " + paramfilename + " --output-gen-map " 
-		if genmapRandomRegions:
+		sim_cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + binTrajDir + "/rep" + taskIndexStr + ".txt " + args.cosiBuild, + " -p " + paramfilename + " --output-gen-map " 
+		if args.genmapRandomRegions:
 			sim_cmd += " --genmapRandomRegions"
-		if dropSings is not None:
-			sim_cmd += " --drop-singletons " + str(dropSings)
+		if args.dropSings is not None:
+			sim_cmd += " --drop-singletons " + str(args.dropSings)
 		sim_cmd += " --tped " + populateDir + 'rep' + taskIndexStr
 		if args.printOnly:
 			dispatch = False
 		else:
 			dispatch = True
-		slurm_array(runDir + "run_sel_sims.sh", sim_cmd, numSims, dispatch=dispatch)
+		slurm_array(runDir + "run_sel_sims.sh", sim_cmd, args.n, dispatch=dispatch)
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
@@ -302,7 +302,7 @@ def execute_likes_from_scores(args):
 		xlims = scoreRange
 		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_scores_final')], data[(bin_medians_str[ibin], 'linked_scores_final')], data[(bin_medians_str[ibin], 'neut_scores_final')]
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, args.thinToSize)
-		write_hist_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
+		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 	return
 def execute_visualize_likes(args):
 	'''currently: view all'''
