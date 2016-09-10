@@ -1,8 +1,10 @@
 ## functions for transforming component score calculations as part of composite.py
-## last updated 07.24.16 	vitti@broadinstitute.org
+## last updated 09.10.16 	vitti@broadinstitute.org
+
 from math import fabs
 import sys
 import os
+
 def write_delIHH_file(readfilename, writefilename):
 	"""taken from JV func_scores.py. given a selscan iHS file, parses it and writes delihh file"""
 	readfile = open(readfilename, 'r')
@@ -173,7 +175,7 @@ def interpolate_from_windows(inputTpedFilename, inputIhsFilename, inputWinihsFil
 	for iSnp in range(nsnps):
 		thisPos = all_snps[iSnp]
 		if thisPos < thisScorePos: #interpolate until we advance to the first one for which we have a score
-			interpolated_ihs, interpolated_ihh1, interpolated_ihh0, interpol_freq = interpolate(starts, ends, scores, ihh1s, ihh0s, thisPos, freqs)
+			interpolated_ihs, interpolated_ihh1, interpolated_ihh0, interpol_freq = interpolate_haps(starts, ends, scores, ihh1s, ihh0s, thisPos, freqs)
 
 			unnormed_ihs= 0 #dummy to pass to selscan so norm will function
 			writeline = str(thisPos) + "\t" + str(thisPos) + "\t" + str(interpol_freq) + "\t" + str(interpolated_ihh1) + "\t" + str(interpolated_ihh0) + "\t" + str(unnormed_ihs) + "\t" + str(interpolated_ihs) + "\t9\n" #index interpolated in outputfile, in case it's not already obvious?
@@ -192,3 +194,8 @@ def interpolate_from_windows(inputTpedFilename, inputIhsFilename, inputWinihsFil
 	readfile.close()
 	writefile.close()
 	print('wrote to ' + outputFilename)
+def calc_winIhs(score_array):
+	"""returns mean of absolute value of all scores in window"""
+	absolutes = [fabs(x) for x in score_array]
+	total = sum(absolutes)
+	return total/len(score_array)
