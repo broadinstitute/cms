@@ -1,8 +1,10 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.09.16 vitti@broadinstitute.org
+## last updated: 09.10.16 vitti@broadinstitute.org
 
-import subprocess
+from math import fabs, sqrt
+from random import randint
 import numpy as np
+import subprocess
 import sys
 import os
 
@@ -86,7 +88,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
 	nsnps = 0
 	normfilename = inputScoreFile + ".norm"	
-	openfile = open(writefilename, 'r')
+	openfile = open(inputScoreFile, 'r')
 	normfile = open(normfilename, 'w')
 	for line in openfile:
 		entries = line.split()
@@ -94,7 +96,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 		unnormed_ihs_val = float(entries[5]) #locus/phys-pos/1_freq/ihh_1/ihh_0/ihs/derived_ihh_left/derived_ihh_right/ancestral_ihh_left/ancestral_ihh_right
 		for ibin in range(len(bin_bounds)):
 			if freq_allele1 <= bin_bounds[ibin]:
-				normalizedvalue = (unnormed_ihs_val - means_bin[ibin])/sqrt(vars_bin[ibin])
+				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
 				break
 		writeline = line.strip('\n') +"\t" + str(normalizedvalue) + '\n'
 		normfile.write(writeline)		
