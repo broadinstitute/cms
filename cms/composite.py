@@ -8,6 +8,8 @@ from dists.scores_func import calc_fst_deldaf
 import subprocess
 import argparse
 import sys
+import os
+
 
 #############################
 ## DEFINE ARGUMENT PARSER ###
@@ -114,7 +116,7 @@ def execute_xp_from_ihh(args):
 	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
-			print(command)
+			print(cmdstring)
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
@@ -131,7 +133,7 @@ def execute_poppair(args):
 	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
-			print(command)
+			print(cmdstring)
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
@@ -147,7 +149,7 @@ def execute_outgroups(args):
 		argstring += " " + pairfile
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
-			print(command)
+			print(cmdstring)
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
@@ -158,7 +160,8 @@ def execute_ml_region(args):
 def execute_ucsc_viz(args):
 	#convertBedGraph
 	inprefix = args.infile_prefix
-	outfile = open(args.outfile, 'w')
+	outfilename = args.outfile
+	outfile = open(outfilename, 'w')
 	#MUST BE CASE-SENSITIVE SORTED
 	for chrom in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 3, 4, 5, 6, 7, 8, 9]:
 		chromfile = inprefix + ".chr" + str(chrom) + ".txt"
@@ -189,7 +192,7 @@ if __name__ == '__main__':
 	# if called with no arguments, print help
 	if len(sys.argv)==1:
 		runparser.parse_args(['--help'])
-	elif len(sys.argv)==2 and (len(commands)>1 or commands[0][0]!=None):
+	elif len(sys.argv)==2:
 		runparser.parse_args([sys.argv[1], '--help'])
 
 	subcommand = sys.argv[1]

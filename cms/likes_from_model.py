@@ -349,7 +349,7 @@ if __name__ == '__main__':
 	# if called with no arguments, print help
 	if len(sys.argv)==1:
 		runparser.parse_args(['--help'])
-	elif len(sys.argv)==2 and (len(commands)>1 or commands[0][0]!=None):
+	elif len(sys.argv)==2:
 		runparser.parse_args([sys.argv[1], '--help'])
 
 	subcommand = sys.argv[1]
