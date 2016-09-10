@@ -7,6 +7,8 @@
 bootstrap_targetval_filename = "/Users/vitti/n2stats.txt"
 #"results_inclusive_targetstats_thinned_bootstrap_bysnp_2reps_120915_3pm_chr21-22.txt"
 
+
+
 def read_lines(openfile, numlines):
 	for i in range(numlines):
 		line = openfile.readline()
@@ -172,7 +174,7 @@ def generate_params():
 
 	return paramDict
 def get_ranges():
-	paramDict = generateParams()
+	paramDict = generate_params()
 	split2time = paramDict[('split', 2)][0]
 	split3time = paramDict[('split', 3)][0]
 	split4time = paramDict[('split', 4)][0]

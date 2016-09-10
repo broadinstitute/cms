@@ -5,7 +5,7 @@
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
-from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value, sample_point_wrapper
+from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
 from model.plot_func import plot_comparison
 #from util.parallel import uger_array
 from scipy import optimize
@@ -78,6 +78,14 @@ def full_parser_cms_modeller():
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 
 	return parser
+
+
+#############################
+## WRAPPER FOR OPTIMIZE   ###
+#############################
+def sample_point_wrapper(values):
+	'''function passed to scipy.optimize.'''
+	return sample_point(nreps, gradientname, keys, indices, values)
 
 ############################
 ## DEFINE EXEC FUNCTIONS ###
