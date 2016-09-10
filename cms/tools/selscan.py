@@ -568,7 +568,7 @@ class SelscanNormTool(SelscanBaseTool):
             verify_norm_command  = '{dir}/selscan-{ver}/{binPath} --help > /dev/null 2>&1'.format(dir=util.file.get_build_path(), 
                                                                                 ver=TOOL_VERSION, binPath=normBinaryPath) 
 
-            install_methods.append(tools.CondaPackage(TOOL_NAME, version=TOOL_VERSION))
+            install_methods.append(tools.CondaPackage(TOOL_NAME, executable="norm", version=TOOL_VERSION))
 
         tools.Tool.__init__(self, install_methods = install_methods)
 
