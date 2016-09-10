@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 09.05.16 vitti@broadinstitute.org
+## last updated: 09.10.16 vitti@broadinstitute.org
 
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
-from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
+from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value, sample_point_wrapper
 from model.plot_func import plot_comparison
 #from util.parallel import uger_array
 from scipy import optimize
+import numpy as np
 import subprocess
 import argparse
+import random
 import sys
 
 #############################
@@ -130,11 +132,21 @@ def execute_bootstrap(args):
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
 		for ipop in range(npops):
-			inputfilename = inputfilenames[i]
+			allRegionDER, allRegionANC, allRegionPI, allseqlens = [], [], [], []
+			nsnps, totalregions, totallen = 0, 0, 0
+			inputfilename = inputfilenames[ipop]
 			print("reading allele frequency statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
+				allRegionPI.extend(allpi)
+				allRegionDER.extend(allnderiv)
+				allRegionANC.extend(allnanc)
+				allseqlens.extend(seqlens)
+				totalregions += nregions
+				totallen += sum(seqlens)
+				for i in range(len(allpi)):
+					nsnps += len(allpi[i])
 			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
 			
 			####################################
@@ -377,7 +389,7 @@ def execute_optimize(args):
 
 	x0 = np.array(x0)
 	stepdict = {'eps':float(args.stepSize)}
-	result = optimize.minimize(samplePoint_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
+	result = optimize.minimize(sample_point_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
 	print(result)
 
 	print( "******************")
