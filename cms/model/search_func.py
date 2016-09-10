@@ -1,5 +1,5 @@
 ## this file contains functions for cms_modeller
-## last updated: 07.27.16	vitti@broadinstitute.org
+## last updated: 09.10.16	vitti@broadinstitute.org
 
 from model.error_func import calc_error
 from model.params_func import get_ranges, generate_params, update_params, write_paramfile
@@ -7,14 +7,14 @@ from model.params_func import get_ranges, generate_params, update_params, write_
 ########################
 ## PERTURBING A MODEL ##
 ########################
-def sample_point(nRep, keys, indices, values, writeparamfilename = "/tmp/point.par", scaleParams = False, paramsAsDists = False):
+def sample_point(nRep, keys, indices, values, writeparamfilename = "/tmp/point.par", scaleParams = False):
 	'''given a perturbation of demographic model, writes paramfile and runs point. '''
 	if scaleParams:
 		ranges = get_ranges()
 		actualValues = []
 		for i in range(len(keys)):
 			key, index, value = keys[i], indices[i], values[i]
-			interval = rangeDict[key][index]
+			interval = ranges[key][index]
 			low, high = float(interval[0]), float(interval[1])
 			actual = get_real_value(value, low, high)
 			actualValues.append(actual)
@@ -23,16 +23,13 @@ def sample_point(nRep, keys, indices, values, writeparamfilename = "/tmp/point.p
 
 	paramDict = generate_params()
 	paramDict_updated = update_params(paramDict, keys, indices, actualValues)
-	if paramsAsDists == False:
-		write_paramfile(writeparamfilename, paramDict_updated)
-	else:
-		distDict = params_to_dists(paramDict_updated)
-		write_paramfile(writeparamfilename, distDict)
+	write_paramfile(writeparamfilename, paramDict_updated)
 
 	singrate = paramDict_updated['singrate']
-	runstatscommand = cosi_build + " -p " + writeparamfilename + " -n " + str(nRep) + " --drop-singletons " + str(singrate) + "  --custom-stats --genmapRandomRegions > " + statfilename
-	print(runstatscommand)
-	#subprocess.check_output(runstatscommand, shell=True)
+	statfilename = "/tmp/point.err"
+	runstatscommand = "coalescent -p " + writeparamfilename + " -n " + str(nRep) + " --drop-singletons " + str(singrate) + "  --custom-stats --genmapRandomRegions > " + statfilename
+	#print(runstatscommand)
+	subprocess.check_output(runstatscommand, shell=True)
 	error = calc_error(statfilename, stats, pops)
 	return error
 def get_real_value(scaledVal, low, high):
@@ -76,6 +73,3 @@ def read_dimensionsfile(filename, runType='grid'):
 		return runname, keys, indices, values
 	elif runType == 'optimize':
 		return runname, keys, indices
-def sample_point_wrapper(values):
-	'''function passed to scipy.optimize.'''
-	return sample_point(nreps, gradientname, keys, indices, values, paramsAsDists)

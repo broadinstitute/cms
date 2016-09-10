@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 09.05.16 vitti@broadinstitute.org
+## last updated: 09.10.16 vitti@broadinstitute.org
 
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
 from model.params_func import get_ranges, generate_params
@@ -9,8 +9,10 @@ from model.search_func import read_dimensionsfile, sample_point, get_real_value,
 from model.plot_func import plot_comparison
 #from util.parallel import uger_array
 from scipy import optimize
+import numpy as np
 import subprocess
 import argparse
+import random
 import sys
 
 #############################
@@ -31,7 +33,7 @@ def full_parser_cms_modeller():
 	target_stats_parser.add_argument('--ld', action='store_true', help='calculate summary statistics from within-population linkage disequilibrium') 
 	target_stats_parser.add_argument('--fst', action='store_true', help='calculate summary statistics from population comparison using allele frequencies') 
 	target_stats_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
-	target_stats_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
+	target_stats_parser.add_argument('--modelpath', action='store', type=str, default='cms/model/', help="path to model directory containing executables")
 
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
@@ -76,6 +78,14 @@ def full_parser_cms_modeller():
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 
 	return parser
+
+
+#############################
+## WRAPPER FOR OPTIMIZE   ###
+#############################
+def sample_point_wrapper(values):
+	'''function passed to scipy.optimize.'''
+	return sample_point(nreps, gradientname, keys, indices, values)
 
 ############################
 ## DEFINE EXEC FUNCTIONS ###
@@ -130,11 +140,21 @@ def execute_bootstrap(args):
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
 		for ipop in range(npops):
-			inputfilename = inputfilenames[i]
+			allRegionDER, allRegionANC, allRegionPI, allseqlens = [], [], [], []
+			nsnps, totalregions, totallen = 0, 0, 0
+			inputfilename = inputfilenames[ipop]
 			print("reading allele frequency statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
+				allRegionPI.extend(allpi)
+				allRegionDER.extend(allnderiv)
+				allRegionANC.extend(allnanc)
+				allseqlens.extend(seqlens)
+				totalregions += nregions
+				totallen += sum(seqlens)
+				for i in range(len(allpi)):
+					nsnps += len(allpi[i])
 			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
 			
 			####################################
@@ -377,7 +397,7 @@ def execute_optimize(args):
 
 	x0 = np.array(x0)
 	stepdict = {'eps':float(args.stepSize)}
-	result = optimize.minimize(samplePoint_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
+	result = optimize.minimize(sample_point_wrapper, x0, method=args.method, bounds=bounds, options=stepdict)
 	print(result)
 
 	print( "******************")

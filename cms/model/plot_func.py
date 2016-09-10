@@ -1,8 +1,11 @@
 ## this file contains functions for cms_modeller
-## last updated: 09.08.16	vitti@broadinstitute.org
+## last updated: 09.10.16	vitti@broadinstitute.org
 
 from model.bootstrap_func import flattenList
 from model.params_func import get_target_values
+from model.error_func import read_custom_statsfile
+import matplotlib.pyplot as plt
+from matplotlib import pylab
 import numpy as np
 
 def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r2', 'dprime'], pops=[1,2,3,4], poplabels=['1', '2', '3', '4'], ):
@@ -15,10 +18,17 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 	scenariobase = scenariobase.replace('.stat', '')
 
 	targetstats = get_target_values()
-	modelstats = readIScustomstatfile(statfilename, 4)
+	modelstats = read_custom_statsfile(statfilename, 4)
+
+
+	popPairs = []
+	for i in range(len(pops)):
+	    for j in range(i+1, len(pops)):
+    	    popPair = (pops[i], pops[j])
+        	popPairs.append(popPair)
 
 	for stat in stats:
-		tosavefilename = tosavedir + "/"  + savestring + "_" + stat + ".png"
+
 		target_vals, target_ses, model_vals, model_ses = [], [], [], []
 		if stat != "fst":
 			for pop in pops:

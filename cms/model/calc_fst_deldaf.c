@@ -1,4 +1,4 @@
-// last updated 07.27.16 	vitti@broadinstitute.org
+// last updated 09.09.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         }
     }
     
-    fprintf(stderr, "%d snps, %d samples.\n", data.nsnp, data.nsample);
+    //fprintf(stderr, "%d snps, %d samples.\n", data.nsnp, data.nsample);
     free_coal_data(&data);
     
     //count alleles for pop1
@@ -72,37 +72,37 @@ int main(int argc, char **argv) {
             else if (data.genotype[isamp][isnp] == 1) {nall1[1][isnp]++;}
         }
     }
-    fprintf(stderr, "%d snps, %d samples.\n", data.nsnp, data.nsample);
+    //fprintf(stderr, "%d snps, %d samples.\n", data.nsnp, data.nsample);
     
     nsnp = data.nsnp;
     
     fprintf(outf, "pos\tfst\tdelDAF\n");
 
     for (isnp = 0; isnp < nsnp; isnp++) {
-        fprintf(stderr, "snp: %d\n", isnp);
+        //fprintf(stderr, "snp: %d\n", isnp);
         if (nall0[0] == NULL) {continue;}
         nai[0] = nall0[0][isnp]; //number of 0 alleles in pop 0
-        fprintf(stderr, "number of 0 alleles in pop 0: %d\n", nai[0]);
+        //fprintf(stderr, "number of 0 alleles in pop 0: %d\n", nai[0]);
         nai[1] = nall1[0][isnp]; //number of 1 alleles in pop 0
-        fprintf(stderr, "number of 1 alleles in pop 0: %d\n", nai[1]);
+        //fprintf(stderr, "number of 1 alleles in pop 0: %d\n", nai[1]);
         ni = nai[0] + nai[1]; //number of alleles, pop 0
-        fprintf(stderr, "number of alleles in pop 0: %d\n", ni);
+        //fprintf(stderr, "number of alleles in pop 0: %d\n", ni);
         p[0] = (double) nai[0] / ni; //frequency of allele 0 in pop 0
-        fprintf(stderr, "frequency of 0 in pop 0: %f\n", p[0]);
+        //fprintf(stderr, "frequency of 0 in pop 0: %f\n", p[0]);
         
         if (nall0[1] == NULL) {continue;}
         naj[0] = nall0[1][isnp]; //number of 0 alleles in pop 1
-        fprintf(stderr, "number of 0 alleles in pop 1: %d\n", naj[0]);
+        //fprintf(stderr, "number of 0 alleles in pop 1: %d\n", naj[0]);
         naj[1] = nall1[1][isnp]; //number of 1 alleles in pop 1
-        fprintf(stderr, "number of 1 alleles in pop 1: %d\n", naj[1]);
+        //fprintf(stderr, "number of 1 alleles in pop 1: %d\n", naj[1]);
         na_both[0] = nai[0] + naj[0]; //combined number of 0 alleles
-        fprintf(stderr, "number of 0 alleles total: %d\n", na_both[0]);
+        //fprintf(stderr, "number of 0 alleles total: %d\n", na_both[0]);
         na_both[1] = nai[1] + naj[1]; //combined number of 1 alleles
-        fprintf(stderr, "number of 1 alleles total: %d\n", na_both[1]);
+        //fprintf(stderr, "number of 1 alleles total: %d\n", na_both[1]);
         nj = naj[0] + naj[1]; //number of alleles, pop 1
-        fprintf(stderr, "number of alleles in pop 1: %d\n", nj);
+        //fprintf(stderr, "number of alleles in pop 1: %d\n", nj);
         p[1] = (double) naj[0] / nj; //frequency of allele 0 in pop 1
-        fprintf(stderr, "frequency of 0 in pop 1: %f\n", p[1]);
+        //fprintf(stderr, "frequency of 0 in pop 1: %f\n", p[1]);
         
         if ((nai[0] == 0 && naj[0] == 0) || (nai[1] == 0 && naj[1] == 0)) {nSkip++; continue;}
         
