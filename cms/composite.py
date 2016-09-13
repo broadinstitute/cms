@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 09.09.16 vitti@broadinstitute.org
+## last updated: 09.13.16 vitti@broadinstitute.org
 
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
@@ -162,24 +162,24 @@ def execute_ucsc_viz(args):
 	inprefix = args.infile_prefix
 	outfilename = args.outfile
 	outfile = open(outfilename, 'w')
-	#MUST BE CASE-SENSITIVE SORTED
-	for chrom in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 3, 4, 5, 6, 7, 8, 9]:
+	for chrom in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 3, 4, 5, 6, 7, 8, 9]: 	#BEDGRAPH MUST BE CASE-SENSITIVE SORTED
 		chromfile = inprefix + ".chr" + str(chrom) + ".txt"
 		assert os.path.isfile(chromfile)
 		infile = open(chromfile, 'r')
 		if args.strip_header:
+			print("test")
 			infile.readline()
 		for line in infile:
 			entries = line.strip('\n').split()
-			startPos = int(entries[args.posIndex])
-			score = float(entries[args.scoreIndex]) #use normalized value
+			startPos = int(entries[int(args.posIndex)])
+			score = float(entries[int(args.scoreIndex)]) #use normalized value
 			writestring = "chr" + str(chrom) + "\t" + str(startPos) + "\t" + str(startPos + 1) + "\t" + str(score) + "\n"
 			outfile.write(writestring)
 		infile.close()
 	outfile.close()
 	print("wrote to: " + outfilename)
 	#convertBedGraphtoBigWig:
-	print("for large datasets, convert to BigWig format: http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig\n")
+	print("for large datasets, convert to BigWig format, e.g.: http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig\n")
 	return
 
 ##########
