@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.10.16 vitti@broadinstitute.org
+## last updated: 09.13.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -68,6 +68,7 @@ def full_parser_likes_from_model():
 		#POP COMPARISONS:
 		scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
+		scores_from_sims_parser.add_argument('--recomfile', action='store', help="input recomfile for sims")
 		#NORMALIZE: 
 		scores_from_sims_parser.add_argument('--normalizeIhs', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")	
 		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
@@ -207,7 +208,7 @@ def execute_scores_from_sims(args):
 		calc_xpehh(inputTped, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputTped, altinputTped, outputFilename) #RECOM FILE?
+		calc_fst_deldaf(inputTped, altinputTped, args.recomfile, outputFilename)
 	if args.normalizeIhs is not None:
 		#if the normargfile exists, use it. otherwise, just pipe to scans.py
 		if args.normalizeIhs == "":
