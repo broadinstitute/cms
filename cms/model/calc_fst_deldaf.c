@@ -1,4 +1,4 @@
-// last updated 09.09.16 	vitti@broadinstitute.org
+// last updated 09.13.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
                 nfst++;
             } // end if denom != 0
             else{fst = NAN;}
-            fprintf(stderr, "%d\t%f\t%f\n", data.pos[isnp],fst,delDAF);
+            //fprintf(stderr, "%d\t%f\t%f\n", data.pos[isnp],fst,delDAF);
             fprintf(outf, "%d\t%f\t%f\n", data.pos[isnp],fst,delDAF);
         } //end Weir Hill estimator
 
