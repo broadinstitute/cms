@@ -372,7 +372,7 @@ def main_selscan_xpehh(args):
     metaData["xpehh_pop_B_tped"] = args.inputRefTped
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
 
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData, key_to_act_on="xpehh", append=True)
+    #util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData, key_to_act_on="xpehh", append=True)
 
     return 0
 __commands__.append(('selscan_xpehh', parser_selscan_xpehh))
