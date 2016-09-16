@@ -1,6 +1,5 @@
 ## relaunches cosi command until a selection trajectory is created successully (i.e., resampling selection coefficients/sweep start times from specified distributions)
-## last updated: 08.15.16 	vitti@broadinstitute.org; phasing this out (redundant with Snakemake -- OR NOT?? needs drrma?)
-
+## last updated: 08.15.16 	vitti@broadinstitute.org
 import sys
 import subprocess
 

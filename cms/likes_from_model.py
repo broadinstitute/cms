@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.13.16 vitti@broadinstitute.org
+## last updated: 09.16.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -39,7 +39,7 @@ def full_parser_likes_from_model():
 	for snakemake_parser in [get_sel_trajs_parser, run_sel_sims_parser]:
 		snakemake_parser.add_argument('--cluster', action='store', help='if included: dispatch Snakemake to cluster to parallelize generation of replicates using supplied argument (e.g. qsub, sbatch)')
 		snakemake_parser.add_argument('--jobs', action='store', help='use at most this many cores in parallel')
-		snakemake_parser.add_argument('n', action='store', type=int, help='num replicates to run') #figure out where to store
+		snakemake_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
 
 	##########################
 	### COSI - SHARED ARGS  ##
@@ -116,7 +116,7 @@ def execute_run_neut_sims(args):
 	neutRunDir = args.outputDir
 	if args.outputDir[-1] != "/":
 		neutRunDir += "/"
-	neutRunDir += "run_neut_sims"
+	neutRunDir += "neut_sims"
 	runDir = check_make_dir(neutRunDir)
 	runDir += "/"
 	print("running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
@@ -127,7 +127,6 @@ def execute_run_neut_sims(args):
 	if args.dropSings is not None:
 		neutSimCommand += " --drop-singletons " + str(args.dropSings)
 	neutSimCommand += " -n "  + str(args.n) + " --tped " + runDir + "rep"
-
 	if args.printOnly:
 		print(neutSimCommand)
 	else:
@@ -350,8 +349,6 @@ if __name__ == '__main__':
 	# if called with no arguments, print help
 	if len(sys.argv)==1:
 		runparser.parse_args(['--help'])
-	elif len(sys.argv)==2:
-		runparser.parse_args([sys.argv[1], '--help'])
 
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
