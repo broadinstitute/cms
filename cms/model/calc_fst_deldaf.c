@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "skipped on: %d\n", nSkip);
     //fprintf(stderr, "fst_sum: %f\n", fst_sum);
     //fprintf(stderr, "nfst: %d\n", nfst);
-    fprintf(outf, "chrom ave Fst: %.8f\n", (fst_sum/nfst));
+    fprintf(stderr, "chrom ave Fst: %.8f\n", (fst_sum/nfst));
     return 0;
 }
 

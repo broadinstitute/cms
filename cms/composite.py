@@ -167,7 +167,6 @@ def execute_ucsc_viz(args):
 		assert os.path.isfile(chromfile)
 		infile = open(chromfile, 'r')
 		if args.strip_header:
-			print("test")
 			infile.readline()
 		for line in infile:
 			entries = line.strip('\n').split()
