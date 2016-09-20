@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.16.16 vitti@broadinstitute.org
+## last updated: 09.20.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -96,7 +96,7 @@ def full_parser_likes_from_model():
 	##############
 	## SEL BINS ##
 	##############
-	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, likes_from_scores_parser]:
+	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims, likes_from_scores_parser]:
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
