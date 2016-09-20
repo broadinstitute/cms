@@ -96,7 +96,7 @@ def full_parser_likes_from_model():
 	##############
 	## SEL BINS ##
 	##############
-	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims, likes_from_scores_parser]:
+	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser]:
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
