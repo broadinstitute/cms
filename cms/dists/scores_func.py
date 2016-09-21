@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.15.16 vitti@broadinstitute.org
+## last updated: 09.20.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -61,13 +61,14 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		assert entries[0] == "bin"
 		bins, nums, means, variances = [], [], [], []
 		for line in openfile:
-			entries = line.split()
-			if entries[0] != "Normalizing":
-				binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
-				bins.append(binlimit)
-				nums.append(numinbin)
-				means.append(mean)
-				variances.append(variance)
+			if line is not None:
+				entries = line.split()
+				if entries[0] != "Normalizing":
+					binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
+					bins.append(binlimit)
+					nums.append(numinbin)
+					means.append(mean)
+					variances.append(variance)
 		openfile.close()
 		return bins, nums, means, variances
 	elif scoretype == "xp":
