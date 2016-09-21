@@ -23,9 +23,9 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 
 	popPairs = []
 	for i in range(len(pops)):
-	    for j in range(i+1, len(pops)):
-    	    popPair = (pops[i], pops[j])
-        	popPairs.append(popPair)
+		for j in range(i+1, len(pops)):
+			popPair = (pops[i], pops[j])
+			popPairs.append(popPair)
 
 	for stat in stats:
 
