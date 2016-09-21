@@ -57,6 +57,7 @@ def full_parser_likes_from_model():
 		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--recomfile', action='store', help="input recomfile for sims")
 		#NORMALIZE: 
+		#scores_from_sims_parser.add_argument('--concatNeutScores', action='store', help="directory from which to concatenate neutral scores (in order to normalize)")
 		scores_from_sims_parser.add_argument('--normalizeIhs', action='store_true')
 		scores_from_sims_parser.add_argument('--neutIhsNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
 		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store_true')	
@@ -187,6 +188,10 @@ def execute_run_sel_sims(args):
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
 	inputFilename, outputFilename = args.inputFilename, args.outputFilename
+
+	#################
+	## CALC SCORES ##
+	#################
 	if args.ihs:
 		calc_ihs(inputFilename, outputFilename)
 	if args.delIhh:
@@ -198,13 +203,34 @@ def execute_scores_from_sims(args):
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
 		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename)
+
+	###############
+	## NORMALIZE ##
+	###############
+	#if args.concatNeutScores is not None:
+	#	neutSimDir = args.concatNeutScores
+	#	neutSimDir_contents = os.listdir(neutSimDir)
+	#	neutSim_scores = [item for item in neutSimDir_contents if ".out" in item]
+	#	print('loading neutral simulates from ' str(len(neutSim_scores)) + " files from " + neutSimDir + ' ...')
+
+	#	neut_xpehh = [item for item in neutSim_scores if "xpehh" in item]
+	#	neut_ihs = [item for item in neutSim_scores if "ihs" in item]
+
+		#sort by poppairs
+		#if len(neut_xpehh) > 0:
+		#	pass
+
+		#sort by pops
+		#if len(neut_ihs) > 0:
+		#	pass
+
 	if args.normalizeIhs:
 		if args.neutIhsNormParams is not None:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 			print("loading normalization parameters from " + args.neutIhsNormParams + " ...")
 			norm_sel_ihs(args.inputFilename, args.neutIhsNormParams, bin_ends)
 		else:
-			norm_neut_ihs(args.inputFilename, args.inputIhs + ".norm")
+			norm_neut_ihs(args.inputFilename, args.outputFilename)
 
 	if args.normalizeDelIhh:
 		if args.neutDelIhhNormParams is not None:
@@ -212,14 +238,14 @@ def execute_scores_from_sims(args):
 			print("loading normalization parameters from " + args.neutDelIhhNormParams + " ...")		
 			norm_sel_ihs(args.inputFilename, args.neutDelIhhNormParams, bin_ends)
 		else:
-			norm_neut_ihs(args.inputFilename, args.inputFilename + ".norm")
+			norm_neut_ihs(args.inputFilename, args.outputFilename)
 
 	if args.normalizeXpehh:
 		if args.normalizeXpehh:
 			if args.neutXpehhNormParams is not None:
 				norm_sel_xpehh(args.inputFilename, args.neutXpehhNormParams)
 			else:
-				norm_neut_xpehh(args.inputXpehh, args.inputXpehh + ".norm")
+				norm_neut_xpehh(args.inputFilename, args.outputFilename)
 		
 	return
 def execute_likes_from_scores(args):
