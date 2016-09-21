@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.20.16 vitti@broadinstitute.org
+## last updated: 09.21.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -22,24 +22,14 @@ def full_parser_likes_from_model():
 	## RUN NEUTRAL SIMULATIONS ##
 	#############################
 	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='Run neutral simulations from a demographic model.')
-	run_neut_sims_parser.add_argument('n', action='store', type=int, help='num replicates to run')
 	
 	###############################
 	## RUN SELECTION SIMULATIONS ##
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
 	get_sel_trajs_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time')
-	
 	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='Run simulations of selection from demographic model and selection trajectories.')	
 	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
-	
-	#############################
-	## SNAKEMAKE - SHARED ARGS ##
-	#############################
-	for snakemake_parser in [get_sel_trajs_parser, run_sel_sims_parser]:
-		snakemake_parser.add_argument('--cluster', action='store', help='if included: dispatch Snakemake to cluster to parallelize generation of replicates using supplied argument (e.g. qsub, sbatch)')
-		snakemake_parser.add_argument('--jobs', action='store', help='use at most this many cores in parallel')
-		snakemake_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
 
 	##########################
 	### COSI - SHARED ARGS  ##
@@ -50,29 +40,29 @@ def full_parser_likes_from_model():
 		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
+		cosi_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
 
 	################################
-	## CALCULATE SCORES FROM SIMS ## I'm not sure if we even want to include this. It just wraps infrastructure that already exists elsewhere. leave as exercise for the user?
+	## CALCULATE SCORES FROM SIMS ## 
 	################################
 	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='Calculate scores from simulated data.')
 	if True:
-		#PER POP:
-		scores_from_sims_parser.add_argument('--inputTped', action='store', help='tped from which to calculate score')
-		scores_from_sims_parser.add_argument('--inputIhs', action='store', help='iHS from which to calculate delihh')
-		scores_from_sims_parser.add_argument('--inputdelIhh', action='store', help='delIhh from which to calculate norm')
-		scores_from_sims_parser.add_argument('--inputXpehh', action='store', help='Xp-ehh from which to calculate norm')
-
-		scores_from_sims_parser.add_argument('outputFilename', help='where to write scorefile')		
+		scores_from_sims_parser.add_argument('inputFilename', action='store', help='tped from which to calculate score / iHS from which to calculate delIhh / unnormalized to normalize.')
+		scores_from_sims_parser.add_argument('outputFilename', action='store', help='where to write scorefile')		
+		#PER POP:			
 		scores_from_sims_parser.add_argument('--ihs', action='store_true', help="calculate iHS from simulates")
-		scores_from_sims_parser.add_argument('--delIhh', action='store_true', help="calculate delIHH from simulates")
+		scores_from_sims_parser.add_argument('--delIhh', action='store_true', help="calculate delIHH from iHS from simulates")
 		#POP COMPARISONS:
 		scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--recomfile', action='store', help="input recomfile for sims")
 		#NORMALIZE: 
-		scores_from_sims_parser.add_argument('--normalizeIhs', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")	
-		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
-		scores_from_sims_parser.add_argument('--normalizeXpehh', action='store', help="filename for parameters to normalize to; if not given then will by default normalize file to its own global dist")
+		scores_from_sims_parser.add_argument('--normalizeIhs', action='store_true')
+		scores_from_sims_parser.add_argument('--neutIhsNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
+		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store_true')	
+		scores_from_sims_parser.add_argument('--neutDelIhhNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
+		scores_from_sims_parser.add_argument('--normalizeXpehh', action='store_true')
+		scores_from_sims_parser.add_argument('--neutXpehhNormParams', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
@@ -196,39 +186,41 @@ def execute_run_sel_sims(args):
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
-	inputTped, outputFilename = args.inputTped, args.outputFilename
+	inputFilename, outputFilename = args.inputFilename, args.outputFilename
 	if args.ihs:
-		calc_ihs(inputTped, outputFilename)
-	if args.delIhh:
-		ihsfilename = args.inputIhs
+		calc_ihs(inputFilename, outputFilename)
+	if args.delIhh is not None:
+		ihsfilename = inputFilename
 		calc_delihh(ihsfilename, outputFilename)
 	if args.xpehh is not None:
 		altinputTped = args.xpehh
-		calc_xpehh(inputTped, altinputTped, outputFilename)		
+		calc_xpehh(inputFilename, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputTped, altinputTped, args.recomfile, outputFilename)
-	if args.normalizeIhs is not None:
-		#if the normargfile exists, use it. otherwise, just pipe to scans.py
-		if args.normalizeIhs == "":
-			norm_neut_ihs(args.inputIhs, args.inputIhs + ".norm")
-		else:
+		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename)
+	if args.normalizeIhs:
+		if args.neutIhsNormParams is not None:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-			norm_sel_ihs(args.inputIhs, args.normalizeIhs, bin_ends)
-			#print("loading normalization parameters from " + args.normalizeIhs + " ...")
-	if args.normalizeDelIhh is not None:
-		if args.normalizeDelIhh == "":
-			#can reuse iHS func
-			norm_neut_ihs(args.inputDelihh, args.inputDelihh + ".norm")
-			#norm_neut_delihh
+			print("loading normalization parameters from " + args.neutIhsNormParams + " ...")
+			norm_sel_ihs(args.inputFilename, args.neutIhsNormParams, bin_ends)
 		else:
+			norm_neut_ihs(args.inputFilename, args.inputIhs + ".norm")
+
+	if args.normalizeDelIhh:
+		if args.neutDelIhhNormParams is not None:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-			norm_sel_ihs(args.inputDelihh, args.normalizeDelihh, bin_ends)
-	if args.normalizeXpehh is not None:
-		if args.normalizeXpehh == "":
-			norm_neut_xpehh(args.inputXpehh, args.inputXpehh + ".norm")
+			print("loading normalization parameters from " + args.neutDelIhhNormParams + " ...")		
+			norm_sel_ihs(args.inputFilename, args.neutDelIhhNormParams, bin_ends)
 		else:
-			norm_sel_xpehh(args.inputXpehh, args.normalizeXpehh)
+			norm_neut_ihs(args.inputFilename, args.inputFilename + ".norm")
+
+	if args.normalizeXpehh:
+		if args.normalizeXpehh:
+			if args.neutXpehhNormParams is not None:
+				norm_sel_xpehh(args.inputFilename, args.neutXpehhNormParams)
+			else:
+				norm_neut_xpehh(args.inputXpehh, args.inputXpehh + ".norm")
+		
 	return
 def execute_likes_from_scores(args):
 	'''adapted from likes_from_scores_vers.py'''
