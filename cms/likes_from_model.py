@@ -189,7 +189,7 @@ def execute_scores_from_sims(args):
 	inputFilename, outputFilename = args.inputFilename, args.outputFilename
 	if args.ihs:
 		calc_ihs(inputFilename, outputFilename)
-	if args.delIhh is not None:
+	if args.delIhh:
 		ihsfilename = inputFilename
 		calc_delihh(ihsfilename, outputFilename)
 	if args.xpehh is not None:
