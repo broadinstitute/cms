@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.21.16 vitti@broadinstitute.org
+## last updated: 09.22.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -228,7 +228,7 @@ def execute_scores_from_sims(args):
 		if args.neutIhsNormParams is not None:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 			print("loading normalization parameters from " + args.neutIhsNormParams + " ...")
-			norm_sel_ihs(args.inputFilename, args.neutIhsNormParams, bin_ends)
+			norm_sel_ihs(args.inputFilename, args.neutIhsNormParams)
 		else:
 			norm_neut_ihs(args.inputFilename, args.outputFilename)
 
@@ -236,7 +236,7 @@ def execute_scores_from_sims(args):
 		if args.neutDelIhhNormParams is not None:
 			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 			print("loading normalization parameters from " + args.neutDelIhhNormParams + " ...")		
-			norm_sel_ihs(args.inputFilename, args.neutDelIhhNormParams, bin_ends)
+			norm_sel_ihs(args.inputFilename, args.neutDelIhhNormParams)
 		else:
 			norm_neut_ihs(args.inputFilename, args.outputFilename)
 
