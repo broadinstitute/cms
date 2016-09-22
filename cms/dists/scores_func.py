@@ -63,13 +63,13 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		for line in openfile:
 			#if line is not None:
 			entries = line.split()
-				if (len(entries) >=1):
-					if entries[0] != "Normalizing":
-						binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
-						bins.append(binlimit)
-						nums.append(numinbin)
-						means.append(mean)
-						variances.append(variance)
+			if (len(entries) >=1):
+				if entries[0] != "Normalizing":
+					binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
+					bins.append(binlimit)
+					nums.append(numinbin)
+					means.append(mean)
+					variances.append(variance)
 		openfile.close()
 		return bins, nums, means, variances
 	elif scoretype == "xp":
