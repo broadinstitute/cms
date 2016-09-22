@@ -86,10 +86,13 @@ def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "scans.py"):
 	cmdStr = "python " + runProgram + " selscan_norm_ihs " + inputScoreFile + " > " + outfileName
 	print(cmdStr)
 	return
-def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
+def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	''' from normalize_Ihs_manually() in func_scores.py''' 
 	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
+	#print(str(means))
+	#print(str(variances))
+	#print(str(bin_bounds))
 	nsnps = 0
 	normfilename = inputScoreFile + ".norm"	
 	openfile = open(inputScoreFile, 'r')
@@ -98,9 +101,13 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 		entries = line.split()
 		freq_allele1 = float(entries[2]) #1 is ancestral, 0 is derived in tped
 		unnormed_ihs_val = float(entries[5]) #locus/phys-pos/1_freq/ihh_1/ihh_0/ihs/derived_ihh_left/derived_ihh_right/ancestral_ihh_left/ancestral_ihh_right
-		for ibin in range(len(bin_bounds)):
-			if freq_allele1 <= bin_bounds[ibin]:
+		for ibin in range(len(bins)):
+			if freq_allele1 <= bins[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
+				assert not(np.isnan(normalizedvalue))
+				#if np.isnan(normalizedvalue):
+					#print(freq_allele1)
+					#print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
 				break
 		writeline = line.strip('\n') +"\t" + str(normalizedvalue) + '\n'
 		normfile.write(writeline)		
