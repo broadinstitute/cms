@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.22.16 vitti@broadinstitute.org
+## last updated: 09.23.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -202,7 +202,7 @@ def execute_scores_from_sims(args):
 		calc_xpehh(inputFilename, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename)
+		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, 'cms/cms/model/')
 
 	###############
 	## NORMALIZE ##
