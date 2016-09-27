@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.23.16 vitti@broadinstitute.org
+## last updated: 09.27.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -263,28 +263,28 @@ def execute_likes_from_scores(args):
 	data = {}
 	if args.ihs:
 		comparison, stripHeader = False, False
-		expectedlen_neut, indices_sel = get_indices(args.neutFile, "ihs_neut")
-		expectedlen_sel, indices_sel = get_indices(args.selFile, "ihs_sel")
+		expectedlen_neut, indices_sel = get_indices('ihs', "neut")
+		expectedlen_sel, indices_sel = get_indices('ihs', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('ihs', numLikesBins)
 	if args.delihh:
 		comparison, stripHeader = False, False
-		expectedlen_neut, indices_sel = get_indices(args.neutFile, "delihh_neut")
-		expectedlen_sel, indices_sel = get_indices(args.selFile, "delihh_sel")
+		expectedlen_neut, indices_sel = get_indices('delihh', "neut")
+		expectedlen_sel, indices_sel = get_indices('delihh', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
 	if args.xp:
 		comparison, stripHeader = True, True
-		expectedlen_neut, indices_sel = get_indices(args.neutFile, "xp_neut")
-		expectedlen_sel, indices_sel = get_indices(args.selFile, "xp_sel")
+		expectedlen_neut, indices_sel = get_indices('xp', "neut")
+		expectedlen_sel, indices_sel = get_indices('xp', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
 	if args.deldaf:
 		comparison, stripHeader = True, False
-		expectedlen_neut, indices_sel = get_indices(args.neutFile, "deldaf_neut")
-		expectedlen_sel, indices_sel = get_indices(args.selFile, "deldaf_sel")
+		expectedlen_neut, indices_sel = get_indices('deldaf', "neut")
+		expectedlen_sel, indices_sel = get_indices('deldaf', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
 	if args.fst:
 		comparison, stripHeader = True, False
-		expectedlen_neut, indices_sel = get_indices(args.neutFile, "fst_neut")
-		expectedlen_sel, indices_sel = get_indices(args.selFile, "fst_sel")
+		expectedlen_neut, indices_sel = get_indices('fst', "neut")
+		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
 		
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader, verbose)		
