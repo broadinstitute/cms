@@ -263,33 +263,33 @@ def execute_likes_from_scores(args):
 	data = {}
 	if args.ihs:
 		comparison, stripHeader = False, False
-		expectedlen_neut, indices_sel = get_indices('ihs', "neut")
+		expectedlen_neut, indices_neut = get_indices('ihs', "neut")
 		expectedlen_sel, indices_sel = get_indices('ihs', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('ihs', numLikesBins)
 	if args.delihh:
 		comparison, stripHeader = False, False
-		expectedlen_neut, indices_sel = get_indices('delihh', "neut")
+		expectedlen_neut, indices_neut = get_indices('delihh', "neut")
 		expectedlen_sel, indices_sel = get_indices('delihh', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
 	if args.xp:
 		comparison, stripHeader = True, True
-		expectedlen_neut, indices_sel = get_indices('xp', "neut")
+		expectedlen_neut, indices_neut = get_indices('xp', "neut")
 		expectedlen_sel, indices_sel = get_indices('xp', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
 	if args.deldaf:
 		comparison, stripHeader = True, False
-		expectedlen_neut, indices_sel = get_indices('deldaf', "neut")
+		expectedlen_neut, indices_neut = get_indices('deldaf', "neut")
 		expectedlen_sel, indices_sel = get_indices('deldaf', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
 	if args.fst:
 		comparison, stripHeader = True, False
-		expectedlen_neut, indices_sel = get_indices('fst', "neut")
+		expectedlen_neut, indices_neut = get_indices('fst', "neut")
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
 		
-	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader, verbose)		
+	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
-	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader, verbose)		
+	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
 	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	neut_der_freq = [1. - float(x) for x in neut_anc_freq]
