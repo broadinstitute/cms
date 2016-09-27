@@ -15,7 +15,7 @@ def write_delIHH_file(readfilename, writefilename):
 		if len(entries) == 8:
 			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
 		elif len(entries) == 11:
-			locus, phys, freq_1, ihh_1, ihh_0, ihs, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r, manually_normed = entries
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r, manually_normed = entries
 
 					#ancestral - derived
 		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
