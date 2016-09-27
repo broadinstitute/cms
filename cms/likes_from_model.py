@@ -287,6 +287,8 @@ def execute_likes_from_scores(args):
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
 		
+	#print(histBins)
+
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
@@ -311,15 +313,28 @@ def execute_likes_from_scores(args):
 		for datatype in datatypes:
 			key = (bin_medians_str[ibin], datatype) #BINS!
 			data[key] = eval(datatype)
-	
+
 	#################
 	## BIN SCORES ##
 	#################		
 	#build in option to merge bins here?
 	for ibin in range(len(bin_starts)):
 		xlims = scoreRange
-		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_scores_final')], data[(bin_medians_str[ibin], 'linked_scores_final')], data[(bin_medians_str[ibin], 'neut_scores_final')]
-		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, args.thinToSize)
+		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_score_final')], data[(bin_medians_str[ibin], 'linked_score_final')], data[(bin_medians_str[ibin], 'neutral_score_final')]
+		
+		
+		#print(causal_scores)
+		#givenBins = get_hist_bins(score, numLikesBins)
+
+
+		#for debug
+		#if causal_scores == []:
+		#	causal_scores = [0]
+
+
+		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
+		
+
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 	return
 def execute_visualize_likes(args):

@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.22.16 vitti@broadinstitute.org
+## last updated: 09.27.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -211,7 +211,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 			toreturn[iIndex].append(thisValue)
 	openfile.close()
 	return toreturn
-def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thinToSize = False):
+def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
 		print("Thinning data to " + str(limiting) + " SNPs...")
@@ -228,6 +228,8 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thin
 
 		causal_scores, linked_scores, neut_scores = short_causal, short_linked, short_neut
 
+	#print(causal_scores)
+
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
@@ -237,18 +239,23 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thin
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	n_causal, bins_causal = np.hist(causal_scores, bins=givenBins, weights = weights_causal)
-	n_linked, bins_linked = np.hist(linked_scores, bins=givenBins, weights = weights_linked)
-	n_neut, bins_neut = np.hist(neut_scores, bins=givenBins, weights = weights_neut)
+	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
+	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
+	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
 
-	return n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut
+	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
+	#print(debug_array)
+
+	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
-	for status in ['causal', 'linked', 'neutral']:
+	for status in ['causal', 'linked', 'neut']:
 		writefilename = writePrefix + "_" + status + ".txt"
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
-		for index in range(len(n_scores)):
+		for index in range(len(n_scores)-1):
+
 			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
+			#print(towritestring)
 			writefile.write(towritestring)
 		writefile.close()
 	return
