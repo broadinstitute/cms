@@ -321,20 +321,14 @@ def execute_likes_from_scores(args):
 	for ibin in range(len(bin_starts)):
 		xlims = scoreRange
 		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_score_final')], data[(bin_medians_str[ibin], 'linked_score_final')], data[(bin_medians_str[ibin], 'neutral_score_final')]
-		
-		
+				
 		#print(causal_scores)
 		#givenBins = get_hist_bins(score, numLikesBins)
-
-
 		#for debug
 		#if causal_scores == []:
 		#	causal_scores = [0]
 
-
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
-		
-
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 	return
 def execute_visualize_likes(args):
