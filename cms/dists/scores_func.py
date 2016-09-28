@@ -70,7 +70,6 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 					nums.append(numinbin)
 					means.append(mean)
 					variances.append(variance)
-					break
 		openfile.close()
 		return bins, nums, means, variances
 	elif scoretype == "xp":
@@ -102,6 +101,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 		entries = line.split()
 		freq_allele1 = float(entries[2]) #1 is ancestral, 0 is derived in tped
 		unnormed_ihs_val = float(entries[5]) #locus/phys-pos/1_freq/ihh_1/ihh_0/ihs/derived_ihh_left/derived_ihh_right/ancestral_ihh_left/ancestral_ihh_right
+		normalizedvalue = float('NaN')
 		for ibin in range(len(bins)):
 			if freq_allele1 <= bins[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
