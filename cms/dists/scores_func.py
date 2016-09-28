@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.27.16 vitti@broadinstitute.org
+## last updated: 09.28.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -70,6 +70,7 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 					nums.append(numinbin)
 					means.append(mean)
 					variances.append(variance)
+					break
 		openfile.close()
 		return bins, nums, means, variances
 	elif scoretype == "xp":
@@ -81,7 +82,7 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		return num, mean, var
 	openfile.close()
 	return
-def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "scans.py"):
+def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "cms/cms/scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_ihs " + inputScoreFile + " > " + outfileName
 	print(cmdStr)
@@ -104,10 +105,10 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 		for ibin in range(len(bins)):
 			if freq_allele1 <= bins[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
-				assert not(np.isnan(normalizedvalue))
-				#if np.isnan(normalizedvalue):
-					#print(freq_allele1)
-					#print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
+				#assert not(np.isnan(normalizedvalue))
+				if np.isnan(normalizedvalue):
+					print(freq_allele1)
+					print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
 				break
 		writeline = line.strip('\n') +"\t" + str(normalizedvalue) + '\n'
 		normfile.write(writeline)		
