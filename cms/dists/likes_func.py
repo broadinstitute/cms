@@ -77,7 +77,7 @@ def read_demographics_from_filename(filename):
 		if model in filename_entries:
 			break
 	for score in scores:
-		if score in filename_entries
+		if score in filename_entries:
 	for dist in dists:
 		if dist in filename_local:
 			break
