@@ -72,7 +72,6 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
 		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
 		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
-		likes_from_scores_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
 		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
@@ -90,9 +89,10 @@ def full_parser_likes_from_model():
 
 	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='Visualize likelihood tables generated from simulated data.')
 	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited) with bins of probability density function to visualize.')	
-	#visualize_likes_parser.add_argument('modelNames', help='comma-delimited list of strings used to a ')	
-
 	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
+
+	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
+		likes_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
 	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
@@ -310,48 +310,54 @@ def execute_visualize_likes(args):
 	likesfilenames = args.likesFiles
 	print('loading ' + str(len(likesfilenames)) + " likelihood tables..." )
 
-	likes_dict = {}
-	for likesfilename in likesfilenames:
-		if not os.path.isfile(likesfilename):
-			print('must first run likes_from_scores: ' + likesfilename)
-		else:
-			starts, ends, vals = read_likes_file(likesfilename)
-			key = read_demographics_from_filename(likesfilename) #key = (model, score, dist, pop)
-			likesdict[key] = [starts, ends, vals]
-			
 	if args.oldLikes:
-		old_likes = get_old_likes()
-		scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
-		pops = range(1,5)
-		models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best', 'nulldefault', 'nulldefault_constantsize']
-		dists = ['causal', 'linked', 'neut']
-		colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
-		
-		for score in scores: #each score gets its own figure
-			#fig = plt.figure()
-			#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
-			bins, scorerange, ylims = get_hist_bins(score, 50)
-			f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7 ,ax8), (ax9, ax10, ax11, ax12), (ax13, ax14, ax15, ax16), (ax17, ax18,ax19, ax20)) = plt.subplots(5, 4, sharex='col', sharey='row')
-			f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
-			iAxis = 1
+		likes_dict = get_old_likes()
+	else:		
+		likes_dict = {}
+		for likesfilename in likesfilenames:
+			if not os.path.isfile(likesfilename):
+				print('must first run likes_from_scores: ' + likesfilename)
+			else:
+				starts, ends, vals = read_likes_file(likesfilename)
+				key = read_demographics_from_filename(likesfilename) #key = (model, score, dist, pop)
+				likes_dict[key] = [starts, ends, vals]
+	
+	keys = likes_dict.keys()
+	scores, pops, models, dists = [], [], [], []
+	for key in keys:
+		scores.append(key[0])
+		pops.append(key[1])
+		models.append(key[2])
+		dists.append(key[3])
+	for collection in [scores, pops, models, dists]:
+		collection = set(collection)
 
-			for imodel in range(len(models)): #rows
-				model = models[imodel]
-				for ipop in range(len(pops)): #columns
-					ax = eval('ax' + str(iAxis))
-					pop = pops[ipop]
-					#ax = fig.add_subplot(111)#111)	
-					#print(str(imodel)  + "\t" + str(ipop))
-					#ax = axarr[imodel, ipop]			
-					starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
-					starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
-					starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
-					assert starts_causal == starts_neut and starts_neut == starts_linked
-					plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
-					plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
-					plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
-					iAxis +=1
-			plt.show()
+	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
+		
+	for score in scores: #each score gets its own figure
+		#fig = plt.figure()
+		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
+		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
+
+		axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
+		f, axes = plt.subplots(len(models), len(pops), sharex='col', sharey='row')
+		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
+		iAxis = 1
+
+		for imodel in range(len(models)): #rows
+			model = models[imodel]
+			for ipop in range(len(pops)): #columns
+				ax = eval('ax' + str(iAxis))
+				pop = pops[ipop]		
+				starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
+				starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
+				starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
+				assert starts_causal == starts_neut and starts_neut == starts_linked
+				plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
+				plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
+				plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
+				iAxis +=1
+		plt.show()
 		
 	return
 ##########

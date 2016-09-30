@@ -77,7 +77,7 @@ def read_demographics_from_filename(filename):
 		if model in filename_entries:
 			break
 	for score in scores:
-		if score in filename_entries
+		if score in filename_entries:
 	for dist in dists:
 		if dist in filename_local:
 			break
@@ -87,3 +87,16 @@ def read_demographics_from_filename(filename):
 		#if "_" + str(pop) + "_" in
 	key = (model, score, dist, pop)
 	return key
+def define_axes(numPops, numModels):
+	allitems = []
+	axnum = 0
+	for imodel in range(1, numModels+1):
+		items = []
+		for ipop in range(1, numPops+1):
+			axnum +=1
+			items.append('ax' + str(axnum))
+		allitems.append(items)
+	returnstring = str(allitems)
+	returnstring = returnstring.replace('[', '(')
+	returnstring = returnstring.replace(']', ')')
+	return returnstring
