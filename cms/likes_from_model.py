@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.27.16 vitti@broadinstitute.org
+## last updated: 09.30.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -57,7 +57,6 @@ def full_parser_likes_from_model():
 		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
 		scores_from_sims_parser.add_argument('--recomfile', action='store', help="input recomfile for sims")
 		#NORMALIZE: 
-		#scores_from_sims_parser.add_argument('--concatNeutScores', action='store', help="directory from which to concatenate neutral scores (in order to normalize)")
 		scores_from_sims_parser.add_argument('--normalizeIhs', action='store_true')
 		scores_from_sims_parser.add_argument('--neutIhsNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
 		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store_true')	
@@ -70,8 +69,6 @@ def full_parser_likes_from_model():
 	##################################################
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
 	if True:
-		#likes_from_scores_parser.add_argument('--write', action='store_true', help='once scores have been calculated and normalized, bin values and write probability distributions to file')
-		#likes_from_scores_parser.add_argument('--plot', action='store_true', help='once probability distributions written to file, visualize')	
 		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
 		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
 		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
@@ -92,7 +89,10 @@ def full_parser_likes_from_model():
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
 	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='Visualize likelihood tables generated from simulated data.')
-	#visualize_likes_parser.add_argument('')
+	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited) with bins of probability density function to visualize.')	
+	#visualize_likes_parser.add_argument('modelNames', help='comma-delimited list of strings used to a ')	
+
+	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
 
 	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
@@ -207,22 +207,6 @@ def execute_scores_from_sims(args):
 	###############
 	## NORMALIZE ##
 	###############
-	#if args.concatNeutScores is not None:
-	#	neutSimDir = args.concatNeutScores
-	#	neutSimDir_contents = os.listdir(neutSimDir)
-	#	neutSim_scores = [item for item in neutSimDir_contents if ".out" in item]
-	#	print('loading neutral simulates from ' str(len(neutSim_scores)) + " files from " + neutSimDir + ' ...')
-
-	#	neut_xpehh = [item for item in neutSim_scores if "xpehh" in item]
-	#	neut_ihs = [item for item in neutSim_scores if "ihs" in item]
-
-		#sort by poppairs
-		#if len(neut_xpehh) > 0:
-		#	pass
-
-		#sort by pops
-		#if len(neut_ihs) > 0:
-		#	pass
 
 	if args.normalizeIhs:
 		if args.neutIhsNormParams is not None:
@@ -287,8 +271,6 @@ def execute_likes_from_scores(args):
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
 		
-	#print(histBins)
-
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
@@ -317,54 +299,58 @@ def execute_likes_from_scores(args):
 	#################
 	## BIN SCORES ##
 	#################		
-	#build in option to merge bins here?
 	for ibin in range(len(bin_starts)):
 		xlims = scoreRange
-		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_score_final')], data[(bin_medians_str[ibin], 'linked_score_final')], data[(bin_medians_str[ibin], 'neutral_score_final')]
-				
-		#print(causal_scores)
-		#givenBins = get_hist_bins(score, numLikesBins)
-		#for debug
-		#if causal_scores == []:
-		#	causal_scores = [0]
-
+		causal_scores, linked_scores, neut_scores = data[(bin_medians_str[ibin], 'causal_score_final')], data[(bin_medians_str[ibin], 'linked_score_final')], data[(bin_medians_str[ibin], 'neutral_score_final')]		
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
+		print("wrote to " + args.outPrefix +"_" + bin_medians_str[ibin])
 	return
 def execute_visualize_likes(args):
-	'''currently: view all'''
-	old_likes = get_old_likes()
-	scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
-	pops = range(1,5)
-	models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best', 'nulldefault', 'nulldefault_constantsize']
-	dists = ['causal', 'linked', 'neut']
-	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
-	
-	for score in scores: #each score gets its own figure
-		#fig = plt.figure()
-		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
-		bins, scorerange, ylims = get_hist_bins(score, 50)
-		f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7 ,ax8), (ax9, ax10, ax11, ax12), (ax13, ax14, ax15, ax16), (ax17, ax18,ax19, ax20)) = plt.subplots(5, 4, sharex='col', sharey='row')
-		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
-		iAxis = 1
+	likesfilenames = args.likesFiles
+	print('loading ' + str(len(likesfilenames)) + " likelihood tables..." )
 
-		for imodel in range(len(models)): #rows
-			model = models[imodel]
-			for ipop in range(len(pops)): #columns
-				ax = eval('ax' + str(iAxis))
-				pop = pops[ipop]
-				#ax = fig.add_subplot(111)#111)	
-				#print(str(imodel)  + "\t" + str(ipop))
-				#ax = axarr[imodel, ipop]			
-				starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
-				starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
-				starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
-				assert starts_causal == starts_neut and starts_neut == starts_linked
-				plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
-				plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
-				plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
-				iAxis +=1
-		plt.show()
+	for likesfilename in likesfilenames:
+		if not os.path.isfile(likesfilename):
+			print('must first run likes_from_scores: ' + likesfilename)
+		else:
+			starts, ends, vals = read_likes_file(likesfilename)
+			#key = (model, score, dist, pop)
+			
+	if args.oldLikes:
+		old_likes = get_old_likes()
+		scores = ['ihs', 'delihh', 'fst', 'xp', 'deldaf']
+		pops = range(1,5)
+		models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best', 'nulldefault', 'nulldefault_constantsize']
+		dists = ['causal', 'linked', 'neut']
+		colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
+		
+		for score in scores: #each score gets its own figure
+			#fig = plt.figure()
+			#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
+			bins, scorerange, ylims = get_hist_bins(score, 50)
+			f, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7 ,ax8), (ax9, ax10, ax11, ax12), (ax13, ax14, ax15, ax16), (ax17, ax18,ax19, ax20)) = plt.subplots(5, 4, sharex='col', sharey='row')
+			f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
+			iAxis = 1
+
+			for imodel in range(len(models)): #rows
+				model = models[imodel]
+				for ipop in range(len(pops)): #columns
+					ax = eval('ax' + str(iAxis))
+					pop = pops[ipop]
+					#ax = fig.add_subplot(111)#111)	
+					#print(str(imodel)  + "\t" + str(ipop))
+					#ax = axarr[imodel, ipop]			
+					starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
+					starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
+					starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
+					assert starts_causal == starts_neut and starts_neut == starts_linked
+					plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
+					plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
+					plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
+					iAxis +=1
+			plt.show()
+		
 	return
 ##########
 ## MAIN ##
