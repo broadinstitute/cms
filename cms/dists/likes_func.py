@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 07.23.16 vitti@broadinstitute.org
+## last updated: 09.30.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TkAgg') #set backend
@@ -63,4 +63,27 @@ def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
 	ax.set_xlim(xlims)
 	ax.set_ylim(ylims)
 	return ax
+def read_demographics_from_filename(filename):
+	'''specific to a set of models/pops; facilitates quick visualization of arbitrary comparisons'''
+	models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best','nulldefault_constantsize', 'nulldefault']
+	scores = ['ihs', 'delihh', 'fst', 'xpehh', 'deldaf']
+	dists = ['causal', 'linked', 'neut']
+	pops = range(1,5)
 
+	filename_entries = filename.split('/')
+	filename_local = filename_entries[-1]
+
+	for model in models:
+		if model in filename_entries:
+			break
+	for score in scores:
+		if score in filename_entries
+	for dist in dists:
+		if dist in filename_local:
+			break
+	for pop in pops:
+		if "sel" + str(pop) in filename_entries:
+			break
+		#if "_" + str(pop) + "_" in
+	key = (model, score, dist, pop)
+	return key
