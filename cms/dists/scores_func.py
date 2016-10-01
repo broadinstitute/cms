@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.28.16 vitti@broadinstitute.org
+## last updated: 09.30.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -174,7 +174,7 @@ def get_indices(score, dem_scenario):
 			ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 8 #these files have 8 columns; last one is binary variable
 		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
 	elif score == "delihh":
-		expectedlen = 8
+		expectedlen = 7
 		physpos_index, freq_anc_index = 1, 2
 		delihh_unnormed_index, delihh_normed_index = 5, 6
 		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
