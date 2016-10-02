@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.01.16 vitti@broadinstitute.org
+## last updated: 10.02.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -235,9 +235,9 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	causal_scores = np.array(causal_scores)
 	linked_scores = np.array(linked_scores)
 	neut_scores = np.array(neut_scores)
-	causal_scores = causal_scores[~numpy.isnan(causal_scores)]
-	linked_scores = linked_scores[~numpy.isnan(linked_scores)]
-	neut_scores = neut_scores[~numpy.isnan(neut_scores)]
+	causal_scores = causal_scores[~np.isnan(causal_scores)]
+	linked_scores = linked_scores[~np.isnan(linked_scores)]
+	neut_scores = neut_scores[~np.isnan(neut_scores)]
 
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
