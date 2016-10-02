@@ -161,6 +161,9 @@ def get_hist_bins(score,numBins):
 	elif score == "xp":
 		scorerange = [-3., 7.]
 		ylims = [0, .25]
+	elif score == "nsl":
+		scorerange = [-4., 4.]
+		ylims = [0, .25]	
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
 	return bins, scorerange, ylims
@@ -197,6 +200,11 @@ def get_indices(score, dem_scenario):
 		else:
 			expectedlen = 10
 		indices = [physpos_index, xp_normed_index, freq_anc_index]
+	elif score == "nsl":
+		physpos_index, freq_anc_index = 1, 2
+		normedscoreindex = 6
+		expectedlen = 7
+		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	''' from func_clean.py '''
