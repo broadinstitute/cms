@@ -203,7 +203,10 @@ def get_indices(score, dem_scenario):
 	elif score == "nsl":
 		physpos_index, freq_anc_index = 1, 2
 		normedscoreindex = 6
-		expectedlen = 7
+		if "sel" in dem_scenario:
+			expectedlen = 7
+		else:
+			expectedlen = 8
 		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
