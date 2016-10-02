@@ -161,6 +161,9 @@ def get_hist_bins(score,numBins):
 	elif score == "xp":
 		scorerange = [-3., 7.]
 		ylims = [0, .25]
+	elif score == "nsl":
+		scorerange = [-4., 4.]
+		ylims = [0, .25]	
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
 	return bins, scorerange, ylims
@@ -174,7 +177,10 @@ def get_indices(score, dem_scenario):
 			ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 8 #these files have 8 columns; last one is binary variable
 		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
 	elif score == "delihh":
-		expectedlen = 7
+		if "sel" in dem_scenario:
+			expectedlen = 7
+		else:
+			expectedlen = 8
 		physpos_index, freq_anc_index = 1, 2
 		delihh_unnormed_index, delihh_normed_index = 5, 6
 		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
@@ -194,6 +200,11 @@ def get_indices(score, dem_scenario):
 		else:
 			expectedlen = 10
 		indices = [physpos_index, xp_normed_index, freq_anc_index]
+	elif score == "nsl":
+		physpos_index, freq_anc_index = 1, 2
+		normedscoreindex = 6
+		expectedlen = 7
+		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	''' from func_clean.py '''
@@ -239,6 +250,9 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = linked_scores[~np.isnan(linked_scores)]
 	neut_scores = neut_scores[~np.isnan(neut_scores)]
 
+
+
+
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
@@ -247,6 +261,9 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	causal_scores = np.clip(causal_scores, xlims[0], xlims[1]) #np.clip
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
+
+	#put pseudocount for empty bins here?
+	#for givenBin in givenBins:
 
 	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
 	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)

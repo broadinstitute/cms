@@ -76,6 +76,7 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
 		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
 		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='define probability distribution for delIHH')	
+		likes_from_scores_parser.add_argument('--nsl', action='store_true', help='define probability distribution for nSl')	
 		likes_from_scores_parser.add_argument('--xpehh', action='store_true', help='define probability distribution for XP-EHH')	
 		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='define probability distribution for delDAF')	
 		likes_from_scores_parser.add_argument('--fst', action='store_true', help='define probability distribution for Fst')	
@@ -270,7 +271,12 @@ def execute_likes_from_scores(args):
 		expectedlen_neut, indices_neut = get_indices('fst', "neut")
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
-		
+	if args.nsl:
+		comparison, stripHeader = False, False
+		expectedlen_neut, indices_neut = get_indices('nsl', "neut")
+		expectedlen_sel, indices_sel = get_indices('nsl', "sel")
+		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)		
+
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
