@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 09.30.16 vitti@broadinstitute.org
+## last updated: 10.02.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TkAgg') #set backend
@@ -22,6 +22,9 @@ def get_hist_bins(score,numBins):
 		ylims = [0, .25]
 	elif score == "xp":
 		scorerange = [-3., 7.]
+		ylims = [0, .25]
+	elif score=="nsl":
+		scorerange = [-4., 4.]
 		ylims = [0, .25]
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
