@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 09.30.16 vitti@broadinstitute.org
+## last updated: 10.02.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -76,7 +76,7 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
 		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
 		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='define probability distribution for delIHH')	
-		likes_from_scores_parser.add_argument('--xp', action='store_true', help='define probability distribution for XP-EHH')	
+		likes_from_scores_parser.add_argument('--xpehh', action='store_true', help='define probability distribution for XP-EHH')	
 		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='define probability distribution for delDAF')	
 		likes_from_scores_parser.add_argument('--fst', action='store_true', help='define probability distribution for Fst')	
 
@@ -255,18 +255,18 @@ def execute_likes_from_scores(args):
 		expectedlen_neut, indices_neut = get_indices('delihh', "neut")
 		expectedlen_sel, indices_sel = get_indices('delihh', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
-	if args.xp:
+	if args.xpehh:
 		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('xp', "neut")
 		expectedlen_sel, indices_sel = get_indices('xp', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
 	if args.deldaf:
-		comparison, stripHeader = True, False
+		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('deldaf', "neut")
 		expectedlen_sel, indices_sel = get_indices('deldaf', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
 	if args.fst:
-		comparison, stripHeader = True, False
+		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('fst', "neut")
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
