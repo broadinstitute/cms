@@ -314,6 +314,7 @@ def execute_likes_from_scores(args):
 	return
 def execute_visualize_likes(args):
 	likesfilenames = args.likesFiles
+	likesfilenames = likesfilenames.split(',')
 	print('loading ' + str(len(likesfilenames)) + " likelihood tables..." )
 
 	if args.oldLikes:
