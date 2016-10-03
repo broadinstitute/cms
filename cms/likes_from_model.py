@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.02.16 vitti@broadinstitute.org
+## last updated: 10.03.16 vitti@broadinstitute.org
 
-from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename
+from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files
 from util.parallel import slurm_array
@@ -332,9 +332,9 @@ def execute_visualize_likes(args):
 	keys = likes_dict.keys()
 	scores, pops, models, dists = [], [], [], []
 	for key in keys:
-		scores.append(key[0])
-		pops.append(key[1])
-		models.append(key[2])
+		models.append(key[0])
+		scores.append(key[1])
+		pops.append(key[2])
 		dists.append(key[3])
 	for collection in [scores, pops, models, dists]:
 		collection = set(collection)
@@ -347,6 +347,7 @@ def execute_visualize_likes(args):
 		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
 
 		axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
+		print(axes)
 		f, axes = plt.subplots(len(models), len(pops), sharex='col', sharey='row')
 		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
 		iAxis = 1
