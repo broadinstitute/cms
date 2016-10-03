@@ -89,7 +89,7 @@ def full_parser_likes_from_model():
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
 	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='Visualize likelihood tables generated from simulated data.')
-	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited) with bins of probability density function to visualize.')	
+	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited, or passed as one file containing paths for each) with bins of probability density function to visualize.')	
 	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
 
 	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
@@ -315,6 +315,14 @@ def execute_likes_from_scores(args):
 def execute_visualize_likes(args):
 	likesfilenames = args.likesFiles
 	likesfilenames = likesfilenames.split(',')
+	if len(likesfilenames) == 1:
+		file_paths = []
+		openfile=open(likesfilenames[0], 'r')
+		for file_path in openfile:
+			file_paths.append(file_path)
+		openfile.close()
+		likesfilenames = file_paths
+
 	print('loading ' + str(len(likesfilenames)) + " likelihood tables..." )
 
 	if args.oldLikes:
