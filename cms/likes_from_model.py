@@ -237,6 +237,7 @@ def execute_likes_from_scores(args):
 	'''adapted from likes_from_scores_vers.py'''
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
 	numLikesBins = args.nLikesBins #histogram bins
+
 	datatypes = []
 	for status in ['causal', 'linked', 'neutral']:
 		for dpoint in ['positions', 'score_final']:
@@ -318,7 +319,8 @@ def execute_visualize_likes(args):
 	if len(likesfilenames) == 1:
 		file_paths = []
 		openfile=open(likesfilenames[0], 'r')
-		for file_path in openfile:
+		for line in openfile:
+			file_path = line.strip('\n')
 			file_paths.append(file_path)
 		openfile.close()
 		likesfilenames = file_paths
@@ -340,12 +342,28 @@ def execute_visualize_likes(args):
 	keys = likes_dict.keys()
 	scores, pops, models, dists = [], [], [], []
 	for key in keys:
+		#print(key)
 		models.append(key[0])
 		scores.append(key[1])
-		pops.append(key[2])
-		dists.append(key[3])
-	for collection in [scores, pops, models, dists]:
-		collection = set(collection)
+		dists.append(key[2])
+		pops.append(key[3])
+
+
+	scores = set(scores)
+	scores = list(scores)
+	models = set(models)
+	models = list(models)
+	pops = set(pops)
+	pops = list(pops)
+	dists = set(dists)
+	dists = list(dists)
+
+	#print(pops)
+	#print(models)
+	#print('loaded likes for ' + str(len(scores)) + " scores...")
+	#print('loaded likes for ' + str(len(models)) + " models...")
+	#print('loaded likes for ' + str(len(pops)) + " pops...")	
+	#print('loaded likes for ' + str(len(dists)) + " dists...")	
 
 	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
 		
@@ -353,26 +371,42 @@ def execute_visualize_likes(args):
 		#fig = plt.figure()
 		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
 		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
+		#axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
+		#print(axes)
 
-		axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
-		print(axes)
 		f, axes = plt.subplots(len(models), len(pops), sharex='col', sharey='row')
 		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
 		iAxis = 1
+		#plt.xlabel(models, fontsize='7')
 
 		for imodel in range(len(models)): #rows
 			model = models[imodel]
+			
 			for ipop in range(len(pops)): #columns
-				ax = eval('ax' + str(iAxis))
-				pop = pops[ipop]		
-				starts_causal, ends_causal, vals_causal = old_likes[(model, score, 'causal', pop)]
-				starts_linked, ends_linked, vals_linked = old_likes[(model, score, 'linked', pop)]
-				starts_neut, ends_neut, vals_neut = old_likes[(model, score, 'neut', pop)]				
+				ax = axes[imodel, ipop]
+				pop = pops[ipop]
+
+
+				starts_causal, ends_causal, vals_causal = likes_dict[(model, score, 'causal', pop)]
+				starts_linked, ends_linked, vals_linked = likes_dict[(model, score, 'linked', pop)]
+				starts_neut, ends_neut, vals_neut = likes_dict[(model, score, 'neut', pop)]				
 				assert starts_causal == starts_neut and starts_neut == starts_linked
 				plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
 				plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
 				plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
 				iAxis +=1
+				if imodel == (len(models)-1):
+					ax.set_xlabel(pop)
+				if ipop == (len(pops)-1):
+					entries = model.split("_")
+					label = ""
+					for item in entries:
+						label += item +"\n"
+					label.strip('\n')
+					ax.set_ylabel(label, fontsize=7)
+					ax.yaxis.set_label_position("right")
+
+
 		plt.show()
 		
 	return
