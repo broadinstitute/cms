@@ -20,7 +20,7 @@ def get_hist_bins(score,numBins):
 	elif score == "deldaf" or score =="fst_deldaf":
 		scorerange = [-1., 1.]
 		ylims = [0, .25]
-	elif score == "xp":
+	elif score == "xp" or score =="xpehh":
 		scorerange = [-3., 7.]
 		ylims = [0, .25]
 	elif score=="nsl":
