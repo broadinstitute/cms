@@ -289,6 +289,7 @@ def execute_likes_from_scores(args):
 		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]]
 		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]] 
 		neutral_indices = [i for i, x in enumerate(neut_positions) if neut_der_freq[i]>=bin_starts[ibin] and neut_der_freq[i]<bin_ends[ibin]] 
+		print("loaded " +str(len(causal_indices)) + " causal variants, " + str(len(linked_indices)) + " linked variants, and " + str(len(neutral_indices)) + " neutral variants." )
 
 		causal_positions = [sel_positions[variant] for variant in causal_indices]
 		causal_score_final = [sel_score_final[variant] for variant in causal_indices]
