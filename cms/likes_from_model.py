@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.03.16 vitti@broadinstitute.org
+## last updated: 10.05.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -70,7 +70,7 @@ def full_parser_likes_from_model():
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
 	if True:
 		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
-		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
+		likes_from_scores_parser.add_argument('selFile_firstBin', action='store', help='file with scores for selected scenarios (normalized if necessary) for first selscenario bin; will infer other binfiles from this and freqRange/nBins')
 		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
 		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
@@ -92,7 +92,7 @@ def full_parser_likes_from_model():
 	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited, or passed as one file containing paths for each) with bins of probability density function to visualize.')	
 	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
 
-	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
+	for likes_parser in [likes_from_scores_parser]:#, visualize_likes_parser]:
 		likes_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
 	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
@@ -276,15 +276,25 @@ def execute_likes_from_scores(args):
 		comparison, stripHeader = False, False
 		expectedlen_neut, indices_neut = get_indices('nsl', "neut")
 		expectedlen_sel, indices_sel = get_indices('nsl', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)		
+		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)				
+	"""
+	As previously written, this routine takes in a single (concatenated) selscore and and a single neutscore file , then separates out each SNP according to ITS OWN MAF.
+	I don't think this is right. I think we want to concat all reps for a given selscenario, and let the selSNP's MAF determine which bin SNPs(/reps) get sorted into.
+	i.e., I think this previous approach will divvy up SNPs from a single replicate into multiple separate probability density functions, and I don't think that's legit (same haplotype!)
+	This seems a rehashing of my alternate CMS scoring scheme confusion from like, 2013
 
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
 	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
+	#################
+	## SORT BY MAF ## 10.04.16 need to revisit this
+	#################
+
 	neut_der_freq = [1. - float(x) for x in neut_anc_freq]
 	sel_der_freq = [1. - float(x) for x in sel_anc_freq]
+
 	for ibin in range(len(bin_starts)):
 		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]]
 		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and sel_der_freq[i]>=bin_starts[ibin] and sel_der_freq[i]<bin_ends[ibin]] 
@@ -313,6 +323,32 @@ def execute_likes_from_scores(args):
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_medians_str[ibin])
+	"""
+
+	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
+	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
+
+	firstbinfilename = args.selFile_firstBin
+	binfile_entries = firstbinfilename.split(bin_starts[0])
+	for bin_median in bin_medians_str:
+		binfilename = binfile_entries.join(bin_median)
+
+		val_array = load_vals_from_files(binfilename, expectedlen_sel, indices_sel, stripHeader)		
+		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
+
+		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
+		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 
+
+		causal_positions = [sel_positions[variant] for variant in causal_indices]
+		causal_score_final = [sel_score_final[variant] for variant in causal_indices]
+
+		linked_positions = [sel_positions[variant] for variant in linked_indices]
+		linked_score_final = [sel_score_final[variant] for variant in linked_indices]
+
+		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
+		write_hists_to_files(args.outPrefix +"_" + bin_median, histBins, n_causal, n_linked, n_neut)
+		print("wrote to " + args.outPrefix +"_" + bin_median)
+
 	return
 def execute_visualize_likes(args):
 	likesfilenames = args.likesFiles
@@ -372,6 +408,9 @@ def execute_visualize_likes(args):
 		#fig = plt.figure()
 		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
 		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
+		##MAYBE JUST READ THIS FROM LIKESFILES?
+
+
 		#axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
 		#print(axes)
 
