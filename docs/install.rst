@@ -10,6 +10,8 @@ Step 2: Configure Conda
 Software used by the cms project is distributed through the bioconda channel for the conda package manager. It is necessary to add this channel to the conda config::
 
   conda config --add channels bioconda
+  conda config --add channels r
+  conda config --add channels conda-forge
 
 Step 3: Make a conda environment and install cms
 
@@ -19,7 +21,7 @@ It is recommended to install cms into its own conda directory. This ensures its 
 
 A new conda environment can be created with the following command, which will also install relevant cms dependencies. It is recommended to use the Python3 version of the environment file::
 
-  conda env create -f=conda-environment_py3.yaml -n cms-env3
+  conda env create -f conda-environment_py3.yaml -n cms-env3
 
 Step 4: Activate the cms environment
 
