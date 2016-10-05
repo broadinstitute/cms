@@ -52,6 +52,7 @@ dependencies:
 - wheel=0.29.0
 - xz=5.0.5
 - zlib=1.2.8
+- pysam==0.9.1
 - pip:
   - apipkg==1.4
   - boltons==16.4.1
@@ -67,7 +68,6 @@ dependencies:
   - py==1.4.31
   - pycodestyle==2.0.0
   - pyflakes==1.2.3
-  - pysam==0.9.1
   - pytest==2.9.2
   - pytest-cov==2.2.1
   - pytest-xdist==1.14
