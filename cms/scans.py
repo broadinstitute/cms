@@ -325,7 +325,7 @@ def main_selscan_nsl(args):
     metaData["nsl"] = args.outFile+".nsl.out"
     metaData["nsl_log"] = args.outFile+".nsl.log"
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
+   # util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, metaData)
 
     return 0
 __commands__.append(('selscan_nsl', parser_selscan_nsl))

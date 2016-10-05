@@ -1,5 +1,5 @@
 ## functions for transforming component score calculations as part of composite.py
-## last updated 09.10.16 	vitti@broadinstitute.org
+## last updated 09.27.16 	vitti@broadinstitute.org
 
 from math import fabs
 import sys
@@ -11,7 +11,12 @@ def write_delIHH_file(readfilename, writefilename):
 	writefile = open(writefilename, 'w')
 	for line in readfile:
 		entries = line.split()
-		locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
+		#handle input with/without ihh decomp
+		if len(entries) == 8:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
+		elif len(entries) == 11:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r, manually_normed = entries
+
 					#ancestral - derived
 		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
 		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs_unnormed) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm

@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.15.16 vitti@broadinstitute.org
+## last updated: 10.02.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -61,13 +61,15 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		assert entries[0] == "bin"
 		bins, nums, means, variances = [], [], [], []
 		for line in openfile:
+			#if line is not None:
 			entries = line.split()
-			if entries[0] != "Normalizing":
-				binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
-				bins.append(binlimit)
-				nums.append(numinbin)
-				means.append(mean)
-				variances.append(variance)
+			if (len(entries) >=1):
+				if entries[0] != "Normalizing":
+					binlimit, numinbin, mean, variance = float(entries[0]), int(entries[1]), float(entries[2]), float(entries[3])
+					bins.append(binlimit)
+					nums.append(numinbin)
+					means.append(mean)
+					variances.append(variance)
 		openfile.close()
 		return bins, nums, means, variances
 	elif scoretype == "xp":
@@ -79,15 +81,18 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		return num, mean, var
 	openfile.close()
 	return
-def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "scans.py"):
+def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "cms/cms/scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_ihs " + inputScoreFile + " > " + outfileName
 	print(cmdStr)
 	return
-def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
+def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	''' from normalize_Ihs_manually() in func_scores.py''' 
 	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
+	#print(str(means))
+	#print(str(variances))
+	#print(str(bin_bounds))
 	nsnps = 0
 	normfilename = inputScoreFile + ".norm"	
 	openfile = open(inputScoreFile, 'r')
@@ -96,9 +101,14 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename, bin_bounds):
 		entries = line.split()
 		freq_allele1 = float(entries[2]) #1 is ancestral, 0 is derived in tped
 		unnormed_ihs_val = float(entries[5]) #locus/phys-pos/1_freq/ihh_1/ihh_0/ihs/derived_ihh_left/derived_ihh_right/ancestral_ihh_left/ancestral_ihh_right
-		for ibin in range(len(bin_bounds)):
-			if freq_allele1 <= bin_bounds[ibin]:
+		normalizedvalue = float('NaN')
+		for ibin in range(len(bins)):
+			if freq_allele1 <= bins[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
+				#assert not(np.isnan(normalizedvalue))
+				if np.isnan(normalizedvalue):
+					print(freq_allele1)
+					print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
 				break
 		writeline = line.strip('\n') +"\t" + str(normalizedvalue) + '\n'
 		normfile.write(writeline)		
@@ -151,6 +161,9 @@ def get_hist_bins(score,numBins):
 	elif score == "xp":
 		scorerange = [-3., 7.]
 		ylims = [0, .25]
+	elif score == "nsl":
+		scorerange = [-4., 4.]
+		ylims = [0, .25]	
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
 	bins = [scorerange[0] + binlen * i for i in range(numBins)]
 	return bins, scorerange, ylims
@@ -164,7 +177,10 @@ def get_indices(score, dem_scenario):
 			ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 8 #these files have 8 columns; last one is binary variable
 		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
 	elif score == "delihh":
-		expectedlen = 8
+		if "sel" in dem_scenario:
+			expectedlen = 7
+		else:
+			expectedlen = 8
 		physpos_index, freq_anc_index = 1, 2
 		delihh_unnormed_index, delihh_normed_index = 5, 6
 		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
@@ -184,6 +200,14 @@ def get_indices(score, dem_scenario):
 		else:
 			expectedlen = 10
 		indices = [physpos_index, xp_normed_index, freq_anc_index]
+	elif score == "nsl":
+		physpos_index, freq_anc_index = 1, 2
+		normedscoreindex = 6
+		if "sel" in dem_scenario:
+			expectedlen = 7
+		else:
+			expectedlen = 8
+		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	''' from func_clean.py '''
@@ -202,7 +226,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 			toreturn[iIndex].append(thisValue)
 	openfile.close()
 	return toreturn
-def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thinToSize = False):
+def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
 		print("Thinning data to " + str(limiting) + " SNPs...")
@@ -219,6 +243,19 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thin
 
 		causal_scores, linked_scores, neut_scores = short_causal, short_linked, short_neut
 
+	#print(causal_scores)
+
+	#check for nans
+	causal_scores = np.array(causal_scores)
+	linked_scores = np.array(linked_scores)
+	neut_scores = np.array(neut_scores)
+	causal_scores = causal_scores[~np.isnan(causal_scores)]
+	linked_scores = linked_scores[~np.isnan(linked_scores)]
+	neut_scores = neut_scores[~np.isnan(neut_scores)]
+
+
+
+
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
@@ -228,18 +265,26 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, thin
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	n_causal, bins_causal = np.hist(causal_scores, bins=givenBins, weights = weights_causal)
-	n_linked, bins_linked = np.hist(linked_scores, bins=givenBins, weights = weights_linked)
-	n_neut, bins_neut = np.hist(neut_scores, bins=givenBins, weights = weights_neut)
+	#put pseudocount for empty bins here?
+	#for givenBin in givenBins:
 
-	return n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut
+	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
+	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
+	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
+
+	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
+	#print(debug_array)
+
+	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
-	for status in ['causal', 'linked', 'neutral']:
+	for status in ['causal', 'linked', 'neut']:
 		writefilename = writePrefix + "_" + status + ".txt"
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
-		for index in range(len(n_scores)):
+		for index in range(len(n_scores)-1):
+
 			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
+			#print(towritestring)
 			writefile.write(towritestring)
 		writefile.close()
 	return
