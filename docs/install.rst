@@ -19,7 +19,7 @@ It is recommended to install cms into its own conda directory. This ensures its 
 
 A new conda environment can be created with the following command, which will also install relevant cms dependencies. It is recommended to use the Python3 version of the environment file::
 
-  conda env create -f=conda-environment_py3.yaml -n cms-env3
+  conda env create -f conda-environment_py3.yaml -n cms-env3
 
 Step 4: Activate the cms environment
 
