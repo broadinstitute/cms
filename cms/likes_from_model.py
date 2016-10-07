@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.05.16 vitti@broadinstitute.org
+## last updated: 10.07.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -324,7 +324,7 @@ def execute_likes_from_scores(args):
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_medians_str[ibin])
 	"""
-
+	xlims = scoreRange
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
@@ -347,7 +347,7 @@ def execute_likes_from_scores(args):
 		linked_positions = [sel_positions[variant] for variant in linked_indices]
 		linked_score_final = [sel_score_final[variant] for variant in linked_indices]
 
-		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, int(numLikesBins), args.thinToSize)
+		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_score_final, linked_score_final, neut_score_final, xlims, int(numLikesBins), args.thinToSize)
 		write_hists_to_files(args.outPrefix +"_" + bin_median, histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_median)
 
