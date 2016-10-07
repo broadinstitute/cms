@@ -329,7 +329,7 @@ def execute_likes_from_scores(args):
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	firstbinfilename = args.selFile_firstBin
-	binfile_entries = firstbinfilename.split(bin_starts[0])
+	binfile_entries = firstbinfilename.split(str(bin_starts[0]))
 	for bin_median in bin_medians_str:
 		binfilename = binfile_entries.join(bin_median)
 
@@ -338,6 +338,8 @@ def execute_likes_from_scores(args):
 
 		causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
 		linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 
+
+		print("loaded " +str(len(causal_indices)) + " causal variants, " + str(len(linked_indices)) + " linked variants from:" + binfilename)
 
 		causal_positions = [sel_positions[variant] for variant in causal_indices]
 		causal_score_final = [sel_score_final[variant] for variant in causal_indices]
