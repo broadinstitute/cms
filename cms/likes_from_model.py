@@ -331,7 +331,7 @@ def execute_likes_from_scores(args):
 	firstbinfilename = args.selFile_firstBin
 	binfile_entries = firstbinfilename.split(str(bin_starts[0]))
 	for bin_median in bin_medians_str:
-		binfilename = binfile_entries.join(bin_median)
+		binfilename = bin_median.join(binfile_entries)#binfile_entries.join(bin_median)
 
 		val_array = load_vals_from_files(binfilename, expectedlen_sel, indices_sel, stripHeader)		
 		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
