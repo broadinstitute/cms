@@ -9,6 +9,8 @@ from util.parallel import slurm_array
 import argparse
 import subprocess
 import sys, os
+import matplotlib as mp 
+mp.use('agg')
 import matplotlib.pyplot as plt
 
 #############################
