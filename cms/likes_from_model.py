@@ -92,8 +92,8 @@ def full_parser_likes_from_model():
 	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited, or passed as one file containing paths for each) with bins of probability density function to visualize.')	
 	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
 
-	for likes_parser in [likes_from_scores_parser]:#, visualize_likes_parser]:
-		likes_parser.add_argument('nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
+	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
+		likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
 	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
