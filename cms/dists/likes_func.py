@@ -75,7 +75,7 @@ def read_demographics_from_filename(filename):
 	dists = ['causal', 'linked', 'neut']
 	pops = range(1,5)
 
-	#filename_entries = filename.split('/')
+	filename_entries = filename.split('/')
 	filename_local = filename_entries[-1]
 
 	for model in models:
