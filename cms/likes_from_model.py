@@ -279,7 +279,8 @@ def execute_likes_from_scores(args):
 		expectedlen_sel, indices_sel = get_indices('nsl', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)				
 	else:
-		print("error")
+		print("Must specify score (e.g. --ihs)")
+		sys.exit(0)
 
 	xlims = scoreRange
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
