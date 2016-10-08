@@ -378,7 +378,11 @@ def execute_visualize_likes(args):
 			model = models[imodel]
 			
 			for ipop in range(len(pops)): #columns
-				ax = axes[imodel, ipop]
+				
+				if len(models) == 1:
+					ax = axes[ipop]
+				else:
+					ax = axes[imodel, ipop]
 				pop = pops[ipop]
 
 
