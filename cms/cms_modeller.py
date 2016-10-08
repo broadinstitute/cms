@@ -2,6 +2,9 @@
 ## top-level script for demographic modeling as part of CMS 2.0. 
 ## last updated: 10.08.16 vitti@broadinstitute.org
 
+import matplotlib as mp 
+mp.use('agg') #set backend
+
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
 from model.params_func import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
@@ -9,14 +12,13 @@ from model.search_func import read_dimensionsfile, sample_point, get_real_value,
 from model.plot_func import plot_comparison
 #from util.parallel import uger_array
 from scipy import optimize
-import matplotlib as mp 
 import numpy as np
 import subprocess
 import argparse
 import random
 import sys
 
-mp.use('agg') #set backend
+
 
 #############################
 ## DEFINE ARGUMENT PARSER ###
