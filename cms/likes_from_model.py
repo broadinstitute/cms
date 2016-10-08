@@ -253,33 +253,34 @@ def execute_likes_from_scores(args):
 		expectedlen_neut, indices_neut = get_indices('ihs', "neut")
 		expectedlen_sel, indices_sel = get_indices('ihs', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('ihs', numLikesBins)
-	if args.delihh:
+	elif args.delihh:
 		comparison, stripHeader = False, False
 		expectedlen_neut, indices_neut = get_indices('delihh', "neut")
 		expectedlen_sel, indices_sel = get_indices('delihh', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
-	if args.xpehh:
+	elif args.xpehh:
 		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('xp', "neut")
 		expectedlen_sel, indices_sel = get_indices('xp', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
-	if args.deldaf:
+	elif args.deldaf:
 		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('deldaf', "neut")
 		expectedlen_sel, indices_sel = get_indices('deldaf', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
-	if args.fst:
+	elif args.fst:
 		comparison, stripHeader = True, True
 		expectedlen_neut, indices_neut = get_indices('fst', "neut")
 		expectedlen_sel, indices_sel = get_indices('fst', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
-	if args.nsl:
+	elif args.nsl:
 		comparison, stripHeader = False, False
 		expectedlen_neut, indices_neut = get_indices('nsl', "neut")
 		expectedlen_sel, indices_sel = get_indices('nsl', "sel")
 		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)				
 	else:
-		print("error")
+		print("Must specify score (e.g. --ihs)")
+		sys.exit(0)
 
 	xlims = scoreRange
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
