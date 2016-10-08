@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.07.16 vitti@broadinstitute.org
+## last updated: 10.08.16 vitti@broadinstitute.org
 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
@@ -324,14 +324,18 @@ def execute_likes_from_scores(args):
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_medians_str[ibin])
 	"""
+	binfilename = ""
 	xlims = scoreRange
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	firstbinfilename = args.selFile_firstBin
-	binfile_entries = firstbinfilename.split(str(bin_starts[0]))
+	binfile_entries = firstbinfilename.split(str(bin_medians_str[0]))
 	for bin_median in bin_medians_str:
 		binfilename = bin_median.join(binfile_entries)#binfile_entries.join(bin_median)
+
+		if binfilename == binfilenamelast:
+			print("error iterating over selfreq bins; make sure that your scores are sorted into directories according to final sel DAF")
 
 		val_array = load_vals_from_files(binfilename, expectedlen_sel, indices_sel, stripHeader)		
 		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
@@ -350,7 +354,7 @@ def execute_likes_from_scores(args):
 		n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_score_final, linked_score_final, neut_score_final, xlims, int(numLikesBins), args.thinToSize)
 		write_hists_to_files(args.outPrefix +"_" + bin_median, histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_median)
-
+		binfilenamelast = binfilename
 	return
 def execute_visualize_likes(args):
 	likesfilenames = args.likesFiles
