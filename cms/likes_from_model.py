@@ -324,7 +324,7 @@ def execute_likes_from_scores(args):
 		write_hists_to_files(args.outPrefix +"_" + bin_medians_str[ibin], histBins, n_causal, n_linked, n_neut)
 		print("wrote to " + args.outPrefix +"_" + bin_medians_str[ibin])
 	"""
-	binfilename = ""
+	binfilenamelast = ""
 	xlims = scoreRange
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
