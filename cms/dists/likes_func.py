@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 10.3.16 vitti@broadinstitute.org
+## last updated: 10.8.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TkAgg') #set backend
@@ -75,22 +75,30 @@ def read_demographics_from_filename(filename):
 	dists = ['causal', 'linked', 'neut']
 	pops = range(1,5)
 
-	filename_entries = filename.split('/')
+	#filename_entries = filename.split('/')
 	filename_local = filename_entries[-1]
 
 	for model in models:
-		if model in filename_entries:
+		#if model in filename_entries:
+		#	break
+		if model in filename:
 			break
 	for score in scores:
-		if score in filename_entries:
+		#if score in filename_entries:
+		#	break
+		if score in filename:
 			break
 		else:
 			score = "fst"
 	for dist in dists:
 		if dist in filename_local:
 			break
+		#if dist in filename:
+		#	break
 	for pop in pops:
-		if "sel" + str(pop) in filename_entries:
+		#if "sel" + str(pop) in filename_entries:
+		#	break
+		if "sel" + str(pop) in filename:
 			break
 		#if "_" + str(pop) + "_" in
 	key = (model, score, dist, pop)
