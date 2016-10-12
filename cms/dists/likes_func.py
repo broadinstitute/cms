@@ -10,22 +10,22 @@ import os
 def get_hist_bins(score,numBins):
 	if score == "ihs":
 		scorerange = [-3., 3.]#[-4., 4.]
-		ylims = [0, .25]
+		ylims = [0, .1]#.25]
 	elif score == "delihh":
 		scorerange = [-2., 3.]
-		ylims = [0, .25]
+		ylims = [0, .1]#.25]
 	elif score == "fst":
 		scorerange = [-.05, 1.]#[-2., 4.5]
-		ylims = [0, .25]
+		ylims = [0, .1]#.25]
 	elif score == "deldaf" or score =="fst_deldaf":
 		scorerange = [-1., 1.]
-		ylims = [0, .25]
+		ylims = [0, .1]#.25]
 	elif score == "xp" or score =="xpehh":
-		scorerange = [-3., 7.]
-		ylims = [0, .25]
+		scorerange = [-3., 3.]#[-3., 7.]
+		ylims = [0, .1]#.25]
 	elif score=="nsl":
-		scorerange = [-4., 4.]
-		ylims = [0, .25]
+		scorerange = [-3., 3.]#-4., 4.]
+		ylims = [0, .1]#.25]
 	else:
 		print("error: " + score)
 	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
@@ -64,7 +64,20 @@ def get_old_likes():
 def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
 	assert len(starts) == len(ends)
 	midpoints = [(starts[i] + ends[i])/2 for i in range(len(starts))]
-	ax.scatter(midpoints, vals, color=color)
+
+	bar_width = (starts[0] - ends[0])/3
+	if color == "blue":
+		offset = 0
+	elif color == "red":
+		offset = bar_width
+	elif color == "green":
+		offset = (-1 * bar_width)
+
+	plot_xvals = [midpoints[i] + offset for i in range(len(midpoints))]
+
+	#ax.scatter(midpoints, vals, color=color)
+	ax.bar(plot_xvals, vals, bar_width, color=color)
+
 	ax.set_xlim(xlims)
 	ax.set_ylim(ylims)
 	return ax
