@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.02.16 vitti@broadinstitute.org
+## last updated: 10.09.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -272,10 +272,27 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
 	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
 
+	"""
+	## trying another way of making a Probability Density Function from a histogram...
+	## http://stackoverflow.com/questions/21532667/numpy-histogram-cumulative-density-does-not-sum-to-1
+	density_causal, bins_causal = np.histogram(causal_scores, normed=True, density = True)
+	unity_causal = density_causal / density_causal.sum()
+
+	density_linked, bins_linked = np.histogram(linked_scores, normed=True, density = True)
+	unity_linked = density_linked / density_linked.sum()
+
+	density_neut, bins_neut = np.histogram(neut_scores, normed=True, density = True)
+	unity_neut = density_neut / density_neut.sum()
+
+	return unity_causal, unity_linked, unity_neut, bins_causal, bins_linked, bins_neut
+	"""
+
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
 	#print(debug_array)
 
 	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
+
+
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 	for status in ['causal', 'linked', 'neut']:
 		writefilename = writePrefix + "_" + status + ".txt"

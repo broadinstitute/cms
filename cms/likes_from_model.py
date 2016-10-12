@@ -330,7 +330,12 @@ def execute_visualize_likes(args):
 				starts, ends, vals = read_likes_file(likesfilename)
 				key = read_demographics_from_filename(likesfilename) #key = (model, score, dist, pop)
 				likes_dict[key] = [starts, ends, vals]
-	
+				#print(likesfilename)
+				#print("\t" + str(key))
+				for item in key:
+					if str(item) not in likesfilename:
+						print("ERROR: " + str(item) + " " + likesfilename)
+
 	keys = likes_dict.keys()
 	scores, pops, models, dists = [], [], [], []
 	for key in keys:
@@ -384,7 +389,6 @@ def execute_visualize_likes(args):
 				else:
 					ax = axes[imodel, ipop]
 				pop = pops[ipop]
-
 
 				starts_causal, ends_causal, vals_causal = likes_dict[(model, score, 'causal', pop)]
 				starts_linked, ends_linked, vals_linked = likes_dict[(model, score, 'linked', pop)]
