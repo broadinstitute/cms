@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 10.8.16 vitti@broadinstitute.org
+## last updated: 10.12.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TkAgg') #set backend
@@ -9,7 +9,7 @@ import numpy as np
 import os
 def get_hist_bins(score,numBins):
 	if score == "ihs":
-		scorerange = [-4., 4.]
+		scorerange = [-3., 3.]#[-4., 4.]
 		ylims = [0, .25]
 	elif score == "delihh":
 		scorerange = [-2., 3.]
@@ -71,7 +71,7 @@ def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
 def read_demographics_from_filename(filename):
 	'''specific to a set of models/pops; facilitates quick visualization of arbitrary comparisons'''
 	models = ['default_112115_825am', 'default_default_101715_12pm', 'gradient_101915_treebase_6_best','nulldefault_constantsize', 'nulldefault']
-	scores = ['ihs', 'delihh', 'fst', 'xpehh', 'deldaf']
+	scores = ['ihs', 'delihh', 'fst', 'xpehh', 'deldaf', 'nsl']
 	dists = ['causal', 'linked', 'neut']
 	pops = range(1,5)
 
@@ -99,6 +99,8 @@ def read_demographics_from_filename(filename):
 		#if "sel" + str(pop) in filename_entries:
 		#	break
 		if "sel" + str(pop) in filename:
+			break
+		if "_" + str(pop) + "_" in filename_local:
 			break
 		#if "_" + str(pop) + "_" in
 	key = (model, score, dist, pop)

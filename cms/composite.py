@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 09.13.16 vitti@broadinstitute.org
+## last updated: 10.12.16 vitti@broadinstitute.org
 
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
@@ -112,7 +112,7 @@ def execute_xp_from_ihh(args):
 	inputtped1 = args.inIhh1
 	inputtped2 = args.inIhh2
 	outfilename = args.outfilename
-	cmd = "/dists/write_xpehh_fromihh"
+	cmd = "dists/write_xpehh_fromihh"
 	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
@@ -121,7 +121,7 @@ def execute_xp_from_ihh(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_poppair(args):
-	cmd = "/combine/combine_scores_poppair"
+	cmd = "combine/combine_scores_poppair"
 	if args.xp_reverse_pops:
 		xp_reversed = 0
 	else:
@@ -140,10 +140,10 @@ def execute_poppair(args):
 def execute_outgroups(args):
 	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
 	if not args.region: 	#GENOME-WIDE
-		cmd = "/combine/combine_scores_multiplepops"
+		cmd = "combine/combine_scores_multiplepops"
 		argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	else:	#WITHIN REGION
-		cmd = "/combine/combine_scores_multiplepops_region"
+		cmd = "combine/combine_scores_multiplepops_region"
 		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
