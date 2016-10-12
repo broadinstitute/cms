@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.09.16 vitti@broadinstitute.org
+## last updated: 10.12.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -289,6 +289,17 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
 	#print(debug_array)
+
+	totalNsnps = len(causal_scores) + len(linked_scores) + len(neut_scores)
+
+	#add pseudocount (pseudoprob) for empty bins
+	for ibin in range(len(n_causal)):
+		if n_causal[ibin] == 0:
+			n_causal[ibin] = (1./totalNsnps)
+		if n_linked[ibin] == 0:
+			n_linked[ibin] = (1./totalNsnps)
+		if n_neut[ibin] == 0:
+			n_neut[ibin] = (1./totalNsnps)
 
 	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
 
