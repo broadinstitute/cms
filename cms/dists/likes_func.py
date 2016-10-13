@@ -65,7 +65,7 @@ def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
 	assert len(starts) == len(ends)
 	midpoints = [(starts[i] + ends[i])/2 for i in range(len(starts))]
 
-	bar_width = (starts[0] - ends[0])/3
+	bar_width = (starts[0] - ends[0])/5
 	if color == "blue":
 		offset = 0
 	elif color == "red":
