@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.12.16 vitti@broadinstitute.org
+## last updated: 10.14.16 vitti@broadinstitute.org
 
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
+from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index
 from dists.scores_func import calc_fst_deldaf 
 import subprocess
 import argparse
+import gzip
 import sys
 import os
 
@@ -25,6 +30,14 @@ def full_parser_composite():
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
 
+	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
+	hapviz_parser.add_argument('haps', type=str, action="store", help="input data, as tped or vcf")
+	hapviz_parser.add_argument('out',type=str,default=None, help="save image as file")
+	hapviz_parser.add_argument('--startpos',type=int,default=-1, help="define physical bounds of region")
+	hapviz_parser.add_argument('--endpos',type=int,default=10e10, help="define physical bounds of region")
+	hapviz_parser.add_argument('--corepos',type=int,default=-1, help="partition haplotypes based on allele status at this position")
+	hapviz_parser.add_argument('--title', type=str, default=None, help="title to give to plot")
+	hapviz_parser.add_argument('--annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
 
 	win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
 	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
@@ -91,6 +104,172 @@ def full_parser_composite():
 def execute_freqscores(args):
 	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath)
 	return
+def execute_hapviz(args):
+	"""original Shervin Tabrizi update Joe Vitti"""
+	##############
+	## LOAD DATA##
+	##############
+	inputfilename = args.haps
+	coreindex = -1
+	if ".hap" in inputfilename:
+		haplotypes = []
+		h = open(inputfilename, 'r')
+		if h.readline().strip() == "##format=hapmap2transposed":
+			transpose = True
+		else:
+			transpose = False
+			h.seek(0)
+		
+		coreindex = -1
+		indexcounter = 0
+		for line in h: 
+			haplotypes.append(''.join(line.strip().split()[1]))
+
+			pos = line.strip().split()[0]
+			if int(pos) == int(args.corepos):
+				#print("found the core snp")
+				coreindex = indexcounter
+			indexcounter +=1
+
+		if transpose:
+			haplotypes2 = ['']*len(haplotypes[0])
+			for i in haplotypes:
+				for j in range(len(i)):
+					haplotypes2[j] += i[j]
+
+		haplotypes = haplotypes2
+
+	else:
+		startpos, endpos = int(args.startpos), int(args.endpos)
+		if ".tped" in inputfilename:
+			varids, genpositions, physpositions, all_genotypes = [], [], [], []
+
+			if ".gz" in inputfilename:
+				print("unzip!")
+				sys.exit(0)
+				#infile = gzip.open(inputfilename, 'rb')
+			else:
+				infile = open(inputfilename, 'r')
+			i = 0
+			for line in infile:
+				entries = line.split()
+				chrom, varid, genpos, physpos, genotypes = entries[0], entries[1], entries[2], entries[3], entries[4:]
+				physpos = int(physpos)
+				if physpos == int(args.corepos):
+					coreindex = i
+				if int(physpos) >= startpos and physpos <= endpos:
+					varids.append(varid)
+					genpositions.append(float(genpos))
+					physpositions.append(physpos)
+					all_genotypes.append(genotypes)
+				elif physpos > endpos:
+					break
+				i+=1
+			infile.close()
+		"""
+		elif ".vcf" in inputfilename:
+			varids, genpositions, physpositions, all_genotypes = [], [], [], []
+
+			if ".gz" in inputfilename:
+				print("unzip!")
+				sys.exit(0)
+				infile = gzip.open(inputfilename, 'rb')
+			else:
+				infile = open(inputfilename, 'r')
+
+			line = infile.readline()
+			entries = line.split()
+			while entries[0] != "#CHROM":
+				line = infile.readline()
+				entries = line.split()
+			#VCF-filter-pop option previously built in here
+			#vcfindivs = entries[9:]
+			#genotype_indices = [vcfindivs.index(item) for item in totakeindivs]
+			#print genotype_indices
+			i = 0
+			for line in sourcefile:
+				entries = line.split()
+				pos = int(entries[1])
+				if physpos == int(args.corepos):
+					coreindex = i
+				if pos >= startpos and pos <= endpos:
+					these_genotypes = []
+					varids.append(entries[1])	#entries[2])
+					physpositions.append(pos)
+					genotypes = entries[9:] #technically gratuitous
+					#for genotype_index in genotype_indices:
+					#	theseVars = genotypes[genotype_index]
+					for theseVars in genotypes:
+						var1, var2 = theseVars[0], theseVars[2] #from diploid formatting
+						these_genotypes.append(var1)
+						these_genotypes.append(var2)
+					all_genotypes.append(these_genotypes)
+				elif pos > endpos:
+					break
+				i+=1
+			infile.close()
+		"""
+		haplotypes = []
+		#h = open(infile, 'r')
+		#if h.readline().strip() == "##format=hapmap2transposed":
+		#	transpose = True
+		#else:
+		#	transpose = False
+		#	h.seek(0)
+		#for line in h: haplotypes.append(''.join(line.strip().split()[1]))
+		for genotypelist in all_genotypes: 
+			#print(genotypelist)
+			haplotype = ''.join(genotypelist)
+			haplotypes.append(haplotype)
+			#haplotypes.append(''.join(genotypelist.strip().split()[1]))
+
+		transpose = True
+		if transpose:
+			haplotypes2 = ['']*len(haplotypes[0])
+			for i in haplotypes:
+				for j in range(len(i)):
+					haplotypes2[j] += i[j]
+		haplotypes = haplotypes2
+
+
+
+	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
+
+
+	########################
+	## SORT BY SIMILARITY ##
+	########################
+	if args.corepos:
+		coreindex = -1 #GET CORE INDEX
+		print("corepos arg: " + str(args.corepos))
+		hap = hapSort_coreallele(haplotypes, coreindex)
+	else:
+		hap = hapSort(haplotypes) 
+
+	##########
+	## PLOT ##
+	##########
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	hapViz(ax, hap[0], args.out)
+
+	if args.annotate is not None:
+		positions, annotations = readAnnotations(args.annotate)
+		ylim = ax.axis()[-1]
+		for i_snppos in range(len(positions)):
+			snppos = positions[i_snppos]
+			annotation = annotations[i_snppos]
+			foundindex = find_snp_index(args.haps, snppos) 
+			plt.plot(foundindex, ylim, "v", color="black", markersize=1)
+			plt.plot(foundindex, -5, "^", color="black", markersize=1)
+			plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
+
+	if args.title is not None:
+		plt.title(args.title, fontsize=5)
+
+	plt.savefig(args.out,  bbox_inches = 'tight', dpi=1000)
+	plt.close()
+	return	
 def execute_win_haps(args):
 	windowsize = args.windowsize
 	jumplen = args.jumplen
