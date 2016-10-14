@@ -1,10 +1,6 @@
 ## functions for viewing haplotypes original Shervin Tabrizi update Joe Vitti
 ## last updated 10.14.16 	vitti@broadinstitute.org
 
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as ptc
 import numpy as np
 import os
 
@@ -13,33 +9,11 @@ def difference(hap1,hap2):
 	for i in range(len(hap1)):
 		if hap1[i] != hap2[i]: dif += 1
 	return dif
-def hapSortdbg(infile):
-	haplotypes = []
-	with open(infile, 'r') as h:
-		for line in h: haplotypes.append(line.strip())
-	return haplotypes 
-def hapSort(infile):
+def hapSort(haplotypes):
 	"""
 	sorts haplotypes to better visualize haplotype blocks
 	"""
-	haplotypes = []
-	h = open(infile, 'r')
-	if h.readline().strip() == "##format=hapmap2transposed":
-		transpose = True
-	else:
-		transpose = False
-		h.seek(0)
 
-	for line in h: haplotypes.append(''.join(line.strip().split()[1]))
-	
-	if transpose:
-		haplotypes2 = ['']*len(haplotypes[0])
-		for i in haplotypes:
-			for j in range(len(i)):
-				haplotypes2[j] += i[j]
-
-	haplotypes = haplotypes2
-	
 	haplotypes_sorted = []	
 	
 	print("Now getting differences")
@@ -79,35 +53,9 @@ def hapSort(infile):
 	#print("length of sorted haps: " + str(len(haplotypes_sorted)))
 
 	return [haplotypes_sorted,indices]
-def hapSort_coreallele(infilename, corepos):
+def hapSort_coreallele(haplotypes, coreindex):
 	"""sorts haplotypes to better visualize haplotype blocks
 	THIS VERS: separates based on core allele specified as string"""
-	haplotypes = []
-	h = open(infilename, 'r')
-	if h.readline().strip() == "##format=hapmap2transposed":
-		transpose = True
-	else:
-		transpose = False
-		h.seek(0)
-	
-	coreindex = -1
-	indexcounter = 0
-	for line in h: 
-		haplotypes.append(''.join(line.strip().split()[1]))
-
-		pos = line.strip().split()[0]
-		if pos == corepos:
-			print("found the core snp")
-			coreindex = indexcounter
-		indexcounter +=1
-
-	if transpose:
-		haplotypes2 = ['']*len(haplotypes[0])
-		for i in haplotypes:
-			for j in range(len(i)):
-				haplotypes2[j] += i[j]
-
-	haplotypes = haplotypes2
 
 	if coreindex == -1:
 		print("did not find core snp in " + infilename)
@@ -115,9 +63,8 @@ def hapSort_coreallele(infilename, corepos):
 
 	else:
 
-		#print coreindex
 		zerohaps, onehaps, twohaps = [], [], [] #partition based on allele at core site
-		#zerocount, onecount, twocount = 0, 0, 0
+
 		for i in range(len(haplotypes)):
 			if haplotypes[i][coreindex] == '0':
 				zerohaps.append(haplotypes[i])
