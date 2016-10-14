@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.12.16 vitti@broadinstitute.org
+## last updated: 10.14.16 vitti@broadinstitute.org
 
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
+from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index
 from dists.scores_func import calc_fst_deldaf 
 import subprocess
 import argparse
@@ -25,6 +26,12 @@ def full_parser_composite():
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
 
+	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
+	hapviz_parser.add_argument('inTped', type=str, action="store", help="input data")
+	hapviz_parser.add_argument('-out',type=str,default=None, help="save image as file")
+	hapviz_parser.add_argument('-corepos',type=str,default=None, help="partition haplotypes based on allele status at this position")
+	hapviz_parser.add_argument('-title', type=str, default=None, help="title to give to plot")
+	hapviz_parser.add_argument('-annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
 
 	win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
 	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
@@ -91,6 +98,38 @@ def full_parser_composite():
 def execute_freqscores(args):
 	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath)
 	return
+def execute_hapviz(args):
+	if args.corepos:
+		print("corepos arg: " + str(args.corepos))
+		hap = hapSort_coreallele(args.haps, args.corepos)
+		coreindex = int(hap[2])
+	else:
+		hap = hapSort(args.haps)
+
+	numHap = len(hap[0])   
+
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+
+	hapViz(ax, hap[0], args.out)
+
+	if args.annotate is not None:
+		positions, annotations = readAnnotations(args.annotate)
+		ylim = ax.axis()[-1]
+		for i_snppos in range(len(positions)):
+			snppos = positions[i_snppos]
+			annotation = annotations[i_snppos]
+			foundindex = find_snp_index(args.haps, snppos) 
+			plt.plot(foundindex, ylim, "v", color="black", markersize=1)
+			plt.plot(foundindex, -5, "^", color="black", markersize=1)
+			plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
+
+	if args.title is not None:
+		plt.title(args.title, fontsize=5)
+
+	plt.savefig(args.out,  bbox_inches = 'tight', dpi=1000)
+	plt.close()
+	return	
 def execute_win_haps(args):
 	windowsize = args.windowsize
 	jumplen = args.jumplen
