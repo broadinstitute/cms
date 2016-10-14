@@ -11,6 +11,7 @@ from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotation
 from dists.scores_func import calc_fst_deldaf 
 import subprocess
 import argparse
+import gzip
 import sys
 import os
 
@@ -32,9 +33,9 @@ def full_parser_composite():
 	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
 	hapviz_parser.add_argument('haps', type=str, action="store", help="input data, as tped or vcf")
 	hapviz_parser.add_argument('out',type=str,default=None, help="save image as file")
-	hapviz_parser.add_argument('--startpos',type=int,default=None, help="define physical bounds of region")
-	hapviz_parser.add_argument('--endpos',type=int,default=None, help="define physical bounds of region")
-	hapviz_parser.add_argument('--corepos',type=int,default=None, help="partition haplotypes based on allele status at this position")
+	hapviz_parser.add_argument('--startpos',type=int,default=-1, help="define physical bounds of region")
+	hapviz_parser.add_argument('--endpos',type=int,default=10e10, help="define physical bounds of region")
+	hapviz_parser.add_argument('--corepos',type=int,default=-1, help="partition haplotypes based on allele status at this position")
 	hapviz_parser.add_argument('--title', type=str, default=None, help="title to give to plot")
 	hapviz_parser.add_argument('--annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
 
@@ -139,12 +140,14 @@ def execute_hapviz(args):
 		haplotypes = haplotypes2
 
 	else:
-
+		startpos, endpos = int(args.startpos), int(args.endpos)
 		if ".tped" in inputfilename:
 			varids, genpositions, physpositions, all_genotypes = [], [], [], []
 
 			if ".gz" in inputfilename:
-				infile = gzip.open(inputfilename, 'rb')
+				print("unzip!")
+				sys.exit(0)
+				#infile = gzip.open(inputfilename, 'rb')
 			else:
 				infile = open(inputfilename, 'r')
 			i = 0
@@ -154,7 +157,7 @@ def execute_hapviz(args):
 				physpos = int(physpos)
 				if physpos == int(args.corepos):
 					coreindex = i
-				if physpos >= startpos and physpos <= endpos:
+				if int(physpos) >= startpos and physpos <= endpos:
 					varids.append(varid)
 					genpositions.append(float(genpos))
 					physpositions.append(physpos)
@@ -163,11 +166,13 @@ def execute_hapviz(args):
 					break
 				i+=1
 			infile.close()
-
+		"""
 		elif ".vcf" in inputfilename:
 			varids, genpositions, physpositions, all_genotypes = [], [], [], []
 
 			if ".gz" in inputfilename:
+				print("unzip!")
+				sys.exit(0)
 				infile = gzip.open(inputfilename, 'rb')
 			else:
 				infile = open(inputfilename, 'r')
@@ -203,7 +208,7 @@ def execute_hapviz(args):
 					break
 				i+=1
 			infile.close()
-
+		"""
 		haplotypes = []
 		#h = open(infile, 'r')
 		#if h.readline().strip() == "##format=hapmap2transposed":
@@ -212,7 +217,11 @@ def execute_hapviz(args):
 		#	transpose = False
 		#	h.seek(0)
 		#for line in h: haplotypes.append(''.join(line.strip().split()[1]))
-		for genotypelist in all_genotypes: haplotypes.append(''.join(genotypelist.strip().split()[1]))
+		for genotypelist in all_genotypes: 
+			#print(genotypelist)
+			haplotype = ''.join(genotypelist)
+			haplotypes.append(haplotype)
+			#haplotypes.append(''.join(genotypelist.strip().split()[1]))
 
 		transpose = True
 		if transpose:

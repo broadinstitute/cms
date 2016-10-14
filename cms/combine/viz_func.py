@@ -1,6 +1,7 @@
 ## functions for viewing haplotypes original Shervin Tabrizi update Joe Vitti
 ## last updated 10.14.16 	vitti@broadinstitute.org
 
+import matplotlib
 import numpy as np
 import os
 
@@ -58,7 +59,7 @@ def hapSort_coreallele(haplotypes, coreindex):
 	THIS VERS: separates based on core allele specified as string"""
 
 	if coreindex == -1:
-		print("did not find core snp in " + infilename)
+		#print("did not find core snp in " + infilename)
 		return hapSortSub(haplotypes)
 
 	else:
@@ -124,7 +125,7 @@ def hapSortSub(haplotypes):
 	for index in indices:
 		haplotypes_sorted.append( haplotypes[index] )
 	
-	assert len(haplotypes) == len(haplotyes_sorted)
+	assert len(haplotypes) == len(haplotypes_sorted)
 	#print("length of orig haps: " +str(len(haplotypes)))
 	#print("length of sorted haps: " + str(len(haplotypes_sorted)))
 
