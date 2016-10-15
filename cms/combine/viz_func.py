@@ -1,10 +1,66 @@
 ## functions for viewing haplotypes original Shervin Tabrizi update Joe Vitti
-## last updated 10.14.16 	vitti@broadinstitute.org
+## last updated 10.15.16 	vitti@broadinstitute.org
 
 import matplotlib
 import numpy as np
 import os
+def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transpose = True, saveHapFile = None):
+	coreindex = -1
+	varids, genpositions, physpositions, all_genotypes = [], [], [], []
+	if ".gz" in inputfilename:
+		print("unzip!")
+		sys.exit(0)
+		#infile = gzip.open(inputfilename, 'rb')
+	infile = open(inputfilename, 'r')
+	i = 0
+	for line in infile:
+		entries = line.split()
+		chrom, varid, genpos, physpos, genotypes = entries[0], entries[1], entries[2], entries[3], entries[4:]
+		physpos = int(physpos)
+		if corePos is not None:
+			if physpos == int(corePos):
+				coreindex = i
+		if int(physpos) >= startpos and physpos <= endpos:
+			varids.append(varid)
+			genpositions.append(float(genpos))
+			physpositions.append(physpos)
+			all_genotypes.append(genotypes)
+		elif physpos > endpos:
+			break
+		i+=1
+	infile.close()
 
+	if maf is not None:
+		filtered_haps = []
+		filter_maf = float(maf)
+		for genotypelist in all_genotypes:
+			genotypes = [int(x) for x in genotypelist]
+			n_a0 = float(genotypes.count(0))
+			n_a1 = float(genotypes.count(1))
+			n = float(len(genotypes))
+
+			f_a0 = n_a0 / n
+			f_a1 = n_a1 / n
+			if f_a0 < filter_maf or f_a1 < filter_maf:
+				pass
+			else:
+				filtered_haps.append(genotypelist)
+		all_genotypes = filtered_haps
+
+	haplotypes = []
+	for genotypelist in all_genotypes: 
+		haplotype = ''.join(genotypelist)
+		haplotypes.append(haplotype)
+
+	if transpose:
+		haplotypes2 = zip(*haplotypes)
+		haplotypes = list(haplotypes2)
+
+	if saveHapFile is not None:
+		print('come back to this')
+		pass
+
+	return haplotypes, coreindex
 def difference(hap1,hap2):
 	dif = 0
 	for i in range(len(hap1)):
