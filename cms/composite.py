@@ -7,7 +7,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
-from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index
+from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion
 from dists.scores_func import calc_fst_deldaf 
 import subprocess
 import argparse
@@ -30,71 +30,76 @@ def full_parser_composite():
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
 
+	#pullhaps_parser = subparsers.add_parser('pullhaps', help="load haplotypes from vcf/tped and write to file")
+	#necessary?
+
 	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
-	hapviz_parser.add_argument('haps', type=str, action="store", help="input data, as tped or vcf")
+	hapviz_parser.add_argument('inputfile', type=str, action="store", help="input tped")
+	hapviz_parser.add_argument('startpos',type=int, help="define physical bounds of region")
+	hapviz_parser.add_argument('endpos',type=int, help="define physical bounds of region")
 	hapviz_parser.add_argument('out',type=str,default=None, help="save image as file")
-	hapviz_parser.add_argument('--startpos',type=int,default=-1, help="define physical bounds of region")
-	hapviz_parser.add_argument('--endpos',type=int,default=10e10, help="define physical bounds of region")
 	hapviz_parser.add_argument('--corepos',type=int,default=-1, help="partition haplotypes based on allele status at this position")
 	hapviz_parser.add_argument('--title', type=str, default=None, help="title to give to plot")
 	hapviz_parser.add_argument('--annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
 
-	win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
-	win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
-	win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
-	win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
-	win_haps_parser.add_argument('--jumplen', default=15, type=int, help='number of SNPs to distance windows')
+	if True:
 
-	interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="Fill (otherwise omitted) iHS values at low-freq sites based on sliding window averages.")
-	interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
-	interpolate_hapscores_parser.add_argument('inihsfilename', type=str, action='store', help="input per-site score file")
-	interpolate_hapscores_parser.add_argument('inwinihsfilename', type=str, action='store', help="input window score file")
-	interpolate_hapscores_parser.add_argument('outfilename', type=str, action='store', help="file to write")			
+		win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
+		win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
+		win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
+		win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
+		win_haps_parser.add_argument('--jumplen', default=15, type=int, help='number of SNPs to distance windows')
 
-	delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs', help="Calculate delIHH values from iHS output files.")
-	delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
-	delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
+		interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="Fill (otherwise omitted) iHS values at low-freq sites based on sliding window averages.")
+		interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
+		interpolate_hapscores_parser.add_argument('inihsfilename', type=str, action='store', help="input per-site score file")
+		interpolate_hapscores_parser.add_argument('inwinihsfilename', type=str, action='store', help="input window score file")
+		interpolate_hapscores_parser.add_argument('outfilename', type=str, action='store', help="file to write")			
 
-	xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="Calculate XP-EHH based on two per-pop iHH files.")
-	xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
-	xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
-	xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
+		delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs', help="Calculate delIHH values from iHS output files.")
+		delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
+		delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
 
-	###############
-	## POP PAIRS ##
-	###############
-	poppair_parser = subparsers.add_parser('poppair', help='Collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons).')
-	poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
-	poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
-	poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
-	poppair_parser.add_argument('in_fst_deldaf_file', type=str, action='store', help="file with Fst, delDaf values for poppair")
-	poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
-	poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
-	poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
+		xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="Calculate XP-EHH based on two per-pop iHH files.")
+		xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
+		xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
+		xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
 
-	########################
-	## LARGER COMPARISONS ##
-	########################
-	outgroups_parser = subparsers.add_parser('outgroups', help='Combine scores from comparisons of a putative selected pop to 2+ outgroups.')
-	outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
-	outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
-	outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
-	outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
-	outgroups_parser.add_argument('--chrom', type=str, action="store", help="chromosome containing region") #FOR WITHIN-REGION CMS
-	outgroups_parser.add_argument('--startBp', type=int, action="store", help="start location of region in basepairs")
-	outgroups_parser.add_argument('--endBp', type=int, action="store", help="end location of region in basepairs")
+		###############
+		## POP PAIRS ##
+		###############
+		poppair_parser = subparsers.add_parser('poppair', help='Collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons).')
+		poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
+		poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
+		poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
+		poppair_parser.add_argument('in_fst_deldaf_file', type=str, action='store', help="file with Fst, delDaf values for poppair")
+		poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
+		poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
+		poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
 
-	for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
-		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+		########################
+		## LARGER COMPARISONS ##
+		########################
+		outgroups_parser = subparsers.add_parser('outgroups', help='Combine scores from comparisons of a putative selected pop to 2+ outgroups.')
+		outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
+		outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
+		outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
+		outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
+		outgroups_parser.add_argument('--chrom', type=str, action="store", help="chromosome containing region") #FOR WITHIN-REGION CMS
+		outgroups_parser.add_argument('--startBp', type=int, action="store", help="start location of region in basepairs")
+		outgroups_parser.add_argument('--endBp', type=int, action="store", help="end location of region in basepairs")
 
-	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
-	
-	ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
-	ucsc_viz_parser.add_argument('infile_prefix', type=str, action="store", help="prefix of file containing scores to be reformatted (e.g. 'score_chr' for files named scores_chr#.txt)")
-	ucsc_viz_parser.add_argument('outfile', type=str, action="store", help="file to write")
-	ucsc_viz_parser.add_argument('--posIndex', type=int, action="store", default=1, help="index for column of datafile containing physical position (zero-indexed)")
-	ucsc_viz_parser.add_argument('--scoreIndex', type=str, action="store", default=-2, help="index for column of datafile containing score (zero-indexed)")
-	ucsc_viz_parser.add_argument('--strip_header', action="store_true", help="if input files include header line")
+		for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
+			common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+
+		ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
+		
+		ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
+		ucsc_viz_parser.add_argument('infile_prefix', type=str, action="store", help="prefix of file containing scores to be reformatted (e.g. 'score_chr' for files named scores_chr#.txt)")
+		ucsc_viz_parser.add_argument('outfile', type=str, action="store", help="file to write")
+		ucsc_viz_parser.add_argument('--posIndex', type=int, action="store", default=1, help="index for column of datafile containing physical position (zero-indexed)")
+		ucsc_viz_parser.add_argument('--scoreIndex', type=str, action="store", default=-2, help="index for column of datafile containing score (zero-indexed)")
+		ucsc_viz_parser.add_argument('--strip_header', action="store_true", help="if input files include header line")
 
 	return parser
 
@@ -109,132 +114,11 @@ def execute_hapviz(args):
 	##############
 	## LOAD DATA##
 	##############
-	inputfilename = args.haps
-	coreindex = -1
-	if ".hap" in inputfilename:
-		haplotypes = []
-		h = open(inputfilename, 'r')
-		if h.readline().strip() == "##format=hapmap2transposed":
-			transpose = True
-		else:
-			transpose = False
-			h.seek(0)
-		
-		coreindex = -1
-		indexcounter = 0
-		for line in h: 
-			haplotypes.append(''.join(line.strip().split()[1]))
-
-			pos = line.strip().split()[0]
-			if int(pos) == int(args.corepos):
-				#print("found the core snp")
-				coreindex = indexcounter
-			indexcounter +=1
-
-		if transpose:
-			haplotypes2 = ['']*len(haplotypes[0])
-			for i in haplotypes:
-				for j in range(len(i)):
-					haplotypes2[j] += i[j]
-
-		haplotypes = haplotypes2
-
-	else:
-		startpos, endpos = int(args.startpos), int(args.endpos)
-		if ".tped" in inputfilename:
-			varids, genpositions, physpositions, all_genotypes = [], [], [], []
-
-			if ".gz" in inputfilename:
-				print("unzip!")
-				sys.exit(0)
-				#infile = gzip.open(inputfilename, 'rb')
-			else:
-				infile = open(inputfilename, 'r')
-			i = 0
-			for line in infile:
-				entries = line.split()
-				chrom, varid, genpos, physpos, genotypes = entries[0], entries[1], entries[2], entries[3], entries[4:]
-				physpos = int(physpos)
-				if physpos == int(args.corepos):
-					coreindex = i
-				if int(physpos) >= startpos and physpos <= endpos:
-					varids.append(varid)
-					genpositions.append(float(genpos))
-					physpositions.append(physpos)
-					all_genotypes.append(genotypes)
-				elif physpos > endpos:
-					break
-				i+=1
-			infile.close()
-		"""
-		elif ".vcf" in inputfilename:
-			varids, genpositions, physpositions, all_genotypes = [], [], [], []
-
-			if ".gz" in inputfilename:
-				print("unzip!")
-				sys.exit(0)
-				infile = gzip.open(inputfilename, 'rb')
-			else:
-				infile = open(inputfilename, 'r')
-
-			line = infile.readline()
-			entries = line.split()
-			while entries[0] != "#CHROM":
-				line = infile.readline()
-				entries = line.split()
-			#VCF-filter-pop option previously built in here
-			#vcfindivs = entries[9:]
-			#genotype_indices = [vcfindivs.index(item) for item in totakeindivs]
-			#print genotype_indices
-			i = 0
-			for line in sourcefile:
-				entries = line.split()
-				pos = int(entries[1])
-				if physpos == int(args.corepos):
-					coreindex = i
-				if pos >= startpos and pos <= endpos:
-					these_genotypes = []
-					varids.append(entries[1])	#entries[2])
-					physpositions.append(pos)
-					genotypes = entries[9:] #technically gratuitous
-					#for genotype_index in genotype_indices:
-					#	theseVars = genotypes[genotype_index]
-					for theseVars in genotypes:
-						var1, var2 = theseVars[0], theseVars[2] #from diploid formatting
-						these_genotypes.append(var1)
-						these_genotypes.append(var2)
-					all_genotypes.append(these_genotypes)
-				elif pos > endpos:
-					break
-				i+=1
-			infile.close()
-		"""
-		haplotypes = []
-		#h = open(infile, 'r')
-		#if h.readline().strip() == "##format=hapmap2transposed":
-		#	transpose = True
-		#else:
-		#	transpose = False
-		#	h.seek(0)
-		#for line in h: haplotypes.append(''.join(line.strip().split()[1]))
-		for genotypelist in all_genotypes: 
-			#print(genotypelist)
-			haplotype = ''.join(genotypelist)
-			haplotypes.append(haplotype)
-			#haplotypes.append(''.join(genotypelist.strip().split()[1]))
-
-		transpose = True
-		if transpose:
-			haplotypes2 = ['']*len(haplotypes[0])
-			for i in haplotypes:
-				for j in range(len(i)):
-					haplotypes2[j] += i[j]
-		haplotypes = haplotypes2
-
-
-
+	inputfilename = args.inputfile
+	startpos = int(args.startpos)
+	endpos = int(args.endpos)
+	haplotypes, coreindex = pullRegion(inputfilename, startpos, endpos)
 	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
-
 
 	########################
 	## SORT BY SIMILARITY ##
