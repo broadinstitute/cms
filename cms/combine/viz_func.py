@@ -265,4 +265,5 @@ def find_snp_index(infilename, snppos):
 			coreindex = indexcounter
 			break
 		indexcounter +=1
+	#print(str(coreindex))
 	return coreindex

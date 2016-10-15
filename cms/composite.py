@@ -145,14 +145,16 @@ def execute_hapviz(args):
 			snppos = positions[i_snppos]
 			annotation = annotations[i_snppos]
 			foundindex = find_snp_index(inputfilename, snppos) 
-			plt.plot(foundindex, ylim, "v", color="black", markersize=1)
-			plt.plot(foundindex, -5, "^", color="black", markersize=1)
-			plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
+			if foundindex is not -1:
+				plt.plot(foundindex, ylim, "v", color="black", markersize=1)
+				plt.plot(foundindex, -5, "^", color="black", markersize=1)
+				plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
 
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
 
-	plt.savefig(args.out,  bbox_inches = 'tight', dpi=1000)
+	#fig.show()
+	plt.savefig(args.out,  bbox_inches = 'tight', dpi=3000)
 	plt.close()
 	return	
 def execute_win_haps(args):
