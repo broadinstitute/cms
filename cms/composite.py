@@ -41,6 +41,8 @@ def full_parser_composite():
 	hapviz_parser.add_argument('--corepos',type=int,default=-1, help="partition haplotypes based on allele status at this position")
 	hapviz_parser.add_argument('--title', type=str, default=None, help="title to give to plot")
 	hapviz_parser.add_argument('--annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
+	hapviz_parser.add_argument('--maf', type=str, default=None, help="filter on minor allele frequency (e.g. .01, .05)")			
+
 
 	if True:
 
@@ -117,15 +119,14 @@ def execute_hapviz(args):
 	inputfilename = args.inputfile
 	startpos = int(args.startpos)
 	endpos = int(args.endpos)
-	haplotypes, coreindex = pullRegion(inputfilename, startpos, endpos)
+
+	haplotypes, coreindex = pullRegion(inputfilename, startpos, endpos, args.maf)
 	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
 
 	########################
 	## SORT BY SIMILARITY ##
 	########################
 	if args.corepos:
-		coreindex = -1 #GET CORE INDEX
-		print("corepos arg: " + str(args.corepos))
 		hap = hapSort_coreallele(haplotypes, coreindex)
 	else:
 		hap = hapSort(haplotypes) 

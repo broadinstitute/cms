@@ -4,7 +4,7 @@
 import matplotlib
 import numpy as np
 import os
-def pullRegion(inputfilename, startpos, endpos, corePos = None, transpose = True, saveHapFile = None):
+def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transpose = True, saveHapFile = None):
 	coreindex = -1
 	varids, genpositions, physpositions, all_genotypes = [], [], [], []
 	if ".gz" in inputfilename:
@@ -29,6 +29,23 @@ def pullRegion(inputfilename, startpos, endpos, corePos = None, transpose = True
 			break
 		i+=1
 	infile.close()
+
+	if maf is not None:
+		filtered_haps = []
+		filter_maf = float(maf)
+		for genotypelist in all_genotypes:
+			genotypes = [int(x) for x in genotypelist]
+			n_a0 = float(genotypes.count(0))
+			n_a1 = float(genotypes.count(1))
+			n = float(len(genotypes))
+
+			f_a0 = n_a0 / n
+			f_a1 = n_a1 / n
+			if f_a0 < filter_maf or f_a1 < filter_maf:
+				pass
+			else:
+				filtered_haps.append(genotypelist)
+		all_genotypes = filtered_haps
 
 	haplotypes = []
 	for genotypelist in all_genotypes: 
