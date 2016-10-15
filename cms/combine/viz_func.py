@@ -256,16 +256,11 @@ def readAnnotations(annotationfilename):
 	return positions, annotations
 def find_snp_index(infilename, snppos):
 	h = open(infilename, 'r')##
-	if h.readline().strip() == "##format=hapmap2transposed":
-		transpose = True
-	else:
-		transpose = False
-		h.seek(0)
 	coreindex = -1
 	indexcounter = 0
 	for line in h: 
-		pos = line.strip().split()[0]
-		if pos == snppos:
+		pos = line.strip().split()[3]
+		if int(pos) == int(snppos):
 			#print("found the core snp")
 			coreindex = indexcounter
 			break

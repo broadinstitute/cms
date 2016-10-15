@@ -144,7 +144,7 @@ def execute_hapviz(args):
 		for i_snppos in range(len(positions)):
 			snppos = positions[i_snppos]
 			annotation = annotations[i_snppos]
-			foundindex = find_snp_index(args.haps, snppos) 
+			foundindex = find_snp_index(inputfilename, snppos) 
 			plt.plot(foundindex, ylim, "v", color="black", markersize=1)
 			plt.plot(foundindex, -5, "^", color="black", markersize=1)
 			plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
