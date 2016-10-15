@@ -7,7 +7,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
-from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion
+from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf 
 import subprocess
 import argparse
@@ -30,18 +30,16 @@ def full_parser_composite():
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
 	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
 
-	#pullhaps_parser = subparsers.add_parser('pullhaps', help="load haplotypes from vcf/tped and write to file")
-	#necessary?
-
 	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
 	hapviz_parser.add_argument('inputfile', type=str, action="store", help="input tped")
-	hapviz_parser.add_argument('startpos',type=int, help="define physical bounds of region")
-	hapviz_parser.add_argument('endpos',type=int, help="define physical bounds of region")
+	hapviz_parser.add_argument('--startpos',type=int, help="define physical bounds of region")
+	hapviz_parser.add_argument('--endpos',type=int, help="define physical bounds of region")
 	hapviz_parser.add_argument('out',type=str,default=None, help="save image as file")
 	hapviz_parser.add_argument('--corepos',type=int,default=-1, help="partition haplotypes based on allele status at this position")
 	hapviz_parser.add_argument('--title', type=str, default=None, help="title to give to plot")
 	hapviz_parser.add_argument('--annotate', type=str, default=None, help="tab-delimited file where each line gives <chr.pos>\t<annotation>")			
 	hapviz_parser.add_argument('--maf', type=str, default=None, help="filter on minor allele frequency (e.g. .01, .05)")			
+	hapviz_parser.add_argument('--dpi', type=str, default=300, help="image resolution")			
 
 
 	if True:
@@ -117,16 +115,25 @@ def execute_hapviz(args):
 	## LOAD DATA##
 	##############
 	inputfilename = args.inputfile
-	startpos = int(args.startpos)
-	endpos = int(args.endpos)
 
-	haplotypes, coreindex = pullRegion(inputfilename, startpos, endpos, args.maf)
+
+	if ".hap" in inputfilename:
+		haplotypes, coreindex, physpositions = load_from_hap(inputfilename, args.maf, corePos = args.corepos)
+	else:
+		if args.startpos is None or args.endpos is None:
+			print("must provide bounds with --startpos and --endpos")
+			sys.exit(0)
+		else:
+			startpos = int(args.startpos)
+			endpos = int(args.endpos)
+			haplotypes, coreindex, physpositions = pullRegion(inputfilename, startpos, endpos, args.maf, corePos = args.corepos)
+
 	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
 
 	########################
 	## SORT BY SIMILARITY ##
 	########################
-	if args.corepos:
+	if args.corepos is not -1:
 		hap = hapSort_coreallele(haplotypes, coreindex)
 	else:
 		hap = hapSort(haplotypes) 
@@ -144,17 +151,19 @@ def execute_hapviz(args):
 		for i_snppos in range(len(positions)):
 			snppos = positions[i_snppos]
 			annotation = annotations[i_snppos]
-			foundindex = find_snp_index(inputfilename, snppos) 
-			if foundindex is not -1:
-				plt.plot(foundindex, ylim, "v", color="black", markersize=1)
-				plt.plot(foundindex, -5, "^", color="black", markersize=1)
-				plt.text(foundindex, -20, str(snppos) +"\n" + annotation, fontsize=3)
+			#foundindex = find_snp_index(inputfilename, snppos) 
+			if int(snppos) in physpositions:
+				foundindex = physpositions.index(int(snppos)) - 1 #RETURN TO THIS
+				#print(str(snppos) + "\t" + str(foundindex))
+				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
+				ax.plot(foundindex, -5, "^", color="black", markersize=1)
+				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
 
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
 
 	#fig.show()
-	plt.savefig(args.out,  bbox_inches = 'tight', dpi=3000)
+	plt.savefig(args.out, dpi=float(args.dpi))#,   dpi=500) #bbox_inches = 'tight',
 	plt.close()
 	return	
 def execute_win_haps(args):
