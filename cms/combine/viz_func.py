@@ -4,6 +4,54 @@
 import matplotlib
 import numpy as np
 import os
+def load_from_hap(inputfilename, filter_maf=None, corePos = None):
+	#openfile = open(inputfilename)
+	#header = openfile.readline()
+	haplotypes = []
+	physpositions = []
+	h = open(inputfilename, 'r')
+	index = 0
+	coreindex = -1
+	if h.readline().strip() == "##format=hapmap2transposed":
+		transpose = True
+	else:
+		transpose = False
+		h.seek(0)
+
+	if filter_maf == None:
+		filter_maf = -1.
+	else:
+		filter_maf = float(filter_maf)
+
+	for line in h: 
+		genotypes = line.strip().split()[1]
+		int_genotypes = [int(x) for x in genotypes]
+		n_a0 = float(int_genotypes.count(0))
+		n_a1 = float(int_genotypes.count(1))
+		n = float(len(int_genotypes))
+		f_a0 = n_a0 / n
+		f_a1 = n_a1 / n
+		if f_a0 < filter_maf or f_a1 < filter_maf:
+			pass
+		else:
+			haplotypes.append(''.join(genotypes))
+			entries = line.split()
+			label = entries[0]
+			physpos = int(label.split('.')[1])
+			physpositions.append(physpos)
+			if physpos == corePos:
+				coreindex = index
+			index +=1
+	h.close()
+
+	if transpose:
+		haplotypes2 = ['']*len(haplotypes[0])
+		for i in haplotypes:
+			for j in range(len(i)):
+				haplotypes2[j] += i[j]
+	haplotypes = haplotypes2
+	#print(str(len(haplotypes)))
+	return haplotypes, coreindex, physpositions
 def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transpose = True, saveHapFile = None):
 	coreindex = -1
 	varids, genpositions, physpositions, all_genotypes = [], [], [], []
@@ -60,7 +108,7 @@ def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transp
 		print('come back to this')
 		pass
 
-	return haplotypes, coreindex
+	return haplotypes, coreindex, physpositions
 def difference(hap1,hap2):
 	dif = 0
 	for i in range(len(hap1)):
@@ -198,14 +246,17 @@ def hapViz(ax, haplotypes,out,coreindex = None,markers=None):
 	col1 = '#2B83BA' #blue
 	col2 = '#d7191c' #red
 	
-	my_cmap = matplotlib.colors.ListedColormap([col0, col1, col2])
+	my_cmap = matplotlib.colors.ListedColormap([col0, col1])#[col0, col1, col2])
 	my_cmap.set_bad(color='w', alpha=0)
 
 	num_haps = len(haplotypes)
 	num_snps = len(haplotypes[0]) 
 	
 	hap_spacer = 1
-	hap_height = 10 
+	if num_snps > 500:
+		hap_height = 10 
+	else:
+		hap_height = 1
 	snp_width = 1
 	xCoord = [i*snp_width for i in range(num_snps)]
 	yCoord = [j*hap_height for j in range(num_haps)] 
@@ -251,10 +302,10 @@ def readAnnotations(annotationfilename):
 		for line in openfile:
 			entries = line.split()
 			positions.append(entries[0])
-			annotations.append(entries[1])
+			annotations.append(' '.join(entries[1:]))
 		openfile.close()
 	return positions, annotations
-def find_snp_index(infilename, snppos):
+def find_snp_index(infilename, snppos, startpos):
 	h = open(infilename, 'r')##
 	coreindex = -1
 	indexcounter = 0
@@ -264,6 +315,9 @@ def find_snp_index(infilename, snppos):
 			#print("found the core snp")
 			coreindex = indexcounter
 			break
-		indexcounter +=1
+		if int(pos) < startpos:
+			pass
+		else:
+			indexcounter +=1
 	#print(str(coreindex))
-	return coreindex
+	return indexcounter
