@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.12.16 vitti@broadinstitute.org
+## last updated: 10.17.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -210,21 +210,35 @@ def get_indices(score, dem_scenario):
 		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
-	''' from func_clean.py '''
+	''' if filename is .list, opens and parses multiple files '''
 	toreturn, incompleteData = [[] for index in takeindices], 0
-	openfile = open(filename, 'r')
-	if stripHeader:
-		header = openfile.readline()
-	for line in openfile:
-		entries = line.split()
-		if len(entries) != numCols:
-			print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
-			incompleteData +=1
-		for iIndex in range(len(takeindices)):
-			index = takeindices[iIndex]
-			thisValue = float(entries[index])
-			toreturn[iIndex].append(thisValue)
-	openfile.close()
+
+	entries = filename.split('.')
+	if entries[-1] == "list":
+		allfilenames = []
+		openfile = open(filename, 'r')
+		for line in openfile:
+			repfilename = line.strip('\n')
+			allfilenames.append(repfilename)
+		openfile.close()
+
+	else:
+		allfilenames = [filename]
+
+	for filename in allfilenames:
+		openfile = open(filename, 'r')
+		if stripHeader:
+			header = openfile.readline()
+		for line in openfile:
+			entries = line.split()
+			if len(entries) != numCols:
+				print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
+				incompleteData +=1
+			for iIndex in range(len(takeindices)):
+				index = takeindices[iIndex]
+				thisValue = float(entries[index])
+				toreturn[iIndex].append(thisValue)
+		openfile.close()
 	return toreturn
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:

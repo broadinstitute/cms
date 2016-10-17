@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.14.16 vitti@broadinstitute.org
+## last updated: 10.15.16 vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
@@ -116,7 +116,6 @@ def execute_hapviz(args):
 	##############
 	inputfilename = args.inputfile
 
-
 	if ".hap" in inputfilename:
 		haplotypes, coreindex, physpositions = load_from_hap(inputfilename, args.maf, corePos = args.corepos)
 	else:
@@ -151,10 +150,8 @@ def execute_hapviz(args):
 		for i_snppos in range(len(positions)):
 			snppos = positions[i_snppos]
 			annotation = annotations[i_snppos]
-			#foundindex = find_snp_index(inputfilename, snppos) 
 			if int(snppos) in physpositions:
-				foundindex = physpositions.index(int(snppos)) - 1 #RETURN TO THIS
-				#print(str(snppos) + "\t" + str(foundindex))
+				foundindex = physpositions.index(int(snppos))
 				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
 				ax.plot(foundindex, -5, "^", color="black", markersize=1)
 				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
@@ -162,8 +159,8 @@ def execute_hapviz(args):
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
 
-	#fig.show()
-	plt.savefig(args.out, dpi=float(args.dpi))#,   dpi=500) #bbox_inches = 'tight',
+	plt.tight_layout()
+	plt.savefig(args.out, dpi=float(args.dpi))
 	plt.close()
 	return	
 def execute_win_haps(args):

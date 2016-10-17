@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.08.16 vitti@broadinstitute.org
+## last updated: 10.17.16 vitti@broadinstitute.org
 import matplotlib as mp 
 mp.use('agg')
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
@@ -70,8 +70,8 @@ def full_parser_likes_from_model():
 	##################################################
 	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
 	if True:
-		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary)')
-		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary)')
+		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary). May be a file containing a list of files (e.g. multiple replicates) if suffix is <.list>.')
+		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary). May be a file containing a list of files (e.g. multiple replicates) if suffix is <.list>.')
 		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
 		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
 		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
@@ -283,6 +283,7 @@ def execute_likes_from_scores(args):
 		sys.exit(0)
 
 	xlims = scoreRange
+	
 	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
 	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
