@@ -229,7 +229,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 	for ifilename in range(len(allfilenames)):
 		filename = allfilenames[ifilename]
 		if ifilename % 100 == 0: 
-			print("now file " + str(i) + " out of " + str(len(allfilenames)))
+			print("now file " + str(ifilename) + " out of " + str(len(allfilenames)))
 		openfile = open(filename, 'r')
 		if stripHeader:
 			header = openfile.readline()
