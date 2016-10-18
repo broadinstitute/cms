@@ -209,7 +209,7 @@ def get_indices(score, dem_scenario):
 			expectedlen = 8
 		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
-def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
+def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False):
 	''' if filename is .list, opens and parses multiple files '''
 	toreturn, incompleteData = [[] for index in takeindices], 0
 
@@ -228,8 +228,9 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 
 	for ifilename in range(len(allfilenames)):
 		filename = allfilenames[ifilename]
-		if ifilename % 100 == 0: 
-			print("now file " + str(ifilename) + " out of " + str(len(allfilenames)))
+		if printProgress:
+			if ifilename % 100 == 0: 
+				print("now file " + str(ifilename) + " out of " + str(len(allfilenames)))
 		openfile = open(filename, 'r')
 		if stripHeader:
 			header = openfile.readline()
