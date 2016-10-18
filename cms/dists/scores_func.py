@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.17.16 vitti@broadinstitute.org
+## last updated: 10.18.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -224,8 +224,11 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False):
 
 	else:
 		allfilenames = [filename]
+	print('loading data from ' + str(len(allfilenames)) + ' files...')
 
-	for filename in allfilenames:
+	for ifilename in range(len(allfilenames)):
+		filename = allfilenames[ifilename]
+		if ifilename % 100 == 0: print "now file " + str(i) + " out of " + str(len(allfilenames))
 		openfile = open(filename, 'r')
 		if stripHeader:
 			header = openfile.readline()
