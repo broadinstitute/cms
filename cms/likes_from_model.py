@@ -2,7 +2,7 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
 ## last updated: 10.17.16 vitti@broadinstitute.org
 import matplotlib as mp 
-mp.use('agg')
+mp.use('TKAgg') 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files
