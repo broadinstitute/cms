@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 10.12.16 vitti@broadinstitute.org
+## last updated: 10.19.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 #mp.use('TkAgg') #set backend
@@ -76,7 +76,7 @@ def plot_likes(starts, ends, vals, ax, xlims, ylims, color='blue'):
 	plot_xvals = [midpoints[i] + offset for i in range(len(midpoints))]
 
 	#ax.scatter(midpoints, vals, color=color)
-	ax.bar(plot_xvals, vals, bar_width, color=color)
+	ax.bar(plot_xvals, vals, bar_width, color=color, edgecolor=color)
 
 	ax.set_xlim(xlims)
 	ax.set_ylim(ylims)
