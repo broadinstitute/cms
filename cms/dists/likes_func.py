@@ -2,7 +2,7 @@
 ## last updated: 10.12.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
-mp.use('TkAgg') #set backend
+#mp.use('TkAgg') #set backend
 import matplotlib.pyplot as plt
 from random import choice
 import numpy as np

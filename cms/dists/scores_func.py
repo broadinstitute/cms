@@ -236,13 +236,15 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 			header = openfile.readline()
 		for line in openfile:
 			entries = line.split()
-			if len(entries) != numCols:
-				print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
-				incompleteData +=1
-			for iIndex in range(len(takeindices)):
-				index = takeindices[iIndex]
-				thisValue = float(entries[index])
-				toreturn[iIndex].append(thisValue)
+			if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
+				if len(entries) != numCols:
+					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
+					incompleteData +=1
+					break
+				for iIndex in range(len(takeindices)):
+					index = takeindices[iIndex]
+					thisValue = float(entries[index])
+					toreturn[iIndex].append(thisValue)
 		openfile.close()
 	return toreturn
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
