@@ -18,17 +18,22 @@ def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	subprocess.check_call( cmdStr.split() )
 	return
 def calc_delihh(readfilename, writefilename):
-	"""given a selscan iHS file, parses it and writes an analogous file with delIHH information"""
+	"""taken from JV func_scores.py. given a selscan iHS file, parses it and writes delihh file"""
 	readfile = open(readfilename, 'r')
 	writefile = open(writefilename, 'w')
 	for line in readfile:
 		entries = line.split()
-		locus, phys, freq_1, ihh_1, ihh_0, ihs, ihh_0_l, ihh_0_r, ihh_1_l, ihh_1_r = entries #[0:10]
+		#handle input with/without ihh decomp
+		if len(entries) == 8:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
+		elif len(entries) == 11:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r, manually_normed = entries
 					#ancestral - derived
 		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
-		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm
+		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs_unnormed) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm
 		writefile.write(writeline)
 	writefile.close()
+	#print("wrote to " + writefilename)
 	readfile.close()
 def calc_xpehh(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
