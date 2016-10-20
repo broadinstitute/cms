@@ -6,7 +6,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <zlib.h>
+//#include <zlib.h>
 #include "cms_data.h"
 #include "pop_comparison.h"
 
