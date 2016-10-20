@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 07.17.16   vitti@broadinstitute.org
+// last updated: 10.20.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -43,10 +43,8 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 	fprintf(stderr, "Preparing to load component scores...\n");
-	//fprintf(stderr, argv);
-	
 
-	get_popComp_data_multiple_region(&data, argc, argv); //DEBUG FUNCTION
+	get_popComp_data_multiple_region(&data, argc, argv); 
 	fprintf(stderr, "nsnps: %d\n", data.nsnps);
 
 	strcpy(outfilename, argv[3]);
@@ -80,7 +78,6 @@ int main(int argc, char **argv) {
 	////////////////////////
 	prior = 1. / data.nsnps;
 	for (isnp = 0; isnp < data.nsnps; isnp++){
-		//fprintf(stderr, "%d\t", data.physpos[0][isnp]);
 
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -89,8 +86,6 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < data.ncomp; iComp++){
 			if (data.physpos[iComp][isnp] != 0){break;}
 		}
-		if (iComp == 2){continue;} //??
-		//fprintf(stderr, "ICOMP: %d\t", iComp);
 		thisihs = data.ihs_normed[iComp][isnp];
 		thisihh = data.delihh_normed[iComp][isnp];
 
@@ -98,32 +93,17 @@ int main(int argc, char **argv) {
 		thisfst = compareFst(&data, isnp);
 		thisdelDaf = comparedelDaf(&data, isnp);
 
-
-
 	delihh_hitprob = getProb(&delihh_hit, thisihh);
 	ihs_hitprob = getProb(&ihs_hit, thisihs);
 	fst_hitprob = getProb(&fst_hit, thisfst);
 	deldaf_hitprob = getProb(&deldaf_hit, thisdelDaf);
 	xpehh_hitprob = getProb(&xpehh_hit, thisxpehh);
-	//denominator = 1;
+
 	delihh_missprob = getProb(&delihh_miss, thisihh); 
 	ihs_missprob = getProb(&ihs_miss, thisihs);
 	fst_missprob = getProb(&fst_miss, thisfst);
 	deldaf_missprob = getProb(&deldaf_miss, thisdelDaf);
 	xpehh_missprob = getProb(&xpehh_miss, thisxpehh);
-
-	//debug
-	if (data.physpos[iComp][isnp] == 136608646){
-		fprintf(stderr, "found causal snp at pos 136608646:\n");
-	fprintf(stderr, "delihh: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisihh, delihh_hitprob, delihh_missprob);
-	fprintf(stderr, "ihs: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisihs, ihs_hitprob, ihs_missprob);
-	fprintf(stderr, "fst: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisfst, fst_hitprob, fst_missprob);	
-	fprintf(stderr, "deldaf: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisdelDaf, deldaf_hitprob, deldaf_missprob);
-	fprintf(stderr, "xpehh: %.9f\thitprob: %.9f\tmissprob: %.9f\n", thisxpehh, xpehh_hitprob, xpehh_missprob);
-}
-
-
-
 
 
 	compLike = 1;
@@ -139,11 +119,6 @@ int main(int argc, char **argv) {
 	denominator *= ((getProb(&fst_miss, thisfst)* (1-prior)) + (getProb(&fst_hit, thisfst) * prior));
 	denominator *= ((getProb(&deldaf_miss, thisdelDaf)* (1-prior)) + (getProb(&deldaf_hit, thisdelDaf) * prior));
 	denominator *= ((getProb(&xpehh_miss, thisxpehh)* (1-prior)) + (getProb(&xpehh_hit, thisxpehh) * prior));
-		
-
-
-
-
 		
 	compLike = numerator / denominator;
 

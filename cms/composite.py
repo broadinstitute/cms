@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.15.16 vitti@broadinstitute.org
+## last updated: 10.20.16 vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from combine.recalc_func import write_delIHH_file, interpolate_haps, windows, interpolate_from_windows
+from combine.recalc_func import interpolate_haps, windows, interpolate_from_windows
 from combine.likes_func import get_likesfiles_frommaster
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
-from dists.scores_func import calc_fst_deldaf 
+from dists.scores_func import calc_fst_deldaf, calc_delihh
 import subprocess
 import argparse
 import gzip
@@ -83,6 +83,9 @@ def full_parser_composite():
 		outgroups_parser = subparsers.add_parser('outgroups', help='Combine scores from comparisons of a putative selected pop to 2+ outgroups.')
 		outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
 		outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
+		outgroups_parser.add_argument('--likesfile_low', type=str, action="store", help="text file where probability distributions are specified for component scores")
+		outgroups_parser.add_argument('--likesfile_mid', type=str, action="store", help="text file where probability distributions are specified for component scores")
+
 		outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
 		outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
 		outgroups_parser.add_argument('--chrom', type=str, action="store", help="chromosome containing region") #FOR WITHIN-REGION CMS
@@ -178,7 +181,7 @@ def execute_interpolate_hapscores(args):
 	interpolate_from_windows(inputTpedFilename, inputIhsFilename, inputWinihsFilename, outputFilename)
 	return
 def execute_delihh_from_ihs(args):
-	write_delIHH_file(args.readfile, args.writefile)
+	calc_delihh(args.readfile, args.writefile)
 	return
 def execute_xp_from_ihh(args):
 	inputtped1 = args.inIhh1
@@ -210,13 +213,27 @@ def execute_poppair(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
-	delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
+	#delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
+	delihh_hit_hi_filename, delihh_miss_hi_filename, ihs_hit_hi_filename, ihs_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile)
+	#HI-FREQ by default
+	if args.likesfile_mid is not None:
+		delihh_hit_mid_filename, delihh_miss_mid_filename, ihs_hit_mid_filename, ihs_miss_mid_filename, xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid)
+	if args.likesfile_low is not None:
+		delihh_hit_low_filename, delihh_miss_low_filename, ihs_hit_low_filename, ihs_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low)
+
 	if not args.region: 	#GENOME-WIDE
 		cmd = "combine/combine_scores_multiplepops"
 		argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
 	else:	#WITHIN REGION
 		cmd = "combine/combine_scores_multiplepops_region"
-		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
+		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile 
+		for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
+			for dist_type in ['hit', 'miss']:
+				for freq in ['low', 'mid', 'hi']:
+					argument = eval(score + "_" + dist_type + "_" + freq)
+					argstring += " " + argument 
+		#+ delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
+
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
 	cmdstring = cmd + " " + argstring
