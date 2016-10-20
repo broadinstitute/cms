@@ -3,15 +3,17 @@
 __author__ = "dpark@broadinstitute.org,irwin@broadinstitute.org"
 
 import collections
+import json
+import operator
 import os
 import re
 import logging
 import tempfile
 import shutil
+import shlex
 import subprocess
 import util.file
 import util.misc
-import json
 
 try:
     # Python 3.x
@@ -37,6 +39,21 @@ __all__ = sorted(
 installed_tools = {}
 
 _log = logging.getLogger(__name__)
+
+
+def iter_leaf_subclasses(aClass):
+    "Iterate over subclasses at all levels that don't themselves have a subclass"
+    isLeaf = True
+    for subclass in sorted(aClass.__subclasses__(), key=operator.attrgetter("__name__")):
+        isLeaf = False
+        for leafClass in iter_leaf_subclasses(subclass):
+            if not getattr(leafClass, '_skiptest', False):
+                yield leafClass
+    if isLeaf:
+        yield aClass
+
+def all_tool_classes():
+    return iter_leaf_subclasses(Tool)
 
 
 def get_tool_by_name(name):
@@ -217,7 +234,9 @@ class CondaPackage(InstallMethod):
         conda_cache_path=None,
         patches=None,
         post_install_command=None,
-        post_install_ret=0
+        post_install_ret=0,
+        post_verify_command=None,
+        post_verify_ret=0
     ):
         # if the executable name is specifed, use it; otherwise use the package name
         self.executable = executable or package
@@ -231,34 +250,47 @@ class CondaPackage(InstallMethod):
         self.post_install_command = post_install_command
         self.post_install_ret = post_install_ret
 
+        # call the post-verification command.
+        # Useful for copying in license files, building databases, etc.
+        # The post-verify command is executed relative to the conda environment bin/
+        # And has the active conda environment on the PATH
+        self.post_verify_command = post_verify_command
+        self.post_verify_ret = post_verify_ret
+        self.post_verify_cmd_executed = False
+
         self.verifycmd = verifycmd
         self.verifycode = verifycode
         self.require_executability = require_executability
         self.patches = patches or []
 
         # if we have specified a conda env/root, use it
-        # alternatively, use cms tools dir as default env root if os.environ["CONDA_ENV_PATH"] is not defined
+        # alternatively, use cms tools dir as default env root if os.environ["CONDA_PREFIX"] is not defined
         #
-        # in newer versions of conda, CONDA_DEFAULT_ENV can be used
-        # as it is always the full path (in earlier versions it could be name or path)
-        # CONDA_ENV_PATH is always a path, but not always present        
+        # as it is always the path
+        # CONDA_PREFIX is always a full path, but may not be present in older versions
+        # CONDA_ENV_PATH may be used instead
+        # in even older versions of conda, CONDA_DEFAULT_ENV can be used as another fallback
         self.env_path = None
-        if "CONDA_ENV_PATH" in os.environ and len(os.environ["CONDA_ENV_PATH"]):
-            _log.debug('CONDA_ENV_PATH found')
+        if "CONDA_PREFIX" in os.environ and len(os.environ["CONDA_PREFIX"]):
+            #_log.debug('CONDA_PREFIX found')
+            last_path_component = os.path.basename(os.path.normpath(os.environ["CONDA_PREFIX"]))
+            self.env_path = os.path.dirname(os.environ["CONDA_PREFIX"]) if last_path_component == "bin" else os.environ["CONDA_PREFIX"]
+        elif "CONDA_ENV_PATH" in os.environ and len(os.environ["CONDA_ENV_PATH"]):
+            #_log.debug('CONDA_ENV_PATH found')
             last_path_component = os.path.basename(os.path.normpath(os.environ["CONDA_ENV_PATH"]))
             self.env_path = os.path.dirname(os.environ["CONDA_ENV_PATH"]) if last_path_component == "bin" else os.environ["CONDA_ENV_PATH"]
         elif "CONDA_DEFAULT_ENV" in os.environ and len(os.environ["CONDA_DEFAULT_ENV"]):
-            _log.debug('CONDA_ENV_PATH not found, using CONDA_DEFAULT_ENV')
+            #_log.debug('CONDA_ENV_PATH not found, using CONDA_DEFAULT_ENV')
             conda_env_path = os.environ.get('CONDA_DEFAULT_ENV')  # path to current conda environment
             if conda_env_path:
                 if os.path.isdir(conda_env_path):
-                    _log.debug('Conda env found is specified as dir: %s' % conda_env_path)
+                    #_log.debug('Conda env found is specified as dir: %s' % conda_env_path)
                     conda_env_path = os.path.abspath(conda_env_path)
                     last_path_component = os.path.basename(os.path.normpath(conda_env_path))
                     self.env_path = os.path.dirname(last_path_component) if last_path_component == "bin" else conda_env_path
                 else: # if conda env is an environment name, infer the path
-                    _log.debug('Conda env found is specified by name: %s' % conda_env_path)
-                    result = util.misc.run_and_print(["conda", "env", "list", "--json"], loglevel=logging.DEBUG, env=os.environ)
+                    #_log.debug('Conda env found is specified by name: %s' % conda_env_path)
+                    result = util.misc.run_and_print(["conda", "env", "list", "--json"], silent=True, env=os.environ)
                     if result.returncode == 0:
                         command_output = result.stdout.decode("UTF-8")
                         data = json.loads(self._string_from_start_of_json(command_output))
@@ -271,14 +303,14 @@ class CondaPackage(InstallMethod):
 
         # if the env is being overridden, or if we could not find an active conda env
         if env_root_path or env or not self.env_path:
-            env_root_path = env_root_path or os.path.join(util.file.get_build_path(), 'conda-tools')
+            env_root_path = env_root_path or os.path.join(util.file.get_project_path(), 'tools', 'conda-tools')
             env = env or 'default'
             self.env_path = os.path.realpath(os.path.expanduser(
                 os.path.join(env_root_path, env)))
 
         # set an env variable to the conda cache path. this env gets passed to the
         # the subprocess, and the variable instructs conda where to place its cache files
-        conda_cache_path = conda_cache_path or os.path.join(util.file.get_build_path(), 'conda-cache')
+        conda_cache_path = conda_cache_path or os.path.join(util.file.get_project_path(), 'tools', 'conda-cache')
         self.conda_cache_path = os.path.realpath(os.path.expanduser(conda_cache_path))
         self.conda_env = os.environ
         old_envs_path = os.environ.get('CONDA_DEFAULT_ENV')
@@ -368,6 +400,21 @@ class CondaPackage(InstallMethod):
         else:
             self.installed = False
         if self.installed:
+            # call the post-verification command.
+            # Useful for copying in license files, building databases, etc.
+            # This is executed relative to the conda environment bin/
+            # And has the active conda environment on the PATH
+            if (not self.post_verify_cmd_executed) and self.post_verify_command:
+                post_verify_command = shlex.split(self.post_verify_command)
+                _log.debug("Running post-verification cmd: {}".format(self.post_verify_command))
+
+                result = util.misc.run_and_print(post_verify_command, silent=False, check=False, env=self.conda_env, cwd=self.bin_path)
+                post_verify_cmd_return_code = result.returncode
+                if post_verify_cmd_return_code == self.post_verify_ret:
+                    self.post_verify_cmd_executed = True
+                else:
+                    raise subprocess.CalledProcessError(post_verify_cmd_return_code, "Post verification command failed with exit %s: %s" % (post_verify_cmd_return_code, self.post_verify_command))
+
             return installed_version
         return False
 
@@ -512,7 +559,8 @@ class CondaPackage(InstallMethod):
 
             result = util.misc.run_and_print(
                 [
-                    "conda", "install", "--json", "-c", self.channel, "-y", "-q", "-p", self.env_path,
+                    # --no-update-dependencies ensures subsequent installs do not bump versions of prior pinned installs
+                    "conda", "install", "--json", "-c", self.channel, "-y", "-q", "--no-update-dependencies", "-p", self.env_path,
                     self._package_str
                 ],
                 loglevel=logging.DEBUG,
