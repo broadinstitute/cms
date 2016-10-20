@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	float fst_hitprob, fst_missprob, fst_bf;
 	float deldaf_hitprob, deldaf_missprob, deldaf_bf;
 
-	if (argc < 37) {
+	if (argc < 32) {
 		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filenames {low, mid, hi}> <ihs_miss_filenames {low, mid, hi}> <delihh_hit_filenames {low, mid, hi}> <delihh_miss_filenames {low, mid, hi}> <xpehh_hit_filenames {low, mid, hi}> <xpehh_miss_filenames {low, mid, hi}> <fst_hit_filenames {low, mid, hi}> <fst_miss_filenames {low, mid, hi}> <deldaf_hit_filenames {low, mid, hi}> <deldaf_miss_filenames {low, mid, hi}> <popPair file 1> <popPair file 2...>\n");
 		exit(0);
 	}

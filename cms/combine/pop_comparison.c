@@ -1,6 +1,7 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 07.21.16 	vitti@broadinstitute.org
+// last updated 10.20.16 	vitti@broadinstitute.org
 
+#define EXTRAARGS 33
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -14,8 +15,6 @@ float getProb(likes_data* data, double value){
 	for (ibin = 0; ibin < data->nbins; ibin++){
 		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->probs[ibin];}
 	}
-	
-
 	if (value < data->start_bin[0]){return data->probs[0];}
 	if (value > data->end_bin[data->nbins - 1]){return data->probs[data->nbins - 1];}
 
@@ -34,10 +33,8 @@ float compareFst(popComp_data_multiple* data, int isnp){//currently: takes max v
 	double fst;
 	int iComp;
 	fst =	-100;
-	//fprintf(stderr, "%d\n", data->ncomp);
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->fst[iComp][isnp] > fst){fst = data->fst[iComp][isnp];}
-		//else{fprintf(stderr, "blimey what the eff: %f\n", data->fst[iComp][isnp]);}
 	}
 
 	return fst;
@@ -81,13 +78,12 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	/// COLLATE LOCI: LOAD ///
 	/////////////////////////
 
-	//(CURRENTLY; composite.py splits one master likesfile into 12 arguments to pass to combine_scores_multiplepops.c)
-	numLikesFiles = 12; 
-	nComparisons = argc - numLikesFiles; //MUST CHECK THIS IS BEING PASSED CORRECTLY
+	nComparisons = argc - EXTRAARGS; 
+	numLikesFiles = EXTRAARGS;
+	fprintf(stderr,"\n\n%d\n\n", nComparisons);
 	totNsnp = 0;
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
-		//fprintf(stderr, infilename);
 		inf = fopen(infilename, "r");
 		assert(inf != NULL);
 		fgets(newLine, line_size, inf); // header
@@ -247,9 +243,8 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	/// COLLATE LOCI: LOAD ///
 	/////////////////////////
 
-	//(CURRENTLY; composite.py splits one master likesfile into 12 arguments to pass to combine_scores_multiplepops.c, plus 2 for startbp and endbp)
-	numLikesFiles = 14; 
-	nComparisons = argc - numLikesFiles; //MUST CHECK THIS IS BEING PASSED CORRECTLY
+	nComparisons = argc - EXTRAARGS; 
+	numLikesFiles = EXTRAARGS;
 	totNsnp = 0;
 	//fprintf(stderr, "numcomparisons: %d\n", nComparisons);
 	for (iComp = 0; iComp < nComparisons; iComp++){
@@ -361,18 +356,12 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	fprintf(stderr, "Loading all component scores...\n");
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp+numLikesFiles]);
-		//fprintf(stderr, infilename);
 		get_popComp_data(&data_sing, infilename);
 		//fprintf(stderr, "\n\tloaded data for one population comparison; nSnps: %d\n", data_sing.nsnps);
 		//jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
-
-		//let's try a nested loop.
 		for (isnp = 0; isnp < nunique; isnp++){
 			for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
-
-				//fprintf(stderr, "%d\t%d\t%d\t%d\n", isnp, jsnp, allUniqueSnps[isnp], data_sing.physpos[jsnp]);
 				if (allUniqueSnps[isnp] == data_sing.physpos[jsnp]){ // the snp matches; load all data
-					//printf(stderr, "foobar!");
 					data->physpos[iComp][isnp] = data_sing.physpos[jsnp];	
 					data->genpos[iComp][isnp] = data_sing.genpos[jsnp];	 
 					data->daf_selpop[iComp][isnp] = data_sing.daf_selpop[jsnp];	 
@@ -388,7 +377,6 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 				//else {pass;}
 				//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){jsnp++; if (jsnp >= data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
 				//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){pass;}
-
 				} //end for jsnp loop
 
 		}// end for isnp loop
