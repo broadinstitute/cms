@@ -237,7 +237,7 @@ def execute_outgroups(args):
 	for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
 		for dist_type in ['hit', 'miss']:
 			for freq in ['low', 'mid', 'hi']:
-				argument = eval(score + "_" + dist_type + "_" + freq)
+				argument = eval(score + "_" + dist_type + "_" + freq + "_" + filename)
 				argstring += " " + argument 
 
 	for pairfile in args.infiles.split(','):
