@@ -181,7 +181,7 @@ except ImportError:
                 print(error.decode("utf-8"))
                 try:
                     raise subprocess.CalledProcessError(
-                        returncode, args, output, error)
+                        returncode, args, output, error) #pylint: disable-msg=E1121
                 except TypeError: # py2 CalledProcessError does not accept error
                     raise subprocess.CalledProcessError(
                         returncode, args, output)
@@ -209,9 +209,21 @@ def run_and_print(args, stdout=None, stderr=None,
     if not buffered:
         if check and not silent:
             try:
-                result = run(args, stdin=stdin, stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT, env=env, cwd=cwd,
-                           timeout=timeout, check=check)
+                result = run(
+                    args,
+                    stdin=stdin,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    env=env,
+                    cwd=cwd,
+                    timeout=timeout,
+                    check=check
+                )
+                print(result.stdout.decode('utf-8'))
+                try:
+                    print(result.stderr.decode('utf-8'))
+                except AttributeError:
+                    pass
             except subprocess.CalledProcessError as e:
                 if loglevel:
                     try:
@@ -248,17 +260,17 @@ def run_and_print(args, stdout=None, stderr=None,
                                     cwd=cwd)
         output = []
         while process.poll() is None:
-            if not silent:
-                for c in iter(process.stdout.read, b""):
-                    output.append(c)
-                    print(c.decode('utf-8'), end="") # print for py3 / p2 from __future__
-                    sys.stdout.flush() # flush buffer to stdout
+            for c in iter(process.stdout.read, b""):
+                output.append(c)
+                if not silent:
+                   print(c.decode('utf-8'), end="") # print for py3 / p2 from __future__
+                sys.stdout.flush() # flush buffer to stdout
 
         # in case there are still chars in the pipe buffer
-        if not silent:
-            for c in iter(lambda: process.stdout.read(1), b""):
-                print(c, end="")
-                sys.stdout.flush() # flush buffer to stdout
+        for c in iter(lambda: process.stdout.read(1), b""):
+           if not silent:
+               print(c, end="")
+           sys.stdout.flush() # flush buffer to stdout
 
         if check and process.returncode != 0:
             raise subprocess.CalledProcessError(process.returncode, args,
