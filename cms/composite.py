@@ -213,26 +213,32 @@ def execute_poppair(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
+	"""still possible to toggle likesFreqs vs. not (?)"""
 	#delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
 	delihh_hit_hi_filename, delihh_miss_hi_filename, ihs_hit_hi_filename, ihs_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile)
 	#HI-FREQ by default
-	if args.likesfile_mid is not None:
-		delihh_hit_mid_filename, delihh_miss_mid_filename, ihs_hit_mid_filename, ihs_miss_mid_filename, xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid)
+	usefreqs = []
 	if args.likesfile_low is not None:
 		delihh_hit_low_filename, delihh_miss_low_filename, ihs_hit_low_filename, ihs_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low)
-
+		usefreqs.append('low')
+	if args.likesfile_mid is not None:
+		delihh_hit_mid_filename, delihh_miss_mid_filename, ihs_hit_mid_filename, ihs_miss_mid_filename, xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid)
+		usefreqs.append('mid')
+	while len(usefreqs) < 3:
+		usefreqs.append('hi')
+		
 	if not args.region: 	#GENOME-WIDE
 		cmd = "combine/combine_scores_multiplepops"
-		argstring = args.outfile + " " + delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
+		argstring = args.outfile 
 	else:	#WITHIN REGION
 		cmd = "combine/combine_scores_multiplepops_region"
 		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile 
-		for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
-			for dist_type in ['hit', 'miss']:
-				for freq in ['low', 'mid', 'hi']:
-					argument = eval(score + "_" + dist_type + "_" + freq)
-					argstring += " " + argument 
-		#+ delihh_hit_filename + " " + delihh_miss_filename + " " + ihs_hit_filename + " " + ihs_miss_filename + " " + xpehh_hit_filename + " " + xpehh_miss_filename + " " + fst_hit_filename + " " + fst_miss_filename + " " + deldaf_hit_filename + " " + deldaf_miss_filename 
+	
+	for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
+		for dist_type in ['hit', 'miss']:
+			for freq in ['low', 'mid', 'hi']:
+				argument = eval(score + "_" + dist_type + "_" + freq)
+				argstring += " " + argument 
 
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
