@@ -5,7 +5,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <zlib.h>
+//#include <zlib.h>
 #include "cms_data.h"
 
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}

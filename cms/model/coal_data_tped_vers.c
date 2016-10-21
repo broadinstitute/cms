@@ -1,10 +1,10 @@
-// last updated 09.08.16	vitti@broadinstitute.org 
+// last updated 10.20.16	vitti@broadinstitute.org 
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <zlib.h>
+//#include <zlib.h>
 #include "coal_data_tped_vers.h"
 
 /************************/
