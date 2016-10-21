@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.18.16 vitti@broadinstitute.org
+## last updated: 10.21.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -26,9 +26,13 @@ def calc_delihh(readfilename, writefilename):
 		#handle input with/without ihh decomp
 		if len(entries) == 8:
 			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
+		elif len(entries) == 10:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r  = entries
 		elif len(entries) == 11:
 			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, der_ihh_l, der_ihh_r, anc_ihh_l, anc_ihh_r, manually_normed = entries
 					#ancestral - derived
+		else:
+			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
 		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
 		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs_unnormed) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm
 		writefile.write(writeline)
@@ -214,7 +218,7 @@ def get_indices(score, dem_scenario):
 			expectedlen = 8
 		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
-def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False):
+def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
 	''' if filename is .list, opens and parses multiple files '''
 	toreturn, incompleteData = [[] for index in takeindices], 0
 
@@ -242,7 +246,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 		for line in openfile:
 			entries = line.split()
 			if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
-				if len(entries) != numCols:
+				if checkCols and (len(entries) != numCols):
 					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 					incompleteData +=1
 					break
@@ -279,9 +283,6 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = linked_scores[~np.isnan(linked_scores)]
 	neut_scores = neut_scores[~np.isnan(neut_scores)]
 
-
-
-
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
@@ -291,27 +292,10 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	#put pseudocount for empty bins here?
-	#for givenBin in givenBins:
+	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins, weights = weights_causal)
+	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins, weights = weights_linked)
+	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins, weights = weights_neut)
 
-	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
-	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
-	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
-
-	"""
-	## trying another way of making a Probability Density Function from a histogram...
-	## http://stackoverflow.com/questions/21532667/numpy-histogram-cumulative-density-does-not-sum-to-1
-	density_causal, bins_causal = np.histogram(causal_scores, normed=True, density = True)
-	unity_causal = density_causal / density_causal.sum()
-
-	density_linked, bins_linked = np.histogram(linked_scores, normed=True, density = True)
-	unity_linked = density_linked / density_linked.sum()
-
-	density_neut, bins_neut = np.histogram(neut_scores, normed=True, density = True)
-	unity_neut = density_neut / density_neut.sum()
-
-	return unity_causal, unity_linked, unity_neut, bins_causal, bins_linked, bins_neut
-	"""
 
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
 	#print(debug_array)
@@ -331,14 +315,13 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 
 
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
+	assert len(givenBins) == (len(n_causal) + 1)
 	for status in ['causal', 'linked', 'neut']:
 		writefilename = writePrefix + "_" + status + ".txt"
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
 		for index in range(len(n_scores)-1):
-
 			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
-			#print(towritestring)
 			writefile.write(towritestring)
 		writefile.close()
 	return
