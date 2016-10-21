@@ -320,7 +320,7 @@ def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 		writefilename = writePrefix + "_" + status + ".txt"
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
-		for index in range(len(n_scores)-1):
+		for index in range(len(n_scores)):
 			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
 			writefile.write(towritestring)
 		writefile.close()
