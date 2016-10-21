@@ -1,11 +1,11 @@
 // data structure to facilitate parsing of pop ihh files
-// last updated: 09.07.16   vitti@broadinstitute.org
+// last updated: 10.21.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <zlib.h>
+//#include <zlib.h>
 #include "pop_ihh_data.h"
 
 void get_pop_ihh_data(ihh_data* data, char filename[]) {
