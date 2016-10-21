@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.17.16 vitti@broadinstitute.org
+## last updated: 10.21.16 vitti@broadinstitute.org
+
 import matplotlib as mp 
 mp.use('TKAgg') 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
@@ -340,7 +341,6 @@ def execute_visualize_likes(args):
 	keys = likes_dict.keys()
 	scores, pops, models, dists = [], [], [], []
 	for key in keys:
-		#print(key)
 		models.append(key[0])
 		scores.append(key[1])
 		dists.append(key[2])
@@ -356,8 +356,6 @@ def execute_visualize_likes(args):
 	dists = set(dists)
 	dists = list(dists)
 
-	#print(pops)
-	#print(models)
 	print('loaded likes for ' + str(len(scores)) + " scores...")
 	print('loaded likes for ' + str(len(models)) + " models...")
 	print('loaded likes for ' + str(len(pops)) + " pops...")	
@@ -366,19 +364,11 @@ def execute_visualize_likes(args):
 	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
 		
 	for score in scores: #each score gets its own figure
-		#fig = plt.figure()
-		#fig, axarr = plt.subplots(len(models),len(pops), sharex = True, sharey =False)#len(models), len(pops), sharex=False, sharey=True)
 		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
-		##MAYBE JUST READ THIS FROM LIKESFILES?
-
-
-		#axes = define_axes(len(models), len(pops)) #not sure if this is going to work.
-		#print(axes)
 
 		f, axes = plt.subplots(len(models), len(pops), sharex='col', sharey='row')
 		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
 		iAxis = 1
-		#plt.xlabel(models, fontsize='7')
 
 		for imodel in range(len(models)): #rows
 			model = models[imodel]

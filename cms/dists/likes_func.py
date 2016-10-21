@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 10.19.16 vitti@broadinstitute.org
+## last updated: 10.21.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 #mp.use('TkAgg') #set backend
@@ -28,8 +28,8 @@ def get_hist_bins(score,numBins):
 		ylims = [0, .1]#.25]
 	else:
 		print("error: " + score)
-	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
-	bins = [scorerange[0] + binlen * i for i in range(numBins)]
+	binlen = (scorerange[1] - scorerange[0])/float(numBins)
+	bins = [scorerange[0] + binlen * i for i in range(numBins+1)]
 	return bins, scorerange, ylims
 def read_likes_file(likesfilename):
 	'''parses a file from e.g. write_hists_to_files'''

@@ -292,9 +292,9 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
-	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
-	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
+	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins, weights = weights_causal)
+	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins, weights = weights_linked)
+	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins, weights = weights_neut)
 
 
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
@@ -315,6 +315,7 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 
 
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
+	assert len(givenBins) == (len(n_causal) + 1)
 	for status in ['causal', 'linked', 'neut']:
 		writefilename = writePrefix + "_" + status + ".txt"
 		writefile = open(writefilename, 'w')
