@@ -218,7 +218,7 @@ def get_indices(score, dem_scenario):
 			expectedlen = 8
 		indices = [physpos_index, normedscoreindex, freq_anc_index]
 	return expectedlen, indices
-def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False):
+def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
 	''' if filename is .list, opens and parses multiple files '''
 	toreturn, incompleteData = [[] for index in takeindices], 0
 
@@ -246,7 +246,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 		for line in openfile:
 			entries = line.split()
 			if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
-				if len(entries) != numCols:
+				if checkCols and (len(entries) != numCols):
 					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 					incompleteData +=1
 					break
@@ -283,9 +283,6 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = linked_scores[~np.isnan(linked_scores)]
 	neut_scores = neut_scores[~np.isnan(neut_scores)]
 
-
-
-
 	#get weights to plot pdf from hist
 	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
 	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
@@ -295,27 +292,10 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	#put pseudocount for empty bins here?
-	#for givenBin in givenBins:
-
 	n_causal, bins_causal = np.histogram(causal_scores, bins=givenBins, weights = weights_causal)
 	n_linked, bins_linked = np.histogram(linked_scores, bins=givenBins, weights = weights_linked)
 	n_neut, bins_neut = np.histogram(neut_scores, bins=givenBins, weights = weights_neut)
 
-	"""
-	## trying another way of making a Probability Density Function from a histogram...
-	## http://stackoverflow.com/questions/21532667/numpy-histogram-cumulative-density-does-not-sum-to-1
-	density_causal, bins_causal = np.histogram(causal_scores, normed=True, density = True)
-	unity_causal = density_causal / density_causal.sum()
-
-	density_linked, bins_linked = np.histogram(linked_scores, normed=True, density = True)
-	unity_linked = density_linked / density_linked.sum()
-
-	density_neut, bins_neut = np.histogram(neut_scores, normed=True, density = True)
-	unity_neut = density_neut / density_neut.sum()
-
-	return unity_causal, unity_linked, unity_neut, bins_causal, bins_linked, bins_neut
-	"""
 
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
 	#print(debug_array)
@@ -340,9 +320,7 @@ def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
 		for index in range(len(n_scores)-1):
-
 			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
-			#print(towritestring)
 			writefile.write(towritestring)
 		writefile.close()
 	return
