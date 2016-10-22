@@ -115,9 +115,9 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 			if freq_allele1 <= bins[ibin]:
 				normalizedvalue = (unnormed_ihs_val - means[ibin])/sqrt(variances[ibin])
 				#assert not(np.isnan(normalizedvalue))
-				if np.isnan(normalizedvalue):
-					print(freq_allele1)
-					print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
+				#if np.isnan(normalizedvalue):
+				#	print(freq_allele1)
+				#	print("\t" + str(unnormed_ihs_val) +"\t-\t" + str(means[ibin]) +"\t\\" + str(sqrt(variances[ibin])))
 				break
 		writeline = line.strip('\n') +"\t" + str(normalizedvalue) + '\n'
 		normfile.write(writeline)		
@@ -228,7 +228,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 		openfile = open(filename, 'r')
 		for line in openfile:
 			repfilename = line.strip('\n')
-			if os.path.isfile(repfile):
+			if os.path.isfile(repfilename):
 				allfilenames.append(repfilename)
 		openfile.close()
 
