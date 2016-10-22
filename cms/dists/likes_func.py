@@ -9,23 +9,23 @@ import numpy as np
 import os
 def get_hist_bins(score,numBins):
 	if score == "ihs":
-		scorerange = [-3., 3.]#[-4., 4.]
-		ylims = [0, .1]#.25]
+		scorerange = [-3., 3.]
+		ylims = [0, .1]
 	elif score == "delihh":
 		scorerange = [-2., 3.]
-		ylims = [0, .1]#.25]
+		ylims = [0, .1]
 	elif score == "fst":
-		scorerange = [-.05, 1.]#[-2., 4.5]
-		ylims = [0, .1]#.25]
+		scorerange = [-.05, 1.]
+		ylims = [0, .1]
 	elif score == "deldaf" or score =="fst_deldaf":
-		scorerange = [-.25., 1.]
-		ylims = [0, .1]#.25]
+		scorerange = [-.25, 1.]
+		ylims = [0, .1]
 	elif score == "xp" or score =="xpehh":
-		scorerange = [-3., 3.]#[-3., 7.]
-		ylims = [0, .1]#.25]
+		scorerange = [-3., 3.]
+		ylims = [0, .1]
 	elif score=="nsl":
-		scorerange = [-3., 3.]#-4., 4.]
-		ylims = [0, .1]#.25]
+		scorerange = [-3., 3.]
+		ylims = [0, .1]
 	else:
 		print("error: " + score)
 	binlen = (scorerange[1] - scorerange[0])/float(numBins)
