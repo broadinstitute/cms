@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.20.16 vitti@broadinstitute.org
+## last updated: 10.23.16 vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
@@ -232,7 +232,7 @@ def execute_outgroups(args):
 		argstring = args.outfile 
 	else:	#WITHIN REGION
 		cmd = "combine/combine_scores_multiplepops_region"
-		argstring = str(args.startBp) + " " + str(args.endBp) + " " + args.outfile 
+		argstring = args.outfile + " " + str(args.startBp) + " " + str(args.endBp) + " "  
 	
 	for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
 		for dist_type in ['hit', 'miss']:
@@ -258,7 +258,7 @@ def execute_ucsc_viz(args):
 	outfilename = args.outfile
 	outfile = open(outfilename, 'w')
 	for chrom in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 3, 4, 5, 6, 7, 8, 9]: 	#BEDGRAPH MUST BE CASE-SENSITIVE SORTED
-		chromfile = inprefix + ".chr" + str(chrom) + ".txt"
+		chromfile = inprefix + ".chr" + str(chrom) + ".txt.norm"
 		assert os.path.isfile(chromfile)
 		infile = open(chromfile, 'r')
 		if args.strip_header:

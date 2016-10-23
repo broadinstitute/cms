@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 10.20.16 	vitti@broadinstitute.org
+// last updated 10.22.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 33
 #include <stdio.h>
@@ -80,7 +80,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 
 	nComparisons = argc - EXTRAARGS; 
 	numLikesFiles = EXTRAARGS;
-	fprintf(stderr,"\n\n%d\n\n", nComparisons);
+	//fprintf(stderr,"\n\n%d\n\n", nComparisons);
 	totNsnp = 0;
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp+(numLikesFiles)]);
