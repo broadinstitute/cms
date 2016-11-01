@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 10.20.16   vitti@broadinstitute.org
+// last updated: 11.01.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,16 +21,29 @@ int main(int argc, char **argv) {
 	int iComp, isnp; //
 	char outfilename[256]; 
 	double thisihs, thisihh; // per-pop
-	double thisfst, thisxpehh, thisdelDaf;
+	double thisfst, thisxpehh, thisdelDaf, thisdaf;
 	double compLike, numerator, denominator;
 	double prior;
-	likes_data delihh_hit, delihh_miss, ihs_hit, ihs_miss, xpehh_hit, xpehh_miss, fst_hit, fst_miss, deldaf_hit, deldaf_miss;
-	char delihh_hit_filename[256], delihh_miss_filename[256]; // LIKES
-	char ihs_hit_filename[256], ihs_miss_filename[256];
-	char xpehh_hit_filename[256], xpehh_miss_filename[256];
-	char fst_hit_filename[256], fst_miss_filename[256];
-	char deldaf_hit_filename[256], deldaf_miss_filename[256];
-
+	likes_data delihh_hit_low, delihh_hit_mid, delihh_hit_hi, delihh_miss_low, delihh_miss_mid, delihh_miss_hi;
+	likes_data ihs_hit_low, ihs_hit_mid, ihs_hit_hi, ihs_miss_low, ihs_miss_mid, ihs_miss_hi;
+	likes_data xpehh_hit_low, xpehh_hit_mid, xpehh_hit_hi, xpehh_miss_low, xpehh_miss_mid, xpehh_miss_hi;
+	likes_data fst_hit_low, fst_hit_mid, fst_hit_hi, fst_miss_low, fst_miss_mid, fst_miss_hi;
+	likes_data deldaf_hit_low, deldaf_hit_mid, deldaf_hit_hi, deldaf_miss_low, deldaf_miss_mid, deldaf_miss_hi;
+	char delihh_hit_low_filename[256], delihh_miss_low_filename[256];
+	char delihh_hit_mid_filename[256], delihh_miss_mid_filename[256]; 	
+	char delihh_hit_hi_filename[256], delihh_miss_hi_filename[256]; 
+	char ihs_hit_low_filename[256], ihs_miss_low_filename[256];
+	char ihs_hit_mid_filename[256], ihs_miss_mid_filename[256];
+	char ihs_hit_hi_filename[256], ihs_miss_hi_filename[256];
+	char xpehh_hit_low_filename[256], xpehh_miss_low_filename[256];
+	char xpehh_hit_mid_filename[256], xpehh_miss_mid_filename[256];
+	char xpehh_hit_hi_filename[256], xpehh_miss_hi_filename[256];
+	char fst_hit_low_filename[256], fst_miss_low_filename[256];
+	char fst_hit_mid_filename[256], fst_miss_mid_filename[256];
+	char fst_hit_hi_filename[256], fst_miss_hi_filename[256];
+	char deldaf_hit_low_filename[256], deldaf_miss_low_filename[256];
+	char deldaf_hit_mid_filename[256], deldaf_miss_mid_filename[256];
+	char deldaf_hit_hi_filename[256], deldaf_miss_hi_filename[256];
 
 	float delihh_hitprob, delihh_missprob;
 	float ihs_hitprob, ihs_missprob;
@@ -38,8 +51,8 @@ int main(int argc, char **argv) {
 	float fst_hitprob, fst_missprob;
 	float deldaf_hitprob, deldaf_missprob;
 
-	if (argc < 15) {
-		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops_region <startbp> <endbp> <outfilename> <ihs_hit_filename> <ihs_miss_filename> <delihh_hit_filename> <delihh_miss_filename> <xpehh_hit_filename> <xpehh_miss_filename> <fst_hit_filename> <fst_miss_filename> <deldaf_hit_filename> <deldaf_miss_filename> <popPair file 1> <popPair file 2...>\n");
+	if (argc < 34) {
+		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops_region <startbp> <endbp> <outfilename> <ihs_hit_filenames {low, mid, hi}> <ihs_miss_filenames {low, mid, hi}> <delihh_hit_filenames {low, mid, hi}> <delihh_miss_filenames {low, mid, hi}> <xpehh_hit_filenames {low, mid, hi}> <xpehh_miss_filenames {low, mid, hi}> <fst_hit_filenames {low, mid, hi}> <fst_miss_filenames {low, mid, hi}> <deldaf_hit_filenames {low, mid, hi}> <deldaf_miss_filenames {low, mid, hi}> <popPair file 1> <popPair file 2...>\n");
 		exit(0);
 	}
 	fprintf(stderr, "Preparing to load component scores...\n");
@@ -51,28 +64,69 @@ int main(int argc, char **argv) {
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	fprintf(stderr, "writing to: %s\n", outfilename);
-	strcpy(ihs_hit_filename, argv[4]);
-	strcpy(ihs_miss_filename, argv[5]);
-	strcpy(delihh_hit_filename, argv[6]);
-	strcpy(delihh_miss_filename, argv[7]);
+	strcpy(ihs_hit_low_filename, argv[2]);
+	strcpy(ihs_hit_mid_filename, argv[3]);
+	strcpy(ihs_hit_hi_filename, argv[4]);
+	strcpy(ihs_miss_low_filename, argv[5]);
+	strcpy(ihs_miss_mid_filename, argv[6]);
+	strcpy(ihs_miss_hi_filename, argv[7]);
+	strcpy(delihh_hit_low_filename, argv[8]);
+	strcpy(delihh_hit_mid_filename, argv[9]);
+	strcpy(delihh_hit_hi_filename, argv[10]);
+	strcpy(delihh_miss_low_filename, argv[11]);
+	strcpy(delihh_miss_mid_filename, argv[12]);
+	strcpy(delihh_miss_hi_filename, argv[13]);
+	strcpy(xpehh_hit_low_filename, argv[14]);
+	strcpy(xpehh_hit_mid_filename, argv[15]);
+	strcpy(xpehh_hit_hi_filename, argv[16]);
+	strcpy(xpehh_miss_low_filename, argv[17]);
+	strcpy(xpehh_miss_mid_filename, argv[18]);
+	strcpy(xpehh_miss_hi_filename, argv[19]);
+	strcpy(fst_hit_low_filename, argv[20]);
+	strcpy(fst_hit_mid_filename, argv[21]);
+	strcpy(fst_hit_hi_filename, argv[22]);
+	strcpy(fst_miss_low_filename, argv[23]);
+	strcpy(fst_miss_mid_filename, argv[24]);
+	strcpy(fst_miss_hi_filename, argv[25]);
+	strcpy(deldaf_hit_low_filename, argv[26]);
+	strcpy(deldaf_hit_mid_filename, argv[27]);
+	strcpy(deldaf_hit_hi_filename, argv[28]);
+	strcpy(deldaf_miss_low_filename, argv[29]);
+	strcpy(deldaf_miss_mid_filename, argv[30]);
+	strcpy(deldaf_miss_hi_filename, argv[31]);
+	//separate probability distributions based on observed derived allele frequency
+	get_likes_data(&delihh_hit_low, delihh_hit_low_filename);
+	get_likes_data(&delihh_miss_low, delihh_miss_low_filename);
+	get_likes_data(&ihs_hit_low, ihs_hit_low_filename);
+	get_likes_data(&ihs_miss_low, ihs_miss_low_filename);
+	get_likes_data(&xpehh_hit_low, xpehh_hit_low_filename);
+	get_likes_data(&xpehh_miss_low, xpehh_miss_low_filename);
+	get_likes_data(&fst_hit_low, fst_hit_low_filename);
+	get_likes_data(&fst_miss_low, fst_miss_low_filename);
+	get_likes_data(&deldaf_hit_low, deldaf_hit_low_filename);
+	get_likes_data(&deldaf_miss_low, deldaf_miss_low_filename);
 
-	strcpy(xpehh_hit_filename, argv[8]);
-	strcpy(xpehh_miss_filename, argv[9]);
-	strcpy(fst_hit_filename, argv[10]);
-	strcpy(fst_miss_filename, argv[11]);
-	strcpy(deldaf_hit_filename, argv[12]);
-	strcpy(deldaf_miss_filename, argv[13]);
-	get_likes_data(&delihh_hit, delihh_hit_filename);
-	get_likes_data(&delihh_miss, delihh_miss_filename);
-	get_likes_data(&ihs_hit, ihs_hit_filename);
-	get_likes_data(&ihs_miss, ihs_miss_filename);
-	get_likes_data(&xpehh_hit, xpehh_hit_filename);
-	get_likes_data(&xpehh_miss, xpehh_miss_filename);
-	get_likes_data(&fst_hit, fst_hit_filename);
-	get_likes_data(&fst_miss, fst_miss_filename);
-	get_likes_data(&deldaf_hit, deldaf_hit_filename);
-	get_likes_data(&deldaf_miss, deldaf_miss_filename);
+	get_likes_data(&delihh_hit_mid, delihh_hit_mid_filename);
+	get_likes_data(&delihh_miss_mid, delihh_miss_mid_filename);
+	get_likes_data(&ihs_hit_mid, ihs_hit_mid_filename);
+	get_likes_data(&ihs_miss_mid, ihs_miss_mid_filename);
+	get_likes_data(&xpehh_hit_mid, xpehh_hit_mid_filename);
+	get_likes_data(&xpehh_miss_mid, xpehh_miss_mid_filename);
+	get_likes_data(&fst_hit_mid, fst_hit_mid_filename);
+	get_likes_data(&fst_miss_mid, fst_miss_mid_filename);
+	get_likes_data(&deldaf_hit_mid, deldaf_hit_mid_filename);
+	get_likes_data(&deldaf_miss_mid, deldaf_miss_mid_filename);
 
+	get_likes_data(&delihh_hit_hi, delihh_hit_hi_filename);
+	get_likes_data(&delihh_miss_hi, delihh_miss_hi_filename);
+	get_likes_data(&ihs_hit_hi, ihs_hit_hi_filename);
+	get_likes_data(&ihs_miss_hi, ihs_miss_hi_filename);
+	get_likes_data(&xpehh_hit_hi, xpehh_hit_hi_filename);
+	get_likes_data(&xpehh_miss_hi, xpehh_miss_hi_filename);
+	get_likes_data(&fst_hit_hi, fst_hit_hi_filename);
+	get_likes_data(&fst_miss_hi, fst_miss_hi_filename);
+	get_likes_data(&deldaf_hit_hi, deldaf_hit_hi_filename);
+	get_likes_data(&deldaf_miss_hi, deldaf_miss_hi_filename);
 	////////////////////////
 	// ITERATE OVER SNPS ///
 	////////////////////////
@@ -93,32 +147,63 @@ int main(int argc, char **argv) {
 		thisfst = compareFst(&data, isnp);
 		thisdelDaf = comparedelDaf(&data, isnp);
 
-	delihh_hitprob = getProb(&delihh_hit, thisihh);
-	ihs_hitprob = getProb(&ihs_hit, thisihs);
-	fst_hitprob = getProb(&fst_hit, thisfst);
-	deldaf_hitprob = getProb(&deldaf_hit, thisdelDaf);
-	xpehh_hitprob = getProb(&xpehh_hit, thisxpehh);
+		thisdaf = data.daf_selpop[iComp][isnp];
 
-	delihh_missprob = getProb(&delihh_miss, thisihh); 
-	ihs_missprob = getProb(&ihs_miss, thisihs);
-	fst_missprob = getProb(&fst_miss, thisfst);
-	deldaf_missprob = getProb(&deldaf_miss, thisdelDaf);
-	xpehh_missprob = getProb(&xpehh_miss, thisxpehh);
+		if (thisdaf <= .35){
+			delihh_hitprob = getProb(&delihh_hit_low, thisihh);
+			ihs_hitprob = getProb(&ihs_hit_low, thisihs);
+			fst_hitprob = getProb(&fst_hit_low, thisfst);
+			deldaf_hitprob = getProb(&deldaf_hit_low, thisdelDaf);
+			xpehh_hitprob = getProb(&xpehh_hit_low, thisxpehh);
 
+			delihh_missprob = getProb(&delihh_miss_low, thisihh); 
+			ihs_missprob = getProb(&ihs_miss_low, thisihs);
+			fst_missprob = getProb(&fst_miss_low, thisfst);
+			deldaf_missprob = getProb(&deldaf_miss_low, thisdelDaf);
+			xpehh_missprob = getProb(&xpehh_miss_low, thisxpehh);
+		}
+
+		else if(thisdaf > .35 && thisdaf <= .65){
+			delihh_hitprob = getProb(&delihh_hit_mid, thisihh);
+			ihs_hitprob = getProb(&ihs_hit_mid, thisihs);
+			fst_hitprob = getProb(&fst_hit_mid, thisfst);
+			deldaf_hitprob = getProb(&deldaf_hit_mid, thisdelDaf);
+			xpehh_hitprob = getProb(&xpehh_hit_mid, thisxpehh);
+
+			delihh_missprob = getProb(&delihh_miss_mid, thisihh); 
+			ihs_missprob = getProb(&ihs_miss_mid, thisihs);
+			fst_missprob = getProb(&fst_miss_mid, thisfst);
+			deldaf_missprob = getProb(&deldaf_miss_mid, thisdelDaf);
+			xpehh_missprob = getProb(&xpehh_miss_mid, thisxpehh);
+		}
+
+		else{
+			delihh_hitprob = getProb(&delihh_hit_hi, thisihh);
+			ihs_hitprob = getProb(&ihs_hit_hi, thisihs);
+			fst_hitprob = getProb(&fst_hit_hi, thisfst);
+			deldaf_hitprob = getProb(&deldaf_hit_hi, thisdelDaf);
+			xpehh_hitprob = getProb(&xpehh_hit_hi, thisxpehh);
+
+			delihh_missprob = getProb(&delihh_miss_hi, thisihh); 
+			ihs_missprob = getProb(&ihs_miss_hi, thisihs);
+			fst_missprob = getProb(&fst_miss_hi, thisfst);
+			deldaf_missprob = getProb(&deldaf_miss_hi, thisdelDaf);
+			xpehh_missprob = getProb(&xpehh_miss_hi, thisxpehh);
+		}
 
 	compLike = 1;
 	numerator = 1.;
-	numerator *= getProb(&delihh_hit, thisihh) * prior;
-	numerator *= getProb(&ihs_hit, thisihs) * prior;
-	numerator *= getProb(&fst_hit, thisfst)* prior;
-	numerator *= getProb(&deldaf_hit, thisdelDaf) * prior;
-	numerator *= getProb(&xpehh_hit, thisxpehh) * prior;
+	numerator *= delihh_hitprob * prior;
+	numerator *= ihs_hitprob * prior;
+	numerator *= fst_hitprob * prior;
+	numerator *= deldaf_hitprob * prior;
+	numerator *= xpehh_hitprob * prior;
 	denominator = 1.;
-	denominator *= ((getProb(&delihh_miss, thisihh) * (1-prior)) + (getProb(&delihh_hit, thisihh) * prior));
-	denominator *= ((getProb(&ihs_miss, thisihs)* (1-prior)) + (getProb(&ihs_hit, thisihh) * prior));
-	denominator *= ((getProb(&fst_miss, thisfst)* (1-prior)) + (getProb(&fst_hit, thisfst) * prior));
-	denominator *= ((getProb(&deldaf_miss, thisdelDaf)* (1-prior)) + (getProb(&deldaf_hit, thisdelDaf) * prior));
-	denominator *= ((getProb(&xpehh_miss, thisxpehh)* (1-prior)) + (getProb(&xpehh_hit, thisxpehh) * prior));
+	denominator *= ((delihh_missprob * (1-prior)) + (delihh_hitprob * prior));
+	denominator *= ((ihs_missprob* (1-prior)) + (ihs_hitprob * prior));
+	denominator *= ((fst_missprob* (1-prior)) + (fst_hitprob * prior));
+	denominator *= ((deldaf_missprob* (1-prior)) + (deldaf_hitprob * prior));
+	denominator *= ((xpehh_missprob* (1-prior)) + (xpehh_hitprob * prior));
 		
 	compLike = numerator / denominator;
 
@@ -126,16 +211,37 @@ int main(int argc, char **argv) {
 	}
 
 	fclose(outf);
-	free_likes_data(&delihh_hit);
-	free_likes_data(&delihh_miss);
-	free_likes_data(&ihs_hit);
-	free_likes_data(&ihs_miss);
-	free_likes_data(&xpehh_hit);
-	free_likes_data(&xpehh_miss);
-	free_likes_data(&fst_hit);
-	free_likes_data(&fst_miss);
-	free_likes_data(&deldaf_hit);
-	free_likes_data(&deldaf_miss);
+	free_likes_data(&delihh_hit_low);
+	free_likes_data(&delihh_hit_mid);
+	free_likes_data(&delihh_hit_hi);		
+	free_likes_data(&delihh_miss_low);
+	free_likes_data(&delihh_miss_mid);
+	free_likes_data(&delihh_miss_hi);
+	free_likes_data(&ihs_hit_low);
+	free_likes_data(&ihs_hit_mid);
+	free_likes_data(&ihs_hit_hi);
+	free_likes_data(&ihs_miss_low);
+	free_likes_data(&ihs_miss_mid);
+	free_likes_data(&ihs_miss_hi);
+	free_likes_data(&xpehh_hit_low);
+	free_likes_data(&xpehh_hit_mid);
+	free_likes_data(&xpehh_hit_hi);
+	free_likes_data(&xpehh_miss_low);
+	free_likes_data(&xpehh_miss_mid);
+	free_likes_data(&xpehh_miss_hi);
+	free_likes_data(&fst_hit_low);
+	free_likes_data(&fst_hit_mid);
+	free_likes_data(&fst_hit_hi);		
+	free_likes_data(&fst_miss_low);
+	free_likes_data(&fst_miss_mid);	
+	free_likes_data(&fst_miss_hi);
+	free_likes_data(&deldaf_hit_low);
+	free_likes_data(&deldaf_hit_mid);
+	free_likes_data(&deldaf_hit_hi);		
+	free_likes_data(&deldaf_miss_low);
+	free_likes_data(&deldaf_miss_mid);
+	free_likes_data(&deldaf_miss_hi);		
+
 	free_popComp_data_multiple(&data);
 	return 0;
 } // end main
