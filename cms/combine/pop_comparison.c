@@ -23,7 +23,7 @@ float getProb(likes_data* data, double value){
 float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max val
 	double xp;
 	int iComp;
-	xp = 0;
+	xp = -1e10;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->xp_normed[iComp][isnp] < xp){xp = data->xp_normed[iComp][isnp];}
 	}
@@ -40,7 +40,6 @@ float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes aver
 		fst += data->fst[iComp][isnp];
 	}
 	ave = fst / (double)data->ncomp;
-
 	return ave;
 } //end function
 float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes max val

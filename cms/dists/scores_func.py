@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.22.16 vitti@broadinstitute.org
+## last updated: 11.2.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -257,6 +257,124 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					toreturn[iIndex].append(thisValue)
 		openfile.close()
 	return toreturn
+def choose_vals_from_files(filename, numCols, takeindices, comp, stripHeader = False, checkCols = False, method = "max"):
+	''' expects a .list file with multiple records (i.e., same replicate, different poppairs) on the same line as input '''
+
+	entries = filename.split('.')
+	if entries[-1] == "list":
+		allfilenames = []
+		openfile = open(filename, 'r')
+		for line in openfile:
+			thisrepfiles = []
+			repfilenames = line.split()
+			for repfilename in repfilenames:
+				if os.path.isfile(repfilename):
+					thisrepfiles.append(repfilename)
+			allfilenames.append(thisrepfiles)
+		openfile.close()
+
+	else:
+		print('check input file.')
+		sys.exit(0)
+		#allfilenames = [filename]
+	print('loading data from ' + str(len(allfilenames)) + ' replicates...')
+	
+	#assert len(takeindices) == 3
+	#print(takeindices)
+	#sys.exit()
+
+	posIndex, takeIndex, ancfreqIndex = takeindices
+	#if comp == "fst":
+	#	posIndex, takeIndex = 0, 1
+	#elif comp == "deldaf":
+	#	posIndex, takeIndex = 0, 2
+	#else:
+	#	posIndex, takeIndex = takeindices[0], takeindices[1]
+	
+	allpos, allscores = [], []
+
+	for ireplicate in range(len(allfilenames)):
+		filelist = allfilenames[ireplicate]
+		repscores = []
+		reppositions = []
+		repanc = []
+		for filename in filelist:
+			#print(filename)
+			#print(str(takeIndex))
+			vals = []
+			positions =[]
+			ancs = []
+			openfile = open(filename, 'r')
+			if stripHeader:
+				header = openfile.readline()
+			for line in openfile:
+				entries = line.split()
+				if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
+					if checkCols and (len(entries) != numCols):
+						print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
+						incompleteData +=1
+						break
+					val = float(entries[takeIndex])
+					pos = int(entries[posIndex])
+					anc = float(entries[ancfreqIndex])
+					vals.append(val)
+					positions.append(pos)
+					ancs.append(anc)
+			openfile.close()
+			repscores.append(vals)
+			reppositions.append(positions)
+			repanc.append(ancs)
+		#choose here
+		chosen, chosenpos = choose_from_reps(repscores, reppositions,  repanc, mode = method)
+		allscores.extend(chosen)
+		allpos.extend(chosenpos)
+	alltoreturn = [allpos, allscores]
+	return alltoreturn
+
+def choose_from_reps(repscores, reppositions, repanc, mode="max"):
+	'''flexible function to choose for likes '''
+	ncomp = len(repscores)
+	allpositions = []
+	for reppositionlist in reppositions:
+		allpositions.extend(reppositionlist)
+	allpositions = set(allpositions)
+	toreturn = []
+	for position in allpositions:
+		scores = []
+		freqs = []
+		for icomp in range(ncomp):
+			if position in reppositions[icomp]:
+				thisindex = reppositions[icomp].index(position)
+				scores.append(repscores[icomp][thisindex])		
+				freqs.append(repanc[icomp][thisindex])
+		#this is where choosing happens
+	
+		if mode == "max":
+			itemtoreturn = max(scores)
+		elif mode in ['mean', 'ave', 'average']:
+			itemtoreturn = np.mean(scores)
+		elif mode == "min":
+			itemtoreturn = min(scores)
+		elif mode == "daf": #
+			itemtoreturn = np.mean(scores)
+			#print('testing...')
+			#thispop_anc = float(freqs[0])
+			#print(thispop_anc)
+			#thispop_der = 1. - thispop_anc
+			#otherpops_anc = freqs[1:]
+			#otherpops_der = [1. - float(item) for item in otherpops_anc]
+			#otherpops_ave = np.mean(otherpops_der)
+			#daf_val = thispop_der - otherpops_ave
+			#itemtoreturn = daf_val
+			#print(freqs)
+			#print(daf_val)
+
+		toreturn.append(itemtoreturn)
+		print(scores)
+		print(itemtoreturn)
+	return toreturn, allpositions
+
+
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
