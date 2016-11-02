@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 10.21.16 vitti@broadinstitute.org
+## last updated: 11.2.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TKAgg') 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
-from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files
+from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
 from util.parallel import slurm_array
 import argparse
 import subprocess
@@ -285,11 +285,25 @@ def execute_likes_from_scores(args):
 
 	xlims = scoreRange
 	
-	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
-	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
+	#this is not flexible to choose among population comparisons. 
+	if not args.xpehh and not args.deldaf and not args.fst: 
+		val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
+		neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
-	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
-	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
+		val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
+		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
+
+
+	else:
+		chooseMethod = "max" #FOR NOW
+
+		posIndex, takeIndex = indices_neut[0], indices_neut[1]
+		val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, posIndex, takeIndex, stripHeader, method=chooseMethod)
+		neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
+
+		posIndex, takeIndex = indices_sel[0], indices_sel[1]
+		val_array = choose_vals_from_files(args.selFile, expectedlen_sel, posIndex, takeIndex, stripHeader, method=chooseMethod)		
+		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
 	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 

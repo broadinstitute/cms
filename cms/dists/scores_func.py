@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 10.22.16 vitti@broadinstitute.org
+## last updated: 11.2.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -257,6 +257,86 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					toreturn[iIndex].append(thisValue)
 		openfile.close()
 	return toreturn
+
+def choose_vals_from_files(filename, numCols, posIndex, takeIndex, stripHeader = False, checkCols = False, method = "max"):
+	''' expects a .list file with multiple records (i.e., same replicate, different poppairs) on the same line as input '''
+
+	entries = filename.split('.')
+	if entries[-1] == "list":
+		allfilenames = []
+		openfile = open(filename, 'r')
+		for line in openfile:
+			thisrepfiles = []
+			repfilenames = line.split()
+			for repfilename in repfilenames:
+				if os.path.isfile(repfilename):
+					thisrepfiles.append(repfilename)
+			allfilenames.append(thisrepfiles)
+		openfile.close()
+
+	else:
+		print('check input file.')
+		sys.exit(0)
+		#allfilenames = [filename]
+	print('loading data from ' + str(len(allfilenames)) + ' replicates...')
+
+	alltoreturn = []
+
+	for ireplicate in range(len(allfilenames)):
+		filelist = allfilenames[ifilename]
+		repscores = []
+		reppositions = []
+		for filename in filelist:
+			vals = []
+			positions =[]
+			openfile = open(filename, 'r')
+			if stripHeader:
+				header = openfile.readline()
+			for line in openfile:
+				entries = line.split()
+				if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
+					if checkCols and (len(entries) != numCols):
+						print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
+						incompleteData +=1
+						break
+					val = float(entries[takeIndex])
+					pos = int(entries[posIndex])
+					vals.append(val)
+					positions.append(pos)
+			openfile.close()
+			repscores.append(vals)
+			reppositions.append(positions)
+
+		#choose here
+		chosen = choose_from_reps(repscores, reppositions, mode = method)
+		alltoreturn.extend(chosen)
+	return alltoreturn
+
+def choose_from_reps(repscores, reppositions, mode="max"):
+	'''flexible function to choose for likes '''
+	ncomp = len(repscores)
+	allpositions = []
+	for reppositionlist in reppositions:
+		allpositions.extend(reppositionlist)
+	allpositions = set(allpositions)
+
+	for position in allpositions:
+		scores = []
+		for icomp in range(ncomp):
+			if position in reppositions[icomp]:
+				thisindex = reppositions.index(position)
+				scores.append(repscores[thisindex])		
+
+		#this is where choosing happens
+		if mode == "max":
+			toreturn.append(max(scores))
+		elif mode in ['mean', 'ave', 'average']:
+			toreturn.append(mean(scores))
+		elif mode == "min":
+			toreturn.append(min(scores))
+	return toreturn
+
+
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
