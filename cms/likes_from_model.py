@@ -293,16 +293,18 @@ def execute_likes_from_scores(args):
 		val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
 		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
-
 	else:
-		chooseMethod = "max" #FOR NOW
+		if args.xpehh:
+			chooseMethod = "max" 
+		elif args.deldaf:
+			chooseMethod = "daf"
+		elif args.fst:
+			chooseMethod = "mean"
 
-		posIndex, takeIndex = indices_neut[0], indices_neut[1]
-		val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, posIndex, takeIndex, stripHeader, method=chooseMethod)
+		val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader, method=chooseMethod)
 		neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
-		posIndex, takeIndex = indices_sel[0], indices_sel[1]
-		val_array = choose_vals_from_files(args.selFile, expectedlen_sel, posIndex, takeIndex, stripHeader, method=chooseMethod)		
+		val_array = choose_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader, method=chooseMethod)		
 		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
 	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]

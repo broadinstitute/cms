@@ -257,8 +257,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					toreturn[iIndex].append(thisValue)
 		openfile.close()
 	return toreturn
-
-def choose_vals_from_files(filename, numCols, posIndex, takeIndex, stripHeader = False, checkCols = False, method = "max"):
+def choose_vals_from_files(filename, numCols, takeindices, stripHeader = False, checkCols = False, method = "max"):
 	''' expects a .list file with multiple records (i.e., same replicate, different poppairs) on the same line as input '''
 
 	entries = filename.split('.')
@@ -279,6 +278,9 @@ def choose_vals_from_files(filename, numCols, posIndex, takeIndex, stripHeader =
 		sys.exit(0)
 		#allfilenames = [filename]
 	print('loading data from ' + str(len(allfilenames)) + ' replicates...')
+	
+	assert len(takeindices) == 3
+	posIndex, takeIndex, ancfreqIndex = takeindices
 
 	alltoreturn = []
 
@@ -286,9 +288,11 @@ def choose_vals_from_files(filename, numCols, posIndex, takeIndex, stripHeader =
 		filelist = allfilenames[ifilename]
 		repscores = []
 		reppositions = []
+		repanc = []
 		for filename in filelist:
 			vals = []
 			positions =[]
+			ancs = []
 			openfile = open(filename, 'r')
 			if stripHeader:
 				header = openfile.readline()
@@ -301,18 +305,20 @@ def choose_vals_from_files(filename, numCols, posIndex, takeIndex, stripHeader =
 						break
 					val = float(entries[takeIndex])
 					pos = int(entries[posIndex])
+					anc = float(entries[ancfreqIndex])
 					vals.append(val)
 					positions.append(pos)
+					ancs.append(anc)
 			openfile.close()
 			repscores.append(vals)
 			reppositions.append(positions)
-
+			repanc.append(anc)
 		#choose here
-		chosen = choose_from_reps(repscores, reppositions, mode = method)
+		chosen = choose_from_reps(repscores, reppositions, repanc, mode = method)
 		alltoreturn.extend(chosen)
 	return alltoreturn
 
-def choose_from_reps(repscores, reppositions, mode="max"):
+def choose_from_reps(repscores, reppositions, repanc, mode="max"):
 	'''flexible function to choose for likes '''
 	ncomp = len(repscores)
 	allpositions = []
@@ -322,11 +328,12 @@ def choose_from_reps(repscores, reppositions, mode="max"):
 
 	for position in allpositions:
 		scores = []
+		freqs = []
 		for icomp in range(ncomp):
 			if position in reppositions[icomp]:
 				thisindex = reppositions.index(position)
 				scores.append(repscores[thisindex])		
-
+				freqs.append(repfreqs[thisindex])
 		#this is where choosing happens
 		if mode == "max":
 			toreturn.append(max(scores))
@@ -334,6 +341,16 @@ def choose_from_reps(repscores, reppositions, mode="max"):
 			toreturn.append(mean(scores))
 		elif mode == "min":
 			toreturn.append(min(scores))
+		elif method == "daf": #
+			print('testing...')
+			thispop_anc = float(freqs[0])
+			thispop_der = 1 - thispop_anc
+			otherpops_anc = freqs[1:]
+			otherpops_der = [1 - float(item) for item in otherpops_anc]
+			otherpops_ave = mean(otherpops_der)
+			daf_val = thispop_der - otherpops_ave
+			toreturn.append(daf_val)
+
 	return toreturn
 
 
