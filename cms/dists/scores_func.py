@@ -370,8 +370,8 @@ def choose_from_reps(repscores, reppositions, repanc, mode="max"):
 			#print(daf_val)
 
 		toreturn.append(itemtoreturn)
-		print(scores)
-		print(itemtoreturn)
+		#print(scores)
+		#print(itemtoreturn)
 	return toreturn, allpositions
 
 
