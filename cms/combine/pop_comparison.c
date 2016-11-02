@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 10.22.16 	vitti@broadinstitute.org
+// last updated 11.02.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 33
 #include <stdio.h>
@@ -29,15 +29,19 @@ float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max va
 	}
 	return xp;
 } //end function
-float compareFst(popComp_data_multiple* data, int isnp){//currently: takes max val
+float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes average
+//takes LSBL? or PBS? I would need to include outgroup-pairs-Fst. 
+//previously: takes max val
 	double fst;
+	double ave;
 	int iComp;
-	fst =	-100;
+	fst =	0.;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
-		if (data->fst[iComp][isnp] > fst){fst = data->fst[iComp][isnp];}
+		fst += data->fst[iComp][isnp];
 	}
+	ave = fst / (double)data->ncomp;
 
-	return fst;
+	return ave;
 } //end function
 float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes max val
 	double deldaf;
