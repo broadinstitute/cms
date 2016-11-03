@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 11.02.16 	vitti@broadinstitute.org
+// last updated 11.03.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 33
 #include <stdio.h>
@@ -42,14 +42,18 @@ float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes aver
 	ave = fst / (double)data->ncomp;
 	return ave;
 } //end function
-float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes max val
+float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes average
+//previously: takes max val
 	double deldaf;
 	int iComp;
-	deldaf = -100;
+	double ave;
+	deldaf = 0;//-100;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
-		if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
+		deldaf += data->deldaf[iComp][isnp];
+		//if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
 	}
-	return deldaf;
+	ave = deldaf / (double)data->ncomp;
+	return ave;
 } //end function
 
 void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv[]){
@@ -246,8 +250,8 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	/// COLLATE LOCI: LOAD ///
 	/////////////////////////
 
-	nComparisons = argc - EXTRAARGS; 
-	numLikesFiles = EXTRAARGS;
+	nComparisons = argc - (EXTRAARGS+2); 
+	numLikesFiles = (EXTRAARGS+2);
 	totNsnp = 0;
 	//fprintf(stderr, "numcomparisons: %d\n", nComparisons);
 	for (iComp = 0; iComp < nComparisons; iComp++){
