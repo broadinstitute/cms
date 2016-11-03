@@ -364,7 +364,9 @@ def execute_visualize_likes(args):
 		scores.append(key[1])
 		dists.append(key[2])
 		pops.append(key[3])
-
+	#keys.sort()
+	for item in keys:
+		print(item)
 
 	scores = set(scores)
 	scores = list(scores)
