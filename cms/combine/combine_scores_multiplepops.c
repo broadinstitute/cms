@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 10.20.16   vitti@broadinstitute.org
+// last updated: 11.3.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -152,8 +152,10 @@ int main(int argc, char **argv) {
 		compLikeRatio = 1;
 
 		thisdaf = data.daf_selpop[iComp][isnp];
+		//fprintf(stderr, "%d\t%d\t%f\t", data.physpos[iComp][isnp], isnp, thisdaf); //debug
 
 		if (thisdaf <= .35){
+			//fprintf(stderr, "lowfreq\n"); //debug
 			delihh_hitprob = getProb(&delihh_hit_low, thisihh);
 			ihs_hitprob = getProb(&ihs_hit_low, thisihs);
 			fst_hitprob = getProb(&fst_hit_low, thisfst);
@@ -168,6 +170,7 @@ int main(int argc, char **argv) {
 		}
 
 		else if(thisdaf > .35 && thisdaf <= .65){
+			//fprintf(stderr, "midfreq\n"); //debug
 			delihh_hitprob = getProb(&delihh_hit_mid, thisihh);
 			ihs_hitprob = getProb(&ihs_hit_mid, thisihs);
 			fst_hitprob = getProb(&fst_hit_mid, thisfst);
@@ -182,6 +185,7 @@ int main(int argc, char **argv) {
 		}
 
 		else{
+			//fprintf(stderr, "hifreq\n"); //debug
 			delihh_hitprob = getProb(&delihh_hit_hi, thisihh);
 			ihs_hitprob = getProb(&ihs_hit_hi, thisihs);
 			fst_hitprob = getProb(&fst_hit_hi, thisfst);
@@ -195,16 +199,24 @@ int main(int argc, char **argv) {
 			xpehh_missprob = getProb(&xpehh_miss_hi, thisxpehh);
 		}
 
+
 		delihh_bf = delihh_hitprob / delihh_missprob;
 		ihs_bf = ihs_hitprob / ihs_missprob;
 		fst_bf = fst_hitprob / fst_missprob;
 		deldaf_bf = deldaf_hitprob / deldaf_missprob;
 		xpehh_bf = xpehh_hitprob / xpehh_missprob;
 
+
 		compLikeRatio = delihh_bf * ihs_bf * fst_bf * deldaf_bf * xpehh_bf;
 
-		fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+		//fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
+		//fprintf(stderr, "delihh %f\t hit %e\tmiss %e\tbf %e\n", thisihh, delihh_hitprob, delihh_missprob, delihh_bf); //debug
+		//fprintf(stderr, "fst %f\t hit %e\tmiss %e\tbf %e\n", thisfst, fst_hitprob, fst_missprob, fst_bf); //debug
+		//fprintf(stderr, "deldaf %f\t hit %e\tmiss %e\tbf %e\n", thisdelDaf, deldaf_hitprob, deldaf_missprob, deldaf_bf); //debug
+		//fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
+		//fprintf(stderr, "clr: %e\n", compLikeRatio);
 
+		fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 	} // end isnp
 
 	fclose(outf);

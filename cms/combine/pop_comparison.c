@@ -1,7 +1,7 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
 // last updated 11.03.16 	vitti@broadinstitute.org
 
-#define EXTRAARGS 33
+#define EXTRAARGS 32
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -25,7 +25,7 @@ float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max va
 	int iComp;
 	xp = -1e10;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
-		if (data->xp_normed[iComp][isnp] < xp){xp = data->xp_normed[iComp][isnp];}
+		if (data->xp_normed[iComp][isnp] > xp){xp = data->xp_normed[iComp][isnp];}
 	}
 	return xp;
 } //end function
@@ -49,7 +49,7 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes av
 	double ave;
 	deldaf = 0;//-100;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
-		deldaf += data->deldaf[iComp][isnp];
+		deldaf += data->delDAF[iComp][isnp];
 		//if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
 	}
 	ave = deldaf / (double)data->ncomp;
@@ -85,7 +85,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	/// COLLATE LOCI: LOAD ///
 	/////////////////////////
 
-	nComparisons = argc - EXTRAARGS; 
+	nComparisons = argc - EXTRAARGS;  
 	numLikesFiles = EXTRAARGS;
 	//fprintf(stderr,"\n\n%d\n\n", nComparisons);
 	totNsnp = 0;

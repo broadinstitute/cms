@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 10.23.16 vitti@broadinstitute.org
+## last updated: 11.03.16 vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
@@ -85,6 +85,8 @@ def full_parser_composite():
 		outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
 		outgroups_parser.add_argument('--likesfile_low', type=str, action="store", help="text file where probability distributions are specified for component scores")
 		outgroups_parser.add_argument('--likesfile_mid', type=str, action="store", help="text file where probability distributions are specified for component scores")
+		outgroups_parser.add_argument('selpop_likes', type=int, action="store", help="model id for selected pop [1, 2, 3, 4]")
+
 
 		outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
 		outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
@@ -213,18 +215,16 @@ def execute_poppair(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
-	"""still possible to toggle likesFreqs vs. not (?)"""
-	#delihh_hit_filename, delihh_miss_filename, ihs_hit_filename, ihs_miss_filename, xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename = get_likesfiles_frommaster(args.likesfile)
-	delihh_hit_hi_filename, delihh_miss_hi_filename, ihs_hit_hi_filename, ihs_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile)
-	#HI-FREQ by default
+	ihs_hit_hi_filename, ihs_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
+
 	usefreqs = []
 	if args.likesfile_low is not None:
-		delihh_hit_low_filename, delihh_miss_low_filename, ihs_hit_low_filename, ihs_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low)
+		ihs_hit_low_filename, ihs_miss_low_filename, delihh_hit_low_filename, delihh_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low, args.selpop_likes)
 		usefreqs.append('low')
 	if args.likesfile_mid is not None:
-		delihh_hit_mid_filename, delihh_miss_mid_filename, ihs_hit_mid_filename, ihs_miss_mid_filename, xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid)
+		ihs_hit_mid_filename, ihs_miss_mid_filename, delihh_hit_mid_filename, delihh_miss_mid_filename,  xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid, args.selpop_likes)
 		usefreqs.append('mid')
-	while len(usefreqs) < 3:
+	while len(usefreqs) < 3:	#HI-FREQ by default
 		usefreqs.append('hi')
 		
 	if not args.region: 	#GENOME-WIDE
@@ -236,7 +236,7 @@ def execute_outgroups(args):
 	
 	for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
 		for dist_type in ['hit', 'miss']:
-			for freq in ['low', 'mid', 'hi']:
+			for freq in usefreqs: #['low', 'mid', 'hi']:
 				argument = eval(score + "_" + dist_type + "_" + freq + "_filename")
 				argstring += " " + argument 
 
