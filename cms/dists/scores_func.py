@@ -241,7 +241,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					fullrange = len(takeindices) - 1
 				else:
 					fullrange = len(takeindices)
-				for iIndex in range(takeindices):
+				for iIndex in range(fullrange):
 					index = takeindices[iIndex]
 					thisValue = float(entries[index])
 					toreturn[iIndex].append(thisValue)
