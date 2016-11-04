@@ -1,5 +1,5 @@
 ## leaf Makefile for cms2.0/model
-## last updated 07.14.16 	vitti@broadinstitute.org
+## last updated 11.4.16 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
@@ -44,7 +44,7 @@ bootstrap_fst_popstats_regions : bootstrap_fst_popstats_regions.o coal_data_tped
 
 
 clean :
-	rm *.o
+	rm *.o && rm calc_fst_deldaf && rm bootstrap_freq_popstats_regions && rm bootstrap_ld_popstats_regions && rm bootstrap_fst_popstats_regions
 
 install :
 	cp calc_fst_deldaf /usr/local/ && cp bootstrap_freq_popstats_regions /usr/local/ && cp bootstrap_ld_popstats_regions /usr/local/ && cp bootstrap_fst_popstats_regions /usr/local/
