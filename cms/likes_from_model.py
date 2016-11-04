@@ -283,32 +283,31 @@ def execute_likes_from_scores(args):
 		print("Must specify score (e.g. --ihs)")
 		sys.exit(0)
 
-	xlims = scoreRange
-	
-	#this is not flexible to choose among population comparisons. 
-	if not args.xpehh and not args.deldaf and not args.fst: 
-		val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
-		neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
+	xlims = scoreRange	
 
-		val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
-		sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
+	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
+	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
 
-	else:
-		if args.xpehh:
-			chooseMethod = "max" 
-			comp = "xpehh"
-		elif args.deldaf:
-			chooseMethod = "daf"
-			comp = "deldaf"
-		elif args.fst:
-			chooseMethod = "mean"
-			comp = "fst"
+	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
+	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
 
-		val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, comp = comp, stripHeader = stripHeader, method=chooseMethod)
-		neut_positions, neut_score_final = val_array[0], val_array[1]
+	#if not args.xpehh and not args.deldaf and not args.fst: 
+	#else:
+	#	if args.xpehh:
+	#		chooseMethod = "max" 
+	#		comp = "xpehh"
+	#	elif args.deldaf:
+	#		chooseMethod = "daf"
+	#		comp = "deldaf"
+	#	elif args.fst:
+	#		chooseMethod = "mean"
+	#		comp = "fst"
 
-		val_array = choose_vals_from_files(args.selFile, expectedlen_sel, indices_sel, comp = comp, stripHeader = stripHeader, method=chooseMethod)		
-		sel_positions, sel_score_final = val_array[0], val_array[1]
+	#	val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, comp = comp, stripHeader = stripHeader, method=chooseMethod)
+	#	neut_positions, neut_score_final = val_array[0], val_array[1]
+
+	#	val_array = choose_vals_from_files(args.selFile, expectedlen_sel, indices_sel, comp = comp, stripHeader = stripHeader, method=chooseMethod)		
+	#	sel_positions, sel_score_final = val_array[0], val_array[1]
 
 	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
 	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 
