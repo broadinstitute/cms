@@ -153,29 +153,6 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 ##################
 ## HISTOGRAMS ###
 ###################
-def get_hist_bins(score,numBins):
-	"""toggle cutoffs of histogram, as well as y-axis limits"""
-	if score == "ihs":
-		scorerange = [-4., 4.]
-		ylims = [0, .25]
-	elif score == "delihh":
-		scorerange = [-2., 3.]
-		ylims = [0, .25]
-	elif score == "fst":
-		scorerange = [-.05, 1.]#[-2., 4.5]
-		ylims = [0, .25]
-	elif score == "deldaf":
-		scorerange = [-1., 1.]
-		ylims = [0, .25]
-	elif score == "xp":
-		scorerange = [-3., 7.]
-		ylims = [0, .25]
-	elif score == "nsl":
-		scorerange = [-4., 4.]
-		ylims = [0, .25]	
-	binlen = (scorerange[1] - scorerange[0])/float(numBins-1)
-	bins = [scorerange[0] + binlen * i for i in range(numBins)]
-	return bins, scorerange, ylims
 def get_indices(score, dem_scenario):
 	"""CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype. also returns anc_freq_index"""
 	if score == "ihs":
@@ -264,7 +241,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					fullrange = len(takeindices) - 1
 				else:
 					fullrange = len(takeindices)
-				for iIndex in range(takeindices):
+				for iIndex in range(fullrange):
 					index = takeindices[iIndex]
 					thisValue = float(entries[index])
 					toreturn[iIndex].append(thisValue)

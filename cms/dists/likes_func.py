@@ -9,7 +9,7 @@ import numpy as np
 import os
 def get_hist_bins(score,numBins):
 	if score == "ihs":
-		scorerange = [-6., 6.]
+		scorerange = [-5., 5.]
 		ylims = [0, .1]
 	elif score == "delihh":
 		scorerange = [-3., 6.]
@@ -24,7 +24,7 @@ def get_hist_bins(score,numBins):
 		scorerange = [-3., 8.]
 		ylims = [0, .1]
 	elif score=="nsl":
-		scorerange = [-6., 6.]
+		scorerange = [-5., 5.]
 		ylims = [0, .1]
 	else:
 		print("error: " + score)
