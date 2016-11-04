@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 11.2.16 vitti@broadinstitute.org
+## last updated: 11.3.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TKAgg') 
@@ -365,8 +365,8 @@ def execute_visualize_likes(args):
 		dists.append(key[2])
 		pops.append(key[3])
 	#keys.sort()
-	for item in keys:
-		print(item)
+	#for item in keys:
+	#	print(item)
 
 	scores = set(scores)
 	scores = list(scores)
@@ -402,13 +402,26 @@ def execute_visualize_likes(args):
 					ax = axes[imodel, ipop]
 				pop = pops[ipop]
 
-				starts_causal, ends_causal, vals_causal = likes_dict[(model, score, 'causal', pop)]
-				starts_linked, ends_linked, vals_linked = likes_dict[(model, score, 'linked', pop)]
-				starts_neut, ends_neut, vals_neut = likes_dict[(model, score, 'neut', pop)]				
-				assert starts_causal == starts_neut and starts_neut == starts_linked
-				plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
-				plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
-				plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
+				causalkey = (model, score, 'causal', pop)
+				linkedkey = (model, score, 'linked', pop)
+				neutkey = (model, score, 'neut', pop)
+				if causalkey in keys:
+					starts_causal, ends_causal, vals_causal = likes_dict[causalkey]
+					plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
+				if linkedkey in keys:
+					starts_linked, ends_linked, vals_linked = likes_dict[linkedkey]
+					plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
+				if neutkey in keys:
+					starts_neut, ends_neut, vals_neut = likes_dict[neutkey]				
+					plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
+		
+				if causalkey in keys and neutkey in keys:
+					assert starts_causal == starts_neut
+				if neutkey in keys and linkedkey in keys:
+					assert starts_neut == starts_linked
+				if causalkey in keys and linkedkey in keys:
+					assert starts_causal == starts_linked
+
 				iAxis +=1
 				if imodel == (len(models)-1):
 					ax.set_xlabel(pop)
