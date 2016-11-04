@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 11.3.16 vitti@broadinstitute.org
+## last updated: 11.4.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 #mp.use('TkAgg') #set backend
@@ -9,7 +9,7 @@ import numpy as np
 import os
 def get_hist_bins(score,numBins):
 	if score == "ihs":
-		scorerange = [-5., 5.]
+		scorerange = [-4., 4.]
 		ylims = [0, .1]
 	elif score == "delihh":
 		scorerange = [-3., 6.]
@@ -18,7 +18,7 @@ def get_hist_bins(score,numBins):
 		scorerange = [-.05, 1.]
 		ylims = [0, .1]
 	elif score == "deldaf" or score =="fst_deldaf":
-		scorerange = [-.1, 1.]
+		scorerange = [-1., 1.]
 		ylims = [0, .1]
 	elif score == "xp" or score =="xpehh":
 		scorerange = [-3., 8.]

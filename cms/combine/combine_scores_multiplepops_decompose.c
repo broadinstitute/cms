@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
 		//fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
 		//fprintf(stderr, "clr: %e\n", compLikeRatio);
 
-		fprintf(outf, "%d\t%e\t%e\t%e\t%e\t%e\n" data.physpos[iComp][isnp], delihh_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf); 
+		fprintf(outf, "%d\t%e\t%e\t%e\t%e\t%e\n", data.physpos[iComp][isnp], delihh_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf); 
 
 		//fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 	} // end isnp
