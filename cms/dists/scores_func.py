@@ -355,7 +355,7 @@ def choose_from_reps(repscores, reppositions, repanc, mode="max"):
 			itemtoreturn = np.mean(scores)
 		elif mode == "min":
 			itemtoreturn = min(scores)
-		elif mode == "daf": #
+		elif mode == "daf" or mode == "deldaf": #
 			itemtoreturn = np.mean(scores)
 			#print('testing...')
 			#thispop_anc = float(freqs[0])
