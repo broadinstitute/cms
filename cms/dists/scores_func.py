@@ -200,7 +200,7 @@ def get_indices(score, dem_scenario):
 		#	expectedlen = 9
 		#else:
 		#	expectedlen = 10
-		indices = [physpos_index, xp_normed_index, freq_anc_index]
+		indices = [physpos_index, scoreindex, freq_anc_index]
 
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
@@ -237,7 +237,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 					incompleteData +=1
 					break
-				if takeindices[-1] ==float('nan'):
+				if np.isnan(takeindices[-1]):
 					fullrange = len(takeindices) - 1
 				else:
 					fullrange = len(takeindices)
