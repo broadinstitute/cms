@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 11.2.16 vitti@broadinstitute.org
+## last updated: 11.4.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -193,22 +193,6 @@ def get_indices(score, dem_scenario):
 		physpos_index, freq_anc_index = 1, 2
 		delihh_unnormed_index, delihh_normed_index = 5, 6
 		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
-	elif score == "fst": #must validate******
-		expectedlen = 3#2
-		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
-		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "deldaf":
-		expectedlen = 3#2
-		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
-		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "xp":
-		physpos_index, freq_anc_index = 1, 2
-		xp_unnormed_index, xp_normed_index, = 7, 8
-		if "sel" in dem_scenario:
-			expectedlen = 9
-		else:
-			expectedlen = 10
-		indices = [physpos_index, xp_normed_index, freq_anc_index]
 	elif score == "nsl":
 		physpos_index, freq_anc_index = 1, 2
 		normedscoreindex = 6
@@ -216,10 +200,35 @@ def get_indices(score, dem_scenario):
 			expectedlen = 7
 		else:
 			expectedlen = 8
-		indices = [physpos_index, normedscoreindex, freq_anc_index]
+		indices = [physpos_index, normedscoreindex, freq_anc_index]		
+	elif score == "fst": #PULL FROM COMP (.CMS FILE)
+		expectedlen = 8
+		physpos_index, scoreindex, freq_anc_index = 0, 5, float('nan')
+		#expectedlen = 3#2
+		#physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+		
+		indices = [physpos_index, scoreindex, freq_anc_index]
+	elif score == "deldaf":#PULL FROM COMP (.CMS FILE)
+		expectedlen = 8
+		physpos_index, scoreindex, freq_anc_index = 0, 6, float('nan')	
+		#expectedlen = 3#2
+		#physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+		indices = [physpos_index, scoreindex, freq_anc_index]
+	elif score == "xp": #PULL FROM COMP (.CMS FILE)
+		expectedlen = 8
+		physpos_index, scoreindex, freq_anc_index = 0, 4, float('nan')	
+		#physpos_index, freq_anc_index = 1, 2
+		#xp_unnormed_index, xp_normed_index, = 7, 8
+		#if "sel" in dem_scenario:
+		#	expectedlen = 9
+		#else:
+		#	expectedlen = 10
+		indices = [physpos_index, xp_normed_index, freq_anc_index]
+
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
 	''' if filename is .list, opens and parses multiple files '''
+
 	toreturn, incompleteData = [[] for index in takeindices], 0
 
 	entries = filename.split('.')
@@ -251,7 +260,11 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 					incompleteData +=1
 					break
-				for iIndex in range(len(takeindices)):
+				if takeindices[-1] ==float('nan'):
+					fullrange = len(takeindices) - 1
+				else:
+					fullrange = len(takeindices)
+				for iIndex in range(takeindices):
 					index = takeindices[iIndex]
 					thisValue = float(entries[index])
 					toreturn[iIndex].append(thisValue)
