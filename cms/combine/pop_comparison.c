@@ -38,8 +38,9 @@ float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes aver
 	int theseComp=0;
 	fst =	0.;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
+		if (data->fst[iComp][isnp] != 0){
 		fst += data->fst[iComp][isnp];
-		theseComp ++;
+		theseComp ++;}
 	}
 	ave = fst / (double)theseComp;
 	return ave;
@@ -52,9 +53,11 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes av
 	int theseComp=0;
 	deldaf = 0;//-100;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
+		if (data->delDAF[iComp][isnp] !=0){
 		deldaf += data->delDAF[iComp][isnp];
-		theseComp++;
+		theseComp++;}
 		//if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
+
 	}
 	ave = deldaf / (double)theseComp;
 	return ave;
