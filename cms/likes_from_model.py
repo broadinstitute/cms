@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 11.3.16 vitti@broadinstitute.org
+## last updated: 11.04.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TKAgg') 
@@ -75,7 +75,7 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary). May be a file containing a list of files (e.g. multiple replicates) if suffix is <.list>.')
 		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
 		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
-		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)')	
+		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)', default=False)	
 		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
 		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='define probability distribution for delIHH')	
 		likes_from_scores_parser.add_argument('--nsl', action='store_true', help='define probability distribution for nSl')	
