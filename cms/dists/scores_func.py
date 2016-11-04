@@ -200,7 +200,7 @@ def get_indices(score, dem_scenario):
 		#	expectedlen = 9
 		#else:
 		#	expectedlen = 10
-		indices = [physpos_index, xp_normed_index, freq_anc_index]
+		indices = [physpos_index, scoreindex, freq_anc_index]
 
 	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
