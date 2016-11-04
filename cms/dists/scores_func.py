@@ -237,7 +237,7 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
 					incompleteData +=1
 					break
-				if takeindices[-1] ==float('nan'):
+				if np.isnan(takeindices[-1]):
 					fullrange = len(takeindices) - 1
 				else:
 					fullrange = len(takeindices)
