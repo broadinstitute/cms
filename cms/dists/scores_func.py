@@ -158,8 +158,8 @@ def get_indices(score, dem_scenario):
 	if score == "ihs":
 		physpos_index, freq_anc_index = 1, 2
 		#if "sel" in dem_scenario:
-		if True: #PULL FROM NORMED FILE
-			ihs_unnormed_index, ihs_normed_index, expectedlen = 9, 10, 11 #these files have 11 columns
+		if True: #PULL FROM NORMED FILE / flexible to old format
+			ihs_unnormed_index, ihs_normed_index, expectedlen = -2, -1, 11 #these files have 11 columns
 		#else: #neutral
 		#	ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 10 #these files have 8 columns; last one is binary variable
 		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
