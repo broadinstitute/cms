@@ -16,7 +16,7 @@ float getMinBf(likes_data* data_hit, likes_data* data_miss){
 	float minBf = 1;
 
 	for (ibin = 0; ibin < data_hit->nbins; ibin++){
-		if(data_hit->probs[ibin] != 1e-10 && data_miss->probs[ibin] != 1e-10){
+		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
 			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
 			if (thisBf < minBf){minBf = thisBf;}
 		}

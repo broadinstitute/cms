@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 11.14.16 vitti@broadinstitute.org
+## last updated: 11.15.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -394,31 +394,30 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	neut_scores = neut_scores[~np.isnan(neut_scores)]
 
 	#get weights to plot pdf from hist
-	weights_causal = np.ones_like(causal_scores)/len(causal_scores)
-	weights_linked = np.ones_like(linked_scores)/len(linked_scores)
-	weights_neut = np.ones_like(neut_scores)/len(neut_scores)
+	#weights_causal = np.ones_like(causal_scores)/len(causal_scores)
+	#weights_linked = np.ones_like(linked_scores)/len(linked_scores)
+	#weights_neut = np.ones_like(neut_scores)/len(neut_scores)
 
 	causal_scores = np.clip(causal_scores, xlims[0], xlims[1]) #np.clip
 	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
 	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
 
-	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins, weights = weights_causal)
-	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins, weights = weights_linked)
-	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins, weights = weights_neut)
-
+	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins)#, weights = weights_causal)
+	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins)#, weights = weights_linked)
+	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins)#, weights = weights_neut)
 
 	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
 	#print(debug_array)
 
-	totalNsnps = len(causal_scores) + len(linked_scores) + len(neut_scores)
+	#totalNsnps = len(causal_scores) + len(linked_scores) + len(neut_scores)
 
-	for ibin in range(len(n_causal)):
-		if n_causal[ibin] == 0:
-			n_causal[ibin] = 1e-10
-		if n_linked[ibin] == 0:
-			n_linked[ibin] = 1e-10
-		if n_neut[ibin] == 0:
-			n_neut[ibin] = 1e-10
+	#for ibin in range(len(n_causal)):
+	#	if n_causal[ibin] <= 1:
+	#		n_causal[ibin] = 1e-10
+	#	if n_linked[ibin] <= 1:
+	#		n_linked[ibin] = 1e-10
+	#	if n_neut[ibin] <=1:
+	#		n_neut[ibin] = 1e-10
 
 	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
 
@@ -430,7 +429,18 @@ def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 		writefile = open(writefilename, 'w')
 		n_scores = eval('n_' + status)
 		for index in range(len(n_scores)):
-			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(n_scores[index])+ "\n"
+			num_in_bin = n_scores[index]
+			if (num_in_bin <= 1):
+				writeprob = 1e-10
+			else:
+				if (index < (len(n_scores) - 1) and index > 0): #check neighbors
+					if (n_scores[index+1] == n_scores[index-1]) and (n_scores[index+1] <=1):
+						writeprob = 1e-10
+					else:
+						writeprob = float(n_scores[index])/(sum(n_scores)) #
+				else:
+					writeprob = float(n_scores[index])/(sum(n_scores)) #
+			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(writeprob)+ "\n"
 			writefile.write(towritestring)
 		writefile.close()
 	return
