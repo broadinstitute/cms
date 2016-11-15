@@ -1,5 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// last updated: 11.3.16   vitti@broadinstitute.org
+// last updated: 11.15.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -45,11 +45,11 @@ int main(int argc, char **argv) {
 	char deldaf_hit_mid_filename[256], deldaf_miss_mid_filename[256];
 	char deldaf_hit_hi_filename[256], deldaf_miss_hi_filename[256];
 
-	float delihh_hitprob, delihh_missprob, delihh_bf; //bayes factor
-	float ihs_hitprob, ihs_missprob, ihs_bf;
-	float xpehh_hitprob, xpehh_missprob, xpehh_bf;
-	float fst_hitprob, fst_missprob, fst_bf;
-	float deldaf_hitprob, deldaf_missprob, deldaf_bf;
+	float delihh_hitprob, delihh_missprob, delihh_bf, delihh_minbf; //bayes factor
+	float ihs_hitprob, ihs_missprob, ihs_bf, ihs_minbf;
+	float xpehh_hitprob, xpehh_missprob, xpehh_bf, xpehh_minbf;
+	float fst_hitprob, fst_missprob, fst_bf, fst_minbf;
+	float deldaf_hitprob, deldaf_missprob, deldaf_bf, deldaf_minbf;
 
 	if (argc < 32) {
 		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filenames {low, mid, hi}> <ihs_miss_filenames {low, mid, hi}> <delihh_hit_filenames {low, mid, hi}> <delihh_miss_filenames {low, mid, hi}> <xpehh_hit_filenames {low, mid, hi}> <xpehh_miss_filenames {low, mid, hi}> <fst_hit_filenames {low, mid, hi}> <fst_miss_filenames {low, mid, hi}> <deldaf_hit_filenames {low, mid, hi}> <deldaf_miss_filenames {low, mid, hi}> <popPair file 1> <popPair file 2...>\n");
@@ -167,6 +167,13 @@ int main(int argc, char **argv) {
 			fst_missprob = getProb(&fst_miss_low, thisfst);
 			deldaf_missprob = getProb(&deldaf_miss_low, thisdelDaf);
 			xpehh_missprob = getProb(&xpehh_miss_low, thisxpehh);
+
+			delihh_minbf = getMinBf(&delihh_miss_low, &delihh_hit_low);
+			ihs_minbf = getMinBf(&ihs_miss_low, &ihs_hit_low);
+			fst_minbf = getMinBf(&fst_miss_low, &fst_hit_low);
+			deldaf_minbf = getMinBf(&deldaf_miss_low, &deldaf_hit_low);
+			xpehh_minbf = getMinBf(&xpehh_miss_low, &xpehh_hit_low);
+
 		}
 
 		else if(thisdaf > .35 && thisdaf <= .65){
@@ -182,6 +189,12 @@ int main(int argc, char **argv) {
 			fst_missprob = getProb(&fst_miss_mid, thisfst);
 			deldaf_missprob = getProb(&deldaf_miss_mid, thisdelDaf);
 			xpehh_missprob = getProb(&xpehh_miss_mid, thisxpehh);
+		
+			delihh_minbf = getMinBf(&delihh_miss_mid, &delihh_hit_mid);
+			ihs_minbf = getMinBf(&ihs_miss_mid, &ihs_hit_mid);
+			fst_minbf = getMinBf(&fst_miss_mid, &fst_hit_mid);
+			deldaf_minbf = getMinBf(&deldaf_miss_mid, &deldaf_hit_mid);
+			xpehh_minbf = getMinBf(&xpehh_miss_mid, &xpehh_hit_mid);
 		}
 
 		else{
@@ -197,15 +210,46 @@ int main(int argc, char **argv) {
 			fst_missprob = getProb(&fst_miss_hi, thisfst);
 			deldaf_missprob = getProb(&deldaf_miss_hi, thisdelDaf);
 			xpehh_missprob = getProb(&xpehh_miss_hi, thisxpehh);
+
+			delihh_minbf = getMinBf(&delihh_miss_hi, &delihh_hit_hi);
+			ihs_minbf = getMinBf(&ihs_miss_hi, &ihs_hit_hi);
+			fst_minbf = getMinBf(&fst_miss_hi, &fst_hit_hi);
+			deldaf_minbf = getMinBf(&deldaf_miss_hi, &deldaf_hit_hi);
+			xpehh_minbf = getMinBf(&xpehh_miss_hi, &xpehh_hit_hi);
+
 		}
 
-
-		delihh_bf = delihh_hitprob / delihh_missprob;
-		ihs_bf = ihs_hitprob / ihs_missprob;
-		fst_bf = fst_hitprob / fst_missprob;
-		deldaf_bf = deldaf_hitprob / deldaf_missprob;
-		xpehh_bf = xpehh_hitprob / xpehh_missprob;
-
+		//catch pseudocounts per SG/IS CMS 1.0 implementation
+		if (delihh_hitprob == 1e-10){
+			delihh_bf = delihh_minbf;
+		}
+		else{
+			delihh_bf = delihh_hitprob / delihh_missprob;
+		}
+		if (ihs_hitprob == 1e-10){
+			ihs_bf = ihs_minbf;
+		}
+		else{
+			ihs_bf = ihs_hitprob / ihs_missprob;
+		}
+		if (fst_hitprob == 1e-10){
+			fst_bf = fst_minbf;
+		}
+		else{
+			fst_bf = fst_hitprob / fst_missprob;
+		}
+		if (deldaf_hitprob == 1e-10){
+			deldaf_bf = deldaf_minbf;
+		}
+		else{
+			deldaf_bf = deldaf_hitprob / deldaf_missprob;			
+		}
+		if (xpehh_hitprob==1e-10){
+			xpehh_bf = xpehh_minbf;
+		}
+		else{
+			xpehh_bf = xpehh_hitprob / xpehh_missprob;
+		}
 
 		compLikeRatio = delihh_bf * ihs_bf * fst_bf * deldaf_bf * xpehh_bf;
 
