@@ -10,7 +10,7 @@
 #include "cms_data.h"
 #include "pop_comparison.h"
 
-float getMinBf(likes_data* data_hit, likes_data* data_miss){
+float getMinBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
 	float thisBf;
 	float minBf = 1;
