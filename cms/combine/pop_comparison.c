@@ -21,6 +21,7 @@ float getMinBf(likes_data* data_hit, likes_data* data_miss){
 			if (thisBf < minBf){minBf = thisBf;}
 		}
 	}//end ibin
+	
 	return minBf;
 }//end function
 

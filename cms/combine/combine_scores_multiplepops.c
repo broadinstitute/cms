@@ -220,31 +220,31 @@ int main(int argc, char **argv) {
 		}
 
 		//catch pseudocounts per SG/IS CMS 1.0 implementation
-		if (delihh_hitprob == 1e-10){
+		if (delihh_hitprob < 2e-10){ 
 			delihh_bf = delihh_minbf;
 		}
 		else{
 			delihh_bf = delihh_hitprob / delihh_missprob;
 		}
-		if (ihs_hitprob == 1e-10){
+		if (ihs_hitprob < 2e-10){
 			ihs_bf = ihs_minbf;
 		}
 		else{
 			ihs_bf = ihs_hitprob / ihs_missprob;
 		}
-		if (fst_hitprob == 1e-10){
+		if (fst_hitprob < 2e-10){
 			fst_bf = fst_minbf;
 		}
 		else{
 			fst_bf = fst_hitprob / fst_missprob;
 		}
-		if (deldaf_hitprob == 1e-10){
+		if (deldaf_hitprob < 2e-10){
 			deldaf_bf = deldaf_minbf;
 		}
 		else{
 			deldaf_bf = deldaf_hitprob / deldaf_missprob;			
 		}
-		if (xpehh_hitprob==1e-10){
+		if (xpehh_hitprob < 2e-10){
 			xpehh_bf = xpehh_minbf;
 		}
 		else{
