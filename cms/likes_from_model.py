@@ -205,7 +205,7 @@ def execute_scores_from_sims(args):
 		calc_xpehh(inputFilename, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, 'cms/cms/model/')
+		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, 'model/')
 
 	###############
 	## NORMALIZE ##

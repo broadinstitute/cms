@@ -1,4 +1,4 @@
-//last updated 11.15.16 	vitti@broadinstitute.org
+//last updated 11.17.16 	vitti@broadinstitute.org
 
 /**********************/
 /***POP COMPARISONS****/
@@ -21,6 +21,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
 void free_popComp_data_multiple(popComp_data_multiple* data);
 
+float getMaxBf(likes_data* data_hit, likes_data* data_miss);
 float getMinBf(likes_data* data_hit, likes_data* data_miss);
 float getProb(likes_data* data, double value);
 float compareXp(popComp_data_multiple* data, int isnp);

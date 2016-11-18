@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 11.15.16 	vitti@broadinstitute.org
+// last updated 11.18.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 32
 #include <stdio.h>
@@ -9,6 +9,21 @@
 //#include <zlib.h>
 #include "cms_data.h"
 #include "pop_comparison.h"
+
+float getMaxBf(likes_data* data_miss, likes_data* data_hit){
+	int ibin;
+	float thisBf;
+	float maxBf = 0;
+
+	for (ibin = 0; ibin < data_hit->nbins; ibin++){
+		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
+			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
+			if (thisBf > maxBf){maxBf = thisBf;}
+		}
+	}//end ibin
+	
+	return maxBf;
+}//end function
 
 float getMinBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
@@ -38,7 +53,7 @@ float getProb(likes_data* data, double value){
 float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max val
 	double xp;
 	int iComp;
-	xp = -1e10;
+	xp = xp_normed[0][isnp];
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->xp_normed[iComp][isnp] > xp){xp = data->xp_normed[iComp][isnp];}
 	}
