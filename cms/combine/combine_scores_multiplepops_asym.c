@@ -1,6 +1,5 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
-// implements symmetrical treatment of right/left side of distribution wrt pseudobins
-// last updated: 11.17.16   vitti@broadinstitute.org
+// last updated: 11.15.16   vitti@broadinstitute.org //phasing out.
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -46,11 +45,11 @@ int main(int argc, char **argv) {
 	char deldaf_hit_mid_filename[256], deldaf_miss_mid_filename[256];
 	char deldaf_hit_hi_filename[256], deldaf_miss_hi_filename[256];
 
-	float delihh_hitprob, delihh_missprob, delihh_bf, delihh_minbf, delihh_maxbf; //bayes factor
-	float ihs_hitprob, ihs_missprob, ihs_bf, ihs_minbf, ihs_maxbf;
-	float xpehh_hitprob, xpehh_missprob, xpehh_bf, xpehh_minbf, xpehh_maxbf;
-	float fst_hitprob, fst_missprob, fst_bf, fst_minbf, fst_maxbf;
-	float deldaf_hitprob, deldaf_missprob, deldaf_bf, deldaf_minbf, deldaf_maxbf;
+	float delihh_hitprob, delihh_missprob, delihh_bf, delihh_minbf; //bayes factor
+	float ihs_hitprob, ihs_missprob, ihs_bf, ihs_minbf;
+	float xpehh_hitprob, xpehh_missprob, xpehh_bf, xpehh_minbf;
+	float fst_hitprob, fst_missprob, fst_bf, fst_minbf;
+	float deldaf_hitprob, deldaf_missprob, deldaf_bf, deldaf_minbf;
 
 	if (argc < 32) {
 		fprintf(stderr, "Usage: ./combine_cms_scores_multiplepops <outfilename> <ihs_hit_filenames {low, mid, hi}> <ihs_miss_filenames {low, mid, hi}> <delihh_hit_filenames {low, mid, hi}> <delihh_miss_filenames {low, mid, hi}> <xpehh_hit_filenames {low, mid, hi}> <xpehh_miss_filenames {low, mid, hi}> <fst_hit_filenames {low, mid, hi}> <fst_miss_filenames {low, mid, hi}> <deldaf_hit_filenames {low, mid, hi}> <deldaf_miss_filenames {low, mid, hi}> <popPair file 1> <popPair file 2...>\n");
@@ -175,13 +174,6 @@ int main(int argc, char **argv) {
 			deldaf_minbf = getMinBf(&deldaf_miss_low, &deldaf_hit_low);
 			xpehh_minbf = getMinBf(&xpehh_miss_low, &xpehh_hit_low);
 
-			delihh_maxbf = getMaxBf(&delihh_miss_low, &delihh_hit_low);
-			ihs_maxbf = getMaxBf(&ihs_miss_low, &ihs_hit_low);
-			fst_maxbf = getMaxBf(&fst_miss_low, &fst_hit_low);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_low, &deldaf_hit_low);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_low, &xpehh_hit_low);
-
-
 		}
 
 		else if(thisdaf > .35 && thisdaf <= .65){
@@ -203,14 +195,6 @@ int main(int argc, char **argv) {
 			fst_minbf = getMinBf(&fst_miss_mid, &fst_hit_mid);
 			deldaf_minbf = getMinBf(&deldaf_miss_mid, &deldaf_hit_mid);
 			xpehh_minbf = getMinBf(&xpehh_miss_mid, &xpehh_hit_mid);
-
-			delihh_maxbf = getMaxBf(&delihh_miss_mid, &delihh_hit_mid);
-			ihs_maxbf = getMaxBf(&ihs_miss_mid, &ihs_hit_mid);
-			fst_maxbf = getMaxBf(&fst_miss_mid, &fst_hit_mid);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_mid, &deldaf_hit_mid);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_mid, &xpehh_hit_mid);
-
-
 		}
 
 		else{
@@ -233,59 +217,34 @@ int main(int argc, char **argv) {
 			deldaf_minbf = getMinBf(&deldaf_miss_hi, &deldaf_hit_hi);
 			xpehh_minbf = getMinBf(&xpehh_miss_hi, &xpehh_hit_hi);
 
-			delihh_maxbf = getMaxBf(&delihh_miss_hi, &delihh_hit_hi);
-			ihs_maxbf = getMaxBf(&ihs_miss_hi, &ihs_hit_hi);
-			fst_maxbf = getMaxBf(&fst_miss_hi, &fst_hit_hi);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_hi, &deldaf_hit_hi);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_hi, &xpehh_hit_hi);
+		}
 
-		}
 		//catch pseudocounts per SG/IS CMS 1.0 implementation
-		if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){
-			delihh_bf = delihh_maxbf;
-		}
-		if (delihh_hitprob < 2e-10 && delihh_missprob > 2e-10){ 
+		if (delihh_hitprob < 2e-10){ 
 			delihh_bf = delihh_minbf;
 		}
 		else{
 			delihh_bf = delihh_hitprob / delihh_missprob;
 		}
-
-		if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){
-			ihs_bf = ihs_maxbf;
-		}
-		if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){
+		if (ihs_hitprob < 2e-10){
 			ihs_bf = ihs_minbf;
 		}
 		else{
 			ihs_bf = ihs_hitprob / ihs_missprob;
 		}
-
-		if (fst_missprob < 2e-10 && fst_hitprob > 2e-10){
-			fst_bf = fst_maxbf;
-		}
-		if (fst_hitprob < 2e-10 && fst_missprob > 2e-10){
+		if (fst_hitprob < 2e-10){
 			fst_bf = fst_minbf;
 		}
 		else{
 			fst_bf = fst_hitprob / fst_missprob;
 		}
-
-		if (deldaf_missprob < 2e-10 && deldaf_hitprob > 2e-10){
-			deldaf_bf = deldaf_maxbf;
-		}
-		if (deldaf_hitprob < 2e-10 && deldaf_missprob > 2e-10){
+		if (deldaf_hitprob < 2e-10){
 			deldaf_bf = deldaf_minbf;
 		}
 		else{
 			deldaf_bf = deldaf_hitprob / deldaf_missprob;			
 		}
-
-
-		if (xpehh_missprob < 2e-10 && xpehh_hitprob > 2e-10){
-			xpehh_bf = xpehh_maxbf;
-		}
-		if (xpehh_hitprob < 2e-10 && xpehh_missprob > 2e-10){
+		if (xpehh_hitprob < 2e-10){
 			xpehh_bf = xpehh_minbf;
 		}
 		else{
