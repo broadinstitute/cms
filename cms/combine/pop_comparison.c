@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 11.18.16 	vitti@broadinstitute.org
+// last updated 11.20.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 32
 #include <stdio.h>
@@ -53,7 +53,7 @@ float getProb(likes_data* data, double value){
 float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max val
 	double xp;
 	int iComp;
-	xp = xp_normed[0][isnp];
+	xp = data->xp_normed[0][isnp];
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->xp_normed[iComp][isnp] > xp){xp = data->xp_normed[iComp][isnp];}
 	}
