@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 07.15.16   vitti@broadinstitute.org
+// last updated: 11.23.16   vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -46,6 +46,18 @@ typedef struct ihs_data {
 } ihs_data;
 void get_ihs_data(ihs_data* data, char filename[]);
 void free_ihs_data(ihs_data* data);
+
+typedef struct nsl_data {
+    int nsnps;
+    int *pos; 
+    double *freq1;
+    double *sl0;
+    double *sl1;
+    double *nsl_unnormed;
+    double *nsl_normed; 
+} nsl_data;
+void get_nsl_data(nsl_data* data, char filename[]);
+void free_nsl_data(nsl_data* data);
 
 typedef struct fst_deldaf_data {
     int nsnps;

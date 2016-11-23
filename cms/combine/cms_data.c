@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 07.15.16 	vitti@broadinstitute.org
+// last updated: 11.23.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -333,6 +333,85 @@ void free_ihs_data(ihs_data* data) {
 	free(data->lastcol);	
 	data->nsnps = 0;
 } //end method
+
+void get_nsl_data(nsl_data* data, char filename[]) {
+	const int line_size = 15000000; 
+	FILE *inf=NULL;
+	char *newLine, *token, *running;
+	int isnp, itoken;
+
+	newLine = malloc((line_size+1) * sizeof(char));
+	assert(newLine != NULL); 
+
+	data->nsnps = 0;
+	data->pos = NULL; 
+	data->freq1 = NULL;
+	data->sl0 = NULL;
+	data->sl1 = NULL;
+	data->nsl_unnormed = NULL;
+	data->nsl_normed = NULL;
+	inf = fopen(filename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
+	assert(inf != NULL);
+	while (fgets(newLine, line_size, inf) != NULL) {
+			assert(strlen(newLine) < line_size);
+			data->nsnps++;
+		}
+	fclose(inf);
+
+	// Allocate memory; initialize
+	data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
+	data->freq1 = malloc(data->nsnps * sizeof(double*)); assert(data->freq1 != NULL);
+	data->sl0 = malloc(data->nsnps * sizeof(double*)); assert(data->sl0 != NULL);
+	data->sl1 = malloc(data->nsnps * sizeof(double*)); assert(data->sl1 != NULL);
+	data->nsl_unnormed = malloc(data->nsnps * sizeof(double*)); assert(data->nsl_unnormed != NULL);
+	data->nsl_normed = malloc(data->nsnps * sizeof(double*)); assert(data->nsl_normed != NULL);
+
+	/*******************
+	GET DATA FROM FILE
+	*******************/
+	inf = fopen(filename, "r");
+	isnp = 0;
+	while (fgets(newLine, line_size, inf) != NULL) {
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 1) {
+				data->pos[isnp] = atoi(token);
+			}	
+			else if (itoken == 2) {
+				data->freq1[isnp] = atof(token);
+			}
+			else if (itoken == 3) {
+				data->sl0[isnp] = atof(token);
+			}			
+			else if (itoken == 4) {
+				data->sl1[isnp] = atof(token);
+			}
+			else if (itoken == 5) {
+				data->nsl_unnormed[isnp] = atof(token);
+			}			
+			else if (itoken == 6) {
+				data->nsl_normed[isnp] = atof(token);
+			}
+
+		} // END for running=newLine
+		isnp++;
+	} //END while(fgets(newLine))
+	
+	fclose(inf);
+	free(newLine);
+} //end method
+
+void free_nsl_data(nsl_data* data) {
+	if (data == NULL) {return;}
+	free(data->pos);
+	free(data->freq1);
+	free(data->sl0);
+	free(data->sl0);
+	free(data->nsl_unnormed);
+	free(data->nsl_normed);
+	data->nsnps = 0;
+} //end method
+
 
 /*************************/
 /***SCORE DISTRIBUTIONS***/
