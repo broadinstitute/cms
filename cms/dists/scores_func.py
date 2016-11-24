@@ -125,6 +125,8 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	normfile.close()
 	print("wrote to: " + normfilename)
 	return
+
+
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName

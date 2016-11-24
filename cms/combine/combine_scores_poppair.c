@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 	fprintf(stderr, "\t nsnps: %d\n", ihs1.nsnps);
 
 	fprintf(stderr, "loading data from: %s\n", nsl1filename);
-	get_ihs_data(&nsl1, nsl1filename);
+	get_nsl_data(&nsl1, nsl1filename);
 	fprintf(stderr, "\t nsnps: %d\n", nsl1.nsnps);
 
 	fprintf(stderr, "loading data from: %s\n", delihh1filename);
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 	get_fst_deldaf_data(&fst_deldaf, fst_deldaffilename);
 	fprintf(stderr, "\t nsnps: %d\n", fst_deldaf.nsnps);
 
-	sprintf(outfilename, "%s", argv[7]);
+	sprintf(outfilename, "%s", argv[8]);
 
 	////////////////////////
 	// ITERATE OVER SNPS ///

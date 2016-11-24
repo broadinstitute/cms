@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 11.03.16 vitti@broadinstitute.org
+## last updated: 11.24.16 vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
@@ -70,6 +70,7 @@ def full_parser_composite():
 		###############
 		poppair_parser = subparsers.add_parser('poppair', help='Collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons).')
 		poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
+		poppair_parser.add_argument('in_nsl_file', type=str, action='store', help="file with normalized nSL values for putative selpop")
 		poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
 		poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
 		poppair_parser.add_argument('in_fst_deldaf_file', type=str, action='store', help="file with Fst, delDaf values for poppair")
@@ -207,7 +208,7 @@ def execute_poppair(args):
 		deldaf_reversed = 0
 	else:
 		deldaf_reversed = 1
-	argstring = args.in_ihs_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
+	argstring = args.in_ihs_file + " "  + args.in_nsl_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(cmdstring)
@@ -215,14 +216,14 @@ def execute_poppair(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
-	ihs_hit_hi_filename, ihs_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
+	ihs_hit_hi_filename, ihs_miss_hi_filename, nsl_hit_hi_filename, nsl_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
 
 	usefreqs = []
 	if args.likesfile_low is not None:
-		ihs_hit_low_filename, ihs_miss_low_filename, delihh_hit_low_filename, delihh_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low, args.selpop_likes)
+		ihs_hit_low_filename, ihs_miss_low_filename, nsl_hit_low_filename, nsl_miss_low_filename, delihh_hit_low_filename, delihh_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low, args.selpop_likes)
 		usefreqs.append('low')
 	if args.likesfile_mid is not None:
-		ihs_hit_mid_filename, ihs_miss_mid_filename, delihh_hit_mid_filename, delihh_miss_mid_filename,  xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid, args.selpop_likes)
+		ihs_hit_mid_filename, ihs_miss_mid_filename, nsl_hit_mid_filename, nsl_miss_mid_filename, delihh_hit_mid_filename, delihh_miss_mid_filename,  xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid, args.selpop_likes)
 		usefreqs.append('mid')
 	while len(usefreqs) < 3:	#HI-FREQ by default
 		usefreqs.append('hi')
@@ -234,7 +235,7 @@ def execute_outgroups(args):
 		cmd = "combine/combine_scores_multiplepops_region"
 		argstring = args.outfile + " " + str(args.startBp) + " " + str(args.endBp) + " "  
 	
-	for score in ['ihs', 'delihh', 'xpehh', 'fst', 'deldaf']:
+	for score in ['ihs', 'nsl', 'delihh', 'xpehh', 'fst', 'deldaf']:
 		for dist_type in ['hit', 'miss']:
 			for freq in usefreqs: #['low', 'mid', 'hi']:
 				argument = eval(score + "_" + dist_type + "_" + freq + "_filename")
