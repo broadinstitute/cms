@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 11.23.16 	vitti@broadinstitute.org
+// last updated: 11.25.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -305,15 +305,15 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 			else if (itoken == 4) {
 				data->ihh1[isnp] = atof(token);
 			}
-			else if (itoken == 5) {
+			else if (itoken == 9) {
 				data->ihs_unnormed[isnp] = atof(token);
 			}			
-			else if (itoken == 6) {
+			else if (itoken == 10) {
 				data->ihs_normed[isnp] = atof(token);
 			}
-			else if (itoken == 7) {
-				data->lastcol[isnp] = atoi(token);
-			}
+			//else if (itoken == 7) {
+			//	data->lastcol[isnp] = atoi(token);
+			//}
 		} // END for running=newLine
 		isnp++;
 	} //END while(fgets(newLine))
@@ -406,7 +406,7 @@ void free_nsl_data(nsl_data* data) {
 	free(data->pos);
 	free(data->freq1);
 	free(data->sl0);
-	free(data->sl0);
+	free(data->sl1);
 	free(data->nsl_unnormed);
 	free(data->nsl_normed);
 	data->nsnps = 0;
@@ -502,6 +502,7 @@ void get_popComp_data(popComp_data* data, char filename[]){
 	data->xp_normed = NULL;
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
+	data->nsl_normed = NULL;
 
 	fprintf(stderr, "\tloading from %s\n", filename);
 
@@ -527,6 +528,7 @@ void get_popComp_data(popComp_data* data, char filename[]){
 	data->xp_normed = malloc(data->nsnps * sizeof(double));
 	data->ihs_normed = malloc(data->nsnps * sizeof(double));
 	data->delihh_normed = malloc(data->nsnps * sizeof(double));
+	data->nsl_normed = malloc(data->nsnps * sizeof(double));
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
 	assert(data->daf_selpop != NULL);
@@ -535,7 +537,7 @@ void get_popComp_data(popComp_data* data, char filename[]){
 	assert(data->xp_normed != NULL);
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
-
+	assert(data->nsl_normed != NULL);
 	inf = fopen(filename, "r");
 	fgets(newLine, line_size, inf); // header
 	assert(inf != NULL);
@@ -566,7 +568,13 @@ void get_popComp_data(popComp_data* data, char filename[]){
 				else if (itoken == 7){
 					 data->ihs_normed[isnp] = atof(token);
 				} 
+	
 				else if (itoken == 8){
+					 data->nsl_normed[isnp] = atof(token);
+					 break;
+				} 
+				
+				else if (itoken == 9){
 					 data->delihh_normed[isnp] = atof(token);
 					 break;
 				} 
@@ -592,6 +600,7 @@ void free_popComp_data(popComp_data* data){
 	free(data->xp_normed);
 	free(data->ihs_normed);
 	free(data->delihh_normed);
+	free(data->nsl_normed);
 	data->nsnps = 0;
 } //end method
 
@@ -605,6 +614,7 @@ void get_popComp_data_region(popComp_data* data, char filename[], int startBp, i
 	int thisPhysPos;
 	float this_genPos, this_daf, this_deldaf, this_xp, this_ihs, this_delihh, this_fst;
 
+	fprintf(stderr, "* Update method to include nsl.");
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	this_locus_id = malloc((line_size+1) * sizeof(char));

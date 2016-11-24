@@ -1,4 +1,4 @@
-//last updated 11.17.16 	vitti@broadinstitute.org
+//last updated 11.24.16 	vitti@broadinstitute.org
 
 /**********************/
 /***POP COMPARISONS****/
@@ -16,6 +16,7 @@ typedef struct popComp_data_multiple{
     double **xp_normed;
     double **ihs_normed;
     double **delihh_normed;
+    double **nsl_normed;
 } popComp_data_multiple;
 void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv[]);
 void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);

@@ -1,5 +1,5 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 11.20.16 	vitti@broadinstitute.org
+// last updated 11.24.16 	vitti@broadinstitute.org
 
 #define EXTRAARGS 32
 #include <stdio.h>
@@ -24,7 +24,6 @@ float getMaxBf(likes_data* data_miss, likes_data* data_hit){
 	
 	return maxBf;
 }//end function
-
 float getMinBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
 	float thisBf;
@@ -39,7 +38,6 @@ float getMinBf(likes_data* data_miss, likes_data* data_hit){
 	
 	return minBf;
 }//end function
-
 float getProb(likes_data* data, double value){
 	int ibin;
 	for (ibin = 0; ibin < data->nbins; ibin++){
@@ -60,8 +58,8 @@ float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max va
 	return xp;
 } //end function
 float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes average
-//takes LSBL? or PBS? I would need to include outgroup-pairs-Fst. 
-//previously: takes max val
+	//takes LSBL? or PBS? I would need to include outgroup-pairs-Fst. 
+	//previously: takes max val
 	double fst;
 	double ave;
 	int iComp;
@@ -76,7 +74,7 @@ float compareFst(popComp_data_multiple* data, int isnp){ //currently: takes aver
 	return ave;
 } //end function
 float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes average
-//previously: takes max val
+	//previously: takes max val
 	double deldaf;
 	int iComp;
 	double ave;
@@ -117,6 +115,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	data->xp_normed = NULL;
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
+	data->nsl_normed = NULL;
 
 	//////////////////////////
 	/// COLLATE LOCI: LOAD ///
@@ -195,6 +194,8 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	data->xp_normed = malloc(nComparisons * sizeof(double*));
 	data->ihs_normed = malloc(nComparisons * sizeof(double*));
 	data->delihh_normed = malloc(nComparisons * sizeof(double*));
+	data->nsl_normed = malloc(nComparisons * sizeof(double*));
+
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
 	assert(data->daf_selpop != NULL);
@@ -203,6 +204,8 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 	assert(data->xp_normed != NULL);
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
+	assert(data->nsl_normed != NULL);
+
 
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		data->physpos[iComp] = calloc(nunique, sizeof(int));
@@ -212,7 +215,9 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 		data->fst[iComp] = calloc(nunique, sizeof(double));
 		data->xp_normed[iComp] = calloc(nunique, sizeof(double));		
 		data->ihs_normed[iComp] = calloc(nunique, sizeof(double));
-		data->delihh_normed[iComp] = calloc(nunique, sizeof(double));		
+		data->delihh_normed[iComp] = calloc(nunique, sizeof(double));	
+		data->nsl_normed[iComp] = calloc(nunique, sizeof(double));	
+			
 		assert(data->physpos[iComp] != NULL);
 		assert(data->genpos[iComp] != NULL);
 		assert(data->daf_selpop[iComp] != NULL);
@@ -221,6 +226,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 		assert(data->xp_normed[iComp] != NULL);
 		assert(data->ihs_normed[iComp] != NULL);
 		assert(data->delihh_normed[iComp] != NULL);
+		assert(data->nsl_normed[iComp] != NULL);		
 	} // end for icomp
 
 	/////////////////////////////////////////////
@@ -243,7 +249,8 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int argc, char *argv
 				data->fst[iComp][isnp] = data_sing.fst[jsnp];	 
 				data->xp_normed[iComp][isnp] = data_sing.xp_normed[jsnp];							 
 				data->ihs_normed[iComp][isnp] = data_sing.ihs_normed[jsnp];	 
-				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];			 
+				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];	
+				data->nsl_normed[iComp][isnp] = data_sing.nsl_normed[jsnp];		 
 				jsnp++; //assert(jsnp<=data_sing.nsnps);
 				if (jsnp >= data_sing.nsnps){break;}
 			}
@@ -264,6 +271,8 @@ void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, cha
 	int *allSnps, *allUniqueSnps;
 	int numLikesFiles;
 	int startPos, endPos;
+
+	fprintf(stderr, "* ADD NSL TO REGION METHOD");
 
 	//////////////////
 	/// INITIALIZE ///
