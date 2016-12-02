@@ -1,7 +1,7 @@
 // methods for running CMS with a putative selPop and 2+ outgroups. 
-// last updated 11.24.16 	vitti@broadinstitute.org
+// last updated 11.29.16 	vitti@broadinstitute.org
 
-#define EXTRAARGS 32
+#define EXTRAARGS 38
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -13,7 +13,7 @@
 float getMaxBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
 	float thisBf;
-	float maxBf = 0;
+	float maxBf = 0.;
 
 	for (ibin = 0; ibin < data_hit->nbins; ibin++){
 		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
@@ -21,13 +21,13 @@ float getMaxBf(likes_data* data_miss, likes_data* data_hit){
 			if (thisBf > maxBf){maxBf = thisBf;}
 		}
 	}//end ibin
-	
+	//fprintf(stderr, "found max bf: %f\n", maxBf);
 	return maxBf;
 }//end function
 float getMinBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
 	float thisBf;
-	float minBf = 1;
+	float minBf = 1.;
 
 	for (ibin = 0; ibin < data_hit->nbins; ibin++){
 		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
@@ -35,7 +35,8 @@ float getMinBf(likes_data* data_miss, likes_data* data_hit){
 			if (thisBf < minBf){minBf = thisBf;}
 		}
 	}//end ibin
-	
+
+	//fprintf(stderr, "found min bf: %f\n", minBf);	
 	return minBf;
 }//end function
 float getProb(likes_data* data, double value){

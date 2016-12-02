@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
 ## last updated: 11.24.16 vitti@broadinstitute.org
+# 12.1 testing filtermaf (IS)
 
 import matplotlib
 matplotlib.use('agg')
@@ -229,7 +230,7 @@ def execute_outgroups(args):
 		usefreqs.append('hi')
 		
 	if not args.region: 	#GENOME-WIDE
-		cmd = "combine/combine_scores_multiplepops"
+		cmd = "combine/combine_scores_multiplepops_filtermaf"
 		argstring = args.outfile 
 	else:	#WITHIN REGION
 		cmd = "combine/combine_scores_multiplepops_region"
