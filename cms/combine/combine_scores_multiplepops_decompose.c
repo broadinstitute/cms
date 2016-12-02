@@ -2,7 +2,7 @@
 
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
 // implements symmetrical treatment of right/left side of distribution wrt pseudobins
-// last updated: 11.24.16   vitti@broadinstitute.org
+// last updated: 11.29.16   vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -205,6 +205,14 @@ int main(int argc, char **argv) {
 			deldaf_maxbf = getMaxBf(&deldaf_miss_low, &deldaf_hit_low);
 			xpehh_maxbf = getMaxBf(&xpehh_miss_low, &xpehh_hit_low);
 
+			fprintf(stderr, "Using these likelihood tables, extreme bayes factors are:\n");
+			fprintf(stderr, "ihs: %e\t%e\n", ihs_minbf, ihs_maxbf);
+			fprintf(stderr, "delihh: %e\t%e\n", delihh_minbf, delihh_maxbf);
+			fprintf(stderr, "nsl: %e\t%e\n", nsl_minbf, nsl_maxbf);
+			fprintf(stderr, "fst: %e\t%e\n", fst_minbf, fst_maxbf);
+			fprintf(stderr, "deldaf: %e\t%e\n", deldaf_minbf, deldaf_maxbf);
+			fprintf(stderr, "xpehh: %e\t%e\n", xpehh_minbf, xpehh_maxbf);
+
 
 		}
 
@@ -270,8 +278,10 @@ int main(int argc, char **argv) {
 			fst_maxbf = getMaxBf(&fst_miss_hi, &fst_hit_hi);
 			deldaf_maxbf = getMaxBf(&deldaf_miss_hi, &deldaf_hit_hi);
 			xpehh_maxbf = getMaxBf(&xpehh_miss_hi, &xpehh_hit_hi);
-
 		}
+
+
+
 		//catch pseudocounts per SG/IS CMS 1.0 implementation
 		if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){
 			delihh_bf = delihh_maxbf;
@@ -343,10 +353,12 @@ int main(int argc, char **argv) {
 		//fprintf(stderr, "deldaf %f\t hit %e\tmiss %e\tbf %e\n", thisdelDaf, deldaf_hitprob, deldaf_missprob, deldaf_bf); //debug
 		//fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
 		//fprintf(stderr, "clr: %e\n", compLikeRatio);
-		fprintf(outf, "%d\t%e\t%e\t%e\t%e\t%e\t%e\n", data.physpos[iComp][isnp], delihh_missprob, nsl_missprob, ihs_missprob, fst_missprob, deldaf_missprob, xpehh_missprob); 
-
+		fprintf(outf, "%d\t%e\t%e\t%e\t%e\t%e\t%e\n", data.physpos[iComp][isnp], delihh_bf, nsl_bf, ihs_bf, fst_bf, deldaf_bf, xpehh_bf); 
+		//fprintf(outf, "%d\t%e\t%e\t%e\t%e\t%e\t%e\n", data.physpos[iComp][isnp], delihh_missprob, nsl_missprob, ihs_missprob, fst_missprob, deldaf_missprob, xpehh_missprob); 
 		//fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 	} // end isnp
+
+
 
 	fclose(outf);
 	free_likes_data(&delihh_hit_low);

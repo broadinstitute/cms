@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 11.25.16 	vitti@broadinstitute.org
+// last updated: 11.24.16 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -568,12 +568,9 @@ void get_popComp_data(popComp_data* data, char filename[]){
 				else if (itoken == 7){
 					 data->ihs_normed[isnp] = atof(token);
 				} 
-	
 				else if (itoken == 8){
 					 data->nsl_normed[isnp] = atof(token);
-					 break;
-				} 
-				
+				} 			
 				else if (itoken == 9){
 					 data->delihh_normed[isnp] = atof(token);
 					 break;

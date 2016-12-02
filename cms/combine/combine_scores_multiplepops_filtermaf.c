@@ -1,7 +1,7 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
 // implements symmetrical treatment of right/left side of distribution wrt pseudobins
-// last updated: 11.26.16   vitti@broadinstitute.org
-// TEST REMOVING IHS
+// last updated: 12.1.16   vitti@broadinstitute.org
+// IS: CMS 1.0 undefined for MAF < .2?!
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,6 +12,7 @@
 #include <time.h>
 #include "cms_data.h"
 #include "pop_comparison.h" 
+#define MINTHRESH .20
 
 /**********/
 /***MAIN***/
@@ -173,179 +174,179 @@ int main(int argc, char **argv) {
 
 		thisdaf = data.daf_selpop[iComp][isnp];
 		//fprintf(stderr, "%d\t%d\t%f\t", data.physpos[iComp][isnp], isnp, thisdaf); //debug
+		if (thisdaf >= MINTHRESH){
+			if (thisdaf <= .35){
+				//fprintf(stderr, "lowfreq\n"); //debug
+				delihh_hitprob = getProb(&delihh_hit_low, thisihh);
+				nsl_hitprob = getProb(&nsl_hit_low, thisnsl);
+				ihs_hitprob = getProb(&ihs_hit_low, thisihs);
+				fst_hitprob = getProb(&fst_hit_low, thisfst);
+				deldaf_hitprob = getProb(&deldaf_hit_low, thisdelDaf);
+				xpehh_hitprob = getProb(&xpehh_hit_low, thisxpehh);
 
-		if (thisdaf <= .35){
-			//fprintf(stderr, "lowfreq\n"); //debug
-			delihh_hitprob = getProb(&delihh_hit_low, thisihh);
-			nsl_hitprob = getProb(&nsl_hit_low, thisnsl);
-			ihs_hitprob = getProb(&ihs_hit_low, thisihs);
-			fst_hitprob = getProb(&fst_hit_low, thisfst);
-			deldaf_hitprob = getProb(&deldaf_hit_low, thisdelDaf);
-			xpehh_hitprob = getProb(&xpehh_hit_low, thisxpehh);
+				delihh_missprob = getProb(&delihh_miss_low, thisihh); 
+				nsl_missprob = getProb(&nsl_miss_low, thisnsl);			
+				ihs_missprob = getProb(&ihs_miss_low, thisihs);
+				fst_missprob = getProb(&fst_miss_low, thisfst);
+				deldaf_missprob = getProb(&deldaf_miss_low, thisdelDaf);
+				xpehh_missprob = getProb(&xpehh_miss_low, thisxpehh);
 
-			delihh_missprob = getProb(&delihh_miss_low, thisihh); 
-			nsl_missprob = getProb(&nsl_miss_low, thisnsl);			
-			ihs_missprob = getProb(&ihs_miss_low, thisihs);
-			fst_missprob = getProb(&fst_miss_low, thisfst);
-			deldaf_missprob = getProb(&deldaf_miss_low, thisdelDaf);
-			xpehh_missprob = getProb(&xpehh_miss_low, thisxpehh);
+				delihh_minbf = getMinBf(&delihh_miss_low, &delihh_hit_low);
+				nsl_minbf = getMinBf(&nsl_miss_low, &nsl_hit_low);			
+				ihs_minbf = getMinBf(&ihs_miss_low, &ihs_hit_low);
+				fst_minbf = getMinBf(&fst_miss_low, &fst_hit_low);
+				deldaf_minbf = getMinBf(&deldaf_miss_low, &deldaf_hit_low);
+				xpehh_minbf = getMinBf(&xpehh_miss_low, &xpehh_hit_low);
 
-			delihh_minbf = getMinBf(&delihh_miss_low, &delihh_hit_low);
-			nsl_minbf = getMinBf(&nsl_miss_low, &nsl_hit_low);			
-			ihs_minbf = getMinBf(&ihs_miss_low, &ihs_hit_low);
-			fst_minbf = getMinBf(&fst_miss_low, &fst_hit_low);
-			deldaf_minbf = getMinBf(&deldaf_miss_low, &deldaf_hit_low);
-			xpehh_minbf = getMinBf(&xpehh_miss_low, &xpehh_hit_low);
-
-			delihh_maxbf = getMaxBf(&delihh_miss_low, &delihh_hit_low);
-			nsl_maxbf = getMaxBf(&nsl_miss_low, &nsl_hit_low);				
-			ihs_maxbf = getMaxBf(&ihs_miss_low, &ihs_hit_low);
-			fst_maxbf = getMaxBf(&fst_miss_low, &fst_hit_low);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_low, &deldaf_hit_low);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_low, &xpehh_hit_low);
-
-
-		}
-
-		else if(thisdaf > .35 && thisdaf <= .65){
-			//fprintf(stderr, "midfreq\n"); //debug
-			delihh_hitprob = getProb(&delihh_hit_mid, thisihh);
-			nsl_hitprob = getProb(&nsl_hit_mid, thisnsl);			
-			ihs_hitprob = getProb(&ihs_hit_mid, thisihs);
-			fst_hitprob = getProb(&fst_hit_mid, thisfst);
-			deldaf_hitprob = getProb(&deldaf_hit_mid, thisdelDaf);
-			xpehh_hitprob = getProb(&xpehh_hit_mid, thisxpehh);
-
-			delihh_missprob = getProb(&delihh_miss_mid, thisihh); 
-			nsl_missprob = getProb(&nsl_miss_mid, thisnsl);
-			ihs_missprob = getProb(&ihs_miss_mid, thisihs);
-			fst_missprob = getProb(&fst_miss_mid, thisfst);
-			deldaf_missprob = getProb(&deldaf_miss_mid, thisdelDaf);
-			xpehh_missprob = getProb(&xpehh_miss_mid, thisxpehh);
-		
-			delihh_minbf = getMinBf(&delihh_miss_mid, &delihh_hit_mid);
-			nsl_minbf = getMinBf(&nsl_miss_mid, &nsl_hit_mid);			
-			ihs_minbf = getMinBf(&ihs_miss_mid, &ihs_hit_mid);
-			fst_minbf = getMinBf(&fst_miss_mid, &fst_hit_mid);
-			deldaf_minbf = getMinBf(&deldaf_miss_mid, &deldaf_hit_mid);
-			xpehh_minbf = getMinBf(&xpehh_miss_mid, &xpehh_hit_mid);
-
-			delihh_maxbf = getMaxBf(&delihh_miss_mid, &delihh_hit_mid);
-			nsl_maxbf = getMaxBf(&nsl_miss_mid, &nsl_hit_mid);		
-			ihs_maxbf = getMaxBf(&ihs_miss_mid, &ihs_hit_mid);
-			fst_maxbf = getMaxBf(&fst_miss_mid, &fst_hit_mid);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_mid, &deldaf_hit_mid);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_mid, &xpehh_hit_mid);
+				delihh_maxbf = getMaxBf(&delihh_miss_low, &delihh_hit_low);
+				nsl_maxbf = getMaxBf(&nsl_miss_low, &nsl_hit_low);				
+				ihs_maxbf = getMaxBf(&ihs_miss_low, &ihs_hit_low);
+				fst_maxbf = getMaxBf(&fst_miss_low, &fst_hit_low);
+				deldaf_maxbf = getMaxBf(&deldaf_miss_low, &deldaf_hit_low);
+				xpehh_maxbf = getMaxBf(&xpehh_miss_low, &xpehh_hit_low);
 
 
-		}
+			}
 
-		else{
-			//fprintf(stderr, "hifreq\n"); //debug
-			delihh_hitprob = getProb(&delihh_hit_hi, thisihh);
-			nsl_hitprob = getProb(&nsl_hit_hi, thisnsl);
-			ihs_hitprob = getProb(&ihs_hit_hi, thisihs);
-			fst_hitprob = getProb(&fst_hit_hi, thisfst);
-			deldaf_hitprob = getProb(&deldaf_hit_hi, thisdelDaf);
-			xpehh_hitprob = getProb(&xpehh_hit_hi, thisxpehh);
+			else if(thisdaf > .35 && thisdaf <= .65){
+				//fprintf(stderr, "midfreq\n"); //debug
+				delihh_hitprob = getProb(&delihh_hit_mid, thisihh);
+				nsl_hitprob = getProb(&nsl_hit_mid, thisnsl);			
+				ihs_hitprob = getProb(&ihs_hit_mid, thisihs);
+				fst_hitprob = getProb(&fst_hit_mid, thisfst);
+				deldaf_hitprob = getProb(&deldaf_hit_mid, thisdelDaf);
+				xpehh_hitprob = getProb(&xpehh_hit_mid, thisxpehh);
 
-			delihh_missprob = getProb(&delihh_miss_hi, thisihh); 
-			nsl_missprob = getProb(&nsl_miss_hi, thisnsl);			
-			ihs_missprob = getProb(&ihs_miss_hi, thisihs);
-			fst_missprob = getProb(&fst_miss_hi, thisfst);
-			deldaf_missprob = getProb(&deldaf_miss_hi, thisdelDaf);
-			xpehh_missprob = getProb(&xpehh_miss_hi, thisxpehh);
+				delihh_missprob = getProb(&delihh_miss_mid, thisihh); 
+				nsl_missprob = getProb(&nsl_miss_mid, thisnsl);
+				ihs_missprob = getProb(&ihs_miss_mid, thisihs);
+				fst_missprob = getProb(&fst_miss_mid, thisfst);
+				deldaf_missprob = getProb(&deldaf_miss_mid, thisdelDaf);
+				xpehh_missprob = getProb(&xpehh_miss_mid, thisxpehh);
+			
+				delihh_minbf = getMinBf(&delihh_miss_mid, &delihh_hit_mid);
+				nsl_minbf = getMinBf(&nsl_miss_mid, &nsl_hit_mid);			
+				ihs_minbf = getMinBf(&ihs_miss_mid, &ihs_hit_mid);
+				fst_minbf = getMinBf(&fst_miss_mid, &fst_hit_mid);
+				deldaf_minbf = getMinBf(&deldaf_miss_mid, &deldaf_hit_mid);
+				xpehh_minbf = getMinBf(&xpehh_miss_mid, &xpehh_hit_mid);
 
-			delihh_minbf = getMinBf(&delihh_miss_hi, &delihh_hit_hi);
-			nsl_minbf = getMinBf(&nsl_miss_hi, &nsl_hit_hi);
-			ihs_minbf = getMinBf(&ihs_miss_hi, &ihs_hit_hi);
-			fst_minbf = getMinBf(&fst_miss_hi, &fst_hit_hi);
-			deldaf_minbf = getMinBf(&deldaf_miss_hi, &deldaf_hit_hi);
-			xpehh_minbf = getMinBf(&xpehh_miss_hi, &xpehh_hit_hi);
-
-			delihh_maxbf = getMaxBf(&delihh_miss_hi, &delihh_hit_hi);
-			nsl_maxbf = getMaxBf(&nsl_miss_hi, &nsl_hit_hi);
-			ihs_maxbf = getMaxBf(&ihs_miss_hi, &ihs_hit_hi);
-			fst_maxbf = getMaxBf(&fst_miss_hi, &fst_hit_hi);
-			deldaf_maxbf = getMaxBf(&deldaf_miss_hi, &deldaf_hit_hi);
-			xpehh_maxbf = getMaxBf(&xpehh_miss_hi, &xpehh_hit_hi);
-
-		}
-		//catch pseudocounts per SG/IS CMS 1.0 implementation
-		if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){
-			delihh_bf = delihh_maxbf;
-		}
-		if (delihh_hitprob < 2e-10 && delihh_missprob > 2e-10){ 
-			delihh_bf = delihh_minbf;
-		}
-		else{
-			delihh_bf = delihh_hitprob / delihh_missprob;
-		}
-
-		if (nsl_missprob < 2e-10 && nsl_hitprob > 2e-10){
-			nsl_bf = nsl_maxbf;
-		}
-		if (nsl_hitprob < 2e-10 && nsl_missprob > 2e-10){ 
-			nsl_bf = nsl_minbf;
-		}
-		else{
-			nsl_bf = nsl_hitprob / nsl_missprob;
-		}
+				delihh_maxbf = getMaxBf(&delihh_miss_mid, &delihh_hit_mid);
+				nsl_maxbf = getMaxBf(&nsl_miss_mid, &nsl_hit_mid);		
+				ihs_maxbf = getMaxBf(&ihs_miss_mid, &ihs_hit_mid);
+				fst_maxbf = getMaxBf(&fst_miss_mid, &fst_hit_mid);
+				deldaf_maxbf = getMaxBf(&deldaf_miss_mid, &deldaf_hit_mid);
+				xpehh_maxbf = getMaxBf(&xpehh_miss_mid, &xpehh_hit_mid);
 
 
-		if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){
-			ihs_bf = ihs_maxbf;
-		}
-		if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){
-			ihs_bf = ihs_minbf;
-		}
-		else{
-			ihs_bf = ihs_hitprob / ihs_missprob;
-		}
+			}
 
-		if (fst_missprob < 2e-10 && fst_hitprob > 2e-10){
-			fst_bf = fst_maxbf;
-		}
-		if (fst_hitprob < 2e-10 && fst_missprob > 2e-10){
-			fst_bf = fst_minbf;
-		}
-		else{
-			fst_bf = fst_hitprob / fst_missprob;
-		}
+			else{
+				//fprintf(stderr, "hifreq\n"); //debug
+				delihh_hitprob = getProb(&delihh_hit_hi, thisihh);
+				nsl_hitprob = getProb(&nsl_hit_hi, thisnsl);
+				ihs_hitprob = getProb(&ihs_hit_hi, thisihs);
+				fst_hitprob = getProb(&fst_hit_hi, thisfst);
+				deldaf_hitprob = getProb(&deldaf_hit_hi, thisdelDaf);
+				xpehh_hitprob = getProb(&xpehh_hit_hi, thisxpehh);
 
-		if (deldaf_missprob < 2e-10 && deldaf_hitprob > 2e-10){
-			deldaf_bf = deldaf_maxbf;
-		}
-		if (deldaf_hitprob < 2e-10 && deldaf_missprob > 2e-10){
-			deldaf_bf = deldaf_minbf;
-		}
-		else{
-			deldaf_bf = deldaf_hitprob / deldaf_missprob;			
-		}
+				delihh_missprob = getProb(&delihh_miss_hi, thisihh); 
+				nsl_missprob = getProb(&nsl_miss_hi, thisnsl);			
+				ihs_missprob = getProb(&ihs_miss_hi, thisihs);
+				fst_missprob = getProb(&fst_miss_hi, thisfst);
+				deldaf_missprob = getProb(&deldaf_miss_hi, thisdelDaf);
+				xpehh_missprob = getProb(&xpehh_miss_hi, thisxpehh);
+
+				delihh_minbf = getMinBf(&delihh_miss_hi, &delihh_hit_hi);
+				nsl_minbf = getMinBf(&nsl_miss_hi, &nsl_hit_hi);
+				ihs_minbf = getMinBf(&ihs_miss_hi, &ihs_hit_hi);
+				fst_minbf = getMinBf(&fst_miss_hi, &fst_hit_hi);
+				deldaf_minbf = getMinBf(&deldaf_miss_hi, &deldaf_hit_hi);
+				xpehh_minbf = getMinBf(&xpehh_miss_hi, &xpehh_hit_hi);
+
+				delihh_maxbf = getMaxBf(&delihh_miss_hi, &delihh_hit_hi);
+				nsl_maxbf = getMaxBf(&nsl_miss_hi, &nsl_hit_hi);
+				ihs_maxbf = getMaxBf(&ihs_miss_hi, &ihs_hit_hi);
+				fst_maxbf = getMaxBf(&fst_miss_hi, &fst_hit_hi);
+				deldaf_maxbf = getMaxBf(&deldaf_miss_hi, &deldaf_hit_hi);
+				xpehh_maxbf = getMaxBf(&xpehh_miss_hi, &xpehh_hit_hi);
+
+			}
+			//catch pseudocounts per SG/IS CMS 1.0 implementation
+			if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){
+				delihh_bf = delihh_maxbf;
+			}
+			if (delihh_hitprob < 2e-10 && delihh_missprob > 2e-10){ 
+				delihh_bf = delihh_minbf;
+			}
+			else{
+				delihh_bf = delihh_hitprob / delihh_missprob;
+			}
+
+			if (nsl_missprob < 2e-10 && nsl_hitprob > 2e-10){
+				nsl_bf = nsl_maxbf;
+			}
+			if (nsl_hitprob < 2e-10 && nsl_missprob > 2e-10){ 
+				nsl_bf = nsl_minbf;
+			}
+			else{
+				nsl_bf = nsl_hitprob / nsl_missprob;
+			}
 
 
-		if (xpehh_missprob < 2e-10 && xpehh_hitprob > 2e-10){
-			xpehh_bf = xpehh_maxbf;
-		}
-		if (xpehh_hitprob < 2e-10 && xpehh_missprob > 2e-10){
-			xpehh_bf = xpehh_minbf;
-		}
-		else{
-			xpehh_bf = xpehh_hitprob / xpehh_missprob;
-		}
+			if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){
+				ihs_bf = ihs_maxbf;
+			}
+			if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){
+				ihs_bf = ihs_minbf;
+			}
+			else{
+				ihs_bf = ihs_hitprob / ihs_missprob;
+			}
 
-		compLikeRatio = delihh_bf * nsl_bf  * fst_bf * deldaf_bf * xpehh_bf; //* ihs_bf
+			if (fst_missprob < 2e-10 && fst_hitprob > 2e-10){
+				fst_bf = fst_maxbf;
+			}
+			if (fst_hitprob < 2e-10 && fst_missprob > 2e-10){
+				fst_bf = fst_minbf;
+			}
+			else{
+				fst_bf = fst_hitprob / fst_missprob;
+			}
 
-		//fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
-		//fprintf(stderr, "delihh %f\t hit %e\tmiss %e\tbf %e\n", thisihh, delihh_hitprob, delihh_missprob, delihh_bf); //debug
-		//fprintf(stderr, "fst %f\t hit %e\tmiss %e\tbf %e\n", thisfst, fst_hitprob, fst_missprob, fst_bf); //debug
-		//fprintf(stderr, "deldaf %f\t hit %e\tmiss %e\tbf %e\n", thisdelDaf, deldaf_hitprob, deldaf_missprob, deldaf_bf); //debug
-		//fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
-		//fprintf(stderr, "clr: %e\n", compLikeRatio);
+			if (deldaf_missprob < 2e-10 && deldaf_hitprob > 2e-10){
+				deldaf_bf = deldaf_maxbf;
+			}
+			if (deldaf_hitprob < 2e-10 && deldaf_missprob > 2e-10){
+				deldaf_bf = deldaf_minbf;
+			}
+			else{
+				deldaf_bf = deldaf_hitprob / deldaf_missprob;			
+			}
 
-		fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
-	} // end isnp
 
+			if (xpehh_missprob < 2e-10 && xpehh_hitprob > 2e-10){
+				xpehh_bf = xpehh_maxbf;
+			}
+			if (xpehh_hitprob < 2e-10 && xpehh_missprob > 2e-10){
+				xpehh_bf = xpehh_minbf;
+			}
+			else{
+				xpehh_bf = xpehh_hitprob / xpehh_missprob;
+			}
+
+			compLikeRatio = delihh_bf * nsl_bf  * fst_bf * deldaf_bf * xpehh_bf; //* ihs_bf
+
+			//fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
+			//fprintf(stderr, "delihh %f\t hit %e\tmiss %e\tbf %e\n", thisihh, delihh_hitprob, delihh_missprob, delihh_bf); //debug
+			//fprintf(stderr, "fst %f\t hit %e\tmiss %e\tbf %e\n", thisfst, fst_hitprob, fst_missprob, fst_bf); //debug
+			//fprintf(stderr, "deldaf %f\t hit %e\tmiss %e\tbf %e\n", thisdelDaf, deldaf_hitprob, deldaf_missprob, deldaf_bf); //debug
+			//fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
+			//fprintf(stderr, "clr: %e\n", compLikeRatio);
+
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", data.physpos[iComp][isnp], data.genpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+		} // end isnp
+	} // end MAF filter
 	fclose(outf);
 	free_likes_data(&delihh_hit_low);
 	free_likes_data(&delihh_hit_mid);
