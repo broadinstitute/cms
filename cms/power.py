@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.2.16		vitti@broadinstitute.org
+## last updated 12.4.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -116,7 +116,7 @@ def execute_run_neut_repscores(args):
 	ihs_commandstring = "python " + cmsdir + "scans.py selscan_ihs"
 	ihs_outfileprefix = basedir + "ihs/rep" + str(repNum) + "_" + str(pop) 
 	ihs_unnormedfile = ihs_outfileprefix + ".ihs.out"
-	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 --truncOk"
+	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 "
 	ihs_fullcmd = ihs_commandstring + " " + ihs_argstring
 	proceed = check_create_file(ihs_unnormedfile, args.checkOverwrite)
 	if proceed:
@@ -182,7 +182,7 @@ def execute_run_sel_repscores(args):
 	ihs_commandstring = "python " + cmsdir + "scans.py selscan_ihs"
 	ihs_outfileprefix = basedir + "ihs/rep" + str(repNum) + "_" + str(pop) 
 	ihs_unnormedfile = ihs_outfileprefix + ".ihs.out"
-	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 --truncOk"
+	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 "
 	ihs_fullcmd = ihs_commandstring + " " + ihs_argstring
 	proceed = check_create_file(ihs_unnormedfile, args.checkOverwrite)
 	if proceed:
