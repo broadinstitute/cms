@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.4.16		vitti@broadinstitute.org
+## last updated 12.5.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -79,9 +79,10 @@ def execute_run_sel_sims(args):
 		trajectory = trajfolder + "rep" + str(irep) + ".txt"
 		cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajectory + " coalescent"
 		argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase + " --output-gen-map"
-		cosicreatefilename = outbase + "_0_1.tped"
+		#cosicreatefilename = outbase + "_0_1.tped"  	#previous implementation batch-ran sims then batch-renamed them.
+		cosi_movedfilename = outbase + "_1.tped"
 
-		proceed = check_create_file(cosicreatefilename, args.checkOverwrite)
+		proceed = check_create_file(cosi_movedfilename, args.checkOverwrite)
 		if proceed:
 			fullCmd = cmd + " " + argstring
 			print(fullCmd)
