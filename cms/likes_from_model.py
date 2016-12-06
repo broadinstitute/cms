@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 11.04.16 vitti@broadinstitute.org
+## last updated: 12.05.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TKAgg') 
@@ -49,6 +49,8 @@ def full_parser_likes_from_model():
 	################################
 	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='Calculate scores from simulated data.')
 	if True:
+		scores_from_sims_parser.add_argument('--cmsdir', action='store', help='TEMPORARY', default="/n/home08/jvitti/cms/cms/")
+
 		scores_from_sims_parser.add_argument('inputFilename', action='store', help='tped from which to calculate score / iHS from which to calculate delIhh / unnormalized to normalize.')
 		scores_from_sims_parser.add_argument('outputFilename', action='store', help='where to write scorefile')		
 		#PER POP:			
@@ -205,7 +207,7 @@ def execute_scores_from_sims(args):
 		calc_xpehh(inputFilename, altinputTped, outputFilename)		
 	if args.fst_deldaf is not None:
 		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, 'model/')
+		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, args.cmsdir + 'model/')
 
 	###############
 	## NORMALIZE ##
