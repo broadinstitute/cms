@@ -28,7 +28,7 @@ def get_concat_files(model, pop, score, altpop = '', basedir = '/idi/sabeti-scra
 	concatfilename = concatfilebase + score + ".txt"
 	binfilename = concatfilebase + score + ".bins"
 	return concatfilename, binfilename
-def get_component_score_files(model, repNum, selPop, altPop, scenario = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed=False):
+def get_component_score_files(model, irep, pop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed=False):
 	if selbin == 'neut':
 		basedir =  filebase + model + "/neut/"
 	else:
@@ -40,9 +40,9 @@ def get_component_score_files(model, repNum, selPop, altPop, scenario = "neut", 
 	in_fst_deldaf_file = basedir + "fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
 
 	if normed:
-		for normedfile in []:
-			pass
-
+		for filename in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
+			filename += ".norm"
+			
 	for returnfile in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(returnfile):
 			print("Missing: " + returnfile)
