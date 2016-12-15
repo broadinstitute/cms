@@ -1,5 +1,4 @@
-## /idi/sabeti-scratch/jvitti/cms2_power/
-## last updated 12.2.16
+## last updated 12.14.16
 
 import subprocess
 import numpy as np
@@ -27,6 +26,7 @@ def readvals_lastcol(filename):
 	openfile.close()
 	return allvals
 
+"""
 def getSelFiles_asList(model, score, pop, listfilename, selbins, binclustername, altpop = "", overwrite = True, numPerBin = 500):
 	if not overwrite:
 		if os.path.isfile(listfilename):
@@ -140,6 +140,7 @@ def getSelCompFiles(model, pop,  writedir, writeprefix, selbins, binclustername,
 		writefile.close()
 		print('wrote to: ' + writefilename)
 	return writefilename
+"""
 #### ^^^^ Connect these to vvvvv
 
 ##################
