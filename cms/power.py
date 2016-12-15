@@ -243,7 +243,7 @@ def execute_run_norm_neut_repscores(args):
 	score = args.score
 	altpop = args.altpop
 	chrlen, edge = args.chromlen, args.edge
-	startbound, endbound = int(edge/2), chrlen - int(edge/2) #define replicate interior (conservative strategy to avoid edge effects)
+	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
 
 	if score in ['ihs', 'delihh', 'nsl']:
 		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
@@ -292,7 +292,7 @@ def execute_run_norm_neut_repscores(args):
 						pass
 				for line in readfile:
 					entries = line.split()
-					physpos = entries[physpos_ind]
+					physpos = int(entries[physpos_ind])
 					if physpos >= startbound and physpos <= endbound:
 						concatfile.write(line)
 				readfile.close()
