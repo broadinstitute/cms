@@ -329,11 +329,7 @@ def execute_norm_from_binfile(args):
 	altpop = args.altpop
 	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
 	
-	reps = range(1, numReps+1)
-	reps.reverse()
-
-	for irep in reps:
-		print(str(irep))
+	for irep in range(numReps, 0, -1):
 		if score in ['ihs']:
 			unnormedfile = basedir  + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
 			normedfilename = unnormedfile + ".norm"
@@ -380,10 +376,7 @@ def execute_sel_norm_from_binfile(args):
 	selbin = args.selbin
 	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
 	
-	reps = range(1, numReps+1)
-	reps.reverse()
-
-	for irep in reps:
+	for irep in range(numReps, 0, -1):
 		if score in ['ihs']:
 			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
 			normedfilename = unnormedfile + ".norm"
