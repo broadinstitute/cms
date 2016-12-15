@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.5.16		vitti@broadinstitute.org
+## last updated 12.14.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -20,7 +20,7 @@ import sys
 import os
 
 #################################
-## DEFINE EXECUTIVE FUNCTIONS ###ful
+## DEFINE EXECUTIVE FUNCTIONS ###
 #################################
 
 ########	Manipulate simulated data 
@@ -242,12 +242,17 @@ def execute_run_norm_neut_repscores(args):
 	cmsdir = args.cmsdir
 	score = args.score
 	altpop = args.altpop
+	chrlen, edge = args.chromlen, args.edge
+	startbound, endbound = int(edge/2), chrlen - int(edge/2) #define replicate interior (conservative strategy to avoid edge effects)
 
 	if score in ['ihs', 'delihh', 'nsl']:
 		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
 	elif score in ['xpehh', 'fst']:
 		altpop = args.altpop
 		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_" + str(altpop) + "_"
+	else:
+		print('must call per composite score')
+		sys.exit(0)
 
 	concatfilename = concatfilebase + score + ".txt"
 	binfilename = concatfilebase + score + ".bins"
@@ -258,14 +263,19 @@ def execute_run_norm_neut_repscores(args):
 			for irep in range(1, numReps+1):
 				if score == 'ihs':
 					unnormedfile = basedir + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop) + ".ihs.out"
+					physpos_ind = 1
 				elif score == "delihh":
 					unnormedfile = basedir + model + "/neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
+					physpos_ind = 1
 				elif score == "nsl":
 					unnormedfile = basedir + model + "/neut/nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
+					physpos_ind = 1
 				elif score == "xpehh":
 					unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
+					physpos_ind = 1
 				elif score == "fst":
 					unnormedfile = basedir + model + "/neut/fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+					physpos_ind = 0
 				if os.path.isfile(unnormedfile):
 					repfiles.append(unnormedfile)
 				else:
@@ -280,10 +290,11 @@ def execute_run_norm_neut_repscores(args):
 						concatfile.write(firstline)
 					else:
 						pass
-				else:
-					concatfile.write(firstline)
 				for line in readfile:
-					concatfile.write(line)
+					entries = line.split()
+					physpos = entries[physpos_ind]
+					if physpos >= startbound and physpos <= endbound:
+						concatfile.write(line)
 				readfile.close()
 			concatfile.close()
 			print('wrote to: ' + concatfilename)
@@ -303,9 +314,10 @@ def execute_run_norm_neut_repscores(args):
 			cmd = ""
 
 		fullcmd = cmd + " " + argstring
+	
+		print(fullcmd)
 		execute(fullcmd)
-		print("use rename_binfiles.py")
-		#print(fullcmd)
+		
 	return
 def execute_norm_from_binfile(args):
 	model = args.model

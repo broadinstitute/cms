@@ -1,5 +1,5 @@
 ## structures input to various functions of the script, power.py
-## last updated 11.30.16
+## last updated 12.14.16
 
 import argparse
 
@@ -30,6 +30,8 @@ def full_parser_power():
 		run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/idi/sabeti-scratch/jvitti/params/test_recom.recom")
 
 	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
+	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)")
+	run_norm_neut_repscores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)")
 	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
 	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
 	for norm_parser in [run_norm_neut_repscores_parser,norm_from_binfile_parser, sel_norm_from_binfile_parser]:
