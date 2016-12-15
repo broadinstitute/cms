@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.14.16		vitti@broadinstitute.org
+## last updated 12.15.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -243,7 +243,7 @@ def execute_run_norm_neut_repscores(args):
 	score = args.score
 	altpop = args.altpop
 	chrlen, edge = args.chromlen, args.edge
-	startbound, endbound = int(edge/2), chrlen - int(edge/2) #define replicate interior (conservative strategy to avoid edge effects)
+	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
 
 	if score in ['ihs', 'delihh', 'nsl']:
 		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
@@ -292,7 +292,7 @@ def execute_run_norm_neut_repscores(args):
 						pass
 				for line in readfile:
 					entries = line.split()
-					physpos = entries[physpos_ind]
+					physpos = int(entries[physpos_ind])
 					if physpos >= startbound and physpos <= endbound:
 						concatfile.write(line)
 				readfile.close()
@@ -327,9 +327,9 @@ def execute_norm_from_binfile(args):
 	cmsdir = args.cmsdir
 	score = args.score
 	altpop = args.altpop
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop)
+	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
 	
-	for irep in range(1, numReps+1):
+	for irep in range(numReps, 0, -1):
 		if score in ['ihs']:
 			unnormedfile = basedir  + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
 			normedfilename = unnormedfile + ".norm"
@@ -347,15 +347,23 @@ def execute_norm_from_binfile(args):
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['xpehh']:
 			unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedFilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedFilename
+			normedfilename = unnormedfile + ".norm"
+			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['fst']:
 			print('currently handling this manually: rewrite_fst_bins.py')
 			pass
-		fullcmd = commandstring + " " + argstring
-		#print(fullcmd)
-		execute(fullcmd)
+
+		alreadyExists = False
+		if args.checkOverwrite:
+			if not os.path.isfile(normedfilename): #check for overwrite
+				alreadyExists = False
+			else:
+				alreadyExists = True				
+		if alreadyExists == False:	
+			fullcmd = commandstring + " " + argstring
+			print(fullcmd)
+			execute(fullcmd)
 	return
 def execute_sel_norm_from_binfile(args):
 	model = args.model
@@ -366,35 +374,42 @@ def execute_sel_norm_from_binfile(args):
 	score = args.score
 	altpop = args.altpop
 	selbin = args.selbin
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop)
+	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
 	
-	for irep in range(1, numReps+1):
+	for irep in range(numReps, 0, -1):
 		if score in ['ihs']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel" + str(selbin) + "/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
+			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
 			normedfilename = unnormedfile + ".norm"
 			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['delihh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel" + str(selbin) + "/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
+			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
 			normedfilename = unnormedfile + ".norm"	
 			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['nsl']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel" + str(selbin) + "/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
+			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
 			normedfilename = unnormedfile + ".norm"			
 			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['xpehh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel" + str(selbin) + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedFilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedFilename
+			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
+			normedfilename = unnormedfile + ".norm"
+			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
 			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
 		elif score in ['fst']:
 			print('currently handling this manually: rewrite_fst_bins.py')
 			pass
 		fullcmd = commandstring + " " + argstring
-		print(fullcmd)
-		#execute(fullcmd)
+		alreadyExists = False
+		if args.checkOverwrite:
+			if not os.path.isfile(normedfilename): #check for overwrite
+				alreadyExists = False
+			else:
+				alreadyExists = True				
+		if alreadyExists == False:
+			print(fullcmd)
+			execute(fullcmd)
 	return	
 def execute_run_poppair(args):
 	''' from run_additioanal_poppair.py'''
@@ -409,34 +424,38 @@ def execute_run_poppair(args):
 	modeldir = writedir + model + "/"
 	check_create_dir(modeldir)
 	
-	#neutdir = modeldir + "neut/"
-	#check_create_dir(neutdir)
+	neutdir = modeldir + "neut/"
+	check_create_dir(neutdir)
+	neutpairdir = neutdir + "pairs/"
+	check_create_dir(neutpairdir)
+
 	#### NEUT SIMS
-	#for irep in range(1, repNum+1):
-	#	in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, "neut")
-	#	outfile = neutdir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
-	#	alreadyExists = False
-	#	if args.checkOverwrite:
-	#		if not os.path.isfile(outfile): #check for overwrite
-	#			alreadyExists = False
-	#		else:
-	#			alreadyExists = True				
-	#	if alreadyExists == False:
-	#		argstring = in_ihs_file + " " + in_nsl_file + " " + in_delihh_file + " " + in_xp_file + " " + in_fst_deldaf_file + " " + outfile
-	#		fullcmd = cmd + " " +  argstring
-	#		print(fullcmd)
-			#execute(fullcmd)
+	for irep in range(1, repNum+1):
+		in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, "neut", normed=True)
+		outfile = neutdir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
+		alreadyExists = False
+		if args.checkOverwrite:
+			if not os.path.isfile(outfile): #check for overwrite
+				alreadyExists = False
+			else:
+				alreadyExists = True				
+		if alreadyExists == False:
+			argstring = in_ihs_file + " " + in_nsl_file + " " + in_delihh_file + " " + in_xp_file + " " + in_fst_deldaf_file + " " + outfile
+			fullcmd = cmd + " " +  argstring
+			print(fullcmd)
+			#if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+			#	execute(fullcmd)
 
 	#### SEL SIMS
 	selbins = ["0.10", "0.20", "0.30", "0.40", "0.50", "0.60", "0.70", "0.80", "0.90"]
 	for selbin in selbins:
 		for irep in range(1, repNum+1):
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin)
-			pairdir = modeldir + "sel" + str(selpop) + "/pairs/"
-			check_create_dir(pairdir)
-			selbindir = pairdir + "sel_" + str(selbin) + "/"
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin, normed=True)
+			selpopdir = modeldir + "sel" + str(selpop) + "/"
+			check_create_dir(selpopdir)
+			selbindir = selpopdir + "sel_" + str(selbin) + "/"
 			check_create_dir(selbindir)
-			#check_create_dir(modeldir + "pairs/")
+			check_create_dir(modeldir + "pairs/")
 			outfile = selbindir + "rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
 			alreadyExists = False
 			if args.checkOverwrite:
@@ -447,9 +466,9 @@ def execute_run_poppair(args):
 			if alreadyExists == False:
 				argstring = in_ihs_file + " " + in_nsl_file + " " + in_delihh_file + " " + in_xp_file + " " + in_fst_deldaf_file + " " + outfile
 				fullcmd = cmd + " " +  argstring
-				#print(fullcmd)
-				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
-					execute(fullcmd)
+				print(fullcmd)
+				#if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				#	execute(fullcmd)
 	return
 def execute_composite_sims(args):
 	model = args.model

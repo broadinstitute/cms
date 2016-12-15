@@ -1,11 +1,7 @@
 ## structures input to various functions of the script, power.py
-## last updated 12.14.16
+## last updated 12.15.16
 
 import argparse
-
-#############################
-## DEFINE ARGUMENT PARSER ###
-#############################
 
 def full_parser_power():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for calculating CMS 2.0 power from simulated data and significance for CMS scores from empirical data.")
@@ -20,7 +16,7 @@ def full_parser_power():
 		run_sims_parser.add_argument('--startrep', type=int, action="store", help='replicate number at which to start', default=1)
 		run_sims_parser.add_argument('--paramfolder', type=str, action="store", help='location to read model parameters', default="/idi/sabeti-scratch/jvitti/params/")
 	run_sel_sims_parser.add_argument('--trajdir', action="store")
-	run_sel_sims_parser.add_argument('--selbin', action="store")
+
 
 	run_neut_repscores_parser = subparsers.add_parser('run_neut_repscores', help ='run per-replicate component scores')
 	run_sel_repscores_parser = subparsers.add_parser('run_sel_repscores', help='run per-replicate component scores')
@@ -38,6 +34,9 @@ def full_parser_power():
 		norm_parser.add_argument('--score', action='store', default='')
 		norm_parser.add_argument('--altpop', action='store', default='')
 
+	for selbin_parser in [run_sel_sims_parser, sel_norm_from_binfile_parser]:
+		selbin_parser.add_argument('--selbin', action="store")
+	
 	run_poppair_parser = subparsers.add_parser('run_poppair', help='collate component scores by population pair')
 	run_poppair_parser.add_argument('--altpop', action='store')
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
@@ -102,7 +101,7 @@ def full_parser_power():
 	##################
 
 	for write_parser in [run_neut_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, 
-			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser]:
+			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 
@@ -122,7 +121,7 @@ def full_parser_power():
 
 
 	for sim_parser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, tpr_parser, run_neut_repscores_parser,run_norm_neut_repscores_parser, norm_from_binfile_parser, composite_sims_parser, 
-						run_neut_sims_parser, run_poppair_parser, run_sel_sims_parser, run_sel_repscores_parser]:
+						run_neut_sims_parser, run_poppair_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		sim_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
 
 	for emp_parser in [normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
@@ -131,12 +130,12 @@ def full_parser_power():
 	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
 
-	for run_cms_parser in [run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, run_poppair_parser, composite_sims_parser, run_sel_repscores_parser]:
+	for run_cms_parser in [run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, run_poppair_parser, composite_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		run_cms_parser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 
 	for commonparser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, normemp_parser, gw_regions_parser, manhattan_parser, run_norm_neut_repscores_parser,norm_from_binfile_parser,
 						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, run_poppair_parser, 
-						run_sel_sims_parser, run_sel_repscores_parser]:
+						run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
 		commonparser.add_argument('--likessuffix', action='store', help='neut or linked', default="neut")
