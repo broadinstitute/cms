@@ -40,9 +40,11 @@ def get_component_score_files(model, irep, pop, altpop, selbin = "neut", filebas
 	in_fst_deldaf_file = basedir + "fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
 
 	if normed:
-		for filename in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
-			filename += ".norm"
-			
+		in_ihs_file += ".norm" 
+		in_nsl_file += ".norm"
+		in_delihh_file += ".norm" 
+		in_xp_file += ".norm"
+
 	for returnfile in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(returnfile):
 			print("Missing: " + returnfile)

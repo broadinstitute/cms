@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 11.15.16 vitti@broadinstitute.org
+## last updated: 12.15.16 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -181,24 +181,26 @@ def get_indices(score, dem_scenario):
 		else:
 			expectedlen = 8
 		indices = [physpos_index, normedscoreindex, freq_anc_index]		
-	elif score == "fst": #PULL FROM COMP (.CMS FILE)
-		expectedlen = 8
-		physpos_index, scoreindex, freq_anc_index = 0, 5, float('nan')
-		#expectedlen = 3#2
-		#physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+	elif score == "fst": #revert#PULL FROM COMP (.CMS FILE)
+		#expectedlen = 8
+		#physpos_index, scoreindex, freq_anc_index = 0, 5, float('nan')
+		expectedlen = 3#2
+		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
 		
 		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "deldaf":#PULL FROM COMP (.CMS FILE)
-		expectedlen = 8
-		physpos_index, scoreindex, freq_anc_index = 0, 6, float('nan')	
-		#expectedlen = 3#2
-		#physpos_index, scoreindex, freq_anc_index = 0, 1, 2
+	elif score == "deldaf":#revert#PULL FROM COMP (.CMS FILE)
+		#expectedlen = 8
+		#physpos_index, scoreindex, freq_anc_index = 0, 6, float('nan')	
+		expectedlen = 3#2
+		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
 		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "xp": #PULL FROM COMP (.CMS FILE)
-		expectedlen = 8
-		physpos_index, scoreindex, freq_anc_index = 0, 4, float('nan')	
-		#physpos_index, freq_anc_index = 1, 2
-		#xp_unnormed_index, xp_normed_index, = 7, 8
+	elif score == "xp": #revert#PULL FROM COMP (.CMS FILE)
+		#expectedlen = 8
+		#physpos_index, scoreindex, freq_anc_index = 0, 4, float('nan')	
+		physpos_index, freq_anc_index = 1, 2
+		xp_unnormed_index, xp_normed_index, = 7, 8
+		expectedlen=9
+		scoreindex = xp_normed_index
 		#if "sel" in dem_scenario:
 		#	expectedlen = 9
 		#else:
@@ -230,25 +232,26 @@ def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, pr
 		if printProgress:
 			if ifilename % 100 == 0: 
 				print("now file " + str(ifilename) + " out of " + str(len(allfilenames)))
-		openfile = open(filename, 'r')
-		if stripHeader:
-			header = openfile.readline()
-		for line in openfile:
-			entries = line.split()
-			if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
-				if checkCols and (len(entries) != numCols):
-					print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
-					incompleteData +=1
-					break
-				if np.isnan(takeindices[-1]):
-					fullrange = len(takeindices) - 1
-				else:
-					fullrange = len(takeindices)
-				for iIndex in range(fullrange):
-					index = takeindices[iIndex]
-					thisValue = float(entries[index])
-					toreturn[iIndex].append(thisValue)
-		openfile.close()
+		if os.path.getsize(filename) > 0:
+			openfile = open(filename, 'r')
+			if stripHeader:
+				header = openfile.readline()
+			for line in openfile:
+				entries = line.split()
+				if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
+					if checkCols and (len(entries) != numCols):
+						print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
+						incompleteData +=1
+						break
+					if np.isnan(takeindices[-1]):
+						fullrange = len(takeindices) - 1
+					else:
+						fullrange = len(takeindices)
+					for iIndex in range(fullrange):
+						index = takeindices[iIndex]
+						thisValue = float(entries[index])
+						toreturn[iIndex].append(thisValue)
+			openfile.close()
 	return toreturn
 def choose_vals_from_files(filename, numCols, takeindices, comp, stripHeader = False, checkCols = False, method = "max"):
 	''' expects a .list file with multiple records (i.e., same replicate, different poppairs) on the same line as input '''

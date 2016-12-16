@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 12.05.16 vitti@broadinstitute.org
+## last updated: 12.15.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('TKAgg') 
@@ -84,6 +84,9 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('--xpehh', action='store_true', help='define probability distribution for XP-EHH')	
 		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='define probability distribution for delDAF')	
 		likes_from_scores_parser.add_argument('--fst', action='store_true', help='define probability distribution for Fst')	
+
+		likes_from_scores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)", default=25000)
+		likes_from_scores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
 
 	##############
 	## SEL BINS ##
@@ -242,6 +245,9 @@ def execute_likes_from_scores(args):
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
 	numLikesBins = args.nLikesBins #histogram bins
 
+	chrlen, edge = args.chromlen, args.edge
+	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
+
 	datatypes = []
 	for status in ['causal', 'linked', 'neutral']:
 		for dpoint in ['positions', 'score_final']:
@@ -312,7 +318,7 @@ def execute_likes_from_scores(args):
 	#	sel_positions, sel_score_final = val_array[0], val_array[1]
 
 	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
-	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos] 
+	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and x > startbound and x < endbound] 
 
 	print("loaded " + str(len(neut_positions)) + " neutral variants from : "  + args.neutFile)
 	print(" and  "+str(len(causal_indices)) + " causal variants, and " + str(len(linked_indices)) + " linked variants from: " + args.selFile)

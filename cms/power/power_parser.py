@@ -39,6 +39,8 @@ def full_parser_power():
 	
 	run_poppair_parser = subparsers.add_parser('run_poppair', help='collate component scores by population pair')
 	run_poppair_parser.add_argument('--altpop', action='store')
+	run_poppair_parser.add_argument('--scorebase', action='store', default="/n/regal/sabeti_lab/jvitti/clear/scores/")
+
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
 
