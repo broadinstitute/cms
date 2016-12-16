@@ -78,6 +78,8 @@ def full_parser_composite():
 		poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
 		poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
 		poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
+		poppair_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
+
 
 		########################
 		## LARGER COMPARISONS ##
@@ -200,7 +202,11 @@ def execute_xp_from_ihh(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_poppair(args):
-	cmd = "combine/combine_scores_poppair"
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores_poppair"
 	if args.xp_reverse_pops:
 		xp_reversed = 0
 	else:
