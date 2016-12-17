@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.16.16		vitti@broadinstitute.org
+## last updated 12.17.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -486,23 +486,23 @@ def execute_composite_sims(args):
 	hi_likesfile = get_likesfiles(model, selpop, likessuffix, likesdir, allfreqs=True)
 	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
 	
+	"""
 	#ALL SEL SIMS
-	modeldir = writedir + model + "/"
-	pairdir = modeldir + "sel" + str(selpop) + "/pairs/"
-	compositedir = modeldir + "sel" + str(selpop) + "/composite/"
-	check_create_dir(compositedir)
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	for sel_freq_bin in sel_freq_bins:
-		writeselfreqbin = compositedir + "sel_" + str(sel_freq_bin) + '/'
-		check_create_dir(writeselfreqbin)
+
+		scoremodeldir = writedir + "scores/" + model + "/"
+		pairdir = scoremodeldir + "sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/pairs/"
+		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
+		check_create_dir(compositedir)
 		for irep in range(1, numPerBin +1):
-			inscorefilelist = get_selinscorefiles(model, selpop, sel_freq_bin, irep, writedir) 
+			inscorefilelist = get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = writedir) 
 			if len(inscorefilelist) > 0:
 				scorefilelist = ""
 				for filename in inscorefilelist:
 					scorefilelist += filename + ","
 				scorefilelist = scorefilelist[:-1]
-				outfile = writeselfreqbin + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + "_maf"
+				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + "_maf"
 				alreadyExists = False
 				if args.checkOverwrite:
 					if not os.path.isfile(outfile): #check for overwrite
@@ -512,19 +512,24 @@ def execute_composite_sims(args):
 				if alreadyExists == False:
 					argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
 					fullcmd = cmd + " " + argstring
-					#print(fullcmd)
+					print(fullcmd)
 					execute(fullcmd)
-
 	"""
+	
 	#ALL NEUT
+	scoremodeldir = writedir + "scores/" + model + "/"
+	pairdir = scoremodeldir + "neut/pairs/"
+	compositedir = writedir + "composite/" + model + "/neut/"
+	check_create_dir(compositedir)
+
 	for irep in range(1, numPerBin +1):	
-		neutinscorefilelist = get_neutinscorefiles(model, selpop, irep)#, pairbasedir) 
+		neutinscorefilelist = get_neutinscorefiles(model, selpop, irep, writedir + "scores/") 
 		if len(neutinscorefilelist) > 0:
 			scorefilelist = ""
 			for filename in neutinscorefilelist:
 				scorefilelist += filename + ","
 			scorefilelist = scorefilelist[:-1]
-			outfile = writedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" + "_maf"
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" + "_maf"
 			
 			alreadyExists = False
 			if args.checkOverwrite:
@@ -535,29 +540,25 @@ def execute_composite_sims(args):
 			if alreadyExists == False:
 				argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
 				fullcmd = cmd + " " + argstring
-				#print(fullcmd)
+				print(fullcmd)
 				execute(fullcmd)
-	"""
+	print("end composite") #debug
 	return
 def execute_normsims(args):
 	model = args.model
 	selpop = args.simpop
-	numPerBin = args.nrep
-	if args.likessuffix == "linked":
-		vsNeut = False
-	else:
-		vsNeut = True
-
+	numPerNeutBin, numPerSelBin = args.nrep_neut, args.nrep_sel
+	suffix = args.suffix
+	writedir = args.writedir
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
-
 	values = []
 	##############################
 	## LOAD STATS FROM NEUT SIMS #
 	##############################
-	for irep in range(1, numPerBin +1):	
-		outfile  = get_neut_repfile_name(model, irep, selpop, vsNeut)
+	for irep in range(1, numPerNeutBin +1):	
+		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		#print(outfile)
-		outfile = outfile + "_maf"
+		#outfile = outfile + "_maf"
 		if os.path.isfile(outfile):
 			openfile = open(outfile, 'r')
 			for line in openfile:
@@ -584,13 +585,12 @@ def execute_normsims(args):
 	## NORMALIZE ##
 	###############
 	#ALL NEUT
-	"""
-	for irep in range(1, numPerBin +1):	
-		outfile  = get_neut_repfile_name(model, irep, selpop, vsNeut,)
-		outfile += "_maf"
+	
+	for irep in range(1, numPerNeutBin +1):	
+		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 
 		if os.path.isfile(outfile):
-			normedfile = outfile + ".norm_maf"
+			normedfile = outfile + ".norm"
 			if not os.path.isfile(normedfile):
 				openfile = open(outfile, 'r')
 				writefile = open(normedfile, 'w')
@@ -603,14 +603,13 @@ def execute_normsims(args):
 				openfile.close()
 				writefile.close()
 	print("wrote to eg: " + normedfile)	
-	"""
+	
 	#ALL SEL SIMS
 	for sel_freq_bin in sel_freq_bins:
-		for irep in range(1, numPerBin +1):
-			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, vsNeut = True, normed = False)
-			rawfile += "_maf"
+		for irep in range(1, numPerSelBin +1):
+			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
 			if os.path.isfile(rawfile):
-				normedfile = rawfile + ".norm_maf"
+				normedfile = rawfile + ".norm"
 				if not os.path.isfile(normedfile):
 					openfile = open(rawfile, 'r')
 					writefile = open(normedfile, 'w')
@@ -623,7 +622,6 @@ def execute_normsims(args):
 					openfile.close()
 					writefile.close()
 	print("wrote to eg: " + normedfile)	
-	
 	return
 def execute_write_master_likes(args):
 	''' from write_master_likes.py'''
@@ -899,15 +897,15 @@ def execute_fpr(args):
 	cutoff = args.cutoff
 	numReps = args.nrep
 	pop = args.simpop
+	suffix = args.suffix
+	writedir = args.writedir
 
 	all_scores = []
 	all_percentages = []
 	
 	if True:
 		for irep in range(1, numReps + 1):
-			#repfilename = get_neut_repfile_name(model, irep, pop, normed=True)
-			#repfilename += "_maf"
-			repfilename = "/idi/sabeti-scratch/jvitti/clean/scores/" + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out_maf.norm_maf"
+			repfilename = get_neut_repfile_name(model, irep, pop, normed=True, suffix=suffix, basedir=writedir)
 			if (irep==1):
 				print(repfilename)
 			physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
@@ -940,6 +938,8 @@ def execute_tpr(args):
 	cutoff = args.cutoff
 	numReps = args.nrep
 	pop = args.simpop
+	suffix = args.suffix
+	writedir = args.writedir
 
 	all_scores = []
 	all_percentages = []
@@ -953,9 +953,9 @@ def execute_tpr(args):
 	allrepfilenames = []
 	for selbin in ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']:
 		for irep in range(1, numReps + 1):
-			repfilename = "/idi/sabeti-scratch/jvitti/scores/" + model + "/sel" + str(pop) + "/composite/sel_" + str(selbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms.out_maf.norm_maf"
-			#repfilename = get_sel_repfile_name(model, irep, pop, selbin, normed=True, vsNeut=True)
-			#print(repfilename)
+			repfilename = get_sel_repfile_name(model, irep, pop, selbin, normed=True, suffix=suffix, basedir=writedir)
+			if (irep==1):
+				print(repfilename)
 			if os.path.isfile(repfilename):
 				allrepfilenames.append(repfilename)
 	chosen = np.random.choice(allrepfilenames, 1000, replace=False) #take random sample	

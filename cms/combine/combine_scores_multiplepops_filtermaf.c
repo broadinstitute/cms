@@ -1,7 +1,7 @@
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
 // implements symmetrical treatment of right/left side of distribution wrt pseudobins
-// last updated: 12.1.16   vitti@broadinstitute.org
-// IS: CMS 1.0 undefined for MAF < .2?!
+// 12.1.16    IS: CMS 1.0 undefined for MAF < .2?! 12.16.16: ignore edges vitti@broadinstitute.org
+
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -13,6 +13,9 @@
 #include "cms_data.h"
 #include "pop_comparison.h" 
 #define MINTHRESH .20
+#define MINBOUND 250000
+#define MAXBOUND 1250000
+
 
 /**********/
 /***MAIN***/
@@ -174,7 +177,9 @@ int main(int argc, char **argv) {
 
 		thisdaf = data.daf_selpop[iComp][isnp];
 		//fprintf(stderr, "%d\t%d\t%f\t", data.physpos[iComp][isnp], isnp, thisdaf); //debug
-		if (thisdaf >= MINTHRESH){
+
+
+		if (thisdaf >= MINTHRESH && data.physpos[iComp][isnp] > MINBOUND && data.physpos[iComp][isnp] < MAXBOUND){
 			if (thisdaf <= .35){
 				//fprintf(stderr, "lowfreq\n"); //debug
 				delihh_hitprob = getProb(&delihh_hit_low, thisihh);

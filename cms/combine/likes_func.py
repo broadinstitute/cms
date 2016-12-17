@@ -1,6 +1,8 @@
 ## functions for composite
 ## 11.24.16	vitti@broadinstitute.org
 
+import sys
+
 def get_likesfiles_frommaster(masterfile, modelselpop, vs="neut"):
 	"""assumes only one demographic model in master likes file, but there may be multiple pops or neut/linked comps"""
 	likesfiles = []
