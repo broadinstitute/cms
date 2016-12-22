@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 11.24.16 vitti@broadinstitute.org
-# 12.1 testing filtermaf (IS)
+## last updated: 12.16.16 	vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
@@ -78,7 +77,6 @@ def full_parser_composite():
 		poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
 		poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
 		poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
-		poppair_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
 
 
 		########################
@@ -100,6 +98,8 @@ def full_parser_composite():
 
 		for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
 			common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+			common_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
+
 
 		ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 		
@@ -223,6 +223,7 @@ def execute_poppair(args):
 		subprocess.check_call( cmdstring.split() )	
 	return
 def execute_outgroups(args):
+
 	ihs_hit_hi_filename, ihs_miss_hi_filename, nsl_hit_hi_filename, nsl_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
 
 	usefreqs = []
@@ -234,12 +235,18 @@ def execute_outgroups(args):
 		usefreqs.append('mid')
 	while len(usefreqs) < 3:	#HI-FREQ by default
 		usefreqs.append('hi')
+
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	
 		
 	if not args.region: 	#GENOME-WIDE
-		cmd = "combine/combine_scores_multiplepops_filtermaf"
+		cmd += "combine/combine_scores_multiplepops_filtermaf"
 		argstring = args.outfile 
 	else:	#WITHIN REGION
-		cmd = "combine/combine_scores_multiplepops_region"
+		cmd += "combine/combine_scores_multiplepops_region"
 		argstring = args.outfile + " " + str(args.startBp) + " " + str(args.endBp) + " "  
 	
 	for score in ['ihs', 'nsl', 'delihh', 'xpehh', 'fst', 'deldaf']:

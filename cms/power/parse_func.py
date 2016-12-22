@@ -1,4 +1,4 @@
-## last updated 12.15.16
+## last updated 12.17.16
 
 import subprocess
 import numpy as np
@@ -50,30 +50,32 @@ def get_component_score_files(model, irep, pop, altpop, selbin = "neut", filebas
 			print("Missing: " + returnfile)
 
 	return in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file 
-def get_neut_repfile_name(model, irep, pop, vsNeut = False, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", ):
-	#if not vsNeut:
-	if True:
-		repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out"
-	#else:
-	#	repfilename = basedir + model + "/neut/rep" + str(irep) + "_" + str(pop) + "_vsneut.cms.out"
+def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", suffix = ""):
+	repfilename = basedir +"composite/"+ model + "/neut/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	#print(repfilename)
 	if normed:
 		repfilename += ".norm"
 	#if not os.path.isfile(repfilename):
 	#	return
 	#else:
 	return repfilename
-def get_sel_repfile_name(model, irep, pop, freqbin, vsNeut = False, normed = False,  basedir = "/idi/sabeti-scratch/jvitti/scores/"):
-	repfilename = basedir + model + "/sel" + str(pop) + "/composite/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms.out"
- 	#if not vsNeut:
-	#if True:
-	#	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms.out"
-		#print(repfilename)
-	#else:
-	#	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) +  "_vsneut.cms.out"	
+def get_sel_repfile_name(model, irep, pop, freqbin, normed = False,  basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix=""):
+	repfilename = basedir +"composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
 	#print(repfilename)
 	if normed:
 		repfilename += ".norm"
+	#if not os.path.isfile(repfilename):
+	#	return	
+	#else:
 	return repfilename
+def get_pr_filesnames(key, basedir):
+	regionlen, percentage, cutoff, model, pop = key
+	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	for filename in [tprfile, fprfile]:
+		if not os.path.isfile(filename):
+			print("missing: " + filename)
+	return fprfile, tprfile 
 def get_emp_cms_file(selpop, model, likessuffix, chrom, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores_composite4_b/"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
 	filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
 	if normed:
@@ -88,7 +90,7 @@ def get_likesfiles(model, selpop, likessuffix, likesdir, allfreqs = True):
 		low_likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_low_vs_" + likessuffix + ".txt"
 		return hi_likesfile, mid_likesfile, low_likesfile 
 	else:
-		likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_allfreq_vs_" + likessuffix + ".txt"
+		likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_allfreq_vs_" + likessuffix + ".txt_2"
 		return likesfile
 	return
 def get_neutinscorefiles(model, selpop, irep, pairbasedir = "/idi/sabeti-scratch/jvitti/clean/scores/"):
@@ -98,16 +100,17 @@ def get_neutinscorefiles(model, selpop, irep, pairbasedir = "/idi/sabeti-scratch
 	altpops.remove(int(selpop))
 	for altpop in altpops:
 		pairfilename = pairbasedir + model + "/neut/pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
+		#print(pairfilename)
 		if os.path.isfile(pairfilename):
 			inscorefiles.append(pairfilename)
 	return inscorefiles	
-def get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = "/idi/sabeti-scratch/jvitti/scores/"):
+def get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = "/n/regal/sabeti_lab/jvitti/clear/"):
 	inscorefiles = []
 	pops = [1, 2, 3, 4]
 	altpops = pops[:]
 	altpops.remove(int(selpop))
 	for altpop in altpops:
-		pairfilename = pairbasedir + model + "/sel" + str(selpop) + "/pairs/sel_" + str(sel_freq_bin) + "/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
+		pairfilename = pairbasedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair"
 		#print(pairfilename)
 		if os.path.isfile(pairfilename):
 			inscorefiles.append(pairfilename)
@@ -200,7 +203,7 @@ def check_create_file(filename, checkOverwrite):
 	return False
 def check_create_dir(directory):
 	if not os.path.isdir(directory):
-		subprocess.check_output(['mkdir', directory])
+		subprocess.check_output(['mkdir', '-p', directory])
 def writeJobsToTaskArray_fromArglist(commandstring, arguments, fileprefix, filewd = "", UGERoptions = ['-cwd', '-P sabeti_lab'], memory="5g", discardOut=False):
 	"""flexible function for generating scripts and argfiles to dispatch parallel jobs on Univa Grid Engine.
 	arglist: a list of strings. each string represents one argstring, for one task on the array."""

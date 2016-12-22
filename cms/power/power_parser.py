@@ -1,5 +1,5 @@
 ## structures input to various functions of the script, power.py
-## last updated 12.15.16
+## last updated 12.17.16
 
 import argparse
 
@@ -81,8 +81,8 @@ def full_parser_power():
 	roc_parser.add_argument('--plot_curve', action="store_true", default=False)
 	roc_parser.add_argument('--find_opt', action="store_true", default=False)
 	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
-	roc_parser.add_argument('--fprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/fpr_4c/")
-	roc_parser.add_argument('--tprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/tpr_4c/")
+	#roc_parser.add_argument('--fprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/fpr_4c/")
+	#roc_parser.add_argument('--tprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/tpr_4c/")
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
@@ -103,7 +103,8 @@ def full_parser_power():
 	##################
 
 	for write_parser in [run_neut_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, 
-			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
+			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser,
+			normsims_parser, fpr_parser, tpr_parser, roc_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 
@@ -134,6 +135,16 @@ def full_parser_power():
 
 	for run_cms_parser in [run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, run_poppair_parser, composite_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		run_cms_parser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
+
+	for sel_sim_parser in [normsims_parser]:
+		sel_sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
+		sel_sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
+
+
+	for sel_sim_parser in [normsims_parser, fpr_parser, tpr_parser]:
+		sel_sim_parser.add_argument('--suffix', type= str, action='store', default='')
+
+
 
 	for commonparser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, normemp_parser, gw_regions_parser, manhattan_parser, run_norm_neut_repscores_parser,norm_from_binfile_parser,
 						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, run_poppair_parser, 
