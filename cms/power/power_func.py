@@ -86,8 +86,9 @@ def calc_pr(all_percentages, threshhold):
 	numNeutReps_exceedThresh = 0
 	totalnumNeutReps = len(all_percentages)
 	for irep in range(totalnumNeutReps):
-		if max(all_percentages[irep]) > threshhold:
-			numNeutReps_exceedThresh +=1
+		if len(all_percentages[irep]) != 0:
+			if max(all_percentages[irep]) > threshhold:
+				numNeutReps_exceedThresh +=1
 	numNeutReps_exceedThresh, totalnumNeutReps = float(numNeutReps_exceedThresh), float(totalnumNeutReps)
 	#print(str(numNeutReps_exceedThresh) + "\t" + str(totalnumNeutReps) + "\n")
 	fpr = numNeutReps_exceedThresh / totalnumNeutReps 

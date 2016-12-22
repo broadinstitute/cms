@@ -68,6 +68,14 @@ def get_sel_repfile_name(model, irep, pop, freqbin, normed = False,  basedir = "
 	#	return	
 	#else:
 	return repfilename
+def get_pr_filesnames(key, basedir):
+	regionlen, percentage, cutoff, model, pop = key
+	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	for filename in [tprfile, fprfile]:
+		if not os.path.isfile(filename):
+			print("missing: " + filename)
+	return fprfile, tprfile 
 def get_emp_cms_file(selpop, model, likessuffix, chrom, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores_composite4_b/"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
 	filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
 	if normed:

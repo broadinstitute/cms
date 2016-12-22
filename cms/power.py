@@ -6,7 +6,7 @@ from power.power_func import normalize, merge_windows, get_window, check_outlier
 						plotManhattan_extended, loadregions, quick_plot, get_causal_rank, get_cdf_from_causal_ranks
 from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
 						load_empscores, writeJobsToTaskArray_fromArglist, check_create_dir, execute, read_pr, write_master_likesfile, get_likesfiles, \
-						get_neutinscorefiles, check_create_file, get_concat_files, plot_dist, readvals_lastcol, get_selinscorefiles
+						get_neutinscorefiles, check_create_file, get_concat_files, plot_dist, readvals_lastcol, get_selinscorefiles, get_pr_filesnames
 
 import matplotlib as mp 
 mp.use('agg')
@@ -915,8 +915,9 @@ def execute_fpr(args):
 				all_percentages.append(rep_percentages)		
 				#FOR DEBUG
 				#print(str(rep_percentages) + "\t" + repfilename)
-				if max(rep_percentages) > thresshold:
-					print("false positive: " + repfilename)
+				if len(rep_percentages) > 0:
+					if max(rep_percentages) > thresshold:
+						print("false positive: " + repfilename)
 
 	print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
 	fpr = calc_pr(all_percentages, thresshold)
@@ -944,48 +945,56 @@ def execute_tpr(args):
 	all_scores = []
 	all_percentages = []
 	
-	if args.saveLog	is not None:
-		writefilename = args.saveLog
-		if os.path.isfile(writefilename):
-			print(writefilename + " already exists; aborting.")
-			sys.exit(0)
+	#if args.saveLog	is not None:
+	#	writefilename = args.saveLog
+	#	if os.path.isfile(writefilename):
+	#		print(writefilename + " already exists; aborting.")
+	#		sys.exit(0)
 
-	allrepfilenames = []
-	for selbin in ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']:
-		for irep in range(1, numReps + 1):
-			repfilename = get_sel_repfile_name(model, irep, pop, selbin, normed=True, suffix=suffix, basedir=writedir)
-			if (irep==1):
-				print(repfilename)
-			if os.path.isfile(repfilename):
-				allrepfilenames.append(repfilename)
-	chosen = np.random.choice(allrepfilenames, 1000, replace=False) #take random sample	
-	for repfilename in chosen:
-		physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
-		if len(cms_normed) > 0:
-			all_scores.append(cms_normed)
-			rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
-			all_percentages.append(rep_percentages)		
+	#per seldaf
+	dafbins = [['0.90']]#['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90']]
+	daflabels = ['highest']#'lo', 'mid', 'hi']
+	for ibin in range(1):
+		thesebins, thislabel = dafbins[ibin], daflabels[ibin]
+		allrepfilenames = []
+		for selbin in thesebins:
+			for irep in range(1, numReps + 1):
+				repfilename = get_sel_repfile_name(model, irep, pop, selbin, normed=True, suffix=suffix, basedir=writedir)
+				if (irep==1):
+					print(repfilename)
+				if os.path.isfile(repfilename):
+					allrepfilenames.append(repfilename)
+		print('loaded ' + str(len(allrepfilenames)) + " replicates...")
+		numToTake = max(500, len(allrepfilenames))
+		chosen = np.random.choice(allrepfilenames, numToTake, replace=False) #take random sample	
+		for repfilename in chosen:
+			physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
+			if len(cms_normed) > 0:
+				all_scores.append(cms_normed)
+				rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
+				all_percentages.append(rep_percentages)		
 
-	print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
-	tpr = calc_pr(all_percentages, thresshold)
-	print('true positive rate: ' + str(tpr) + "\n")
+		print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
+		tpr = calc_pr(all_percentages, thresshold)
+		print('true positive rate: ' + str(tpr) + "\n")
 
-	if args.saveLog	is not None:
-		writefilename = args.saveLog
-		writefile = open(writefilename, 'w')
-		writefile.write(str(tpr)+'\n')
+		if args.saveLog	is not None:
+			writefilename = args.saveLog +"_" + thislabel
+			writefile = open(writefilename, 'w')
+			writefile.write(str(tpr)+'\n')
 
-		writefile.write(model + "\t" + str(regionlen) + "\t" + str(thresshold) + '\t' + str(cutoff) + '\n')
-		writefile.close()
-		print('wrote to :  ' + str(writefilename))
+			writefile.write(model + "\t" + str(regionlen) + "\t" + str(thresshold) + '\t' + str(cutoff) + '\n')
+			writefile.close()
+			print('wrote to :  ' + str(writefilename))
 	return	
 def execute_roc(args):
 	''' from quick_roc.py '''
 	plot_roc = args.plot_curve
 	find_opt = args.find_opt
 	maxFPR = args.maxFPR
-	fprloc = args.fprloc
-	tprloc = args.tprloc
+	#fprloc = args.fprloc
+	#tprloc = args.tprloc
+	writedir = args.writedir
 
 	regionlens = [10000, 25000, 50000, 100000]
 	thressholds = [25, 30, 35, 40, 45, 50]
@@ -1005,11 +1014,12 @@ def execute_roc(args):
 					allpops_fpr, allpops_tpr = [], []
 					for pop in pops:
 						this_key = (regionlen, percentage, cutoff, model, pop)
-						fprfile = "/idi/sabeti-scratch/jvitti/clean/fpr/fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt_maf"
+						#fprfile = "/idi/sabeti-scratch/jvitti/clean/fpr/fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt_maf"
 						#fprfile = fprloc + "fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
-						tprfile = "/idi/sabeti-scratch/jvitti/scores/tpr/maf/composite_nsl_noihs_maf_tpr_" + model + "_" + str(pop) + "_neut_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + ".txt"
-						#tprloc + "sel_tpr_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
+						#tprfile = "/idi/sabeti-scratch/jvitti/scores/tpr/maf/composite_nsl_noihs_maf_tpr_" + model + "_" + str(pop) + "_neut_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + ".txt"
+						#tprloc + tprloc + "sel_tpr_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
 						#print(tprfile)
+						fprfile, tprfile = get_pr_filesnames(this_key, writedir)
 						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
 							fpr = read_pr(fprfile)
 							tpr = read_pr(tprfile)

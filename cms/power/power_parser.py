@@ -81,8 +81,8 @@ def full_parser_power():
 	roc_parser.add_argument('--plot_curve', action="store_true", default=False)
 	roc_parser.add_argument('--find_opt', action="store_true", default=False)
 	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
-	roc_parser.add_argument('--fprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/fpr_4c/")
-	roc_parser.add_argument('--tprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/tpr_4c/")
+	#roc_parser.add_argument('--fprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/fpr_4c/")
+	#roc_parser.add_argument('--tprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/tpr_4c/")
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
@@ -104,7 +104,7 @@ def full_parser_power():
 
 	for write_parser in [run_neut_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, 
 			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser,
-			normsims_parser, fpr_parser, tpr_parser]:
+			normsims_parser, fpr_parser, tpr_parser, roc_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 
