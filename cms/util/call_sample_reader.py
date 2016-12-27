@@ -53,7 +53,7 @@ class CallSampleReader(object):
 
         reader = csv.DictReader(f, delimiter="\t")
         for row in  reader:
-            sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.iteritems() if k not in ("sample", "")}
+            sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.items() if k not in ("sample", "")}
         if isLocal:
             f.close()
         return sample_membership
@@ -107,7 +107,7 @@ class CallSampleReader(object):
         '''
             Add the metadata keys for a given row to the sample key of the sample_membership dict
         '''
-        self.sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.iteritems() if k not in ("sample", "")}
+        self.sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.items() if k not in ("sample", "")}
 
 
     def store_population_membership(self, row, rowFieldNames):
