@@ -1,3 +1,5 @@
+// PHASING OUT 12.29.16 (->combine_scores.c)
+
 // for a given population pair, pulls and collates all component score statistics. 
 // last updated: 11.23.16   vitti@broadinstitute.org
 

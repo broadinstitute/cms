@@ -1,7 +1,8 @@
+// PHASING OUT 12.29.16 (->combine_scores.c)
+
 // for a set of likelihood tables, together with collated CMS comparison scores for a putative selected population vs. any number of outgroups, pulls and collates all component score statistics. 
 // implements symmetrical treatment of right/left side of distribution wrt pseudobins
 // last updated: 11.26.16   vitti@broadinstitute.org
-// TEST REMOVING IHS
 
 #include <stdio.h>
 #include <stdarg.h>
