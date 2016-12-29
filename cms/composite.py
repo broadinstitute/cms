@@ -180,6 +180,7 @@ def execute_win_haps(args):
 	windows(windowsize, jumplen, infilename, writefilename)
 	return
 def execute_interpolate_hapscores(args):
+	''' strike '''
 	inputTpedFilename = args.intpedfilename
 	inputIhsFilename = args.inihsfilename
 	inputWinihsFilename = args.inwinihsfilename

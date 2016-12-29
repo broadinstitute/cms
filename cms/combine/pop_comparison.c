@@ -1,3 +1,5 @@
+// PHASE OUT 12.28.16
+
 // methods for running CMS with a putative selPop and 2+ outgroups. 
 // last updated 11.29.16 	vitti@broadinstitute.org
 
