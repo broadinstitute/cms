@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 12.29.16   vitti@broadinstitute.org
+// last updated: 12.30.16   vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -68,7 +68,7 @@ void get_fst_deldaf_data(fst_deldaf_data* data, char filename[]);
 void free_fst_deldaf_data(fst_deldaf_data* data);
 
 /*************************/
-/***SCORE DISTRIBUTIONS***/
+/***SCORE LIKELIHOODS***/
 /*************************/
 typedef struct likes_data{
     int nbins;
@@ -78,7 +78,20 @@ typedef struct likes_data{
 } likes_data;
 void get_likes_data(likes_data* data, char filename[]);
 void free_likes_data(likes_data* data);
-
+typedef struct likes_data_multiple{
+    int nbins;
+    double *start_bin;
+    double *end_bin;
+    double *miss_probs;      
+    double *hit_probs_hi; //likesFreqs implemented by default; 
+    double *hit_probs_mid; //can toggle by giving same (pooled) 
+    double *hit_probs_low;  //likelihood tables to all three.
+} likes_data_multiple;
+void get_likes_data_multiple(likes_data_multiple* data, char filename[]);
+void free_likes_data_multiple(likes_data_multiple* data);
+float getProb(likes_data* data, double value);
+float getMaxBf(likes_data* data_hit, likes_data* data_miss);
+float getMinBf(likes_data* data_hit, likes_data* data_miss);
 
 /*************************/
 /***TWO-POP COMPARISON***/
@@ -124,10 +137,3 @@ void free_popComp_data_multiple(popComp_data_multiple* data);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);
-
-/**************************/
-/***HANDLING LIKELIHOODS****/
-/**************************/
-float getMaxBf(likes_data* data_hit, likes_data* data_miss);
-float getMinBf(likes_data* data_hit, likes_data* data_miss);
-float getProb(likes_data* data, double value);

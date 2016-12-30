@@ -401,9 +401,9 @@ void free_nsl_data(nsl_data* data) {
 	data->nsnps = 0;
 } //end method
 
-/*************************/
-/***SCORE DISTRIBUTIONS***/
-/*************************/
+/************************/
+/***SCORE LIKELIHOODS***/
+/************************/
 void get_likes_data(likes_data* data, char filename[]){
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
@@ -412,7 +412,6 @@ void get_likes_data(likes_data* data, char filename[]){
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
-
 	data->nbins = 0;
 	data->start_bin = NULL; 
 	data->end_bin = NULL;
@@ -463,6 +462,123 @@ void free_likes_data(likes_data* data) {
 	free(data->end_bin);
 	free(data->probs);
 } //end method
+void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
+	FILE *inf=NULL;
+	const int line_size = 15000000; 
+    char miss_probs_filename[256], hit_probs_hi_filename[256], hit_probs_mid_filename[256], hit_probs_low_filename[256];   
+    likes_data onedist_data;
+    int ibin;
+
+	//////////////////
+	/// INITIALIZE ///
+	//////////////////
+	data->nbins = 0;
+	data->start_bin = NULL;
+	data->end_bin = NULL;
+	data->miss_probs = NULL;
+	data->hit_probs_hi = NULL;
+	data->hit_probs_mid = NULL;
+	data->hit_probs_low = NULL;
+
+
+	inf = fopen(filename, "r"); 
+	assert(inf != NULL);
+	// P(NEUT)
+	fgets(miss_probs_filename, line_size, inf);
+	strtok(miss_probs_filename, "\n");
+	get_likes_data(&onedist_data, miss_probs_filename);
+	data->nbins = onedist_data.nbins;
+	data->start_bin = malloc(data->nbins * sizeof(double));
+	data->end_bin = malloc(data->nbins * sizeof(double));
+	data->miss_probs = malloc(data->nbins * sizeof(double));
+	data->hit_probs_hi = malloc(data->nbins * sizeof(double));	
+	data->hit_probs_mid = malloc(data->nbins * sizeof(double));	
+	data->hit_probs_low = malloc(data->nbins * sizeof(double));		
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		data->start_bin[ibin] = onedist_data.start_bin[ibin];
+		data->end_bin[ibin] = onedist_data.end_bin[ibin];
+		data->miss_probs[ibin] = onedist_data.probs[ibin];
+	} // end ibin
+	free_likes_data(&onedist_data);
+
+	//P(SEL | DAF HI)
+	fgets(hit_probs_hi_filename, line_size, inf);
+	strtok(hit_probs_hi_filename, "\n");
+	get_likes_data(&onedist_data, hit_probs_hi_filename);
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		data->hit_probs_hi[ibin] = onedist_data.probs[ibin];
+	} // end ibin
+	free_likes_data(&onedist_data);
+
+	//P(SEL | DAF MID)
+	fgets(hit_probs_mid_filename, line_size, inf);
+	strtok(hit_probs_mid_filename, "\n");
+	get_likes_data(&onedist_data, hit_probs_mid_filename);
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		data->hit_probs_mid[ibin] = onedist_data.probs[ibin];
+	} // end ibin
+	free_likes_data(&onedist_data);
+
+	//P(SEL | DAF LOW)
+	fgets(hit_probs_low_filename, line_size, inf);
+	strtok(hit_probs_low_filename, "\n");
+	get_likes_data(&onedist_data, hit_probs_low_filename);
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		data->hit_probs_low[ibin] = onedist_data.probs[ibin];
+	} // end ibin
+	free_likes_data(&onedist_data);
+
+	fclose(inf);
+} // end function
+void free_likes_data_multiple(likes_data_multiple* data){
+    if (data == NULL) {return;}
+	data->nbins = 0;
+	free(data->start_bin);
+	free(data->end_bin);
+	free(data->miss_probs);
+	free(data->hit_probs_hi);
+	free(data->hit_probs_mid);
+	free(data->hit_probs_low);
+} // end function
+float getProb(likes_data* data, double value){
+	int ibin;
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->probs[ibin];}
+	}
+	if (value < data->start_bin[0]){return data->probs[0];}
+	if (value > data->end_bin[data->nbins - 1]){return data->probs[data->nbins - 1];}
+
+	return 0;
+} //end function
+float getMaxBf(likes_data* data_miss, likes_data* data_hit){
+	int ibin;
+	float thisBf;
+	float maxBf = 0.;
+
+	for (ibin = 0; ibin < data_hit->nbins; ibin++){
+		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
+			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
+			if (thisBf > maxBf){maxBf = thisBf;}
+		}
+	}//end ibin
+	//fprintf(stderr, "found max bf: %f\n", maxBf);
+	return maxBf;
+}//end function
+float getMinBf(likes_data* data_miss, likes_data* data_hit){
+	int ibin;
+	float thisBf;
+	float minBf = 1.;
+
+	for (ibin = 0; ibin < data_hit->nbins; ibin++){
+		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
+			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
+			if (thisBf < minBf){minBf = thisBf;}
+		}
+	}//end ibin
+
+	//fprintf(stderr, "found min bf: %f\n", minBf);	
+	return minBf;
+}//end function
 
 /****************/
 /***POP PAIR****/
@@ -929,7 +1045,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	free(allUniqueSnps);
 	free(allSnps);
 	free(newLine);
-	fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
+	//fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
 } //end method
 void free_popComp_data_multiple(popComp_data_multiple* data){
 	int iComp;
@@ -957,45 +1073,6 @@ void free_popComp_data_multiple(popComp_data_multiple* data){
 	data->nsnps = 0;
 	data->ncomp = 0;
 } //end method
-float getMaxBf(likes_data* data_miss, likes_data* data_hit){
-	int ibin;
-	float thisBf;
-	float maxBf = 0.;
-
-	for (ibin = 0; ibin < data_hit->nbins; ibin++){
-		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
-			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
-			if (thisBf > maxBf){maxBf = thisBf;}
-		}
-	}//end ibin
-	//fprintf(stderr, "found max bf: %f\n", maxBf);
-	return maxBf;
-}//end function
-float getMinBf(likes_data* data_miss, likes_data* data_hit){
-	int ibin;
-	float thisBf;
-	float minBf = 1.;
-
-	for (ibin = 0; ibin < data_hit->nbins; ibin++){
-		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
-			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
-			if (thisBf < minBf){minBf = thisBf;}
-		}
-	}//end ibin
-
-	//fprintf(stderr, "found min bf: %f\n", minBf);	
-	return minBf;
-}//end function
-float getProb(likes_data* data, double value){
-	int ibin;
-	for (ibin = 0; ibin < data->nbins; ibin++){
-		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->probs[ibin];}
-	}
-	if (value < data->start_bin[0]){return data->probs[0];}
-	if (value > data->end_bin[data->nbins - 1]){return data->probs[data->nbins - 1];}
-
-	return 0;
-} //end function
 float compareXp(popComp_data_multiple* data, int isnp){//currently: takes max val
 	double xp;
 	int iComp;
