@@ -83,15 +83,14 @@ typedef struct likes_data_multiple{
     double *start_bin;
     double *end_bin;
     double *miss_probs;      
-    double *hit_probs_hi; //likesFreqs implemented by default; 
-    double *hit_probs_mid; //can toggle by giving same (pooled) 
-    double *hit_probs_low;  //likelihood tables to all three.
+    double **hit_probs; 
 } likes_data_multiple;
 void get_likes_data_multiple(likes_data_multiple* data, char filename[]);
 void free_likes_data_multiple(likes_data_multiple* data);
-float getProb(likes_data* data, double value);
-float getMaxBf(likes_data* data_hit, likes_data* data_miss);
-float getMinBf(likes_data* data_hit, likes_data* data_miss);
+float getHitProb(likes_data_multiple* data, int likesIndex, double value);
+float getMissProb(likes_data_multiple* data, double value);
+float getMaxBf(likes_data_multiple* data, int likesIndex);
+float getMinBf(likes_data_multiple* data,  int likesIndex);
 
 /*************************/
 /***TWO-POP COMPARISON***/

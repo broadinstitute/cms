@@ -476,10 +476,10 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	data->start_bin = NULL;
 	data->end_bin = NULL;
 	data->miss_probs = NULL;
-	data->hit_probs_hi = NULL;
-	data->hit_probs_mid = NULL;
-	data->hit_probs_low = NULL;
-
+	data->hit_probs = NULL;
+	//data->hit_probs_mid = NULL;
+	//data->hit_probs_low = NULL;
+	data->hit_probs = malloc(3 * sizeof(double*)); //likesFreqs: hi, low, mid
 
 	inf = fopen(filename, "r"); 
 	assert(inf != NULL);
@@ -491,9 +491,13 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	data->start_bin = malloc(data->nbins * sizeof(double));
 	data->end_bin = malloc(data->nbins * sizeof(double));
 	data->miss_probs = malloc(data->nbins * sizeof(double));
-	data->hit_probs_hi = malloc(data->nbins * sizeof(double));	
-	data->hit_probs_mid = malloc(data->nbins * sizeof(double));	
-	data->hit_probs_low = malloc(data->nbins * sizeof(double));		
+	//data->hit_probs_hi = malloc(data->nbins * sizeof(double));	
+	//data->hit_probs_mid = malloc(data->nbins * sizeof(double));	
+	//data->hit_probs_low = malloc(data->nbins * sizeof(double));
+	data->hit_probs[0] = malloc(data->nbins * sizeof(double));
+	data->hit_probs[1] = malloc(data->nbins * sizeof(double));
+	data->hit_probs[2] = malloc(data->nbins * sizeof(double));
+				
 	for (ibin = 0; ibin < data->nbins; ibin++){
 		data->start_bin[ibin] = onedist_data.start_bin[ibin];
 		data->end_bin[ibin] = onedist_data.end_bin[ibin];
@@ -506,7 +510,7 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	strtok(hit_probs_hi_filename, "\n");
 	get_likes_data(&onedist_data, hit_probs_hi_filename);
 	for (ibin = 0; ibin < data->nbins; ibin++){
-		data->hit_probs_hi[ibin] = onedist_data.probs[ibin];
+		data->hit_probs[0][ibin] = onedist_data.probs[ibin];
 	} // end ibin
 	free_likes_data(&onedist_data);
 
@@ -515,7 +519,7 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	strtok(hit_probs_mid_filename, "\n");
 	get_likes_data(&onedist_data, hit_probs_mid_filename);
 	for (ibin = 0; ibin < data->nbins; ibin++){
-		data->hit_probs_mid[ibin] = onedist_data.probs[ibin];
+		data->hit_probs[1][ibin] = onedist_data.probs[ibin];
 	} // end ibin
 	free_likes_data(&onedist_data);
 
@@ -524,7 +528,7 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	strtok(hit_probs_low_filename, "\n");
 	get_likes_data(&onedist_data, hit_probs_low_filename);
 	for (ibin = 0; ibin < data->nbins; ibin++){
-		data->hit_probs_low[ibin] = onedist_data.probs[ibin];
+		data->hit_probs[2][ibin] = onedist_data.probs[ibin];
 	} // end ibin
 	free_likes_data(&onedist_data);
 
@@ -536,46 +540,55 @@ void free_likes_data_multiple(likes_data_multiple* data){
 	free(data->start_bin);
 	free(data->end_bin);
 	free(data->miss_probs);
-	free(data->hit_probs_hi);
-	free(data->hit_probs_mid);
-	free(data->hit_probs_low);
+	//free(data->hit_probs_hi); //hit_probs
+	//free(data->hit_probs_mid);
+	//free(data->hit_probs_low);
+	free(data->hit_probs[0]);
+	free(data->hit_probs[1]);
+	free(data->hit_probs[2]);
+	free(data->hit_probs);
 } // end function
-float getProb(likes_data* data, double value){
+float getHitProb(likes_data_multiple* data, int likesIndex, double value){
 	int ibin;
 	for (ibin = 0; ibin < data->nbins; ibin++){
-		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->probs[ibin];}
+		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->hit_probs[likesIndex][ibin];}
 	}
-	if (value < data->start_bin[0]){return data->probs[0];}
-	if (value > data->end_bin[data->nbins - 1]){return data->probs[data->nbins - 1];}
-
+	if (value < data->start_bin[0]){return data->hit_probs[likesIndex][0];}
+	if (value > data->end_bin[data->nbins - 1]){return data->hit_probs[likesIndex][data->nbins - 1];}
 	return 0;
 } //end function
-float getMaxBf(likes_data* data_miss, likes_data* data_hit){
+float getMissProb(likes_data_multiple* data, double value){
+	int ibin;
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->miss_probs[ibin];}
+	}
+	if (value < data->start_bin[0]){return data->miss_probs[0];}
+	if (value > data->end_bin[data->nbins - 1]){return data->miss_probs[data->nbins - 1];}
+	return 0;
+} //end function
+float getMaxBf(likes_data_multiple* data, int likesIndex){
 	int ibin;
 	float thisBf;
 	float maxBf = 0.;
-
-	for (ibin = 0; ibin < data_hit->nbins; ibin++){
-		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
-			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if(data->hit_probs[likesIndex][ibin] > 1e-10 && data->miss_probs[ibin] > 1e-10){
+			thisBf = data->hit_probs[likesIndex][ibin] / data->miss_probs[ibin];
 			if (thisBf > maxBf){maxBf = thisBf;}
 		}
 	}//end ibin
 	//fprintf(stderr, "found max bf: %f\n", maxBf);
 	return maxBf;
 }//end function
-float getMinBf(likes_data* data_miss, likes_data* data_hit){
+float getMinBf(likes_data_multiple* data, int likesIndex){
 	int ibin;
 	float thisBf;
 	float minBf = 1.;
-
-	for (ibin = 0; ibin < data_hit->nbins; ibin++){
-		if(data_hit->probs[ibin] > 1e-10 && data_miss->probs[ibin] > 1e-10){
-			thisBf = data_hit->probs[ibin] / data_miss->probs[ibin];
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if(data->hit_probs[likesIndex][ibin] > 1e-10 && data->miss_probs[ibin] > 1e-10){
+			thisBf = data->hit_probs[likesIndex][ibin] / data->miss_probs[ibin];
 			if (thisBf < minBf){minBf = thisBf;}
 		}
 	}//end ibin
-
 	//fprintf(stderr, "found min bf: %f\n", minBf);	
 	return minBf;
 }//end function
