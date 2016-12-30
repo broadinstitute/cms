@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include "cms_data.h"
 
-#define EXTRAARGS 38 // for now
-
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
 
 /**********************/
@@ -469,7 +467,6 @@ void free_likes_data(likes_data* data) {
 /****************/
 /***POP PAIR****/
 /***************/
-
 int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
 	ihs_data ihs1;
 	delihh_data delihh1;
@@ -477,11 +474,8 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 	xpehh_data xp;
 	fst_deldaf_data fst_deldaf;
 	int nsnps;
-	//char *locus;
-	int isnp;
 	int ihs1_index, delihh1_index, nsl1_index, xp_index, fst_deldaf_index;
 	int ihs1pos, delihh1pos, nsl1pos, xppos, fst_deldafpos, minimum;
-	double thisDeldaf, thisXp;
 
 	get_ihs_data(&ihs1, ihs_filename);
 	get_delihh_data(&delihh1, delihh_filename);
@@ -520,17 +514,20 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 		if (fst_deldafpos == minimum){fst_deldaf_index++;}
 	} // end while loop
 	//fprintf(stderr, "\tfound complete data for %d SNPs\n", data->nsnps);
-return nsnps;
+	free_ihs_data(&ihs1);
+	free_nsl_data(&nsl1);
+	free_delihh_data(&delihh1);
+	free_xpehh_data(&xp);
+	free_fst_deldaf_data(&fst_deldaf);
+	return nsnps;
 } // end function
-
-
 void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
 	ihs_data ihs1;
 	delihh_data delihh1;
 	nsl_data nsl1;
 	xpehh_data xp;
 	fst_deldaf_data fst_deldaf;
-	char *locus, *token;
+	char *locus;
 	int isnp;
 	int ihs1_index, delihh1_index, nsl1_index, xp_index, fst_deldaf_index;
 	int ihs1pos, delihh1pos, nsl1pos, xppos, fst_deldafpos, minimum;
@@ -551,28 +548,30 @@ void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filen
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
 
+	locus = malloc(256 * sizeof(char));
+
 	////////////////////////////////
 	// LOAD EACH COMPONENT SCORE ///
 	////////////////////////////////
-	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
+	//fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	get_ihs_data(&ihs1, ihs_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
+	//fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
 
-	fprintf(stderr, "\tloading component score data from: %s\n", delihh_filename);
+	//fprintf(stderr, "\tloading component score data from: %s\n", delihh_filename);
 	get_delihh_data(&delihh1, delihh_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n",  delihh1.nsnps);
+	//fprintf(stderr, "\t\t found values for %d SNPs\n",  delihh1.nsnps);
 
-	fprintf(stderr, "\tloading component score data from: %s\n", nsl_filename);
+	//fprintf(stderr, "\tloading component score data from: %s\n", nsl_filename);
 	get_nsl_data(&nsl1, nsl_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n",  nsl1.nsnps);
+	//fprintf(stderr, "\t\t found values for %d SNPs\n",  nsl1.nsnps);
 
-	fprintf(stderr, "\tloading component score data from: %s\n", xpehh_filename);
+	//fprintf(stderr, "\tloading component score data from: %s\n", xpehh_filename);
 	get_xpehh_data(&xp, xpehh_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n",  xp.nsnps);
+	//fprintf(stderr, "\t\t found values for %d SNPs\n",  xp.nsnps);
 
-	fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
+	//fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
 	get_fst_deldaf_data(&fst_deldaf, freqs_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n",  fst_deldaf.nsnps);
+	//fprintf(stderr, "\t\t found values for %d SNPs\n",  fst_deldaf.nsnps);
 
 	///////////////////
 	// COLLATE SNPS ///
@@ -607,7 +606,7 @@ void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filen
 		if (xppos == minimum){xp_index++;}		
 		if (fst_deldafpos == minimum){fst_deldaf_index++;}
 	} // end while loop
-	fprintf(stderr, "\tfound complete data for %d SNPs\n", data->nsnps);
+	//fprintf(stderr, "\tfound complete data for %d SNPs\n", data->nsnps);
 
 	/////////////////////
 	// RESERVE MEMORY ///
@@ -659,12 +658,9 @@ void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filen
 			thisXp=xp.xpehh_normed[xp_index];
 			thisDeldaf=fst_deldaf.deldaf[fst_deldaf_index];
 			//fprintf(stderr, "found match\n"); //debug
-			sprintf(locus, "%d", ihs1pos); //leaving this for now; issues with copying string/pointer-to-char
-			//data->locus_id[isnp] = locus;
-
-			token = strsep(&locus, "\t")
-			strcpy(data->locus_id[isnp], token); //token was given by strsep (here=locus)
 			isnp +=1;
+			sprintf(locus, "%d", ihs1pos); //leaving this for now; issues with copying string/pointer-to-char
+			strcpy(data->locus_id[isnp], locus);	
 			//fprintf(stderr, "isnp is%d\n", isnp); //debug
 			data->physpos[isnp] = ihs1pos;
 			data->genpos[isnp] = xp.genpos[xp_index];
@@ -697,18 +693,16 @@ void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filen
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_fst_deldaf_data(&fst_deldaf);
+	free(locus);
 	//fprintf(stderr, "loaded all data to object\n");
 } //end method
 void free_popComp_data(popComp_data* data){
 	int isnp;
-	fprintf(stderr, "702\n");
 	if (data == NULL) {return;}
 	for (isnp = 0; isnp < data->nsnps; isnp++){
 		free(data->locus_id[isnp]);
 	}
-	fprintf(stderr, "707\n");
-	free(data->locus_id); // THIS IS CREATING ISSUES; need to track down
-	fprintf(stderr, "709\n");
+	free(data->locus_id);
 	free(data->physpos);
 	free(data->genpos);
 	free(data->daf_selpop);
@@ -718,7 +712,7 @@ void free_popComp_data(popComp_data* data){
 	free(data->ihs_normed);
 	free(data->delihh_normed);
 	free(data->nsl_normed);
-	data->nsnps = 0;	fprintf(stderr, "719\n");
+	data->nsnps = 0;
 } //end method
 
 /***********************/
@@ -736,10 +730,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	int	isnp, jsnp, iComp, totNsnp, nunique; //thisPhysPos, itoken
 	int *allSnps, *allUniqueSnps;
 	char ihs_filename[528], delihh_filename[528], nsl_filename[528], xpehh_filename[528], freqs_filename[528];
-	int numExtraArgs, ivar;
-		
-	newLine = malloc((line_size+1) * sizeof(char));
-	assert(newLine != NULL); 
+	int numExtraArgs;
 
 	//////////////////
 	/// INITIALIZE ///
@@ -764,9 +755,9 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	numExtraArgs = argc - nComparisons;
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
-		fprintf(stderr, "loading pop-pair from file: ");
-		fprintf(stderr, infilename);
-		fprintf(stderr, "\n");
+		//fprintf(stderr, "loading pop-pair from file: ");
+		//fprintf(stderr, infilename);
+		//fprintf(stderr, "\n");
 		inf = fopen(infilename, "r");
 		fgets(ihs_filename, line_size, inf);
 		strtok(ihs_filename, "\n");
@@ -781,7 +772,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 		fclose(inf);
 		totNsnp += get_num_completeData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
 	} // end iComp
-	fprintf(stderr, "found a total of %d complete-info snps present in any of %d comparisons\n.", totNsnp,  nComparisons);
+	//fprintf(stderr, "found a total of %d complete-info snps present in any of %d comparisons.\n", totNsnp,  nComparisons);
 
 	//then get array for all of them
 	allSnps = malloc(totNsnp * sizeof(int));
@@ -789,9 +780,9 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		//get each infilename
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
-		fprintf(stderr, "loading pop-pair from file: ");
-		fprintf(stderr, infilename);
-		fprintf(stderr, "\n");
+		//fprintf(stderr, "loading pop-pair from file: ");
+		//fprintf(stderr, infilename);
+		//fprintf(stderr, "\n");
 		inf = fopen(infilename, "r");
 		fgets(ihs_filename, line_size, inf);
 		strtok(ihs_filename, "\n");
@@ -804,39 +795,32 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		get_popComp_data(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
-	
-		//something wonky here.
+		get_popComp_data(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); 
+			
 		for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
-			fprintf(stderr, "isnp: %d; jsnp: %d\n", isnp, jsnp);
-			allSnps[isnp + jsnp] = data_sing.physpos[jsnp];
+			allSnps[isnp] = data_sing.physpos[jsnp];
 			isnp +=1;
 		}
-		fprintf(stderr, "be free\n");
 		free_popComp_data(&data_sing); 
-		fprintf(stderr, "freed\n");
 	}//end icomp
-	fprintf(stderr, "loaded all positions!\n");
-
-	for (ivar = 0; ivar <= totNsnp; ivar++){
-		fprintf(stderr, " %d ", allSnps[ivar]);
-	}
-
-
+	//fprintf(stderr, "loaded all positions!\n");
+	//for (ivar = 0; ivar < totNsnp; ivar++){
+	//	fprintf(stderr, " %d ", allSnps[ivar]);
+	//}
 
 	//////////////////////////
 	/// COLLATE LOCI: SORT ///
 	/////////////////////////
-	fprintf(stderr, "now sorting:\n");
+	//fprintf(stderr, "now sorting:\n");
 	qsort(allSnps, totNsnp, sizeof(int), intcmp);
-	fprintf(stderr, "Sorted SNPs from pos %d to %d\n", allSnps[0], allSnps[totNsnp-1]);
+	//fprintf(stderr, "Sorted SNPs from pos %d to %d\n", allSnps[0], allSnps[totNsnp-1]);
 	nunique = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
 		//fprintf(stderr, "%d\t", allSnps[isnp]);
 		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
 		else{nunique++;}
 	} // end for isnp
-	fprintf(stderr, "Found %d SNPs with values for at least one pop comparison...\n", nunique);
+	//fprintf(stderr, "Found %d SNPs with values for at least one pop comparison...\n", nunique);
 
 	allUniqueSnps	= malloc(nunique * sizeof(int));
 	jsnp = 0;
@@ -850,7 +834,7 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	/// ALLOCATE MEMORY ///
 	//////////////////////
 
-	fprintf(stderr, "Allocating memory...\n");
+	//fprintf(stderr, "Allocating memory...\n");
 	data->nsnps = nunique;
 	data->ncomp =nComparisons;
 	data->physpos = malloc(nComparisons * sizeof(int*));
@@ -900,12 +884,12 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 	// LOAD ALL COMPARISONS TO ONE DATA OBJECT //
 	/////////////////////////////////////////////
 
-	fprintf(stderr, "Loading all component scores...\n");
+	//fprintf(stderr, "Loading all component scores...\n");
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
-		fprintf(stderr, "loading pop-pair from file: ");
-		fprintf(stderr, infilename);
-		fprintf(stderr, "\n");
+		//fprintf(stderr, "loading pop-pair from file: ");
+		//fprintf(stderr, infilename);
+		//fprintf(stderr, "\n");
 
 		inf = fopen(infilename, "r");
 		fgets(ihs_filename, line_size, inf);
@@ -940,10 +924,12 @@ void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, in
 			else if (allUniqueSnps[isnp] > data_sing.physpos[jsnp]){jsnp++; if (jsnp >= data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
 			//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){pass;}
 		}// end for isnp loop
-		
 		free_popComp_data(&data_sing); 
 	} // end for icomp
-fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
+	free(allUniqueSnps);
+	free(allSnps);
+	free(newLine);
+	fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
 } //end method
 void free_popComp_data_multiple(popComp_data_multiple* data){
 	int iComp;
@@ -957,6 +943,7 @@ void free_popComp_data_multiple(popComp_data_multiple* data){
 		free(data->xp_normed[iComp]);
 		free(data->ihs_normed[iComp]);
 		free(data->delihh_normed[iComp]);
+		free(data->nsl_normed[iComp]);	
 	}
 	free(data->physpos);
 	free(data->genpos);
@@ -966,10 +953,10 @@ void free_popComp_data_multiple(popComp_data_multiple* data){
 	free(data->xp_normed);
 	free(data->ihs_normed);
 	free(data->delihh_normed);
+	free(data->nsl_normed);	
 	data->nsnps = 0;
 	data->ncomp = 0;
 } //end method
-
 float getMaxBf(likes_data* data_miss, likes_data* data_hit){
 	int ibin;
 	float thisBf;
@@ -1051,4 +1038,3 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes av
 	ave = deldaf / (double)theseComp;
 	return ave;
 } //end function
-

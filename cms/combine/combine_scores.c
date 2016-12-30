@@ -16,19 +16,16 @@
 
 int main(int argc, char **argv) {
 	popComp_data_multiple score_data;
-	//popComp_data test_data;
 	int nComparisons;
-	
 	//FILE *outf=NULL;
 	//char outfilename[256]; 
-	//int isnp;
+	int isnp;
 
 	if (argc <= 2) {
 		fprintf(stderr, "Usage: ./combine_scores <cms_run_paramfile> <input_pair_file1> ...\n");
 		exit(0);
 	}
 	nComparisons = argc - 2;
-
 	//<cms_run_paramfile> has selpop and altpops and dem model and other options
 	//	* some number of (pop-pairs), with a file for each (which in turn lists score files for each poppair to popComp)
 	//	* likes: options (likesFreqs?) and top-level files
@@ -39,10 +36,28 @@ int main(int argc, char **argv) {
 	// LOAD SCORES ///
 	//////////////////
 	fprintf(stderr, "Preparing to load component scores...\n");
+	get_popComp_data_multiple(&score_data, nComparisons, argc, argv); 
+	fprintf(stderr, "loaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 
-	//get_popComp_data(&test_data, "/n/regal/sabeti_lab/jvitti/clear/scores/nulldefault/neut/ihs/rep1_1.ihs.out.norm", "/n/regal/sabeti_lab/jvitti/clear/scores/nulldefault/neut/delihh/rep1_1.txt.norm", "/n/regal/sabeti_lab/jvitti/clear/scores/nulldefault/neut/nsl/rep1_1.nsl.out.norm", "/n/regal/sabeti_lab/jvitti/clear/scores/nulldefault/neut/xpehh/rep1_1_2.xpehh.out.norm", "/n/regal/sabeti_lab/jvitti/clear/scores/nulldefault/neut/fst_deldaf/rep1_1_2");
-	//fprintf(stderr, "%d\n", argc);
-	get_popComp_data_multiple(&score_data, nComparisons, argc, argv); //this 
+	for (isnp = 0; isnp < score_data.nsnps; isnp++ ){
+		fprintf(stderr, "%f\t", score_data.ihs_normed[1][isnp]);
+
+	}
+	/*
+    int nsnps;
+    int ncomp; // how many non-sel pops
+    int **physpos;
+    double **genpos;
+    double **daf_selpop;
+    double **delDAF;
+    double **fst;
+    double **xp_normed;
+    double **ihs_normed;
+    double **delihh_normed;
+    double **nsl_normed;
+	*/
+
+
 
 	/////////////////////////////
 	// LOAD SCORE LIKELIHOODS ///

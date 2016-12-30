@@ -6,7 +6,6 @@ int intcmp(const void *v1, const void *v2);
 /**********************/
 /***COMPONENT SCORES***/
 /**********************/
-
 typedef struct xpehh_data {
     int nsnps;
     int *pos; 
@@ -71,7 +70,6 @@ void free_fst_deldaf_data(fst_deldaf_data* data);
 /*************************/
 /***SCORE DISTRIBUTIONS***/
 /*************************/
-
 typedef struct likes_data{
     int nbins;
     double *start_bin;
@@ -85,7 +83,7 @@ void free_likes_data(likes_data* data);
 /*************************/
 /***TWO-POP COMPARISON***/
 /*************************/
-
+int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 typedef struct popComp_data{
     int nsnps;
     char **locus_id;
@@ -99,8 +97,6 @@ typedef struct popComp_data{
     double *delihh_normed;
     double *nsl_normed;
 } popComp_data;
-
-int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 void free_popComp_data(popComp_data* data);
 void get_popComp_data_region(popComp_data* data, char infilename[], int startBp, int endBp);
@@ -125,10 +121,13 @@ typedef struct popComp_data_multiple{
 void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
 void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
 void free_popComp_data_multiple(popComp_data_multiple* data);
-
-float getMaxBf(likes_data* data_hit, likes_data* data_miss);
-float getMinBf(likes_data* data_hit, likes_data* data_miss);
-float getProb(likes_data* data, double value);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);
+
+/**************************/
+/***HANDLING LIKELIHOODS****/
+/**************************/
+float getMaxBf(likes_data* data_hit, likes_data* data_miss);
+float getMinBf(likes_data* data_hit, likes_data* data_miss);
+float getProb(likes_data* data, double value);
