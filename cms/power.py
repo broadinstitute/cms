@@ -1,5 +1,5 @@
 ## script to manipulate and analyze empirical/simulated CMS output
-## last updated 12.17.16		vitti@broadinstitute.org
+## last updated 12.31.16		vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
@@ -411,7 +411,9 @@ def execute_sel_norm_from_binfile(args):
 			print(fullcmd)
 			execute(fullcmd)
 	return	
+"""
 def execute_run_poppair(args):
+	'''PHASE OUT'''
 	''' from run_additioanal_poppair.py'''
 	model = args.model
 	selpop = args.simpop
@@ -472,6 +474,7 @@ def execute_run_poppair(args):
 				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
 					execute(fullcmd)
 	return
+"""
 def execute_composite_sims(args):
 	model = args.model
 	selpop = args.simpop

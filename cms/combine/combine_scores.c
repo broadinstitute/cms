@@ -1,7 +1,8 @@
 // last updated 12.31.16: new top-level program for compositing 		vitti@broadinstitute.org
 // gcc -O0 -ggdb3 -lm -Wall -o combine_scores combine_scores.c cms_data.c
 // ./combine_scores test_out.txt test_masterlikes_params.txt testpair1.txt testpair2.txt
-// CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; optional next line: (minPos, maxPos, minDaf)
+// CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
+// optional next line: (minPos, maxPos, minDaf); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -21,10 +22,8 @@ int main(int argc, char **argv) {
 	popComp_data_multiple score_data;
 	likes_data_multiple ihs_likes_data, nsl_likes_data, delihh_likes_data;
 	likes_data_multiple xpehh_likes_data, fst_likes_data, deldaf_likes_data;	
-	//int ibin;  //for debug
-	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
-	char *token, *running;
 	FILE *inf=NULL, *outf=NULL;	
+	char *token, *running;
 	char cms_param_filename[528], paramline[528], outfilename[256];
 	char ihs_master_likesfilename[256], nsl_master_likesfilename[256], delihh_master_likesfilename[256];
     char xpehh_master_likesfilename[256], fst_master_likesfilename[256], deldaf_master_likesfilename[256];
@@ -38,6 +37,10 @@ int main(int argc, char **argv) {
 	double thisihs, thisihh, thisnsl; // per-pop
 	double thisfst, thisxpehh, thisdelDaf, thisdaf;
 	double compLikeRatio, minDaf;
+	//int ibin;  //for debug
+	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
+	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
+	char takeScoreString[6];
 
 	if (argc <= 3) {
 		fprintf(stderr, "Usage: ./combine_scores <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
@@ -76,12 +79,23 @@ int main(int argc, char **argv) {
 	minPos = -1;		
 	maxPos = 2147483647;
 	minDaf = 0;
-	//if additional line is included, parse it
+	takeIhs = takeDelihh = takeNsl = takeXpehh = takeFst = takeDeldaf = 0; //all T by default
+	//if additional lines is included, parse 
 	if (fgets(paramline, line_size, inf) != NULL){
 		for (running = paramline, itoken=0; (token = strsep(&running, " \t")) != NULL; itoken++){
 			if (itoken == 0) {minPos = atoi(token);}
 			else if (itoken == 1){maxPos = atoi(token);}
 			else if (itoken == 2){minDaf = atof(token);}			
+		} // end for running
+	}  //end if fgets paramline
+	if (fgets(paramline, line_size, inf) != NULL){
+		for (running = paramline, itoken=0; (token = strsep(&running, " \t")) != NULL; itoken++){
+			if (itoken == 0) {takeIhs = atoi(token);}
+			else if (itoken == 1){takeDelihh = atoi(token);}
+			else if (itoken == 2){takeNsl = atoi(token);}			
+			else if (itoken == 3){takeFst = atoi(token);}
+			else if (itoken == 4){takeDeldaf = atoi(token);}			
+			else if (itoken == 5){takeXpehh = atoi(token);}		
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
@@ -193,7 +207,13 @@ int main(int argc, char **argv) {
 			/////////////////////
 			/// GET CMS SCORE ///
 			/////////////////////		
-			compLikeRatio = delihh_bf * nsl_bf  * fst_bf * deldaf_bf * xpehh_bf; //* ihs_bf
+			if(takeIhs == 0){compLikeRatio *= ihs_bf; fprintf(stderr, "ihs\t");}
+			if(takeDelihh == 0){compLikeRatio *= delihh_bf;fprintf(stderr, "delihh\t");}
+			if(takeNsl == 0){compLikeRatio *= nsl_bf;fprintf(stderr, "nsl\t");}
+			if(takeFst == 0){compLikeRatio *= fst_bf;fprintf(stderr, "fst\t");}
+			if(takeDeldaf == 0){compLikeRatio *= deldaf_bf;fprintf(stderr, "deldaf\t");}
+			if(takeXpehh == 0){compLikeRatio *= xpehh_bf;fprintf(stderr, "xp\n");}
+		
 			//DEBUG 
 			/*fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
 			fprintf(stderr, "delihh %f\t hit %e\tmiss %e\tbf %e\n", thisihh, delihh_hitprob, delihh_missprob, delihh_bf); //debug
@@ -202,7 +222,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_bf); //debug
 			fprintf(stderr, "clr: %e\n", compLikeRatio);
 			fprintf(stderr, "%d\t%f\t%f\t%f\t%f\t%f\t%f\n", score_data.physpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf);*/
-			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);
