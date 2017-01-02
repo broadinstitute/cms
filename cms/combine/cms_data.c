@@ -1,10 +1,11 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 12.30.16 	vitti@broadinstitute.org
+// last updated: 1.02.17 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <math.h>
 #include "cms_data.h"
 
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
@@ -1127,4 +1128,100 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes av
 	}
 	ave = deldaf / (double)theseComp;
 	return ave;
+} //end function
+
+float get_outgroups_fst(popComp_data_multiple* data, int isnp, int iComp, int jComp){
+	double daf_alt1, daf_alt2;
+	double daf_mean;
+	double fst, num, denom;
+	double msp, msg;
+
+	int nperPop = 172; // quick estimate (?)
+	fprintf(stderr, "must validate");
+	/*
+            pmean = (ni * p[0] + nj * p[1]) / (ni + nj);
+            nic = ni - (double) ni * ni / (ni + nj);
+            njc = nj - (double) nj * nj / (ni + nj);
+            nc = nic + njc;
+            msp = ni * (p[0] - pmean) * (p[0] - pmean) + nj * (p[1] - pmean) * (p[1] - pmean);
+            msg = (ni * p[0] * (1. - p[0]) + nj * p[1] * (1. - p[1])) / (ni - 1 + nj - 1);
+            num = msp - msg;
+            denom = msp + (nc - 1) * msg;
+	*/
+			//thiscomp_deldaf = data->delDAF[iComp][isnp];
+			//thiscomp_daf_sel = data->daf_selpop[iComp][isnp];
+		//	thiscomp_daf_altpop = thiscomp_daf_sel - thiscomp_deldaf; //VALIDATE
+		//	alt_daf += thiscomp_daf_altpop;
+
+	daf_alt1 = data->delDAF[iComp][isnp] - data->daf_selpop[iComp][isnp];
+	daf_alt2 = data->delDAF[jComp][isnp] - data->daf_selpop[jComp][isnp];
+
+	daf_mean = (daf_alt1 + daf_alt2) / 2.;
+	msp = nperPop * (daf_alt1 - daf_mean) * (daf_alt1 - daf_mean) + nperPop * (daf_alt2 - daf_mean) * (daf_alt2 - daf_mean);
+    msg = (nperPop * daf_alt1 * (1. - daf_alt1) + nperPop * daf_alt2 * (1. - daf_alt2)) / (nperPop - 1 + nperPop - 1);
+    num = msp - msg;
+    denom = msp + ((nperPop) - 1) * msg; //really unsure about this. possibly don't use weir-hill estimator
+	fst = (num / denom);
+	return fst;
+} // end function
+float get_PBS(double in_t_1, double in_t_2, double out_t){
+	return ((in_t_1 + in_t_2 - out_t) / 2.);
+}
+float get_T(double fst){//helper method for PBS; transforms Fst cf Cavalli-Sforza 1969
+	return -1 * log(1. - fst); //validate?
+}//end function
+float compareFst_PBS(popComp_data_multiple* data, int isnp){ // population branch statistic (pop vs. two outgroups)
+	// Population-Branch Statistic; an population-specific generalization of Fst for three populations
+	// Yi et al., Science 2013
+	//double fst;
+	//double ave;
+	double maxPbs = 0; //if nPop > 3; get PBS for each pair of outgroups and take the maximum
+	int iComp, jComp;//, theseComp=0;
+	double in_fst_1, in_fst_2, out_fst;
+	double in_t_1, in_t_2, out_t;
+	double thisPbs;
+	//Maybe we don't even use the values calculated by earlier C program (calc_fst_deldaf) -- we need Fst between outgroups anyway.
+	//Maybe instead we just get all DAF values for which we have data, and get PBS for selpop for each grouping with two outgroups?
+	//(Then take maximum?)
+	//every unique pairing of two files we can take from the args given makes a triad. 
+	// nested loop.
+	for (iComp = 0; iComp < data->ncomp; iComp++){
+		for (jComp = iComp + 1; jComp < data->ncomp; jComp++){
+			if ((iComp != jComp) && (data->fst[iComp][isnp] != 0) && (data->fst[jComp][isnp] != 0)){
+				// calc PBS
+				// get three dafs (fuck do I need n_pop????)
+				in_fst_1 = data->fst[iComp][isnp];
+				in_fst_2 = data->fst[jComp][isnp];
+				out_fst = get_outgroups_fst(data, isnp, iComp, jComp);
+				in_t_1 = get_T(in_fst_1);
+				in_t_2 = get_T(in_fst_2);
+				out_t = get_T(out_fst);
+				thisPbs = get_PBS(in_t_1, in_t_2, out_t);
+				if (thisPbs > maxPbs){maxPbs = thisPbs;}
+			} // end if
+		} // end jComp loop
+	} // end icomp Loop
+	return maxPbs;
+} //end function
+float comparedelDaf_outgroup_ave(popComp_data_multiple* data, int isnp){//daf_thispop - AVE(outgroup dafs) [==cms1.0]
+	double deldaf;
+	int iComp, theseComp=0;
+	double 	thiscomp_deldaf, thiscomp_daf_sel, thiscomp_daf_altpop; //for each comp, retrieve altpop daf from datastructure
+	double ave_daf, alt_daf;
+
+	alt_daf = 0;
+	for (iComp = 0; iComp < data->ncomp; iComp++){
+		if (data->delDAF[iComp][isnp] !=0){
+			thiscomp_deldaf = data->delDAF[iComp][isnp];
+			thiscomp_daf_sel = data->daf_selpop[iComp][isnp];
+			thiscomp_daf_altpop = thiscomp_daf_sel - thiscomp_deldaf; //VALIDATE
+			alt_daf += thiscomp_daf_altpop;
+			theseComp++;
+		} // end if
+	} // end for iComp
+	ave_daf = alt_daf / (double)theseComp;
+	deldaf = thiscomp_daf_sel - ave_daf;
+	fprintf(stderr, "made %d comparisons and found average outgroup DAF: %f\n", theseComp, ave_daf); //FOR DEBUG
+	fprintf(stderr, "selpop daf: %f ; delDAF: %f\n", thiscomp_daf_sel, deldaf); // FOR DEBUG
+	return deldaf;
 } //end function

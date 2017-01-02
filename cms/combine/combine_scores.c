@@ -1,4 +1,4 @@
-// last updated 12.31.16: new top-level program for compositing 		vitti@broadinstitute.org
+// last updated 1.2.16: new top-level program for compositing 		vitti@broadinstitute.org
 // gcc -O0 -ggdb3 -lm -Wall -o combine_scores combine_scores.c cms_data.c
 // ./combine_scores test_out.txt test_masterlikes_params.txt testpair1.txt testpair2.txt
 // CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	//int ibin;  //for debug
 	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
-	char takeScoreString[6];
+	//char takeScoreString[6];
 
 	if (argc <= 3) {
 		fprintf(stderr, "Usage: ./combine_scores <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 	// ITERATE OVER SNPS ///
 	////////////////////////
 	strcpy(outfilename, argv[1]);
-	fprintf(stderr, "Preparing to write to: %s\n", outfilename);
+	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
@@ -207,12 +207,12 @@ int main(int argc, char **argv) {
 			/////////////////////
 			/// GET CMS SCORE ///
 			/////////////////////		
-			if(takeIhs == 0){compLikeRatio *= ihs_bf; fprintf(stderr, "ihs\t");}
-			if(takeDelihh == 0){compLikeRatio *= delihh_bf;fprintf(stderr, "delihh\t");}
-			if(takeNsl == 0){compLikeRatio *= nsl_bf;fprintf(stderr, "nsl\t");}
-			if(takeFst == 0){compLikeRatio *= fst_bf;fprintf(stderr, "fst\t");}
-			if(takeDeldaf == 0){compLikeRatio *= deldaf_bf;fprintf(stderr, "deldaf\t");}
-			if(takeXpehh == 0){compLikeRatio *= xpehh_bf;fprintf(stderr, "xp\n");}
+			if(takeIhs == 0){compLikeRatio *= ihs_bf;}// fprintf(stderr, "ihs\t");}
+			if(takeDelihh == 0){compLikeRatio *= delihh_bf;}//fprintf(stderr, "delihh\t");}
+			if(takeNsl == 0){compLikeRatio *= nsl_bf;}//;fprintf(stderr, "nsl\t");}
+			if(takeFst == 0){compLikeRatio *= fst_bf;}//;fprintf(stderr, "fst\t");}
+			if(takeDeldaf == 0){compLikeRatio *= deldaf_bf;}//;fprintf(stderr, "deldaf\t");}
+			if(takeXpehh == 0){compLikeRatio *= xpehh_bf;}//;fprintf(stderr, "xp\n");}
 		
 			//DEBUG 
 			/*fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
