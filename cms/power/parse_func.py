@@ -1,4 +1,4 @@
-## last updated 12.17.16
+## last updated 1.6.17
 
 import subprocess
 import numpy as np
@@ -51,7 +51,7 @@ def get_component_score_files(model, irep, pop, altpop, selbin = "neut", filebas
 
 	return in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file 
 def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", suffix = ""):
-	repfilename = basedir +"composite/"+ model + "/neut/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir +"composite/"+ model + "/neut/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
 	#print(repfilename)
 	if normed:
 		repfilename += ".norm"
@@ -60,7 +60,7 @@ def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabe
 	#else:
 	return repfilename
 def get_sel_repfile_name(model, irep, pop, freqbin, normed = False,  basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix=""):
-	repfilename = basedir +"composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir +"composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
 	#print(repfilename)
 	if normed:
 		repfilename += ".norm"
@@ -196,7 +196,7 @@ def check_create_file(filename, checkOverwrite):
 	if checkOverwrite == False:
 		return True #make it anyway
 	else:
-		if not os.path.isfile(filename):
+		if not os.path.isfile(filename) or os.path.getsize(filename) == 0:
 			return True
 		else:
 			return False

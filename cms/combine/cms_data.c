@@ -1136,8 +1136,8 @@ float get_outgroups_fst(popComp_data_multiple* data, int isnp, int iComp, int jC
 	double fst, num, denom;
 	double msp, msg;
 
-	int nperPop = 172; // quick estimate (?)
-	fprintf(stderr, "must validate");
+	int nperPop = 172; // quick estimate (?) slash accurate for sims.
+	//fprintf(stderr, "must validate");
 	/*
             pmean = (ni * p[0] + nj * p[1]) / (ni + nj);
             nic = ni - (double) ni * ni / (ni + nj);
@@ -1208,7 +1208,7 @@ float comparedelDaf_outgroup_ave(popComp_data_multiple* data, int isnp){//daf_th
 	int iComp, theseComp=0;
 	double 	thiscomp_deldaf, thiscomp_daf_sel, thiscomp_daf_altpop; //for each comp, retrieve altpop daf from datastructure
 	double ave_daf, alt_daf;
-
+	fprintf(stderr, "\n%d\n", data->physpos[0][isnp]);
 	alt_daf = 0;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->delDAF[iComp][isnp] !=0){
@@ -1217,11 +1217,13 @@ float comparedelDaf_outgroup_ave(popComp_data_multiple* data, int isnp){//daf_th
 			thiscomp_daf_altpop = thiscomp_daf_sel - thiscomp_deldaf; //VALIDATE
 			alt_daf += thiscomp_daf_altpop;
 			theseComp++;
+			//fprintf(stderr, "thiscomp_deldaf %f thiscomp_daf_sel %f\n", thiscomp_deldaf, thiscomp_daf_sel);
+			//fprintf(stderr, "alt: %f\n", thiscomp_daf_altpop);
 		} // end if
 	} // end for iComp
 	ave_daf = alt_daf / (double)theseComp;
 	deldaf = thiscomp_daf_sel - ave_daf;
-	fprintf(stderr, "made %d comparisons and found average outgroup DAF: %f\n", theseComp, ave_daf); //FOR DEBUG
-	fprintf(stderr, "selpop daf: %f ; delDAF: %f\n", thiscomp_daf_sel, deldaf); // FOR DEBUG
+	//fprintf(stderr, "made %d comparisons and found average outgroup DAF: %f\n", theseComp, ave_daf); //FOR DEBUG
+	//fprintf(stderr, "selpop daf: %f ; delDAF: %f\n", thiscomp_daf_sel, deldaf); // FOR DEBUG
 	return deldaf;
 } //end function
