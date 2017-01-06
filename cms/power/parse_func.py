@@ -73,8 +73,8 @@ def get_pr_filesnames(key, basedir):
 	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	for filename in [tprfile, fprfile]:
-		if not os.path.isfile(filename):
-			print("missing: " + filename)
+		#if not os.path.isfile(filename):
+		#	print("missing: " + filename)
 	return fprfile, tprfile 
 def get_emp_cms_file(selpop, model, likessuffix, chrom, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores_composite4_b/"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
 	filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
@@ -121,25 +121,26 @@ def get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = "/n/reg
 ## FILE PARSING ##
 ##################
 def read_cms_repfile(infilename):
-	physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = [], [], [], [], [], [], [], [], [], []
+	physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = [], [], [], [], [], [], [], [], [], [], []
 	if not os.path.isfile(infilename):
-		return physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
+		return physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
 	openfile = open(infilename, 'r')
 	for line in openfile:
 		entries = line.split()
 		physpos.append(int(entries[0]))
 		genpos.append(float(entries[1]))
-		ihs_normed.append(float(entries[2]))
-		delihh_normed.append(float(entries[3]))
-		nsl_normed.append(float(entries[4]))
-		xpehh_normed.append(float(entries[5]))
-		fst.append(float(entries[6]))
-		deldaf.append(float(entries[7]))
-		cms_unnormed.append(float(entries[8]))
+		seldaf.append(float(entries[2]))
+		ihs_normed.append(float(entries[3]))
+		delihh_normed.append(float(entries[4]))
+		nsl_normed.append(float(entries[5]))
+		xpehh_normed.append(float(entries[6]))
+		fst.append(float(entries[7]))
+		deldaf.append(float(entries[8]))
+		cms_unnormed.append(float(entries[9]))
 		if ".norm" in infilename:
-			cms_normed.append(float(entries[9]))
+			cms_normed.append(float(entries[10]))
 	openfile.close()
-	return physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
+	return physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
 def load_simscores(model, pop, vsNeut = False, numRep = 500, normed =False):
 	all_simscores = []
 	for irep in range(1, numRep + 1):
