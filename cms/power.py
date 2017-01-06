@@ -532,7 +532,7 @@ def execute_composite_sims(args):
 			for filename in neutinscorefilelist:
 				scorefilelist += filename + ","
 			scorefilelist = scorefilelist[:-1]
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" + "_maf"
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" #+ "_maf"
 			
 			alreadyExists = False
 			if args.checkOverwrite:
@@ -955,8 +955,8 @@ def execute_tpr(args):
 	#		sys.exit(0)
 
 	#per seldaf
-	dafbins = [['0.90']]#['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90']]
-	daflabels = ['highest']#'lo', 'mid', 'hi']
+	dafbins = [['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90']] #[['0.90']
+	daflabels = ['lo', 'mid', 'hi',] #['highest']
 	for ibin in range(1):
 		thesebins, thislabel = dafbins[ibin], daflabels[ibin]
 		allrepfilenames = []
