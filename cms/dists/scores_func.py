@@ -33,7 +33,7 @@ def calc_delihh(readfilename, writefilename):
 					#ancestral - derived
 		else:
 			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
-		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0))
+		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0)) #WAIT WHY FABS?????????
 		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs_unnormed) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm
 		writefile.write(writeline)
 	writefile.close()
@@ -125,8 +125,6 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	normfile.close()
 	print("wrote to: " + normfilename)
 	return
-
-
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName
@@ -326,7 +324,6 @@ def choose_vals_from_files(filename, numCols, takeindices, comp, stripHeader = F
 		allpos.extend(chosenpos)
 	alltoreturn = [allpos, allscores]
 	return alltoreturn
-
 def choose_from_reps(repscores, reppositions, repanc, mode="max"):
 	'''flexible function to choose for likes '''
 	ncomp = len(repscores)
@@ -369,8 +366,6 @@ def choose_from_reps(repscores, reppositions, repanc, mode="max"):
 		#print(scores)
 		#print(itemtoreturn)
 	return toreturn, allpositions
-
-
 def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
 	if thinToSize:
 		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
@@ -425,8 +420,6 @@ def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, give
 	#		n_neut[ibin] = 1e-10
 
 	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
-
-
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 	assert len(givenBins) == (len(n_causal) + 1)
 	for status in ['causal', 'linked', 'neut']:

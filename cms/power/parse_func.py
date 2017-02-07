@@ -1,4 +1,4 @@
-## last updated 1.6.17
+## last updated 1.11.17
 
 import subprocess
 import numpy as np
@@ -73,11 +73,13 @@ def get_pr_filesnames(key, basedir):
 	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	for filename in [tprfile, fprfile]:
-		#if not os.path.isfile(filename):
-		#	print("missing: " + filename)
+		if not os.path.isfile(filename):
+			print("missing: " + filename)
 	return fprfile, tprfile 
-def get_emp_cms_file(selpop, model, likessuffix, chrom, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores_composite4_b/"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
-	filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
+def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
+	#"/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
+	#filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
+	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
@@ -159,11 +161,11 @@ def load_simscores(model, pop, vsNeut = False, numRep = 500, normed =False):
 	infostring += " scores."
 	print(infostring)
 	return all_simscores
-def load_empscores(model, selpop, likessuffix, normed=False):
+def load_empscores(model, selpop, normed=False, suffix=''):
 	chroms = range(1,23)
 	scores = []
 	for chrom in chroms:
-		scorefile = get_emp_cms_file(selpop, model, likessuffix, chrom, normed=normed)
+		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix)
 		print('loading from ' + scorefile)
 		assert os.path.isfile(scorefile)
 		openfile = open(scorefile, 'r')

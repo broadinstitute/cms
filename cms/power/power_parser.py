@@ -1,5 +1,5 @@
 ## structures input to various functions of the script, power.py
-## last updated 12.17.16
+## last updated 1.10.17
 
 import argparse
 
@@ -100,6 +100,7 @@ def full_parser_power():
 	manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
 	extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
 	extended_manhattan_parser.add_argument('--regionsfile', help="input file of regions designated as above threshhold")
+	extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
 
 	##################
 	## SHARED ARGS ###
@@ -135,6 +136,11 @@ def full_parser_power():
 	for emp_parser in [normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 
+	for suffixed_parser in [normsims_parser, fpr_parser, tpr_parser, cdf_parser, normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
+
+
+
 	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
 
@@ -146,8 +152,6 @@ def full_parser_power():
 		sel_sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
 
-	for sel_sim_parser in [normsims_parser, fpr_parser, tpr_parser, cdf_parser]:
-		sel_sim_parser.add_argument('--suffix', type= str, action='store', default='')
 
 
 
@@ -156,6 +160,6 @@ def full_parser_power():
 						run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
-		commonparser.add_argument('--likessuffix', action='store', help='neut or linked', default="neut")
+		#commonparser.add_argument('--likessuffix', action='store', help='neut or linked', default="neut")
 
 	return parser

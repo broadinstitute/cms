@@ -1,7 +1,6 @@
 // {{POP GEN DATA --> DEM MODEL}: CALC POP SUMMARY STATS}
 // {{POP GEN DATA --> COMPONENT SCORES}}
-//sourcefile: coal_data_1kg_autosome_tped_thinned.h 
-// last updated: 06.07.16   vitti@broadinstitute.org
+// last updated: 01.25.17   vitti@broadinstitute.org
 
 /************************/
 /**DEFINE DATASTRUCTURE**/
@@ -33,4 +32,5 @@ int getLowerIndexOfItem(int *values, int numVals, int itemToFind);
 int getUpperIndexOfItem(int *values, int numVals, int itemToFind);
 /*manipulating datastrucutre*/
 void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfilename[]);
+void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recomfilename[]);
 void free_coal_data(coal_data* data);

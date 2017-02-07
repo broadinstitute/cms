@@ -194,7 +194,8 @@ def execute_xp_from_ihh(args):
 	inputtped1 = args.inIhh1
 	inputtped2 = args.inIhh2
 	outfilename = args.outfilename
-	cmd = "dists/write_xpehh_fromihh"
+
+	cmd = args.cmsdir + "combine/write_xpehh_from_ihh"
 	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:

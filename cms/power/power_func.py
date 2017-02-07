@@ -1,5 +1,5 @@
 ## /idi/sabeti-scratch/jvitti/cms2_power/
-## last updated 11.19.16
+## last updated 1.8.17: test alternative normalize
 
 import numpy as np
 #import scipy.stats
@@ -10,7 +10,7 @@ import math
 #################
 def normalize(rawscore, mean, sd):
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
-	normalizedvalue = (rawscore - mean) / sd
+	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue
 
 ###############################
@@ -91,9 +91,13 @@ def calc_pr(all_percentages, threshhold):
 				numNeutReps_exceedThresh +=1
 	numNeutReps_exceedThresh, totalnumNeutReps = float(numNeutReps_exceedThresh), float(totalnumNeutReps)
 	#print(str(numNeutReps_exceedThresh) + "\t" + str(totalnumNeutReps) + "\n")
-	fpr = numNeutReps_exceedThresh / totalnumNeutReps 
-	#print("fpr: " + "\t" + str(fpr) + '\n')
-	return fpr
+	if totalnumNeutReps != 0:
+		pr = numNeutReps_exceedThresh / totalnumNeutReps 
+		#print("fpr: " + "\t" + str(fpr) + '\n')
+	else:
+		pr = 0
+		print('ERROR; empty set')
+	return pr
 
 def get_pval(all_simscores, thisScore):
 	r = np.searchsorted(all_simscores,thisScore)
@@ -150,8 +154,8 @@ def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal 
 	return ax
 def plotManhattan_extended(ax, emp_scores, chrom_pos, chrom):
 	''' makes a figure more like in Karlsson 2013 instead of Grossman 2013'''
-
-	ax.plot(chrom_pos, emp_scores)
+	#ax.scatter(chrom_pos, emp_scores, s=1)
+	ax.plot(chrom_pos, emp_scores, linestyle='None', marker=".", markersize=1, color="grey")
 	ax.set_ylabel('chr' + str(chrom), fontsize=6, rotation='horizontal')
 	labels = ax.get_yticklabels()
 	ax.set_yticklabels(labels, fontsize=6)
@@ -173,12 +177,12 @@ def loadregions(regionfile):
 def quick_plot(ax, pos, val, ylabel,causal_index=-1):
 	ax.scatter(pos, val, s=.8)
 	if causal_index != -1:
-		print('huzzah!')
+		#print('huzzah!')
 		ax.scatter(pos[causal_index], val[causal_index], color='r', s=4)
 	for tick in ax.yaxis.get_major_ticks():
 		tick.label.set_fontsize('6')
 	ax.set_ylabel(ylabel, fontsize='6')
-	ax.set_xlim([0, 1000000])
+	ax.set_xlim([0, 1500000])
 	ax.yaxis.set_label_position('right')
 	return ax
 def get_causal_rank(values, causal_val):
