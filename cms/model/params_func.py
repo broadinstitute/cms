@@ -399,7 +399,7 @@ def write_paramfile(paramfilename, paramDict):
 	return
 def get_dict_from_paramfile(paramfilename):
 	#initialize empty lists so we can append from paramfile as we parse
-	paramDict = {'numPops':4,'labels':{1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}, 'singrate':.5, 'presentSizes':[], 'num_indivs_per_sample':200}
+	paramDict = {'numPops':4,'labels':{1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}, 'singrate':.25, 'presentSizes':[], 'num_indivs_per_sample':200}
 	for pop in range(1,5):
 		for parameter in ['Ne', 'Ne_times', 'Ne_change', 'bn', 'bn_times']:
 			key = (parameter, pop)

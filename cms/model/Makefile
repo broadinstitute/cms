@@ -1,12 +1,12 @@
 ## leaf Makefile for cms2.0/model
-## last updated 11.4.16 	vitti@broadinstitute.org
+## last updated 1.25.17 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
 ######################
 
 CC = gcc
-CCFLAG = -O0 -ggdb3 -lm -Wall 
+CCFLAG = -O0 -ggdb3 -lm -lz -Wall 
 
 ##################
 ## DEFINE RULES ##

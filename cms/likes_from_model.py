@@ -195,6 +195,12 @@ def execute_run_sel_sims(args):
 	return
 def execute_scores_from_sims(args):
 	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
+	""" PHASE OUT; replace with power.py functions that parallelize by REP (much more efficient)"""
+
+	#print("YOUR SHIT'S BUSTED")
+	#sys.exit(0)
+
+
 	inputFilename, outputFilename = args.inputFilename, args.outputFilename
 
 	#################

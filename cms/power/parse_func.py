@@ -1,4 +1,4 @@
-## last updated 1.6.17
+## last updated 2.7.17
 
 import subprocess
 import numpy as np
@@ -73,11 +73,15 @@ def get_pr_filesnames(key, basedir):
 	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
 	for filename in [tprfile, fprfile]:
-		#if not os.path.isfile(filename):
-		#	print("missing: " + filename)
+		if not os.path.isfile(filename):
+			print("missing: " + filename)
+		else:
+			pass
 	return fprfile, tprfile 
-def get_emp_cms_file(selpop, model, likessuffix, chrom, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores_composite4_b/"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
-	filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
+def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
+	#"/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite"):#"/idi/sabeti-scratch/jvitti/synth/cms_composite/"):
+	#filename = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
+	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
@@ -159,11 +163,11 @@ def load_simscores(model, pop, vsNeut = False, numRep = 500, normed =False):
 	infostring += " scores."
 	print(infostring)
 	return all_simscores
-def load_empscores(model, selpop, likessuffix, normed=False):
+def load_empscores(model, selpop, normed=False, suffix=''):
 	chroms = range(1,23)
 	scores = []
 	for chrom in chroms:
-		scorefile = get_emp_cms_file(selpop, model, likessuffix, chrom, normed=normed)
+		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix)
 		print('loading from ' + scorefile)
 		assert os.path.isfile(scorefile)
 		openfile = open(scorefile, 'r')
@@ -262,140 +266,3 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 	writefile.close()
 	print("wrote to: " + writefilename)
 	return
-
-
-"""
-def get_component_score_files_old(model, repNum, selPop, altPop, scenario = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/"):
-	'''PHASE OUT'''
-	if scenario == "neut":
-		in_ihs_file = filebase + model + "/neut/ihs/rep" + str(repNum) + "_" + str(selPop) + "_normed.txt"
-		in_delihh_file = filebase + model + "/neut/delihh/rep" + str(repNum) +  "_" + str(selPop) + ".txt.norm"
-		in_xp_file = filebase + model + "/neut/xpehh/rep" + str(repNum) +  "_" + str(selPop) + "_" + str(altPop) + "_normed.txt"
-		in_fst_deldaf_file = filebase + model + "/neut/fst_deldaf/rep" + str(repNum) + "_" + str(selPop) + "_" + str(altPop)
-
-	else:
-		in_ihs_file = filebase + model + "/sel" + str(selPop) + "/ihs/sel_" + str(scenario) + "/rep" + str(repNum) + "_" + str(selPop) + "_truncOk.ihs.out.norm"
-		in_delihh_file = filebase + model + "/sel" + str(selPop) + '/delihh/sel_' + str(scenario) + '/rep' + str(repNum) + "_" + str(selPop) + ".txt.norm"
-		in_xp_file = filebase + model + "/sel" + str(selPop) + '/xpehh/sel_' + str(scenario) +'/rep' + str(repNum) + "_" + str(selPop) + "_" + str(altPop) + ".xpehh.out.norm"
-		in_fst_deldaf_file = filebase + model + "/sel" + str(selPop) + '/fst_deldaf/sel_' + str(scenario) +'/rep' + str(repNum) + "_" + str(selPop) + "_" + str(altPop)
-
-	for returnfile in [in_ihs_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
-		if not os.path.isfile(returnfile):
-			print("Missing: " + returnfile)
-
-	return in_ihs_file, in_delihh_file, in_xp_file, in_fst_deldaf_file 
-def getSelFiles_asList(model, score, pop, listfilename, selbins, binclustername, altpop = "", overwrite = True, numPerBin = 500):
-	if not overwrite:
-		if os.path.isfile(listfilename):
-			print(listfilename + " exists.")
-			return listfilename
-	listfile = open(listfilename, 'w')
-	nFile = 0
-	if score in ['ihs', 'delihh', 'nsl']:
-		assert(altpop == "")
-	if score in ['xpehh', 'deldaf', 'fst']:
-		assert(altpop != "")
-	if score in ['fst', 'deldaf']:
-		score = 'fst_deldaf'
-
-	for selbin in selbins:
-		selfilebase = '/idi/sabeti-scratch/jvitti/scores/' + model + "/sel" + str(pop) + '/' + score + '/sel_' + str(selbin) + '/'
-		for irep in range(1, numPerBin+1):
-			if score == "ihs":
-				repfilename = selfilebase + "rep" + str(irep) + "_" + str(pop) + "_truncOk.ihs.out.norm"
-			elif score == "delihh":
-				repfilename = selfilebase + "rep" + str(irep) + "_" + str(pop) + ".txt.norm"
-			elif score == "nsl":
-				repfilename = selfilebase + "rep" + str(irep) + "_" + str(pop) + "." + score + ".out.norm"
-			elif score == "xpehh":
-				repfilename = selfilebase + "rep"+ str(irep) + "_" + str(pop) +"_" + str(altpop) + ".xpehh.out.norm"
-			elif score == "fst_deldaf":
-				repfilename = selfilebase + "rep"+ str(irep) + "_" + str(pop) +"_" + str(altpop)
-			if not os.path.isfile(repfilename):
-				print("missing: " + repfilename)
-			if os.path.isfile(repfilename):	 
-				listfile.write(repfilename + "\n")
-				nFile +=1
-	listfile.close()
-	print('wrote ' + str(nFile) + ' files to ' + listfilename)
-	return listfilename
-def getNeutFiles_asList(model, score, pop, listfilename, altpop = "", overwrite = True, numPerBin = 500):
-	if not overwrite:
-		if os.path.isfile(listfilename):
-			print(listfilename + " exists.")
-			return listfilename
-	listfile = open(listfilename, 'w')
-	nFile = 0
-	if score in ['ihs', 'delihh', 'nsl']:
-		assert(altpop == "")
-	if score in ['xpehh', 'deldaf', 'fst']:
-		assert(altpop != "")
-	if score in ['fst', 'deldaf']:
-		score = 'fst_deldaf'
-	neutfilebase = '/idi/sabeti-scratch/jvitti/scores/' + model + "/neut/" + score + '/'
-	for irep in range(1, numPerBin+1):
-		if score == "ihs":
-			repfilename = neutfilebase + "rep" + str(irep) + "_" + str(pop) + "_normed.txt"
-		elif score == "delihh":
-			repfilename = neutfilebase + "rep" + str(irep) + "_" + str(pop) + ".txt.norm"
-		elif score == "nsl":
-			repfilename = neutfilebase + "rep" + str(irep) + "_" + str(pop) + "_normed.txt"#"." + score +# ".out.norm"
-		elif score == "xpehh":
-			repfilename = neutfilebase + "rep"+ str(irep) + "_" + str(pop) +"_" + str(altpop) + "_normed.txt"
-		elif score == "fst_deldaf":
-			repfilename = neutfilebase + "rep"+ str(irep) + "_" + str(pop) +"_" + str(altpop)
-		if not os.path.isfile(repfilename):
-			print("missing: " + repfilename)
-		if os.path.isfile(repfilename):	 
-			listfile.write(repfilename + "\n")
-			nFile +=1
-	listfile.close()
-	print('wrote ' + str(nFile) + ' files to ' + listfilename)
-	return listfilename
-def getNeutCompFiles(model, pop,  writedir, writeprefix, overwrite=False, scoredir = "/idi/sabeti-scratch/jvitti/scores_composite2/"):
-	if writedir[-1] != "/":
-		writedir += "/"
-	writefilename = writedir + writeprefix + "_sel" + str(pop) +"_comp_neut.list"
-	if os.path.isfile(writefilename) and overwrite == False:
-		print("already exists: " + writefilename)
-		return writefilename
-	else:
-		modeldir = scoredir + model + "/neut/"
-		#print(modeldir)
-		modelcontents = os.listdir(modeldir)
-		selidstring = "_" + str(pop) +".cms.out"
-		filecontents = [item for item in modelcontents if selidstring in item and ".norm" not in item and ".decompose" not in item]
-		print('found ' + str(len(filecontents)) + ' files for pop...')
-		writefile = open(writefilename, 'w')
-		for filename in filecontents:
-			writefile.write(modeldir + filename + "\n")
-		writefile.close()
-		print('wrote to: ' + writefilename)
-	return writefilename
-def getSelCompFiles(model, pop,  writedir, writeprefix, selbins, binclustername, overwrite=False, scoredir = "/idi/sabeti-scratch/jvitti/scores_composite2/"):
-	if writedir[-1] != "/":
-		writedir += "/"
-	writefilename = writedir + writeprefix + "_sel" + str(pop) +"_comp_" + binclustername + ".list"
-	if os.path.isfile(writefilename) and overwrite == False:
-		print("already exists: " + writefilename)
-		return writefilename
-	else:
-		allcontents = []
-		modeldir = scoredir + model + "/sel" + str(pop) + "/"
-		for selbin in selbins:
-			bindir = modeldir + "sel_" + str(selbin) + '/'
-			#print(bindir)
-			bincontents = os.listdir(bindir)
-			selidstring = "_" + str(pop) +"_vsneut.cms.out"
-			#print(selidstring)
-			filecontents = [bindir + item for item in bincontents if selidstring in item and ".norm" not in item and ".decompose" not in item]
-			allcontents.extend(filecontents)
-		print('found ' + str(len(allcontents)) + ' files for pop...')
-		writefile = open(writefilename, 'w')
-		for filename in allcontents:
-			writefile.write(filename + "\n")
-		writefile.close()
-		print('wrote to: ' + writefilename)
-	return writefilename
-"""
-

@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 
-	fprintf(stderr, "found sign error in calculation on 12.28.16, creating potential issues with previous calcs. if using this program, slow down and verify\n");
-	exit(0);
+	//fprintf(stderr, "found sign error in calculation on 12.28.16, creating potential issues with previous calcs. if using this program, slow down and verify\n");
+//	exit(0);
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 		if (pos1 == pos2){				
 			if (ihh1 == 0){ihh1 = 1e-08;}
 			if (ihh2 == 0){ihh2 = 1e-08;}
-			xpehh = log(ihh1/ihh2);
+			xpehh = log(ihh1/ihh2); // times neg 1?
 			//fprintf(outf, chromstr);
 			//fprintf(outf, "_");
 			fprintf(outf, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, ihh1, p1, ihh2, p2, xpehh);

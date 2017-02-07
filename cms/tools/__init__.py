@@ -280,7 +280,7 @@ class CondaPackage(InstallMethod):
             last_path_component = os.path.basename(os.path.normpath(os.environ["CONDA_ENV_PATH"]))
             self.env_path = os.path.dirname(os.environ["CONDA_ENV_PATH"]) if last_path_component == "bin" else os.environ["CONDA_ENV_PATH"]
         elif "CONDA_DEFAULT_ENV" in os.environ and len(os.environ["CONDA_DEFAULT_ENV"]):
-            #_log.debug('CONDA_ENV_PATH not found, using CONDA_DEFAULT_ENV')
+            #_log.debug('CONDA_PREFIX not found, using CONDA_DEFAULT_ENV')
             conda_env_path = os.environ.get('CONDA_DEFAULT_ENV')  # path to current conda environment
             if conda_env_path:
                 if os.path.isdir(conda_env_path):
@@ -421,9 +421,9 @@ class CondaPackage(InstallMethod):
     def _attempt_install(self):
         try:
             # check for presence of conda command
-            util.misc.run_and_print(["conda", "-V"], loglevel=logging.INFO, check=True, env=self.conda_env)
+            util.misc.run_and_print(["conda", "-V"], buffered=True, check=True, env=self.conda_env, silent=True)
         except:
-            _log.debug("conda NOT installed")
+            _log.warning("conda NOT installed")
             self._is_attempted = True
             self.installed = False
             return
@@ -475,7 +475,10 @@ class CondaPackage(InstallMethod):
                 return # return rather than raise so we can fall back to the next install method
 
             if data and len(data):
-                installed_package_string = data[0]
+                if isinstance(data[0], dict):
+                    installed_package_string = data[0]["dist_name"]
+                else:
+                    installed_package_string = data[0]
                 package_info_re = re.compile(r"(?P<package_name>.*)-(?P<version>.*)-(?P<build_type>.*)")
                 matches = package_info_re.match(installed_package_string)
                 if matches:
