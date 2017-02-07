@@ -1,8 +1,6 @@
-## /idi/sabeti-scratch/jvitti/cms2_power/
-## last updated 1.8.17: test alternative normalize
+## last updated 2.7.17
 
 import numpy as np
-#import scipy.stats
 import math
 
 #################
@@ -154,12 +152,10 @@ def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal 
 	return ax
 def plotManhattan_extended(ax, emp_scores, chrom_pos, chrom):
 	''' makes a figure more like in Karlsson 2013 instead of Grossman 2013'''
-	#ax.scatter(chrom_pos, emp_scores, s=1)
-	ax.plot(chrom_pos, emp_scores, linestyle='None', marker=".", markersize=1, color="grey")
+	ax.plot(chrom_pos, emp_scores, linestyle='None', marker=".", markersize=.3, color="grey")
 	ax.set_ylabel('chr' + str(chrom), fontsize=6, rotation='horizontal')
 	labels = ax.get_yticklabels()
 	ax.set_yticklabels(labels, fontsize=6)
-	#ax.get_xticks().set_visible(False)
 	return ax
 def loadregions(regionfile):
 	openfile = open(regionfile, 'r')
