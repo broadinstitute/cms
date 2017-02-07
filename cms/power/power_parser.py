@@ -84,6 +84,9 @@ def full_parser_power():
 	#roc_parser.add_argument('--fprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/fpr_4c/")
 	#roc_parser.add_argument('--tprloc', type=str, action="store", default="/idi/sabeti-scratch/jvitti/cms2_power/tpr_4c/")
 
+	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
+	
+
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
 	#############################
@@ -104,7 +107,7 @@ def full_parser_power():
 
 	for write_parser in [run_neut_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, 
 			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser,
-			normsims_parser, fpr_parser, tpr_parser, roc_parser]:
+			normsims_parser, fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 
@@ -113,6 +116,8 @@ def full_parser_power():
 		makelikes_parser.add_argument('selPos', type=int, action='store', default=500000, help="position of the causal allele in simulates")
 		makelikes_parser.add_argument('numLikesBins', type=int, action='store', default=60, help='number of histogram bins')
 	
+
+
 	for uselikes_parser in [write_master_likes_parser, composite_sims_parser, composite_emp_parser]:
 		uselikes_parser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
 
@@ -141,7 +146,7 @@ def full_parser_power():
 		sel_sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
 
-	for sel_sim_parser in [normsims_parser, fpr_parser, tpr_parser]:
+	for sel_sim_parser in [normsims_parser, fpr_parser, tpr_parser, cdf_parser]:
 		sel_sim_parser.add_argument('--suffix', type= str, action='store', default='')
 
 

@@ -532,7 +532,7 @@ def execute_composite_sims(args):
 			for filename in neutinscorefilelist:
 				scorefilelist += filename + ","
 			scorefilelist = scorefilelist[:-1]
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" + "_maf"
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" #+ "_maf"
 			
 			alreadyExists = False
 			if args.checkOverwrite:
@@ -732,14 +732,14 @@ def execute_repviz(args):
 	model, pop = args.model, args.simpop
 	irep = args.vizRep
 	savefilename = args.savefilename
-
+	writedir = args.writedir
 	#CURRENTLY JUST NEUT
 	scenars = ['neut']#'neut', '0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	for scenar in scenars:
 		if scenar == "neut":
-			cmsfilename = get_neut_repfile_name(model, irep, pop, normed = True)
+			cmsfilename = get_neut_repfile_name(model, irep, pop, normed = True, basedir=writedir)
 		else:
-			cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, vsNeut = True)
+			cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, vsNeut = True, basedir=writedir)
 			#print(cmsfilename)
 		if os.path.isfile(cmsfilename):
 			print('loading from... ' + cmsfilename)
@@ -864,29 +864,50 @@ def execute_distviz(args):
 def execute_cdf(args):
 	reps = args.nrep
 	savefilename = args.savefilename
+	writedir = args.writedir
 	scenars = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
-	causal_ranks = []
+	causalPos = args.selPos
+	suffix = args.suffix
+	#causal_ranks_all = []
+	causal_ranks_1, causal_ranks_2, causal_ranks_3, causal_ranks_4 = [], [], [], []
 	for pop in [1, 2, 3, 4]:
 		for scenar in scenars:
 			for irep in range(1, reps+1):
-				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, vsNeut = True)
+				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, basedir=writedir, suffix=suffix)
+			
 				if os.path.isfile(cmsfilename):
-					physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
-					
-					causalPos = 500000
+					physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
 					if causalPos in physpos:
 						causal_index = physpos.index(causalPos)
 						causal_unnormed = cms_unnormed[causal_index]
 						causal_rank = get_causal_rank(cms_unnormed, causal_unnormed)
 						#print('causal rank: ' + str(causal_rank)) 
-						causal_ranks.append(causal_rank)
+						#causal_ranks.append(causal_rank)
+						this_array = eval('causal_ranks_' + str(pop))
+						this_array.append(causal_rank)
+				#else:
+				#	print("missing; " + cmsfilename)
+	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")
+	print("for pop 2, loaded " + str(len(causal_ranks_2)) + " replicates.")
+	print("for pop 3, loaded " + str(len(causal_ranks_3)) + " replicates.")
+	print("for pop 4, loaded " + str(len(causal_ranks_4)) + " replicates.")
 
 	cdf_fig, cdf_ax = plt.subplots()
-	cdf_bins, cdf = get_cdf_from_causal_ranks(causal_ranks)
-	cdf_ax.plot(cdf_bins[1:], cdf)
+	if len(causal_ranks_1) > 0:
+		cdf_bins1, cdf1 = get_cdf_from_causal_ranks(causal_ranks_1)
+		cdf_ax.plot(cdf_bins1[1:], cdf1, color="yellow")
+	if len(causal_ranks_2) > 0:
+		cdf_bins2, cdf2 = get_cdf_from_causal_ranks(causal_ranks_2)
+		cdf_ax.plot(cdf_bins2[1:], cdf2, color="blue")
+	if len(causal_ranks_3) > 0:
+		cdf_bins3, cdf3 = get_cdf_from_causal_ranks(causal_ranks_3)
+		cdf_ax.plot(cdf_bins3[1:], cdf3, color="green")
+	if len(causal_ranks_4) > 0:
+		cdf_bins4, cdf4 = get_cdf_from_causal_ranks(causal_ranks_4)			
+		cdf_ax.plot(cdf_bins4[1:], cdf4, color="purple")
 	cdf_ax.set_xlim([0, 50])
-	plt.title(model + ", " + str(len(causal_ranks)) + " selection replicates")
+	plt.title(model) #+ ", " + str(len(causal_ranks)) + " selection replicates")
 	plt.ylabel('probability that the causal variant is captured')
 	plt.xlabel('significance thresshold (i.e., examining the top x variants)')
 	plt.savefig(savefilename)
@@ -911,7 +932,8 @@ def execute_fpr(args):
 			repfilename = get_neut_repfile_name(model, irep, pop, normed=True, suffix=suffix, basedir=writedir)
 			if (irep==1):
 				print(repfilename)
-			physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
+			physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
+			#physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
 			if len(cms_normed) > 0:
 				all_scores.append(cms_normed)
 				rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
@@ -955,9 +977,9 @@ def execute_tpr(args):
 	#		sys.exit(0)
 
 	#per seldaf
-	dafbins = [['0.90']]#['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90']]
-	daflabels = ['highest']#'lo', 'mid', 'hi']
-	for ibin in range(1):
+	dafbins = [['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90'], ['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90'], ['0.90']]
+	daflabels = ['all', 'lo', 'mid', 'hi','highest']
+	for ibin in [1, 2, 3, 4]:#range(1):
 		thesebins, thislabel = dafbins[ibin], daflabels[ibin]
 		allrepfilenames = []
 		for selbin in thesebins:
@@ -968,10 +990,11 @@ def execute_tpr(args):
 				if os.path.isfile(repfilename):
 					allrepfilenames.append(repfilename)
 		print('loaded ' + str(len(allrepfilenames)) + " replicates...")
-		numToTake = max(500, len(allrepfilenames))
+		numToTake = min(500, len(allrepfilenames))
 		chosen = np.random.choice(allrepfilenames, numToTake, replace=False) #take random sample	
 		for repfilename in chosen:
-			physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
+			physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
+			#physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
 			if len(cms_normed) > 0:
 				all_scores.append(cms_normed)
 				rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
@@ -1280,7 +1303,8 @@ def execute_manhattan(args):
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
 			break
-		physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
 		all_emp_pos.append(physpos)
 		all_emp_scores.append(cms_normed)
 
@@ -1324,7 +1348,8 @@ def execute_extended_manhattan(args):
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
 			break
-		physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
 
 		iax = chrom-1
 		ax = axarr[iax]
