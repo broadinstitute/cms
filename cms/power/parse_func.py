@@ -196,39 +196,3 @@ def check_create_dir(directory):
 	""" ensure that the directory exists; create it if it doesn't """
 	if not os.path.isdir(directory):
 		subprocess.check_output(['mkdir', '-p', directory])
-def writeJobsToTaskArray_fromArglist(commandstring, arguments, fileprefix, filewd = "", UGERoptions = ['-cwd', '-P sabeti_lab'], memory = "5g", discardOut = False):
-	"""flexible function for generating scripts and argfiles to dispatch parallel jobs on Univa Grid Engine.
-	arglist: a list of strings. each string represents one argstring, for one task on the array."""
-	#write file with arguments for all tasks
-	t = 0
-	taskargfilename = filewd + fileprefix + "_taskargs.txt"
-	taskargfile = open(taskargfilename, "w")
-	for argstring in arguments:
-		taskargfile.write(argstring + "\n")
-		t += 1
-	taskargfile.close() 
-	#write script for one job that points to task-argument-file
-	scriptname = filewd + fileprefix + '.sh'
-	scriptfile = open(scriptname, 'w')
-	for UGERoption in UGERoptions:
-		scriptfile.write("#$ " + UGERoption + "\n")
-	scriptfile.write("#$ -t 1-" + str(t) + "\n")
-	scriptfile.write("\n")
-
-	scriptfile.write('export PATH=/idi/sabeti-scratch/jvitti/cms/cms:$PATH\n')
-	scriptfile.write('export PATH=/home/unix/vitti/miniconda3/bin:$PATH\n')
-	scriptfile.write('source activate /home/unix/vitti/miniconda3/envs/cms-env3\n')
-	#scriptfile.write("source activate cms-env3\n")
-	scriptfile.write('source /broad/software/scripts/useuse\n')
-	#scriptfile.write('use .scipy-0.15.1-python-3.4.3\n')
-	scriptfile.write("MYFILE=" + str(taskargfilename) + "\n")
-	scriptfile.write("SAMPLE=$(awk \"NR==$SGE_TASK_ID\" $MYFILE)\n")
-	writestring = commandstring + " $SAMPLE\n"
-	scriptfile.write(writestring)
-	scriptfile.close()
-	if discardOut:
-		subcommand = "qsub -e /tmp/test_error -o /tmp/test_out -l h_vmem=" + str(memory) + " " + scriptname
-	else:
-		subcommand = "qsub -l h_vmem=" + str(memory) + " " + scriptname
-	print(subcommand)
-	return
