@@ -1,40 +1,36 @@
-## last updated 2.7.17
+##	functions for analyzing empirical/simulated CMS output
+##	last updated 02.08.2017	vitti@broadinstitute.org
 
 import numpy as np
 import math
 
-#################
-## NORMALIZING ##
-#################
+###################
+## DEFINE SCORES ##
+###################
+def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "neut",):
+	'''adapted from run_likes_func.py'''
+	writefile = open(writefilename, 'w')
+	for score in ['ihs', 'nsl', 'delihh']: 
+		hitlikesfilename = basedir + model + "/" + score + "/likes_sel" + str(selpop) + "_" + str(freq) + "_causal.txt"#_smoothed.txt"
+		misslikesfilename = basedir + model + "/" + score + "/likes_sel" + str(selpop) + "_" + str(freq) + "_" + miss + ".txt"#"_smoothed.txt"
+		#assert(os.path.isfile(hitlikesfilename) and os.path.isfile(misslikesfilename))
+		writefile.write(hitlikesfilename + "\n" + misslikesfilename + "\n")
+	for score in ['xpehh', 'fst', 'deldaf']:
+		hitlikesfilename = basedir + model + "/" + score + "/likes_sel" + str(selpop) + "_choose_" + str(freq) + "_causal.txt"#_smoothed.txt"
+		misslikesfilename = basedir + model + "/" + score + "/likes_sel" + str(selpop) + "_choose_" + str(freq) + "_" + miss + ".txt"#"_smoothed.txt"
+		#assert(os.path.isfile(hitlikesfilename) and os.path.isfile(misslikesfilename))
+		writefile.write(hitlikesfilename + "\n" + misslikesfilename + "\n")
+	writefile.close()
+	print("wrote to: " + writefilename)
+	return
 def normalize(rawscore, mean, sd):
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
 	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue
 
-###############################
-## CMS_GW VALS AND REGION ID ##
-###############################
-def merge_windows(chrom_signif, windowlen, maxGap = 100000):
-	starts, ends = [], []
-	contig = False
-	for i_start in range(len(chrom_signif) - 1):
-		
-		if not contig:
-			starts.append(chrom_signif[i_start])
-
-		if ((chrom_signif[i_start] + windowlen) > chrom_signif[i_start + 1]): #contiguous
-			contig = True
-		#or, could also be contiguous in the situation where the next snp is not within this window because there doesn't exist such a snp
-		elif chrom_signif[i_start +1] >=(chrom_signif[i_start] + windowlen)  and chrom_signif[i_start +1] < (chrom_signif[i_start] + maxGap):
-			contig = True
-		else:
-			contig = False
-
-		if not contig:
-			windowend = chrom_signif[i_start] + windowlen
-			ends.append(windowend)
-
-	return starts, ends
+###############
+## REGION ID ##
+###############
 def get_window(istart, physpos, scores, windowlen = 100000):
 	window_scores = [scores[istart]]
 	startpos = physpos[istart]
@@ -76,6 +72,27 @@ def check_rep_windows(physpos, scores, windowlen = 100000, cutoff = 3, totalchrl
 		percentage = check_outliers(window_scores, cutoff)
 		rep_percentages.append(percentage)
 	return rep_percentages
+def merge_windows(chrom_signif, windowlen, maxGap = 100000):
+	starts, ends = [], []
+	contig = False
+	for i_start in range(len(chrom_signif) - 1):
+		if not contig:
+			starts.append(chrom_signif[i_start])
+		if ((chrom_signif[i_start] + windowlen) > chrom_signif[i_start + 1]): #contiguous
+			contig = True
+		#or, could also be contiguous in the situation where the next snp is not within this window because there doesn't exist such a snp
+		elif chrom_signif[i_start +1] >=(chrom_signif[i_start] + windowlen)  and chrom_signif[i_start +1] < (chrom_signif[i_start] + maxGap):
+			contig = True
+		else:
+			contig = False
+		if not contig:
+			windowend = chrom_signif[i_start] + windowlen
+			ends.append(windowend)
+	return starts, ends
+
+##########################
+## POWER & SIGNIFICANCE ##
+##########################
 def calc_pr(all_percentages, threshhold):
 	numNeutReps_exceedThresh = 0
 	totalnumNeutReps = len(all_percentages)
@@ -90,6 +107,17 @@ def calc_pr(all_percentages, threshhold):
 		pr = 0
 		print('ERROR; empty set')
 	return pr
+def get_causal_rank(values, causal_val):
+	assert(causal_val in values)
+	values.sort()
+	values.reverse()
+	causal_rank = values.index(causal_val)
+	return causal_rank
+def get_cdf_from_causal_ranks(causal_ranks):
+	numbins = max(causal_ranks) #? heuristic
+	counts, bins = np.histogram(causal_ranks, bins=numbins, normed = True) #doublecheck
+	cdf = np.cumsum(counts)
+	return bins, cdf
 def get_pval(all_simscores, thisScore):
 	r = np.searchsorted(all_simscores,thisScore)
 	n = len(all_simscores)
@@ -102,6 +130,27 @@ def get_pval(all_simscores, thisScore):
 		pval =  1. - (r/(n+1))
 		#pval *= nSnps #Bonferroni
 		return pval
+
+###############
+## VISUALIZE ##
+###############
+def quick_plot(ax, pos, val, ylabel,causal_index=-1):
+	ax.scatter(pos, val, s=.8)
+	if causal_index != -1:
+		ax.scatter(pos[causal_index], val[causal_index], color='r', s=4)
+	for tick in ax.yaxis.get_major_ticks():
+		tick.label.set_fontsize('6')
+	ax.set_ylabel(ylabel, fontsize='6')
+	ax.set_xlim([0, 1500000])
+	ax.yaxis.set_label_position('right')
+	return ax
+def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=10000):
+	if len(allvals) > 0:
+		f, ax = plt.subplots(1)
+		ax.hist(allvals, bins=10000)
+		plt.savefig(savefilename)
+		print('plotted to ' + savefilename)
+	return
 def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal = 0, zscores = True):
 	#neut_rep_scores.sort()
 	#print('sorted neutral scores...')
@@ -150,36 +199,3 @@ def plotManhattan_extended(ax, emp_scores, chrom_pos, chrom):
 	labels = ax.get_yticklabels()
 	ax.set_yticklabels(labels, fontsize=6)
 	return ax
-def loadregions(regionfile):
-	openfile = open(regionfile, 'r')
-	allchroms, allstarts, allends = [], [], []
-	for line in openfile:
-		entries = line.split()
-		if len(entries) == 3:
-			chrom, startpos, endpos = entries[0], int(entries[1]), int(entries[2])
-			allchroms.append(chrom)
-			allstarts.append(startpos)
-			allends.append(endpos)
-	openfile.close()
-	return allchroms, allstarts, allends
-def quick_plot(ax, pos, val, ylabel,causal_index=-1):
-	ax.scatter(pos, val, s=.8)
-	if causal_index != -1:
-		ax.scatter(pos[causal_index], val[causal_index], color='r', s=4)
-	for tick in ax.yaxis.get_major_ticks():
-		tick.label.set_fontsize('6')
-	ax.set_ylabel(ylabel, fontsize='6')
-	ax.set_xlim([0, 1500000])
-	ax.yaxis.set_label_position('right')
-	return ax
-def get_causal_rank(values, causal_val):
-	assert(causal_val in values)
-	values.sort()
-	values.reverse()
-	causal_rank = values.index(causal_val)
-	return causal_rank
-def get_cdf_from_causal_ranks(causal_ranks):
-	numbins = max(causal_ranks) #? heuristic
-	counts, bins = np.histogram(causal_ranks, bins=numbins, normed = True) #doublecheck
-	cdf = np.cumsum(counts)
-	return bins, cdf

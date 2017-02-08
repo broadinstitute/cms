@@ -1,19 +1,19 @@
-## script to manipulate and analyze empirical/simulated CMS output
-## last updated 2.7.17 	vitti@broadinstitute.org
+##	top-level script to manipulate and analyze empirical/simulated CMS output
+##	last updated 02.08.2017	vitti@broadinstitute.org
 
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, loadregions, quick_plot, get_causal_rank, get_cdf_from_causal_ranks
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
 from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, writeJobsToTaskArray_fromArglist, check_create_dir, execute, read_pr, write_master_likesfile, get_likesfiles, \
-						get_neutinscorefiles, check_create_file, get_concat_files, plot_dist, readvals_lastcol, get_selinscorefiles, get_pr_filesnames
+						load_empscores, writeJobsToTaskArray_fromArglist, check_create_dir, execute, read_pr, get_likesfiles, \
+						check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
-#from pybedtools import BedTool
+#from pybedtools import BedTool #some issue with venv or cluster? let's fix this
 import numpy as np
 import argparse
 import sys
@@ -437,11 +437,10 @@ def execute_composite_sims(args):
 	for sel_freq_bin in sel_freq_bins:
 
 		scoremodeldir = writedir + "scores/" + model + "/"
-		pairdir = scoremodeldir + "sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/pairs/"
 		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
 		check_create_dir(compositedir)
 		for irep in range(1, numPerBin +1):
-			inscorefilelist = get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = writedir) 
+			inscorefilelist = []#get_selinscorefiles(model, selpop, sel_freq_bin, irep) 
 			if len(inscorefilelist) > 0:
 				scorefilelist = ""
 				for filename in inscorefilelist:
@@ -463,12 +462,12 @@ def execute_composite_sims(args):
 	
 	#ALL NEUT
 	scoremodeldir = writedir + "scores/" + model + "/"
-	pairdir = scoremodeldir + "neut/pairs/"
 	compositedir = writedir + "composite/" + model + "/neut/"
 	check_create_dir(compositedir)
 
 	for irep in range(1, numPerBin +1):	
-		neutinscorefilelist = get_neutinscorefiles(model, selpop, irep, writedir + "scores/") 
+		neutinscorefilelist = []#get_neutinscorefiles(model, selpop, irep, writedir + "scores/") 
+		print('restructure input')
 		if len(neutinscorefilelist) > 0:
 			scorefilelist = ""
 			for filename in neutinscorefilelist:
@@ -604,7 +603,8 @@ def execute_composite_emp(args):
 	hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
 	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile
 	for chrom in chroms:
-		inscorefilelist = get_pairfiles(chrom, selpop) 
+		print("JV: restructure input;")
+		inscorefilelist = []#get_pairfiles(chrom, selpop) 
 		if len(inscorefilelist) > 0:
 			scorefilelist = ""
 			for filename in inscorefilelist:
@@ -716,7 +716,7 @@ def execute_distviz(args):
 		savefilename = args.savefilename
 		infilename = args.oneFile
 		if os.path.isfile(infilename):
-			values = readvals_lastcol(infilename)
+			values = read_vals_lastcol(infilename)
 			plot_dist(values, savefilename)
 
 	#########################
@@ -741,7 +741,7 @@ def execute_distviz(args):
 					infilename = filebase + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out"
 					#print(infilename)
 					if os.path.isfile(infilename):
-						values = readvals_lastcol(infilename)
+						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
 				#print(allvals)
 				plot_dist(allvals, "/web/personal/vitti/sim_dists/" + model +"_" + str(pop) + "_justneut.png")
@@ -751,7 +751,7 @@ def execute_distviz(args):
 				#	for irep in range(1,501):
 				#		infilename = filebase + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/rep" + str(irep) + "_" + str(pop) + "_vsneut.cms.out"
 				#		if os.path.isfile(infilename):
-				#			values = readvals_lastcol(infilename)
+				#			values = read_vals_lastcol(infilename)
 				#			allvals.extend(values)
 			
 				#plot_dist(allvals, savefilename)
@@ -767,7 +767,7 @@ def execute_distviz(args):
 				for chrom in chroms:
 					infilename = filebase + pop + "_" + model + "_" + "neut" + ".chr" + str(chrom) + ".txt"
 					if os.path.isfile(infilename):
-						values = readvals_lastcol(infilename)
+						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
 				plot_dist(allvals, savefilename)
 	return
@@ -1274,7 +1274,7 @@ def execute_extended_manhattan(args):
 	################################
 
 	if args.regionsfile is not None:
-		regionchrs, regionstarts, regionends = loadregions(args.regionsfile)
+		regionchrs, regionstarts, regionends = load_regions(args.regionsfile)
 		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
 		for iregion in range(len(regionchrs)):
 			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
