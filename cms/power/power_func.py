@@ -50,12 +50,9 @@ def get_window(istart, physpos, scores, windowlen = 100000):
 	return window_scores
 def check_outliers(scorelist, cutoff = 3):
 	numscores = len(scorelist)
-	#print(str(scorelist))
 	outliers = [item for item in scorelist if item > cutoff]
-	#print(str(outliers))
 	numoutliers = len(outliers)
 	percentage = (float(numoutliers) / float(numscores)) * 100.
-	#print(str(percentage) + " percent of scores in this window score above " + str(cutoff))
 	return percentage
 def check_rep_windows(physpos, scores, windowlen = 100000, cutoff = 3, totalchrlen=1000000):
 	'''
@@ -80,7 +77,6 @@ def check_rep_windows(physpos, scores, windowlen = 100000, cutoff = 3, totalchrl
 		rep_percentages.append(percentage)
 	return rep_percentages
 def calc_pr(all_percentages, threshhold):
-	#numNeutReps_exceedThresh / #totalnumNeutReps
 	numNeutReps_exceedThresh = 0
 	totalnumNeutReps = len(all_percentages)
 	for irep in range(totalnumNeutReps):
@@ -88,15 +84,12 @@ def calc_pr(all_percentages, threshhold):
 			if max(all_percentages[irep]) > threshhold:
 				numNeutReps_exceedThresh +=1
 	numNeutReps_exceedThresh, totalnumNeutReps = float(numNeutReps_exceedThresh), float(totalnumNeutReps)
-	#print(str(numNeutReps_exceedThresh) + "\t" + str(totalnumNeutReps) + "\n")
 	if totalnumNeutReps != 0:
 		pr = numNeutReps_exceedThresh / totalnumNeutReps 
-		#print("fpr: " + "\t" + str(fpr) + '\n')
 	else:
 		pr = 0
 		print('ERROR; empty set')
 	return pr
-
 def get_pval(all_simscores, thisScore):
 	r = np.searchsorted(all_simscores,thisScore)
 	n = len(all_simscores)
@@ -169,11 +162,9 @@ def loadregions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
-
 def quick_plot(ax, pos, val, ylabel,causal_index=-1):
 	ax.scatter(pos, val, s=.8)
 	if causal_index != -1:
-		#print('huzzah!')
 		ax.scatter(pos[causal_index], val[causal_index], color='r', s=4)
 	for tick in ax.yaxis.get_major_ticks():
 		tick.label.set_fontsize('6')
@@ -188,12 +179,7 @@ def get_causal_rank(values, causal_val):
 	causal_rank = values.index(causal_val)
 	return causal_rank
 def get_cdf_from_causal_ranks(causal_ranks):
-	#print(causal_ranks)
 	numbins = max(causal_ranks) #? heuristic
 	counts, bins = np.histogram(causal_ranks, bins=numbins, normed = True) #doublecheck
-	#print(counts)
-	#print(bins)
 	cdf = np.cumsum(counts)
-	#print(cdf)
 	return bins, cdf
-

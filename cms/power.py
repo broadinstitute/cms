@@ -594,7 +594,7 @@ def execute_composite_emp(args):
 	cmsdir = args.cmsdir
 	basedir = args.basedir
 	likesdir = args.likes_basedir
-	likessuffix = args.likessuffix
+	suffix = args.likessuffix
 	model = args.model
 	selPop = args.emppop
 	modelPop = args.simpop
@@ -625,7 +625,6 @@ def execute_composite_emp(args):
 def execute_normemp(args):
 	selpop = args.emppop
 	model = args.model
-	#likessuffix = args.likessuffix
 	suffix = args.suffix
 	
 	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix)
@@ -771,37 +770,6 @@ def execute_distviz(args):
 						values = readvals_lastcol(infilename)
 						allvals.extend(values)
 				plot_dist(allvals, savefilename)
-
-
-
-	"""
-	''' view distribution of (currently) unnormalized cms_gw scores '''
-	model = args.model
-	savename = args.savefilename
-	if args.normed_cms:
-		normed = True
-	else:
-		normed = False
-	if args.sim:
-		pop = args.simpop
-		values = load_simscores(model, pop, normed=normed)
-	elif args.emp:
-		pop = args.emppop
-		likessuffix = args.likessuffix
-		values = load_empscores(model, pop, likessuffix, normed=normed)
-
-	if normed==False:
-		print('taking log of raw scores...')
-		#print(values[0])
-		logvalues = [np.log(item) for item in values if not np.isnan(item)]
-		#print(logvalues[0])
-		values = logvalues
-
-	f, ax = plt.subplots(1)
-	ax.hist(values, bins=1000)
-	plt.savefig(savename)
-	print('plotted to ' + savename)
-	"""
 	return
 
 ########	Quantify and visualize power
@@ -1068,7 +1036,6 @@ def execute_gw_regions(args):
 	cutoff = args.cutoff
 	pop = args.emppop
 	windowlen = args.regionlen
-	#vs = args.likessuffix
 	suffix = args.suffix
 
 	chroms = range(1,23)
@@ -1133,7 +1100,6 @@ def execute_regionlog(args):
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
 		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_regions/" + model + "/" + pop + "_" + str(int(args.regionlen)) + "_" + str(int(args.thresshold)) + "_" + str(int(args.cutoff)) + ".txt" #or _alt
-		#regionfilename = "/idi/sabeti-scratch/jvitti/cms2_power/regions/regions_103116_" + str(pop) +"_" + (args.model) + "_" + str(args.likessuffix) +"_" + str(int(args.regionlen)) + "_" + str(int(args.thresshold)) + "_" + str(args.cutoff) + ".txt"
 		print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
@@ -1215,17 +1181,12 @@ def execute_regionlog(args):
 def execute_manhattan(args):
 	selpop = args.emppop
 	model = args.model
-	#likessuffix = args.likessuffix
 	savename = args.savefilename
 	suffix = args.suffix
 	#nRep = args.nrep
 	###############################
 	### LOAD NEUTRAL SIM VALUES ###
 	###############################
-	#if likessuffix == "neut":
-	#	vsNeut = True
-	#elif likessuffix == "linked":
-	#	vsNeut = False
 	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
 	pop = modelpops[selpop]
 
