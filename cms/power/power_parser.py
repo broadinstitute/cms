@@ -25,7 +25,7 @@ def full_parser_power():
 		run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/idi/sabeti-scratch/jvitti/params/test_recom.recom")
 
 	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
-	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)")
+	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)")
 	run_norm_neut_repscores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)")
 	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
 	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
@@ -129,7 +129,7 @@ def full_parser_power():
 		run_cms_parser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 
 	for commonparser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, normemp_parser, gw_regions_parser, manhattan_parser, run_norm_neut_repscores_parser,norm_from_binfile_parser,
-						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, run_poppair_parser, 
+						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, 
 						run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)

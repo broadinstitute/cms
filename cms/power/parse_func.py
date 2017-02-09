@@ -176,9 +176,9 @@ def load_regions(regionfile):
 	openfile.close()
 	return allchroms, allstarts, allends
 
-######################
-## UGER/BOOKKEEPING ##
-######################
+#################
+## BOOKKEEPING ##
+#################
 def execute(commandstring):
 	subprocess.check_output(commandstring.split())
 	return

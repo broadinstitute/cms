@@ -2,6 +2,8 @@
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
 ## last updated: 12.15.16 vitti@broadinstitute.org
 
+## need to merge with power.py. Nix: execute_run_neut_sims  execute_run_sel_sims execute_scores_from_sims
+
 import matplotlib as mp 
 mp.use('TKAgg') 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes

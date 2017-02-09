@@ -1,19 +1,17 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.08.2017	vitti@broadinstitute.org
-
-from power.power_parser import full_parser_power
-from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
-from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, \
-						check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions
+##	last updated 02.09.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
+from power.power_parser import full_parser_power
+from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
+from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
+						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
-#from pybedtools import BedTool #some issue with venv or cluster? let's fix this
+from pybedtools import BedTool 
 import numpy as np
 import argparse
 import sys
@@ -25,6 +23,22 @@ import os
 
 ########	Manipulate simulated data 
 ########	and provide composite scores.
+def execute_write_master_likes(args):
+	''' from write_master_likes.py'''
+	basedir = args.likes_basedir
+	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
+	selpops = [1, 2, 3, 4]
+	freqs = ['allfreq']#'hi', 'low', 'mid']
+	misses = ["neut"]#, "linked"]
+	for model in models:
+		for selpop in selpops:
+			for freq in freqs:
+				for miss in misses:					
+					writefiledir = basedir + model + "/master/"
+					check_create_dir(writefiledir)
+					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
+					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
+	return
 def execute_run_neut_sims(args):
 	'''from run_additional_sims.py'''
 	cmd = "coalescent"
@@ -569,22 +583,6 @@ def execute_normsims(args):
 					writefile.close()
 	print("wrote to eg: " + normedfile)	
 	return
-def execute_write_master_likes(args):
-	''' from write_master_likes.py'''
-	basedir = args.likes_basedir
-	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
-	selpops = [1, 2, 3, 4]
-	freqs = ['allfreq']#'hi', 'low', 'mid']
-	misses = ["neut"]#, "linked"]
-	for model in models:
-		for selpop in selpops:
-			for freq in freqs:
-				for miss in misses:					
-					writefiledir = basedir + model + "/master/"
-					check_create_dir(writefiledir)
-					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
-					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
-	return
 
 ########	Manipulate empirical data
 ########	and provide composite scores
@@ -732,18 +730,14 @@ def execute_distviz(args):
 
 		for model in models:		
 			for pop in modelpops:
-				#savefilename = "/web/personal/vitti/sim_dists/" + model + "_" + str(pop) + ".png"
 				allvals = []
-
 				#NEUT REPS
 				for irep in range(1, reps+1):
 					filebase = "/idi/sabeti-scratch/jvitti/clean/scores/"
 					infilename = filebase + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out"
-					#print(infilename)
 					if os.path.isfile(infilename):
 						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
-				#print(allvals)
 				plot_dist(allvals, "/web/personal/vitti/sim_dists/" + model +"_" + str(pop) + "_justneut.png")
 
 				#SEL REPS
@@ -770,6 +764,144 @@ def execute_distviz(args):
 						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
 				plot_dist(allvals, savefilename)
+	return
+def execute_manhattan(args):
+	selpop = args.emppop
+	model = args.model
+	savename = args.savefilename
+	suffix = args.suffix
+	#nRep = args.nrep
+	###############################
+	### LOAD NEUTRAL SIM VALUES ###
+	###############################
+	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
+	pop = modelpops[selpop]
+
+	#EXPERIMENTAL
+	#This is not how Shari actually normalized for figure 1 2013.
+	#if args.poolModels:
+	#	all_neut_rep_scores = []
+	#	for model in ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']:
+	#		neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
+	#		all_neut_rep_scores.extend(neut_rep_scores)
+	#	neut_rep_scores = all_neut_rep_scores
+	#else:
+	#	neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
+	#print('loaded ' + str(len(neut_rep_scores)) + ' neut simscores...') 
+	neut_rep_scores = []
+
+	#############################
+	### LOAD EMPIRICAL VALUES ###
+	#############################
+	all_emp_pos, all_emp_scores = [], []
+	nSnps = 0
+	for chrom in range(1,23):
+		thesepos, thesescores = [], []
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
+		if not os.path.isfile(emp_cms_filename):
+			print("missing: " + emp_cms_filename)
+			break
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+		all_emp_pos.append(physpos)
+		all_emp_scores.append(cms_normed)
+
+	###########################
+	### DRAW MANHATTAN PLOT ###
+	###########################
+	f, ax = plt.subplots(1)
+	if args.zscores:
+		calc_zscores = True
+	else:
+		calc_zscores = False
+
+	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
+
+	plt.savefig(savename)
+	print('saved to: ' + savename)
+	return
+def execute_extended_manhattan(args):
+	plotscore = args.plotscore
+	selpop = args.emppop
+	model = args.model
+	suffix = args.suffix
+	savename = args.savefilename
+	numChr = 22
+	titlestring = args.titlestring
+
+	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
+	pop = modelpops[selpop]
+	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
+
+	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, figsize=(7, 7))
+	plt.suptitle(titlestring, fontsize=10)
+
+	plt.xlabel('position')
+	plt.ylabel('cms_gw normed score')
+
+	all_emp_pos, all_emp_scores = [], []
+	for chrom in range(1,numChr +1):
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
+		if not os.path.isfile(emp_cms_filename):
+			print("missing: " + emp_cms_filename)
+			break
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+
+		iax = chrom-1
+		ax = axarr[iax]
+		plot_data = eval(plotscore)
+		plotManhattan_extended(ax, plot_data, physpos, chrom)
+		all_emp_pos.append(physpos)
+		all_emp_scores.append(plot_data)
+
+	################################
+	## HILITE SIGNIFICANT REGIONS ##
+	################################
+
+	if args.regionsfile is not None:
+		regionchrs, regionstarts, regionends = load_regions(args.regionsfile)
+		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
+		for iregion in range(len(regionchrs)):
+			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
+			this_chrom = int(regionchr.strip('chr'))
+			ichrom = this_chrom-1
+			chrompos, chromscores = all_emp_pos[ichrom], all_emp_scores[ichrom]
+			zipped = zip(chrompos, chromscores)
+			plotpos, plotvals = [], []
+			for locus in zipped:
+				if locus[0] >= regionstart:
+					plotpos.append(locus[0])
+					plotvals.append(locus[1])
+				if locus[0] > regionend:
+					break
+			axarr[ichrom].plot(plotpos, plotvals, color=colorDict[pop], markersize=1)
+
+	if args.percentile is not None:
+		percentile = float(args.percentile)
+		print('plotting data with heuristic cutoff for ' + str(percentile) + " percentile...")
+		flat_emp_scores = [item for sublist in all_emp_scores for item in sublist if not np.isnan(item)]
+		score_cutoff = float(np.percentile(flat_emp_scores, percentile))
+		print("score cutoff: " + str(score_cutoff))
+		for chrom in range(1,numChr +1):
+			iax = chrom-1
+			ax = axarr[iax]
+			maximumVal = ax.get_xlim()[1]
+			xpoints = np.array([0, maximumVal])
+			ypoints = np.array([score_cutoff, score_cutoff])
+			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="grey", markersize=.3)
+
+			#get empirical scores and positions for pass threshhold and plot them as above with color
+			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
+			zipped =  zip(these_scores, these_pos)
+			significant = [item for item in zipped if item[0] >= score_cutoff]
+			signif_vals = [item[0] for item in significant]
+			signif_pos = [item[1] for item in significant]
+			ax.plot(signif_pos, signif_vals, color=colorDict[pop], linestyle='None', marker=".", markersize=.3)#, markersize=1)
+
+	plt.savefig(savename)
+	print('saved to: ' + savename)
 	return
 
 ########	Quantify and visualize power
@@ -1089,8 +1221,7 @@ def execute_gw_regions(args):
 				writeline = "chr" + str(chromnum) + "\t" + str(starts[iregion]) + "\t" + str(ends[iregion]) + '\n'
 				writefile.write(writeline)
 		writefile.close()
-		print('wrote to ' + writefilename)
-	
+		print('wrote to ' + writefilename)	
 	return
 def execute_regionlog(args):
 	''' writes an excel file '''
@@ -1177,152 +1308,6 @@ def execute_regionlog(args):
 	book.save(args.saveLog)
 	book.save(TemporaryFile())
 	print('wrote ' + str(totalselregions) + ' significant regions to: ' + args.saveLog)
-	return
-def execute_manhattan(args):
-	selpop = args.emppop
-	model = args.model
-	savename = args.savefilename
-	suffix = args.suffix
-	#nRep = args.nrep
-	###############################
-	### LOAD NEUTRAL SIM VALUES ###
-	###############################
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
-	pop = modelpops[selpop]
-
-	#EXPERIMENTAL
-	#This is not how Shari actually normalized for figure 1 2013.
-	#if args.poolModels:
-	#	all_neut_rep_scores = []
-	#	for model in ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']:
-	#		neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#		all_neut_rep_scores.extend(neut_rep_scores)
-	#	neut_rep_scores = all_neut_rep_scores
-	#else:
-	#	neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#print('loaded ' + str(len(neut_rep_scores)) + ' neut simscores...') 
-	neut_rep_scores = []
-
-	#############################
-	### LOAD EMPIRICAL VALUES ###
-	#############################
-	all_emp_pos, all_emp_scores = [], []
-	nSnps = 0
-	for chrom in range(1,23):
-		thesepos, thesescores = [], []
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
-		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
-			break
-		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
-		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
-		all_emp_pos.append(physpos)
-		all_emp_scores.append(cms_normed)
-
-	###########################
-	### DRAW MANHATTAN PLOT ###
-	###########################
-	f, ax = plt.subplots(1)
-	if args.zscores:
-		calc_zscores = True
-	else:
-		calc_zscores = False
-
-	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
-
-	plt.savefig(savename)
-	print('saved to: ' + savename)
-	return
-def execute_extended_manhattan(args):
-	plotscore = args.plotscore
-	selpop = args.emppop
-	model = args.model
-	suffix = args.suffix
-	savename = args.savefilename
-	numChr = 22
-	titlestring = args.titlestring
-
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
-	pop = modelpops[selpop]
-	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
-
-	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, figsize=(7, 7))
-	plt.suptitle(titlestring, fontsize=10)
-
-	plt.xlabel('position')
-	plt.ylabel('cms_gw normed score')
-
-	all_emp_pos, all_emp_scores = [], []
-	for chrom in range(1,numChr +1):
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
-		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
-			break
-		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
-
-		iax = chrom-1
-		ax = axarr[iax]
-		plot_data = eval(plotscore)
-		plotManhattan_extended(ax, plot_data, physpos, chrom)
-		all_emp_pos.append(physpos)
-		all_emp_scores.append(plot_data)
-
-	################################
-	## HILITE SIGNIFICANT REGIONS ##
-	################################
-
-	if args.regionsfile is not None:
-		regionchrs, regionstarts, regionends = load_regions(args.regionsfile)
-		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
-		for iregion in range(len(regionchrs)):
-			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
-			this_chrom = int(regionchr.strip('chr'))
-			ichrom = this_chrom-1
-			chrompos, chromscores = all_emp_pos[ichrom], all_emp_scores[ichrom]
-			zipped = zip(chrompos, chromscores)
-			plotpos, plotvals = [], []
-			for locus in zipped:
-				if locus[0] >= regionstart:
-					plotpos.append(locus[0])
-					plotvals.append(locus[1])
-				if locus[0] > regionend:
-					break
-			axarr[ichrom].plot(plotpos, plotvals, color=colorDict[pop], markersize=1)
-			#axarr[ichrom].plot([regionstart, regionend], [0, 0], color="red")
-
-
-	if args.percentile is not None:
-		percentile = float(args.percentile)
-		print('plotting data with heuristic cutoff for ' + str(percentile) + " percentile...")
-		flat_emp_scores = [item for sublist in all_emp_scores for item in sublist if not np.isnan(item)]
-		score_cutoff = float(np.percentile(flat_emp_scores, percentile))
-		print("score cutoff: " + str(score_cutoff))
-		for chrom in range(1,numChr +1):
-			iax = chrom-1
-			ax = axarr[iax]
-			maximumVal = ax.get_xlim()[1]
-			xpoints = np.array([0, maximumVal])
-			ypoints = np.array([score_cutoff, score_cutoff])
-			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="grey", markersize=.3)
-
-			#get empirical scores and positions for pass threshhold and plot them as above with color
-			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
-			zipped =  zip(these_scores, these_pos)
-			significant = [item for item in zipped if item[0] >= score_cutoff]
-			#print(str(len(significant)))
-			signif_vals = [item[0] for item in significant]
-			signif_pos = [item[1] for item in significant]
-			#for i in range(len(signif_pos)):
-			#	print(str(signif_pos[i]) + "\t" + str(signif_vals[i]))
-			#print(str(signif_vals))
-			#print(str(signif_pos))
-			ax.plot(signif_pos, signif_vals, color=colorDict[pop], linestyle='None', marker=".", markersize=.3)#, markersize=1)
-
-
-	plt.savefig(savename)
-	print('saved to: ' + savename)
 	return
 
 ##########
