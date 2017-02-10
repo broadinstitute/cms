@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 12.16.16 	vitti@broadinstitute.org
+## last updated: 02.10.2017 	vitti@broadinstitute.org
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from combine.recalc_func import interpolate_haps, windows, interpolate_from_windows
-from combine.likes_func import get_likesfiles_frommaster
+from combine.input_func import get_likesfiles_frommaster, write_pair_sourcefile, write_run_paramfile
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
 import subprocess
@@ -179,14 +178,6 @@ def execute_win_haps(args):
 	writefilename = args.writefilename
 	windows(windowsize, jumplen, infilename, writefilename)
 	return
-def execute_interpolate_hapscores(args):
-	''' strike '''
-	inputTpedFilename = args.intpedfilename
-	inputIhsFilename = args.inihsfilename
-	inputWinihsFilename = args.inwinihsfilename
-	outputFilename = args.outfilename
-	interpolate_from_windows(inputTpedFilename, inputIhsFilename, inputWinihsFilename, outputFilename)
-	return
 def execute_delihh_from_ihs(args):
 	calc_delihh(args.readfile, args.writefile)
 	return
@@ -203,31 +194,10 @@ def execute_xp_from_ihh(args):
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
-def execute_poppair(args):
-	if args.cmsdir is not None:
-		cmd = args.cmsdir
-	else:
-		cmd = ""
-	cmd += "combine/combine_scores_poppair"
-	if args.xp_reverse_pops:
-		xp_reversed = 0
-	else:
-		xp_reversed = 1
-	if args.fst_deldaf_reverse_pops:
-		deldaf_reversed = 0
-	else:
-		deldaf_reversed = 1
-	argstring = args.in_ihs_file + " "  + args.in_nsl_file + " " + args.in_delihh_file + " " + args.in_xp_file + " " + str(xp_reversed) + " " + args.in_fst_deldaf_file + " " + str(deldaf_reversed) + " " + args.outfile 
-	cmdstring = cmd + " " + argstring
-	if args.printOnly:
-			print(cmdstring)
-	else:
-		subprocess.check_call( cmdstring.split() )	
-	return
 def execute_outgroups(args):
-
+	''' nix this? execute_composite in power.py '''
+	''' composites scores from input components and likelihood tables '''
 	ihs_hit_hi_filename, ihs_miss_hi_filename, nsl_hit_hi_filename, nsl_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
-
 	usefreqs = []
 	if args.likesfile_low is not None:
 		ihs_hit_low_filename, ihs_miss_low_filename, nsl_hit_low_filename, nsl_miss_low_filename, delihh_hit_low_filename, delihh_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low, args.selpop_likes)
@@ -242,23 +212,22 @@ def execute_outgroups(args):
 		cmd = args.cmsdir
 	else:
 		cmd = ""
+	cmd += "combine/combine_scores"
+	argstring = args.outfile 
 	
-		
-	if not args.region: 	#GENOME-WIDE
-		cmd += "combine/combine_scores_multiplepops_filtermaf"
-		argstring = args.outfile 
-	else:	#WITHIN REGION
-		cmd += "combine/combine_scores_multiplepops_region"
-		argstring = args.outfile + " " + str(args.startBp) + " " + str(args.endBp) + " "  
-	
-	for score in ['ihs', 'nsl', 'delihh', 'xpehh', 'fst', 'deldaf']:
-		for dist_type in ['hit', 'miss']:
-			for freq in usefreqs: #['low', 'mid', 'hi']:
-				argument = eval(score + "_" + dist_type + "_" + freq + "_filename")
-				argstring += " " + argument 
+	#for score in ['ihs', 'nsl', 'delihh', 'xpehh', 'fst', 'deldaf']:
+	#	for dist_type in ['hit', 'miss']:
+	#		for freq in usefreqs: #['low', 'mid', 'hi']:
+	#			argument = eval(score + "_" + dist_type + "_" + freq + "_filename")
+	#			argstring += " " + argument 
 
+	argstring += " " + cms_run_paramfilename
+
+
+	#write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
 	for pairfile in args.infiles.split(','):
 		argstring += " " + pairfile
+
 	cmdstring = cmd + " " + argstring
 	if args.printOnly:
 			print(cmdstring)

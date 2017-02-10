@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 1.10.17 	vitti@broadinstitute.org
+// last updated: 2.10.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -301,7 +301,7 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 			else if (itoken == 5) {
 				data->ihs_unnormed[isnp] = atof(token);
 			}			
-			else if (itoken == 10) {
+			else if (itoken == 6) {
 				data->ihs_normed[isnp] = atof(token);
 			}
 			//else if (itoken == 7) {

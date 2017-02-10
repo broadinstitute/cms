@@ -1,19 +1,18 @@
-## script to manipulate and analyze empirical/simulated CMS output
-## last updated 2.7.17 	vitti@broadinstitute.org
-
-from power.power_parser import full_parser_power
-from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, loadregions, quick_plot, get_causal_rank, get_cdf_from_causal_ranks
-from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, writeJobsToTaskArray_fromArglist, check_create_dir, execute, read_pr, write_master_likesfile, get_likesfiles, \
-						get_neutinscorefiles, check_create_file, get_concat_files, plot_dist, readvals_lastcol, get_selinscorefiles, get_pr_filesnames
+##	top-level script to manipulate and analyze empirical/simulated CMS output
+##	last updated 02.10.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
+from power.power_parser import full_parser_power
+from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
+from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
+						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions, \
+						write_pair_sourcefile, write_run_paramfile
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
-#from pybedtools import BedTool
+from pybedtools import BedTool 
 import numpy as np
 import argparse
 import sys
@@ -25,6 +24,22 @@ import os
 
 ########	Manipulate simulated data 
 ########	and provide composite scores.
+def execute_write_master_likes(args):
+	''' from write_master_likes.py'''
+	basedir = args.likes_basedir
+	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
+	selpops = [1, 2, 3, 4]
+	freqs = ['allfreq']#'hi', 'low', 'mid']
+	misses = ["neut"]#, "linked"]
+	for model in models:
+		for selpop in selpops:
+			for freq in freqs:
+				for miss in misses:					
+					writefiledir = basedir + model + "/master/"
+					check_create_dir(writefiledir)
+					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
+					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
+	return
 def execute_run_neut_sims(args):
 	'''from run_additional_sims.py'''
 	cmd = "coalescent"
@@ -420,62 +435,53 @@ def execute_sel_norm_from_binfile(args):
 def execute_composite_sims(args):
 	model = args.model
 	selpop = args.simpop
-	likessuffix = args.likessuffix
 	likesdir = args.likes_basedir
 	cmsdir = args.cmsdir
 	writedir = args.writedir
-	numPerBin = args.nrep
+	numPerBin_sel = args.nrep_sel
+	numPerBin_neut = args.nrep_neut
+	suffix = args.suffix
 
-	cmd = "python " + cmsdir + "composite.py outgroups"
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores"
 
-	hi_likesfile = get_likesfiles(model, selpop, likessuffix, likesdir, allfreqs=True)
-	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
+	#cmd = "python " + cmsdir + "composite.py outgroups"
+	#hi_likesfile = get_likesfiles(model, selpop, likesdir, allfreqs=True)
+	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
 	
-	"""
+	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
+	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
+	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
+	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
+	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
+	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
+
+	paramfilename = likesdir + "run_params.txt" + suffix
+	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
+	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
+
+	altpops = [1, 2, 3, 4]
+	selpop = int(selpop)
+	altpops.remove(selpop)
+
 	#ALL SEL SIMS
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	for sel_freq_bin in sel_freq_bins:
-
-		scoremodeldir = writedir + "scores/" + model + "/"
-		pairdir = scoremodeldir + "sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/pairs/"
+		scoremodeldir = writedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
 		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
 		check_create_dir(compositedir)
-		for irep in range(1, numPerBin +1):
-			inscorefilelist = get_selinscorefiles(model, selpop, sel_freq_bin, irep, pairbasedir = writedir) 
-			if len(inscorefilelist) > 0:
-				scorefilelist = ""
-				for filename in inscorefilelist:
-					scorefilelist += filename + ","
-				scorefilelist = scorefilelist[:-1]
-				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + "_maf"
-				alreadyExists = False
-				if args.checkOverwrite:
-					if not os.path.isfile(outfile): #check for overwrite
-						alreadyExists = False
-					else:
-						alreadyExists = True				
-				if alreadyExists == False:
-					argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
-					fullcmd = cmd + " " + argstring
-					print(fullcmd)
-					execute(fullcmd)
-	"""
-	
-	#ALL NEUT
-	scoremodeldir = writedir + "scores/" + model + "/"
-	pairdir = scoremodeldir + "neut/pairs/"
-	compositedir = writedir + "composite/" + model + "/neut/"
-	check_create_dir(compositedir)
+		for irep in range(1, numPerBin_sel +1):
+			altpairs = []
+			for altpop in altpops:
+				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
+				pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
 
-	for irep in range(1, numPerBin +1):	
-		neutinscorefilelist = get_neutinscorefiles(model, selpop, irep, writedir + "scores/") 
-		if len(neutinscorefilelist) > 0:
-			scorefilelist = ""
-			for filename in neutinscorefilelist:
-				scorefilelist += filename + ","
-			scorefilelist = scorefilelist[:-1]
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" #+ "_maf"
-			
+			outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -483,11 +489,42 @@ def execute_composite_sims(args):
 				else:
 					alreadyExists = True				
 			if alreadyExists == False:
-				argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile +" "
+				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				execute(fullcmd)
-	print("end composite") #debug
+
+	
+	#ALL NEUT
+	scoremodeldir = writedir + "scores/" + model + "/neut/"
+	compositedir = writedir + "composite/" + model + "/neut/"
+	check_create_dir(compositedir)
+	for irep in range(1, numPerBin_neut +1):	
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+			altpairs.append(pairfilename)
+
+		outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+		alreadyExists = False
+		if args.checkOverwrite:
+			if not os.path.isfile(outfile): #check for overwrite
+				alreadyExists = False
+			else:
+				alreadyExists = True				
+		if alreadyExists == False:
+			#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+			argstring = outfile + " " + paramfilename + " "
+			for pairfile in altpairs:
+				argstring += pairfile + " "
+			fullcmd = cmd + " " + argstring
+			print(fullcmd)
+			execute(fullcmd)
 	return
 def execute_normsims(args):
 	model = args.model
@@ -502,8 +539,6 @@ def execute_normsims(args):
 	##############################
 	for irep in range(1, numPerNeutBin +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
-		#print(outfile)
-		#outfile = outfile + "_maf"
 		if os.path.isfile(outfile):
 			openfile = open(outfile, 'r')
 			for line in openfile:
@@ -570,22 +605,6 @@ def execute_normsims(args):
 					writefile.close()
 	print("wrote to eg: " + normedfile)	
 	return
-def execute_write_master_likes(args):
-	''' from write_master_likes.py'''
-	basedir = args.likes_basedir
-	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
-	selpops = [1, 2, 3, 4]
-	freqs = ['allfreq']#'hi', 'low', 'mid']
-	misses = ["neut"]#, "linked"]
-	for model in models:
-		for selpop in selpops:
-			for freq in freqs:
-				for miss in misses:					
-					writefiledir = basedir + model + "/master/"
-					check_create_dir(writefiledir)
-					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
-					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
-	return
 
 ########	Manipulate empirical data
 ########	and provide composite scores
@@ -594,7 +613,7 @@ def execute_composite_emp(args):
 	cmsdir = args.cmsdir
 	basedir = args.basedir
 	likesdir = args.likes_basedir
-	likessuffix = args.likessuffix
+	suffix = args.likessuffix
 	model = args.model
 	selPop = args.emppop
 	modelPop = args.simpop
@@ -604,7 +623,8 @@ def execute_composite_emp(args):
 	hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
 	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile
 	for chrom in chroms:
-		inscorefilelist = get_pairfiles(chrom, selpop) 
+		print("JV: restructure input;")
+		inscorefilelist = []#get_pairfiles(chrom, selpop) 
 		if len(inscorefilelist) > 0:
 			scorefilelist = ""
 			for filename in inscorefilelist:
@@ -625,7 +645,6 @@ def execute_composite_emp(args):
 def execute_normemp(args):
 	selpop = args.emppop
 	model = args.model
-	#likessuffix = args.likessuffix
 	suffix = args.suffix
 	
 	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix)
@@ -717,7 +736,7 @@ def execute_distviz(args):
 		savefilename = args.savefilename
 		infilename = args.oneFile
 		if os.path.isfile(infilename):
-			values = readvals_lastcol(infilename)
+			values = read_vals_lastcol(infilename)
 			plot_dist(values, savefilename)
 
 	#########################
@@ -733,18 +752,14 @@ def execute_distviz(args):
 
 		for model in models:		
 			for pop in modelpops:
-				#savefilename = "/web/personal/vitti/sim_dists/" + model + "_" + str(pop) + ".png"
 				allvals = []
-
 				#NEUT REPS
 				for irep in range(1, reps+1):
 					filebase = "/idi/sabeti-scratch/jvitti/clean/scores/"
 					infilename = filebase + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out"
-					#print(infilename)
 					if os.path.isfile(infilename):
-						values = readvals_lastcol(infilename)
+						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
-				#print(allvals)
 				plot_dist(allvals, "/web/personal/vitti/sim_dists/" + model +"_" + str(pop) + "_justneut.png")
 
 				#SEL REPS
@@ -752,7 +767,7 @@ def execute_distviz(args):
 				#	for irep in range(1,501):
 				#		infilename = filebase + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/rep" + str(irep) + "_" + str(pop) + "_vsneut.cms.out"
 				#		if os.path.isfile(infilename):
-				#			values = readvals_lastcol(infilename)
+				#			values = read_vals_lastcol(infilename)
 				#			allvals.extend(values)
 			
 				#plot_dist(allvals, savefilename)
@@ -768,40 +783,151 @@ def execute_distviz(args):
 				for chrom in chroms:
 					infilename = filebase + pop + "_" + model + "_" + "neut" + ".chr" + str(chrom) + ".txt"
 					if os.path.isfile(infilename):
-						values = readvals_lastcol(infilename)
+						values = read_vals_lastcol(infilename)
 						allvals.extend(values)
 				plot_dist(allvals, savefilename)
-
-
-
-	"""
-	''' view distribution of (currently) unnormalized cms_gw scores '''
+	return
+def execute_manhattan(args):
+	selpop = args.emppop
 	model = args.model
 	savename = args.savefilename
-	if args.normed_cms:
-		normed = True
-	else:
-		normed = False
-	if args.sim:
-		pop = args.simpop
-		values = load_simscores(model, pop, normed=normed)
-	elif args.emp:
-		pop = args.emppop
-		likessuffix = args.likessuffix
-		values = load_empscores(model, pop, likessuffix, normed=normed)
+	suffix = args.suffix
+	#nRep = args.nrep
+	###############################
+	### LOAD NEUTRAL SIM VALUES ###
+	###############################
+	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
+	pop = modelpops[selpop]
 
-	if normed==False:
-		print('taking log of raw scores...')
-		#print(values[0])
-		logvalues = [np.log(item) for item in values if not np.isnan(item)]
-		#print(logvalues[0])
-		values = logvalues
+	#EXPERIMENTAL
+	#This is not how Shari actually normalized for figure 1 2013.
+	#if args.poolModels:
+	#	all_neut_rep_scores = []
+	#	for model in ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']:
+	#		neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
+	#		all_neut_rep_scores.extend(neut_rep_scores)
+	#	neut_rep_scores = all_neut_rep_scores
+	#else:
+	#	neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
+	#print('loaded ' + str(len(neut_rep_scores)) + ' neut simscores...') 
+	neut_rep_scores = []
 
+	#############################
+	### LOAD EMPIRICAL VALUES ###
+	#############################
+	all_emp_pos, all_emp_scores = [], []
+	nSnps = 0
+	for chrom in range(1,23):
+		thesepos, thesescores = [], []
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
+		if not os.path.isfile(emp_cms_filename):
+			print("missing: " + emp_cms_filename)
+			break
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+		all_emp_pos.append(physpos)
+		all_emp_scores.append(cms_normed)
+
+	###########################
+	### DRAW MANHATTAN PLOT ###
+	###########################
 	f, ax = plt.subplots(1)
-	ax.hist(values, bins=1000)
+	if args.zscores:
+		calc_zscores = True
+	else:
+		calc_zscores = False
+
+	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
+
 	plt.savefig(savename)
-	print('plotted to ' + savename)
-	"""
+	print('saved to: ' + savename)
+	return
+def execute_extended_manhattan(args):
+	plotscore = args.plotscore
+	selpop = args.emppop
+	model = args.model
+	suffix = args.suffix
+	savename = args.savefilename
+	dpi = args.dpi
+	numChr = 22
+	titlestring = args.titlestring
+
+	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
+	pop = modelpops[selpop]
+	#colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'} #1000 Genomes group color scheme
+	colorDict = {1:'#cec627', 2:'#0EBFF0', 3:'#65ff00', 4:'#8B08B0'} #make it pop-!
+	
+
+	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, dpi=dpi, figsize=(7, 10))
+	plt.suptitle(titlestring, fontsize=10)
+
+	plt.xlabel('position')
+	plt.ylabel('cms_gw normed score')
+
+	all_emp_pos, all_emp_scores = [], []
+	for chrom in range(1,numChr +1):
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
+		if not os.path.isfile(emp_cms_filename):
+			print("missing: " + emp_cms_filename)
+			break
+		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
+
+		iax = chrom-1
+		ax = axarr[iax]
+		#ax.grid()
+		plot_data = eval(plotscore)
+		plotManhattan_extended(ax, plot_data, physpos, chrom)
+		all_emp_pos.append(physpos)
+		all_emp_scores.append(plot_data)
+
+	################################
+	## HILITE SIGNIFICANT REGIONS ##
+	################################
+
+	if args.regionsfile is not None:
+		regionchrs, regionstarts, regionends = load_regions(args.regionsfile)
+		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
+		for iregion in range(len(regionchrs)):
+			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
+			this_chrom = int(regionchr.strip('chr'))
+			ichrom = this_chrom-1
+			chrompos, chromscores = all_emp_pos[ichrom], all_emp_scores[ichrom]
+			zipped = zip(chrompos, chromscores)
+			plotpos, plotvals = [], []
+			for locus in zipped:
+				if locus[0] >= regionstart:
+					plotpos.append(locus[0])
+					plotvals.append(locus[1])
+				if locus[0] > regionend:
+					break
+			axarr[ichrom].plot(plotpos, plotvals, color=colorDict[pop], markersize=1)
+
+	if args.percentile is not None:
+		percentile = float(args.percentile)
+		print('plotting data with heuristic cutoff for ' + str(percentile) + " percentile...")
+		flat_emp_scores = [item for sublist in all_emp_scores for item in sublist if not np.isnan(item)]
+		score_cutoff = float(np.percentile(flat_emp_scores, percentile))
+		print("score cutoff: " + str(score_cutoff))
+		for chrom in range(1,numChr +1):
+			iax = chrom-1
+			ax = axarr[iax]
+			maximumVal = ax.get_xlim()[1]
+			xpoints = np.array([0, maximumVal])
+			ypoints = np.array([score_cutoff, score_cutoff])
+			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="red", markersize=.3)
+
+			#get empirical scores and positions for pass threshhold and plot them as above with color
+			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
+			zipped =  zip(these_scores, these_pos)
+			significant = [item for item in zipped if item[0] >= score_cutoff]
+			signif_vals = [item[0] for item in significant]
+			signif_pos = [item[1] for item in significant]
+			ax.plot(signif_pos, signif_vals, color=colorDict[pop], linestyle='None', marker=".", markersize=.3)#, markersize=1)
+
+	plt.savefig(savename)
+	print('saved to: ' + savename)
 	return
 
 ########	Quantify and visualize power
@@ -964,8 +1090,6 @@ def execute_roc(args):
 	plot_roc = args.plot_curve
 	find_opt = args.find_opt
 	maxFPR = args.maxFPR
-	#fprloc = args.fprloc
-	#tprloc = args.tprloc
 	writedir = args.writedir
 
 	regionlens = [10000, 25000, 50000, 100000]
@@ -986,11 +1110,6 @@ def execute_roc(args):
 					allpops_fpr, allpops_tpr = [], []
 					for pop in pops:
 						this_key = (regionlen, percentage, cutoff, model, pop)
-						#fprfile = "/idi/sabeti-scratch/jvitti/clean/fpr/fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt_maf"
-						#fprfile = fprloc + "fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
-						#tprfile = "/idi/sabeti-scratch/jvitti/scores/tpr/maf/composite_nsl_noihs_maf_tpr_" + model + "_" + str(pop) + "_neut_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + ".txt"
-						#tprloc + tprloc + "sel_tpr_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
-						#print(tprfile)
 						fprfile, tprfile = get_pr_filesnames(this_key, writedir)
 						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
 							fpr = read_pr(fprfile)
@@ -1068,7 +1187,6 @@ def execute_gw_regions(args):
 	cutoff = args.cutoff
 	pop = args.emppop
 	windowlen = args.regionlen
-	#vs = args.likessuffix
 	suffix = args.suffix
 
 	chroms = range(1,23)
@@ -1122,8 +1240,7 @@ def execute_gw_regions(args):
 				writeline = "chr" + str(chromnum) + "\t" + str(starts[iregion]) + "\t" + str(ends[iregion]) + '\n'
 				writefile.write(writeline)
 		writefile.close()
-		print('wrote to ' + writefilename)
-	
+		print('wrote to ' + writefilename)	
 	return
 def execute_regionlog(args):
 	''' writes an excel file '''
@@ -1133,7 +1250,6 @@ def execute_regionlog(args):
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
 		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_regions/" + model + "/" + pop + "_" + str(int(args.regionlen)) + "_" + str(int(args.thresshold)) + "_" + str(int(args.cutoff)) + ".txt" #or _alt
-		#regionfilename = "/idi/sabeti-scratch/jvitti/cms2_power/regions/regions_103116_" + str(pop) +"_" + (args.model) + "_" + str(args.likessuffix) +"_" + str(int(args.regionlen)) + "_" + str(int(args.thresshold)) + "_" + str(args.cutoff) + ".txt"
 		print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
@@ -1211,157 +1327,6 @@ def execute_regionlog(args):
 	book.save(args.saveLog)
 	book.save(TemporaryFile())
 	print('wrote ' + str(totalselregions) + ' significant regions to: ' + args.saveLog)
-	return
-def execute_manhattan(args):
-	selpop = args.emppop
-	model = args.model
-	#likessuffix = args.likessuffix
-	savename = args.savefilename
-	suffix = args.suffix
-	#nRep = args.nrep
-	###############################
-	### LOAD NEUTRAL SIM VALUES ###
-	###############################
-	#if likessuffix == "neut":
-	#	vsNeut = True
-	#elif likessuffix == "linked":
-	#	vsNeut = False
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
-	pop = modelpops[selpop]
-
-	#EXPERIMENTAL
-	#This is not how Shari actually normalized for figure 1 2013.
-	#if args.poolModels:
-	#	all_neut_rep_scores = []
-	#	for model in ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']:
-	#		neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#		all_neut_rep_scores.extend(neut_rep_scores)
-	#	neut_rep_scores = all_neut_rep_scores
-	#else:
-	#	neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#print('loaded ' + str(len(neut_rep_scores)) + ' neut simscores...') 
-	neut_rep_scores = []
-
-	#############################
-	### LOAD EMPIRICAL VALUES ###
-	#############################
-	all_emp_pos, all_emp_scores = [], []
-	nSnps = 0
-	for chrom in range(1,23):
-		thesepos, thesescores = [], []
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
-		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
-			break
-		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
-		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
-		all_emp_pos.append(physpos)
-		all_emp_scores.append(cms_normed)
-
-	###########################
-	### DRAW MANHATTAN PLOT ###
-	###########################
-	f, ax = plt.subplots(1)
-	if args.zscores:
-		calc_zscores = True
-	else:
-		calc_zscores = False
-
-	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
-
-	plt.savefig(savename)
-	print('saved to: ' + savename)
-	return
-def execute_extended_manhattan(args):
-	plotscore = args.plotscore
-	selpop = args.emppop
-	model = args.model
-	suffix = args.suffix
-	savename = args.savefilename
-	numChr = 22
-	titlestring = args.titlestring
-
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
-	pop = modelpops[selpop]
-	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
-
-	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, figsize=(7, 7))
-	plt.suptitle(titlestring, fontsize=10)
-
-	plt.xlabel('position')
-	plt.ylabel('cms_gw normed score')
-
-	all_emp_pos, all_emp_scores = [], []
-	for chrom in range(1,numChr +1):
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
-		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
-			break
-		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
-
-		iax = chrom-1
-		ax = axarr[iax]
-		plot_data = eval(plotscore)
-		plotManhattan_extended(ax, plot_data, physpos, chrom)
-		all_emp_pos.append(physpos)
-		all_emp_scores.append(plot_data)
-
-	################################
-	## HILITE SIGNIFICANT REGIONS ##
-	################################
-
-	if args.regionsfile is not None:
-		regionchrs, regionstarts, regionends = loadregions(args.regionsfile)
-		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
-		for iregion in range(len(regionchrs)):
-			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
-			this_chrom = int(regionchr.strip('chr'))
-			ichrom = this_chrom-1
-			chrompos, chromscores = all_emp_pos[ichrom], all_emp_scores[ichrom]
-			zipped = zip(chrompos, chromscores)
-			plotpos, plotvals = [], []
-			for locus in zipped:
-				if locus[0] >= regionstart:
-					plotpos.append(locus[0])
-					plotvals.append(locus[1])
-				if locus[0] > regionend:
-					break
-			axarr[ichrom].plot(plotpos, plotvals, color=colorDict[pop], markersize=1)
-			#axarr[ichrom].plot([regionstart, regionend], [0, 0], color="red")
-
-
-	if args.percentile is not None:
-		percentile = float(args.percentile)
-		print('plotting data with heuristic cutoff for ' + str(percentile) + " percentile...")
-		flat_emp_scores = [item for sublist in all_emp_scores for item in sublist if not np.isnan(item)]
-		score_cutoff = float(np.percentile(flat_emp_scores, percentile))
-		print("score cutoff: " + str(score_cutoff))
-		for chrom in range(1,numChr +1):
-			iax = chrom-1
-			ax = axarr[iax]
-			maximumVal = ax.get_xlim()[1]
-			xpoints = np.array([0, maximumVal])
-			ypoints = np.array([score_cutoff, score_cutoff])
-			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="grey", markersize=.3)
-
-			#get empirical scores and positions for pass threshhold and plot them as above with color
-			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
-			zipped =  zip(these_scores, these_pos)
-			significant = [item for item in zipped if item[0] >= score_cutoff]
-			#print(str(len(significant)))
-			signif_vals = [item[0] for item in significant]
-			signif_pos = [item[1] for item in significant]
-			#for i in range(len(signif_pos)):
-			#	print(str(signif_pos[i]) + "\t" + str(signif_vals[i]))
-			#print(str(signif_vals))
-			#print(str(signif_pos))
-			ax.plot(signif_pos, signif_vals, color=colorDict[pop], linestyle='None', marker=".", markersize=.3)#, markersize=1)
-
-
-	plt.savefig(savename)
-	print('saved to: ' + savename)
 	return
 
 ##########

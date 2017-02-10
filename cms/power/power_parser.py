@@ -1,5 +1,5 @@
-## structures input to various functions of the script, power.py
-## last updated 2.07.17
+##	defines command-line interface for power.py
+##	last updated 02.10.2017	vitti@broadinstitute.org
 
 import argparse
 
@@ -25,7 +25,7 @@ def full_parser_power():
 		run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/idi/sabeti-scratch/jvitti/params/test_recom.recom")
 
 	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
-	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)")
+	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)")
 	run_norm_neut_repscores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)")
 	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
 	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
@@ -35,21 +35,16 @@ def full_parser_power():
 
 	for selbin_parser in [run_sel_sims_parser, sel_norm_from_binfile_parser]:
 		selbin_parser.add_argument('--selbin', action="store")
-	
-	run_poppair_parser = subparsers.add_parser('run_poppair', help='collate component scores by population pair')
-	run_poppair_parser.add_argument('--altpop', action='store')
-	run_poppair_parser.add_argument('--scorebase', action='store', default="/n/regal/sabeti_lab/jvitti/clear/scores/")
 
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
-	normsims_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
-	normsims_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
+	for sim_parser in [composite_sims_parser, normsims_parser]:
+		sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
+		sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
 	#############################
 	## LIKELIHOODS FROM SCORES ##
 	#############################
-	run_likes_parser = subparsers.add_parser('run_likes') # HPASE OUT
-	run_likes_comp_parser = subparsers.add_parser('run_likes_comp')	 #PHASE OUT
 	write_master_likes_parser = subparsers.add_parser('write_master_likes', help="write file for demographic scenario and population pointing to files for all score likelihoods")
 
 	#####################
@@ -81,7 +76,6 @@ def full_parser_power():
 	roc_parser.add_argument('--find_opt', action="store_true", default=False)
 	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
 	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
-	
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
@@ -99,23 +93,17 @@ def full_parser_power():
 	extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
 	extended_manhattan_parser.add_argument('--percentile', help="percentile to hilite")
 	extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
-
-
+	extended_manhattan_parser.add_argument('--dpi', help="resolution for matplotlib", type=int, default=100)
 
 	##################
 	## SHARED ARGS ###
 	##################
 
 	for write_parser in [run_neut_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, 
-			run_poppair_parser, composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser,
+			composite_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser,
 			normsims_parser, fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
-
-	for makelikes_parser in [run_likes_parser, run_likes_comp_parser]:
-		makelikes_parser.add_argument('numPerBin', type=int, action='store', default=1000, help="number of replicates in each bin")
-		makelikes_parser.add_argument('selPos', type=int, action='store', default=500000, help="position of the causal allele in simulates")
-		makelikes_parser.add_argument('numLikesBins', type=int, action='store', default=60, help='number of histogram bins')
 
 	for uselikes_parser in [write_master_likes_parser, composite_sims_parser, composite_emp_parser]:
 		uselikes_parser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
@@ -127,23 +115,23 @@ def full_parser_power():
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
 
 	for sim_parser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, tpr_parser, run_neut_repscores_parser,run_norm_neut_repscores_parser, norm_from_binfile_parser, composite_sims_parser, 
-						run_neut_sims_parser, run_poppair_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
+						run_neut_sims_parser, run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		sim_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
 
 	for emp_parser in [normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 
-	for suffixed_parser in [normsims_parser, fpr_parser, tpr_parser, cdf_parser, normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+	for suffixed_parser in [composite_sims_parser, normsims_parser, fpr_parser, tpr_parser, cdf_parser, normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
 
 	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
 
-	for run_cms_parser in [run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, run_poppair_parser, composite_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
+	for run_cms_parser in [run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, composite_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		run_cms_parser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 
 	for commonparser in [normsims_parser, repviz_parser, distviz_parser, fpr_parser, normemp_parser, gw_regions_parser, manhattan_parser, run_norm_neut_repscores_parser,norm_from_binfile_parser,
-						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, run_poppair_parser, 
+						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, run_neut_sims_parser, run_neut_repscores_parser, composite_sims_parser, 
 						run_sel_sims_parser, run_sel_repscores_parser, sel_norm_from_binfile_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
