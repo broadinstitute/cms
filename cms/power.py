@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.09.2017	vitti@broadinstitute.org
+##	last updated 02.10.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -8,7 +8,8 @@ from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
 						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
 from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions
+						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions, \
+						write_pair_sourcefile, write_run_paramfile
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
 from pybedtools import BedTool 
@@ -434,61 +435,53 @@ def execute_sel_norm_from_binfile(args):
 def execute_composite_sims(args):
 	model = args.model
 	selpop = args.simpop
-	likessuffix = args.likessuffix
 	likesdir = args.likes_basedir
 	cmsdir = args.cmsdir
 	writedir = args.writedir
-	numPerBin = args.nrep
+	numPerBin_sel = args.nrep_sel
+	numPerBin_neut = args.nrep_neut
+	suffix = args.suffix
 
-	cmd = "python " + cmsdir + "composite.py outgroups"
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores"
 
-	hi_likesfile = get_likesfiles(model, selpop, likessuffix, likesdir, allfreqs=True)
-	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
+	#cmd = "python " + cmsdir + "composite.py outgroups"
+	#hi_likesfile = get_likesfiles(model, selpop, likesdir, allfreqs=True)
+	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
 	
-	"""
+	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
+	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
+	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
+	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
+	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
+	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
+
+	paramfilename = likesdir + "run_params.txt" + suffix
+	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
+	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
+
+	altpops = [1, 2, 3, 4]
+	selpop = int(selpop)
+	altpops.remove(selpop)
+
 	#ALL SEL SIMS
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	for sel_freq_bin in sel_freq_bins:
-
-		scoremodeldir = writedir + "scores/" + model + "/"
+		scoremodeldir = writedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
 		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
 		check_create_dir(compositedir)
-		for irep in range(1, numPerBin +1):
-			inscorefilelist = []#get_selinscorefiles(model, selpop, sel_freq_bin, irep) 
-			if len(inscorefilelist) > 0:
-				scorefilelist = ""
-				for filename in inscorefilelist:
-					scorefilelist += filename + ","
-				scorefilelist = scorefilelist[:-1]
-				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + "_maf"
-				alreadyExists = False
-				if args.checkOverwrite:
-					if not os.path.isfile(outfile): #check for overwrite
-						alreadyExists = False
-					else:
-						alreadyExists = True				
-				if alreadyExists == False:
-					argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
-					fullcmd = cmd + " " + argstring
-					print(fullcmd)
-					execute(fullcmd)
-	"""
-	
-	#ALL NEUT
-	scoremodeldir = writedir + "scores/" + model + "/"
-	compositedir = writedir + "composite/" + model + "/neut/"
-	check_create_dir(compositedir)
+		for irep in range(1, numPerBin_sel +1):
+			altpairs = []
+			for altpop in altpops:
+				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
+				pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
 
-	for irep in range(1, numPerBin +1):	
-		neutinscorefilelist = []#get_neutinscorefiles(model, selpop, irep, writedir + "scores/") 
-		print('restructure input')
-		if len(neutinscorefilelist) > 0:
-			scorefilelist = ""
-			for filename in neutinscorefilelist:
-				scorefilelist += filename + ","
-			scorefilelist = scorefilelist[:-1]
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) +".cms.out" #+ "_maf"
-			
+			outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -496,11 +489,42 @@ def execute_composite_sims(args):
 				else:
 					alreadyExists = True				
 			if alreadyExists == False:
-				argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile +" "
+				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				execute(fullcmd)
-	print("end composite") #debug
+
+	
+	#ALL NEUT
+	scoremodeldir = writedir + "scores/" + model + "/neut/"
+	compositedir = writedir + "composite/" + model + "/neut/"
+	check_create_dir(compositedir)
+	for irep in range(1, numPerBin_neut +1):	
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+			altpairs.append(pairfilename)
+
+		outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+		alreadyExists = False
+		if args.checkOverwrite:
+			if not os.path.isfile(outfile): #check for overwrite
+				alreadyExists = False
+			else:
+				alreadyExists = True				
+		if alreadyExists == False:
+			#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+			argstring = outfile + " " + paramfilename + " "
+			for pairfile in altpairs:
+				argstring += pairfile + " "
+			fullcmd = cmd + " " + argstring
+			print(fullcmd)
+			execute(fullcmd)
 	return
 def execute_normsims(args):
 	model = args.model
@@ -515,8 +539,6 @@ def execute_normsims(args):
 	##############################
 	for irep in range(1, numPerNeutBin +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
-		#print(outfile)
-		#outfile = outfile + "_maf"
 		if os.path.isfile(outfile):
 			openfile = open(outfile, 'r')
 			for line in openfile:
@@ -827,14 +849,17 @@ def execute_extended_manhattan(args):
 	model = args.model
 	suffix = args.suffix
 	savename = args.savefilename
+	dpi = args.dpi
 	numChr = 22
 	titlestring = args.titlestring
 
 	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
 	pop = modelpops[selpop]
-	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
+	#colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'} #1000 Genomes group color scheme
+	colorDict = {1:'#cec627', 2:'#0EBFF0', 3:'#65ff00', 4:'#8B08B0'} #make it pop-!
+	
 
-	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, figsize=(7, 7))
+	f, axarr = plt.subplots(numChr, 1, sharex = True, sharey=True, dpi=dpi, figsize=(7, 10))
 	plt.suptitle(titlestring, fontsize=10)
 
 	plt.xlabel('position')
@@ -851,6 +876,7 @@ def execute_extended_manhattan(args):
 
 		iax = chrom-1
 		ax = axarr[iax]
+		#ax.grid()
 		plot_data = eval(plotscore)
 		plotManhattan_extended(ax, plot_data, physpos, chrom)
 		all_emp_pos.append(physpos)
@@ -890,7 +916,7 @@ def execute_extended_manhattan(args):
 			maximumVal = ax.get_xlim()[1]
 			xpoints = np.array([0, maximumVal])
 			ypoints = np.array([score_cutoff, score_cutoff])
-			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="grey", markersize=.3)
+			ax.plot(xpoints, ypoints ,linestyle = "dotted", color="red", markersize=.3)
 
 			#get empirical scores and positions for pass threshhold and plot them as above with color
 			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
@@ -1064,8 +1090,6 @@ def execute_roc(args):
 	plot_roc = args.plot_curve
 	find_opt = args.find_opt
 	maxFPR = args.maxFPR
-	#fprloc = args.fprloc
-	#tprloc = args.tprloc
 	writedir = args.writedir
 
 	regionlens = [10000, 25000, 50000, 100000]
@@ -1086,11 +1110,6 @@ def execute_roc(args):
 					allpops_fpr, allpops_tpr = [], []
 					for pop in pops:
 						this_key = (regionlen, percentage, cutoff, model, pop)
-						#fprfile = "/idi/sabeti-scratch/jvitti/clean/fpr/fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt_maf"
-						#fprfile = fprloc + "fpr_composite_nsl_noihs_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
-						#tprfile = "/idi/sabeti-scratch/jvitti/scores/tpr/maf/composite_nsl_noihs_maf_tpr_" + model + "_" + str(pop) + "_neut_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + ".txt"
-						#tprloc + tprloc + "sel_tpr_" + model + "_" + str(pop) + "_" + "neut" + "_" + str(regionlen) +"_" + str(percentage) + "_"+ str(cutoff) +".txt"
-						#print(tprfile)
 						fprfile, tprfile = get_pr_filesnames(this_key, writedir)
 						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
 							fpr = read_pr(fprfile)

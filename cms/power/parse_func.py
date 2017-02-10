@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 02.08.2017	vitti@broadinstitute.org
+##	last updated 02.10.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -7,6 +7,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 import subprocess
 import os
+
+###################
+## COLLATE FILES ##
+###################
+def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
+	openfile = open(writefilename, 'w')
+	openfile.write(ihsfilename+ "\n")
+	openfile.write(delihhfilename+ "\n")
+	openfile.write(nslfilename+ "\n")
+	openfile.write(xpehhfilename+ "\n")
+	openfile.write(freqsfilename+ "\n")
+	openfile.close()
+	return writefilename
+def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile,
+	fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline):
+	if not os.path.isfile(writefilename):
+		openfile = open(writefilename, 'w')
+		openfile.write(ihs_master_likesfile + "\n")
+		openfile.write(nsl_master_likesfile + "\n") #CHANGE ORDER
+		openfile.write(delihh_master_likesfile + "\n")
+		openfile.write(xpehh_master_likesfile + "\n")
+		openfile.write(fst_master_likesfile + "\n")
+		openfile.write(deldaf_master_likesfile + "\n")	
+		openfile.write(cutoffline + "\n")
+		openfile.write(includeline + "\n")		
+		openfile.close()
+	return writefilename
 
 ##################
 ## LOCATE FILES ##
@@ -50,11 +77,11 @@ def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabe
 	return repfilename
 def get_sel_repfile_name(model, irep, pop, freqbin, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix =""):
 	""" locate simulated composite score file in scenario with selection """
-	repfilename = basedir +"composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
+	repfilename = basedir + "composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
-def get_likesfiles(model, selpop, likessuffix, likesdir, allfreqs = True):
+def get_likesfiles(model, selpop, likesdir, allfreqs = True, likessuffix= "neut"):
 	""" locates master likelihood files for CMS component scores """
 	if not allfreqs:
 		hi_likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_hi_vs_" + likessuffix + ".txt"

@@ -1,5 +1,5 @@
 ##	defines command-line interface for power.py
-##	last updated 02.08.2017	vitti@broadinstitute.org
+##	last updated 02.10.2017	vitti@broadinstitute.org
 
 import argparse
 
@@ -38,8 +38,9 @@ def full_parser_power():
 
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
-	normsims_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
-	normsims_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
+	for sim_parser in [composite_sims_parser, normsims_parser]:
+		sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
+		sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
 	#############################
 	## LIKELIHOODS FROM SCORES ##
@@ -92,6 +93,7 @@ def full_parser_power():
 	extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
 	extended_manhattan_parser.add_argument('--percentile', help="percentile to hilite")
 	extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
+	extended_manhattan_parser.add_argument('--dpi', help="resolution for matplotlib", type=int, default=100)
 
 	##################
 	## SHARED ARGS ###
@@ -119,7 +121,7 @@ def full_parser_power():
 	for emp_parser in [normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 
-	for suffixed_parser in [normsims_parser, fpr_parser, tpr_parser, cdf_parser, normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+	for suffixed_parser in [composite_sims_parser, normsims_parser, fpr_parser, tpr_parser, cdf_parser, normemp_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
 
 	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:

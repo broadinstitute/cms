@@ -1,5 +1,5 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 02.08.2017	vitti@broadinstitute.org
+##	last updated 02.09.2017	vitti@broadinstitute.org
 
 import numpy as np
 import math
@@ -65,8 +65,7 @@ def check_rep_windows(physpos, scores, windowlen = 100000, cutoff = 3, totalchrl
 			numWindows +=1
 		else:
 			#print(str(physpos[isnp]) + "\t")
-			break
-	#print(str(isnp) + " out of " + str(numSnps))		
+			break		
 	for iPos in range(numWindows): 
 		window_scores = get_window(iPos, physpos, scores, windowlen)
 		percentage = check_outliers(window_scores, cutoff)
@@ -194,8 +193,9 @@ def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal 
 	return ax
 def plotManhattan_extended(ax, emp_scores, chrom_pos, chrom):
 	''' makes a figure more like in Karlsson 2013 instead of Grossman 2013'''
-	ax.plot(chrom_pos, emp_scores, linestyle='None', marker=".", markersize=.3, color="grey")
+	ax.plot(chrom_pos, emp_scores, linestyle='None', marker=".", markersize=.3, color="black")
 	ax.set_ylabel('chr' + str(chrom), fontsize=6, rotation='horizontal')
 	labels = ax.get_yticklabels()
 	ax.set_yticklabels(labels, fontsize=6)
+	ax.set_axis_bgcolor('LightGray')
 	return ax

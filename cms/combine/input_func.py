@@ -54,27 +54,3 @@ def get_likesfiles_frommaster(masterfile, modelselpop, vs="neut"):
 		fst_hit_filename, fst_miss_filename = fst_selfiles[0], fst_neutfiles[0]	
 		deldaf_hit_filename, deldaf_miss_filename = deldaf_selfiles[0], deldaf_neutfiles[0]
 	return ihs_hit_filename, ihs_miss_filename, nsl_hit_filename, nsl_miss_filename, delihh_hit_filename, delihh_miss_filename,  xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename
-def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
-	if not os.path.isfile(writefilename):
-		openfile = open(writefilename, 'w')
-		openfile.write(ihsfilename+ "\n")
-		openfile.write(delihhfilename+ "\n")
-		openfile.write(nslfilename+ "\n")
-		openfile.write(xpehhfilename+ "\n")
-		openfile.write(freqsfilename+ "\n")
-		openfile.close()
-	return writefilename
-def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile,
-	fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline):
-	if not os.path.isfile(writefilename):
-		openfile = open(writefilename, 'w')
-		openfile.write(ihs_master_likesfile + "\n")
-		openfile.write(nsl_master_likesfile + "\n") #CHANGE ORDER
-		openfile.write(delihh_master_likesfile + "\n")
-		openfile.write(xpehh_master_likesfile + "\n")
-		openfile.write(fst_master_likesfile + "\n")
-		openfile.write(deldaf_master_likesfile + "\n")	
-		openfile.write(cutoffline + "\n")
-		openfile.write(includeline + "\n")		
-		openfile.close()
-	return writefilename
