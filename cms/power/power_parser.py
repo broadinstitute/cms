@@ -1,5 +1,5 @@
 ##	defines command-line interface for power.py
-##	last updated 02.10.2017	vitti@broadinstitute.org
+##	last updated 02.13.2017	vitti@broadinstitute.org
 
 import argparse
 
@@ -76,6 +76,10 @@ def full_parser_power():
 	roc_parser.add_argument('--find_opt', action="store_true", default=False)
 	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
 	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
+	find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
+	find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
+	find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
+	find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###

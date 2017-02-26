@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 02.10.2017	vitti@broadinstitute.org
+##	last updated 02.13.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -38,7 +38,15 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 ##################
 ## LOCATE FILES ##
 ##################
-def get_component_score_files(model, irep, pop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
+def get_emp_component_score_files(filebase = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = "clear-synth-"):
+	''' IN PROGRES '''
+	in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + ".ihs.out"
+	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
+	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
+	in_xp_file = basedir + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
+	in_fst_deldaf_file = basedir + "fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+	return
+def get_sim_component_score_files(model, irep, pop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
 	""" locates component score files for simulated data """
 	if selbin == 'neut':
 		basedir =  filebase + model + "/neut/"

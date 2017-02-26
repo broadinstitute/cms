@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.10.2017	vitti@broadinstitute.org
+##	last updated 02.13.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 from power.power_parser import full_parser_power
 from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
 						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
-from power.parse_func import get_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
+from power.parse_func import get_sim_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
 						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions, \
-						write_pair_sourcefile, write_run_paramfile
+						write_pair_sourcefile, write_run_paramfile, get_emp_component_score_files
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
 from pybedtools import BedTool 
@@ -125,7 +125,7 @@ def execute_run_neut_repscores(args):
 
 	tped = tpeddir + "rep_" + str(repNum) + "_" + str(pop) + ".tped" #temp quick fix
 	assert os.path.isfile(tped)
-	#in_ihs_file, in_delihh_file, in_xp_file, in_fst_deldaf_file  = get_component_score_files(model, repNum, pop, altpop, scenario = "neut", filebase = basedir)
+	#in_ihs_file, in_delihh_file, in_xp_file, in_fst_deldaf_file  = get_sim_component_score_files(model, repNum, pop, altpop, scenario = "neut", filebase = basedir)
 		
 	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'fst_deldaf']:
 		#dircmd = "mkdir -p " + basedir + scorefiledir + "/"
@@ -476,26 +476,29 @@ def execute_composite_sims(args):
 		for irep in range(1, numPerBin_sel +1):
 			altpairs = []
 			for altpop in altpops:
-				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
+				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
 				pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-				altpairs.append(pairfilename)
+				
+				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+					altpairs.append(pairfilename)
 
-			outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
-			alreadyExists = False
-			if args.checkOverwrite:
-				if not os.path.isfile(outfile): #check for overwrite
-					alreadyExists = False
-				else:
-					alreadyExists = True				
-			if alreadyExists == False:
-				argstring = outfile + " " + paramfilename + " "
-				for pairfile in altpairs:
-					argstring += pairfile +" "
-				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
-				fullcmd = cmd + " " + argstring
-				print(fullcmd)
-				execute(fullcmd)
+			if len(altpairs) !=0:
+				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+				alreadyExists = False
+				if args.checkOverwrite:
+					if not os.path.isfile(outfile): #check for overwrite
+						alreadyExists = False
+					else:
+						alreadyExists = True				
+				if alreadyExists == False:
+					argstring = outfile + " " + paramfilename + " "
+					for pairfile in altpairs:
+						argstring += pairfile +" "
+					#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
+					fullcmd = cmd + " " + argstring
+					print(fullcmd)
+					execute(fullcmd)
 
 	
 	#ALL NEUT
@@ -505,26 +508,28 @@ def execute_composite_sims(args):
 	for irep in range(1, numPerBin_neut +1):	
 		altpairs = []
 		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
-			pairfilename = scoremodeldir + "pairs/rep" + + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-			write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-			altpairs.append(pairfilename)
-
-		outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
-		alreadyExists = False
-		if args.checkOverwrite:
-			if not os.path.isfile(outfile): #check for overwrite
-				alreadyExists = False
-			else:
-				alreadyExists = True				
-		if alreadyExists == False:
-			#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
-			argstring = outfile + " " + paramfilename + " "
-			for pairfile in altpairs:
-				argstring += pairfile + " "
-			fullcmd = cmd + " " + argstring
-			print(fullcmd)
-			execute(fullcmd)
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			
+			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
+		if len(altpairs) !=0:
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+			alreadyExists = False
+			if args.checkOverwrite:
+				if not os.path.isfile(outfile): #check for overwrite
+					alreadyExists = False
+				else:
+					alreadyExists = True				
+			if alreadyExists == False:
+				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile + " "
+				fullcmd = cmd + " " + argstring
+				print(fullcmd)
+				execute(fullcmd)
 	return
 def execute_normsims(args):
 	model = args.model
@@ -617,20 +622,64 @@ def execute_composite_emp(args):
 	model = args.model
 	selPop = args.emppop
 	modelPop = args.simpop
-	cmd = "python " + cmsdir + "composite.py outgroups"
+	#cmd = "python " + cmsdir + "composite.py outgroups"
 	chroms = range(1,23)
 
-	hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
-	mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile
+
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores"
+
+	#for each model_pop key: gives 1KG pops for that model_pop. exemplar subpop, superpop, other subpops...
+	model_popsdict = {1:["YRI", "AFR" "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
+						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS"],
+						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
+						4:["BEB", "SAS", "GIH", "PJL", "STU", "ITU"],
+						0:["MXL", "PUR", "CLM", "PEL"]} #American populations excluded from model
+
+	pops = [1, 2, 3, 4]
+
+	for pop in [1, 2, 3, 4, 0]:
+		if selPop in model_popsdict[pop]:
+			model_selpop = pop
+	if pop == 0: #what do we want to do with American populations? treat them as 4 (admixture)? for now implement this.
+		model_selpop = 4
+	altpops = pops.remove(model_selpop)
+
+	#hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
+	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #skip likesfre for now
+
+	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
+	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
+	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
+	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
+	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
+	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
+
+
+	paramfilename = likesdir + "run_params.txt" + suffix
+	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
+	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
+
+
+
 	for chrom in chroms:
-		print("JV: restructure input;")
-		inscorefilelist = []#get_pairfiles(chrom, selpop) 
-		if len(inscorefilelist) > 0:
-			scorefilelist = ""
-			for filename in inscorefilelist:
-				scorefilelist += filename + ","
-			scorefilelist = scorefilelist[:-1]
-			outfile = basedir + selpop  +"_" + str(model) + "_" + likessuffix + ".chr" + str(chrom) + ".txt"
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(model, irep, selpop, altpop, filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			
+			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
+
+
+
+
+		if len(altpairs) !=0:
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -638,10 +687,12 @@ def execute_composite_emp(args):
 				else:
 					alreadyExists = True				
 			if alreadyExists == False:
-				argstring = scorefilelist + " " + hi_likesfile + " " + str(modelPop) + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + outfile
-				fullcmd = cmd + argstring
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile + " "
+				fullcmd = cmd + " " + argstring
 				print(fullcmd)
-				#execute(fullcmd)	
+				execute(fullcmd)	
 def execute_normemp(args):
 	selpop = args.emppop
 	model = args.model
@@ -1176,6 +1227,54 @@ def execute_roc(args):
 
 	
 
+	return
+def execute_find_cutoff(args):
+	''' a little cleaner and simpler '''
+
+	maxFPR = args.maxFPR
+	fpr_loc = args.fprloc
+	tpr_loc = args.tprloc 
+	################################
+	## LOAD WHATEVER DATA WE HAVE ##
+	################################
+	all_fpr, all_tpr = {}, {}
+	freq_classes = ['lo', 'mid', 'hi', 'highest']
+	fpr_files = os.listdir(fpr_loc)
+	tpr_files = os.listdir(tpr_loc)
+	for fprfile in fpr_files:
+		if "alt" not in fprfile:
+			fpr = read_pr(fpr_loc + fprfile)
+			entries = fprfile.split("_")
+			regionlen, thresshold, cutoff = int(entries[1]), int(entries[2]), int(entries[3])
+			fprkey = (regionlen, thresshold, cutoff)
+			all_fpr[fprkey] = fpr
+			for freq_class in freq_classes:
+				tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
+				if os.path.isfile(tprfile):			
+					tpr = read_pr(tprfile)
+					tprkey = (regionlen, thresshold, cutoff, freq_class)
+					all_tpr[tprkey] = tpr
+	#############################
+	## CHOOSE OPT MEETING CRIT ##
+	#############################
+	best_tpr, best_fpr = 0, 0
+	best_cutoff = 0
+	fpr_keys = all_fpr.keys()
+	tpr_keys = all_tpr.keys()
+	for freq_class in freq_classes:
+		print("Now finding optimal thresshold for " + freq_class + " with a maximum FPR of " + str(maxFPR))
+		for key in fpr_keys:
+			if all_fpr[key] <= maxFPR:
+				tprkey = (key[0], key[1], key[2], freq_class)
+				if tprkey in tpr_keys:
+					tpr = all_tpr[tprkey]
+					if tpr > best_tpr:
+						best_tpr = tpr
+						best_cutoff = tprkey
+						best_fpr = all_fpr[key]
+		print(best_cutoff)
+		print("FPR: " + str(best_fpr))
+		print("TPR: " + str(best_tpr))
 	return
 
 ########	Apply significance cutoffs
