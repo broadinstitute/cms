@@ -58,6 +58,7 @@ def check_create_dir(directory):
 	""" ensure that the directory exists; create it if it doesn't """
 	if not os.path.isdir(directory):
 		subprocess.check_output(['mkdir', '-p', directory])
+	return
 def check_file_len(filename):
 	'''counts number of lines in file'''
 	if os.path.isfile(filename) and os.path.getsize(filename) > 0:

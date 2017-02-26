@@ -5,11 +5,12 @@
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from power.parse_func import get_neut_repfile_name, get_emp_cms_file
+from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, get_sim_component_score_files
 from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp, write_run_paramfile, write_pair_sourcefile, load_empscores, normalize
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
-from dists.freqbins_func import check_create_dir #should put this somewhere else
+from dists.freqbins_func import check_create_dir, execute #should put this somewhere else
+import numpy as np
 import subprocess
 import argparse
 import gzip
@@ -307,7 +308,7 @@ def execute_normsims(args):
 	print("wrote to eg: " + normedfile)	
 	return
 def execute_composite_emp(args):
-	''' from empirical_composite.py '''
+	''' from empirical_composite.py ''' #DIR!
 	cmsdir = args.cmsdir
 	basedir = args.basedir
 	likesdir = args.likes_basedir
@@ -341,7 +342,7 @@ def execute_composite_emp(args):
 
 	#hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
 	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #skip likesfre for now
-
+	selpop = selPop
 	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
 	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
 	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"

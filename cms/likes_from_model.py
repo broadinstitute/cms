@@ -10,7 +10,6 @@ from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, che
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
 from util.parallel import slurm_array
 import argparse
-import subprocess
 import sys, os
 import matplotlib.pyplot as plt
 
@@ -235,7 +234,7 @@ def execute_run_neut_repscores(args):
 	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'fst_deldaf']:
 		#dircmd = "mkdir -p " + basedir + scorefiledir + "/"
 		#subprocess.check_output( dircmd.split() )
- 		check_create_dir(basedir + scorefiledir)
+		check_create_dir(basedir + scorefiledir)
 
 	####### Calculate per-population
 	####### scores: iHS, delIHH, nSL

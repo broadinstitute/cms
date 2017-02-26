@@ -2,6 +2,7 @@
 ## last updated: 	02.27.2017	vitti@broadinstitute.org
 
 import sys
+import os
 
 def get_likesfiles_frommaster(masterfile, modelselpop, vs="neut"):
 	"""assumes only one demographic model in master likes file, but there may be multiple pops or neut/linked comps"""
