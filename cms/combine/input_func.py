@@ -1,4 +1,4 @@
-## functions for composite
+## functions for composite  	#REORG?
 ## last updated: 	02.27.2017	vitti@broadinstitute.org
 
 import sys
@@ -71,3 +71,53 @@ def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
 	infile.close()
 	print('wrote to: ' + outfilename)
 	return outfilename
+def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
+	if not os.path.isfile(writefilename):
+		openfile = open(writefilename, 'w')
+		openfile.write(ihsfilename+ "\n")
+		openfile.write(delihhfilename+ "\n")
+		openfile.write(nslfilename+ "\n")
+		openfile.write(xpehhfilename+ "\n")
+		openfile.write(freqsfilename+ "\n")
+		openfile.close()
+	return writefilename
+def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile,
+	fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline):
+	if not os.path.isfile(writefilename):
+		openfile = open(writefilename, 'w')
+		openfile.write(ihs_master_likesfile + "\n")
+		openfile.write(nsl_master_likesfile + "\n") #CHANGE ORDER
+		openfile.write(delihh_master_likesfile + "\n")
+		openfile.write(xpehh_master_likesfile + "\n")
+		openfile.write(fst_master_likesfile + "\n")
+		openfile.write(deldaf_master_likesfile + "\n")	
+		openfile.write(cutoffline + "\n")
+		openfile.write(includeline + "\n")		
+		openfile.close()
+	return writefilename
+def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
+	""" locates CMS files for empirical data """
+	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
+	if normed:
+		filename += ".norm"
+	if not os.path.isfile(filename):
+		print("MISSING empirical file : " + filename)
+	return filename
+def load_empscores(model, selpop, normed = False, suffix = '', takeIndex = -1):
+	""" for genome-wide empirical CMS data, loads a value according to takeIndex """	
+	chroms = range(1,23)
+	scores = []
+	for chrom in chroms:
+		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix)
+		print('loading from ' + scorefile)
+		assert os.path.isfile(scorefile)
+		openfile = open(scorefile, 'r')
+		for line in openfile:
+			entries=line.split()
+			scores.append(float(entries[takeIndex]))
+		openfile.close()
+	return scores
+def normalize(rawscore, mean, sd):
+	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
+	normalizedvalue = (rawscore - mean) #/ sd
+	return normalizedvalue

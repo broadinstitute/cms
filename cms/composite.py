@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 02.27.2017 	vitti@broadinstitute.org
+## last updated: 02.27.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from power.parse_func import get_neut_repfile_name, get_emp_cms_file
-from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp
+from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp, write_run_paramfile, write_pair_sourcefile, load_empscores, normalize
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
+from dists.freqbins_func import check_create_dir #should put this somewhere else
 import subprocess
 import argparse
 import gzip
@@ -18,7 +19,6 @@ import os
 #############################
 ## DEFINE ARGUMENT PARSER ###
 #############################
-#add composite_sims normsims composite_emp normemp from previous power_parser
 def full_parser_composite():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for manipulating and combining component statistics")
 	subparsers = parser.add_subparsers(help="sub-commands")
@@ -57,6 +57,27 @@ def full_parser_composite():
 	xp_from_ihh_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 	xp_from_ihh_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
 
+
+	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
+	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
+	for sim_parser in [composite_sims_parser, normsims_parser]:
+		sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
+		sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
+
+	composite_emp_parser = subparsers.add_parser('composite_emp')	
+	composite_emp_parser.add_argument('--basedir', type=str, action='store', default='/idi/sabeti-scratch/jvitti/scores_composite4_b/"')
+	normemp_parser = subparsers.add_parser('normemp', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
+
+	for commonparser in [composite_sims_parser, normsims_parser, composite_emp_parser, normemp_parser]:
+		commonparser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
+		commonparser.add_argument('--checkOverwrite', action="store_true", default=False)
+		commonparser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
+		commonparser.add_argument('--suffix', type= str, action='store', default='')
+		commonparser.add_argument('--simpop', action='store', help='simulated population', default=1)
+		commonparser.add_argument('--model', type=str, default="nulldefault")
+		commonparser.add_argument('--nrep', type=int, default=1000)
+		commonparser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
+
 	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
 	
 	ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
@@ -71,60 +92,12 @@ def full_parser_composite():
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
+### Recalculate ancillary scores 
+### from primary component scores
 def execute_freqscores(args):
 	''' python wrapper for program to calculate Fst and delDAF '''
 	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath) #should obviate need for recom file. 
 	return
-def execute_hapviz(args):
-	''' view haplotype data as a colored grid. original Shervin Tabrizi update Joe Vitti ''' 
-	##############
-	## LOAD DATA##
-	##############
-	inputfilename = args.inputfile
-	if ".hap" in inputfilename:
-		haplotypes, coreindex, physpositions = load_from_hap(inputfilename, args.maf, corePos = args.corepos)
-	else:
-		if args.startpos is None or args.endpos is None:
-			print("must provide bounds with --startpos and --endpos")
-			sys.exit(0)
-		else:
-			startpos = int(args.startpos)
-			endpos = int(args.endpos)
-			haplotypes, coreindex, physpositions = pullRegion(inputfilename, startpos, endpos, args.maf, corePos = args.corepos)
-	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
-
-	########################
-	## SORT BY SIMILARITY ##
-	########################
-	if args.corepos is not -1:
-		hap = hapSort_coreallele(haplotypes, coreindex)
-	else:
-		hap = hapSort(haplotypes) 
-
-	##########
-	## PLOT ##
-	##########
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	hapViz(ax, hap[0], args.out)
-	if args.annotate is not None:
-		positions, annotations = readAnnotations(args.annotate)
-		ylim = ax.axis()[-1]
-		for i_snppos in range(len(positions)):
-			snppos = positions[i_snppos]
-			annotation = annotations[i_snppos]
-			if int(snppos) in physpositions:
-				foundindex = physpositions.index(int(snppos))
-				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
-				ax.plot(foundindex, -5, "^", color="black", markersize=1)
-				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
-	if args.title is not None:
-		plt.title(args.title, fontsize=5)
-	plt.tight_layout()
-	plt.savefig(args.out, dpi=float(args.dpi))
-	print("plotted to: " + args.out)
-	plt.close()
-	return	
 def execute_delihh_from_ihs(args):
 	''' python wrapper for program to calculate delIHH from iHS file (containing iHH0, iHH1) '''
 	calc_delihh(args.readfile, args.writefile)
@@ -149,8 +122,9 @@ def execute_xp_from_ihh(args):
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
-#check below 
-# must import: write_run_paramfile check_create_dir write_pair_sourcefile  normalize load_empscores 
+
+### Combine input component scores
+### in user-defined CMS statistic
 def execute_composite_sims(args):
 	model = args.model
 	selpop = args.simpop
@@ -448,7 +422,59 @@ def execute_normemp(args):
 		writefile.close
 		print('wrote to '  + normedfile)
 	return
-#check above
+
+### Visualize and hone in 
+### on variants within regions
+def execute_hapviz(args):
+	''' view haplotype data as a colored grid. original Shervin Tabrizi update Joe Vitti ''' 
+	##############
+	## LOAD DATA##
+	##############
+	inputfilename = args.inputfile
+	if ".hap" in inputfilename:
+		haplotypes, coreindex, physpositions = load_from_hap(inputfilename, args.maf, corePos = args.corepos)
+	else:
+		if args.startpos is None or args.endpos is None:
+			print("must provide bounds with --startpos and --endpos")
+			sys.exit(0)
+		else:
+			startpos = int(args.startpos)
+			endpos = int(args.endpos)
+			haplotypes, coreindex, physpositions = pullRegion(inputfilename, startpos, endpos, args.maf, corePos = args.corepos)
+	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
+
+	########################
+	## SORT BY SIMILARITY ##
+	########################
+	if args.corepos is not -1:
+		hap = hapSort_coreallele(haplotypes, coreindex)
+	else:
+		hap = hapSort(haplotypes) 
+
+	##########
+	## PLOT ##
+	##########
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	hapViz(ax, hap[0], args.out)
+	if args.annotate is not None:
+		positions, annotations = readAnnotations(args.annotate)
+		ylim = ax.axis()[-1]
+		for i_snppos in range(len(positions)):
+			snppos = positions[i_snppos]
+			annotation = annotations[i_snppos]
+			if int(snppos) in physpositions:
+				foundindex = physpositions.index(int(snppos))
+				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
+				ax.plot(foundindex, -5, "^", color="black", markersize=1)
+				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
+	if args.title is not None:
+		plt.title(args.title, fontsize=5)
+	plt.tight_layout()
+	plt.savefig(args.out, dpi=float(args.dpi))
+	print("plotted to: " + args.out)
+	plt.close()
+	return	
 def execute_ml_region(args):
 	''' perform within-region localization using machine learning algorithm '''
 	#chrom, startBp, endBp = args.chrom, args.startBp, args.endBp

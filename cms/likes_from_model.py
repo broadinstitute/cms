@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 02.27.2017 	vitti@broadinstitute.org
+## last updated: 02.27.2017 	vitti@broadinstitute.org #must update docstrings
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -107,6 +107,7 @@ def full_parser_likes_from_model():
 		common_parser.add_argument('--nrep', type=int, default=1000)
 
 	return parser
+
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
@@ -114,7 +115,7 @@ def full_parser_likes_from_model():
 ### model under various scenarios
 def execute_get_sel_trajs(args):
 	'''wraps call to run_traj.py to generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
-	selTrajDir = args.outputDir
+	selTrajDir = args.outputDirs
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
 	selTrajDir += "sel_trajs/"
