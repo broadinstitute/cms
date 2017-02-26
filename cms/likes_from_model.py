@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 12.15.16 vitti@broadinstitute.org
-
-## need to merge with power.py. Nix: execute_run_neut_sims  execute_run_sel_sims execute_scores_from_sims
+## last updated: 02.27.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
-mp.use('TKAgg') 
+mp.use('agg') 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
@@ -21,54 +19,22 @@ import matplotlib.pyplot as plt
 def full_parser_likes_from_model():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for generating probability distributions for component scores from pre-specified demographic model(s).")
 	subparsers = parser.add_subparsers(help="sub-commands")
-	
-	#############################
-	## RUN NEUTRAL SIMULATIONS ##
-	#############################
-	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='Run neutral simulations from a demographic model.')
-	
+
 	###############################
 	## RUN SELECTION SIMULATIONS ##
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
 	get_sel_trajs_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time')
-	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='Run simulations of selection from demographic model and selection trajectories.')	
-	run_sel_sims_parser.add_argument('trajDir', action='store', help='location of simulated trajectories (i.e. outputDir from get_sel_trajs)')
-
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
-	for cosi_parser in [run_neut_sims_parser, get_sel_trajs_parser, run_sel_sims_parser]:
+	for cosi_parser in [get_sel_trajs_parser]:
 		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
 		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
 		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
 		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
 		cosi_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
-
-	################################
-	## CALCULATE SCORES FROM SIMS ## 
-	################################
-	scores_from_sims_parser = subparsers.add_parser('scores_from_sims', help='Calculate scores from simulated data.')
-	if True:
-		scores_from_sims_parser.add_argument('--cmsdir', action='store', help='TEMPORARY', default="/n/home08/jvitti/cms/cms/")
-
-		scores_from_sims_parser.add_argument('inputFilename', action='store', help='tped from which to calculate score / iHS from which to calculate delIhh / unnormalized to normalize.')
-		scores_from_sims_parser.add_argument('outputFilename', action='store', help='where to write scorefile')		
-		#PER POP:			
-		scores_from_sims_parser.add_argument('--ihs', action='store_true', help="calculate iHS from simulates")
-		scores_from_sims_parser.add_argument('--delIhh', action='store_true', help="calculate delIHH from iHS from simulates")
-		#POP COMPARISONS:
-		scores_from_sims_parser.add_argument('--xpehh', action='store', help="inputTped for altpop")
-		scores_from_sims_parser.add_argument('--fst_deldaf', action='store', help="inputTped for altpop")
-		scores_from_sims_parser.add_argument('--recomfile', action='store', help="input recomfile for sims")
-		#NORMALIZE: 
-		scores_from_sims_parser.add_argument('--normalizeIhs', action='store_true')
-		scores_from_sims_parser.add_argument('--neutIhsNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
-		scores_from_sims_parser.add_argument('--normalizeDelIhh', action='store_true')	
-		scores_from_sims_parser.add_argument('--neutDelIhhNormParams', action='store', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
-		scores_from_sims_parser.add_argument('--normalizeXpehh', action='store_true')
-		scores_from_sims_parser.add_argument('--neutXpehhNormParams', help="filename for parameters to normalize to; if flag not given then will by default normalize file to its own global dist")
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
@@ -93,7 +59,7 @@ def full_parser_likes_from_model():
 	##############
 	## SEL BINS ##
 	##############
-	for sel_parser in [get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser]:
+	for sel_parser in [get_sel_trajs_parser, likes_from_scores_parser]:
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
@@ -104,37 +70,13 @@ def full_parser_likes_from_model():
 	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
 		likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
-	for common_parser in [run_neut_sims_parser]:#, get_sel_trajs_parser, run_sel_sims_parser, scores_from_sims_parser, likes_from_scores_parser, visualize_likes_parser]:
-		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
-
 	return parser
 
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
-def execute_run_neut_sims(args):
-	'''run neutral simulations from model'''
-	neutRunDir = args.outputDir
-	if args.outputDir[-1] != "/":
-		neutRunDir += "/"
-	neutRunDir += "neut_sims"
-	runDir = check_make_dir(neutRunDir)
-	runDir += "/"
-	print("running " + str(args.n) + " neutral simulates from model: " + args.inputParamFile)
-	print("writing to: " + runDir)
-	neutSimCommand = args.cosiBuild + " -p " + args.inputParamFile + " --output-gen-map " 
-	if args.genmapRandomRegions:
-		neutSimCommand += " --genmapRandomRegions"
-	if args.dropSings is not None:
-		neutSimCommand += " --drop-singletons " + str(args.dropSings)
-	neutSimCommand += " -n "  + str(args.n) + " --tped " + runDir + "rep"
-	if args.printOnly:
-		print(neutSimCommand)
-	else:
-		subprocess.check_output(neutSimCommand.split())
-	return
 def execute_get_sel_trajs(args):
-	'''generate selection trajectories as needed'''
+	'''wraps call to run_traj.py to generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
@@ -161,95 +103,9 @@ def execute_get_sel_trajs(args):
 			dispatch = True
 		slurm_array(binDir + "run_sel_traj.sh", traj_cmd, args.n, dispatch=dispatch)
 
-	return
-def execute_run_sel_sims(args):
-	'''after get_sel_trajs has been run, use trajectories to generate simulated tped data.'''
-	selSimDir = args.outputDir
-	if selSimDir[-1] != "/":
-		selSimDir += "/"
-	selSimDir += "sel_sims/"
-	runDir = check_make_dir(selSimDir)
-	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-
-	print("loading trajectories from " + args.trajDir)
-	print("outputting to " + runDir)
-
-	for ibin in range(args.nBins):
-		binTrajDir = args.trajDir + "sel_" + bin_medians_str[ibin]
-		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		populateDir = check_make_dir(populateDir)
-		trajectoryFilenames = os.listdir(binTrajDir)
-		paramfilename = binTrajDir + "/params"
-		assert os.path.isfile(paramfilename)			
-		if binTrajDir [-1] != "/":
-			binTrajDir += "/"
-		sim_cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + binTrajDir + "/rep" + taskIndexStr + ".txt " + args.cosiBuild, + " -p " + paramfilename + " --output-gen-map " 
-		if args.genmapRandomRegions:
-			sim_cmd += " --genmapRandomRegions"
-		if args.dropSings is not None:
-			sim_cmd += " --drop-singletons " + str(args.dropSings)
-		sim_cmd += " --tped " + populateDir + 'rep' + taskIndexStr
-		if args.printOnly:
-			dispatch = False
-		else:
-			dispatch = True
-		slurm_array(runDir + "run_sel_sims.sh", sim_cmd, args.n, dispatch=dispatch)
-	return
-def execute_scores_from_sims(args):
-	''' adapted from JV scores_from_tped_vers.py. functions point to scans.py'''
-	""" PHASE OUT; replace with power.py functions that parallelize by REP (much more efficient)"""
-
-	#print("YOUR SHIT'S BUSTED")
-	#sys.exit(0)
-
-
-	inputFilename, outputFilename = args.inputFilename, args.outputFilename
-
-	#################
-	## CALC SCORES ##
-	#################
-	if args.ihs:
-		calc_ihs(inputFilename, outputFilename)
-	if args.delIhh:
-		ihsfilename = inputFilename
-		calc_delihh(ihsfilename, outputFilename)
-	if args.xpehh is not None:
-		altinputTped = args.xpehh
-		calc_xpehh(inputFilename, altinputTped, outputFilename)		
-	if args.fst_deldaf is not None:
-		altinputTped = args.fst_deldaf
-		calc_fst_deldaf(inputFilename, altinputTped, args.recomfile, outputFilename, args.cmsdir + 'model/')
-
-	###############
-	## NORMALIZE ##
-	###############
-
-	if args.normalizeIhs:
-		if args.neutIhsNormParams is not None:
-			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-			print("loading normalization parameters from " + args.neutIhsNormParams + " ...")
-			norm_sel_ihs(args.inputFilename, args.neutIhsNormParams)
-		else:
-			norm_neut_ihs(args.inputFilename, args.outputFilename)
-
-	if args.normalizeDelIhh:
-		if args.neutDelIhhNormParams is not None:
-			fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-			print("loading normalization parameters from " + args.neutDelIhhNormParams + " ...")		
-			norm_sel_ihs(args.inputFilename, args.neutDelIhhNormParams)
-		else:
-			norm_neut_ihs(args.inputFilename, args.outputFilename)
-
-	if args.normalizeXpehh:
-		if args.normalizeXpehh:
-			if args.neutXpehhNormParams is not None:
-				norm_sel_xpehh(args.inputFilename, args.neutXpehhNormParams)
-			else:
-				norm_neut_xpehh(args.inputFilename, args.outputFilename)
-		
-	return
+	return #MAKE CLUSTER-INDEPENDENT
 def execute_likes_from_scores(args):
-	'''adapted from likes_from_scores_vers.py'''
+	''' define likelihood function for component score based on histograms of score values from simulated data '''
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
 	numLikesBins = args.nLikesBins #histogram bins
 
@@ -340,8 +196,9 @@ def execute_likes_from_scores(args):
 	n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_score_final, linked_score_final, neut_score_final, xlims, int(numLikesBins), args.thinToSize)
 	write_hists_to_files(args.outPrefix, histBins, n_causal, n_linked, n_neut)
 	print("wrote to " + args.outPrefix)
-	return
+	return #REVISIT CHOOSE METHOD?
 def execute_visualize_likes(args):
+	''' view likelihood function (i.e. score histograms) of CMS component scores for all models/populations '''
 	likesfilenames = args.likesFiles
 	likesfilenames = likesfilenames.split(',')
 	if len(likesfilenames) == 1:
@@ -366,8 +223,6 @@ def execute_visualize_likes(args):
 				starts, ends, vals = read_likes_file(likesfilename)
 				key = read_demographics_from_filename(likesfilename) #key = (model, score, dist, pop)
 				likes_dict[key] = [starts, ends, vals]
-				#print(likesfilename)
-				#print("\t" + str(key))
 				for item in key:
 					if str(item) not in likesfilename:
 						print("ERROR: " + str(item) + " " + likesfilename)
@@ -379,9 +234,6 @@ def execute_visualize_likes(args):
 		scores.append(key[1])
 		dists.append(key[2])
 		pops.append(key[3])
-	#keys.sort()
-	#for item in keys:
-	#	print(item)
 
 	scores = set(scores)
 	scores = list(scores)
@@ -448,11 +300,9 @@ def execute_visualize_likes(args):
 					label.strip('\n')
 					ax.set_ylabel(label, fontsize=7)
 					ax.yaxis.set_label_position("right")
-
-
-		plt.show()
-		
+		plt.show()	
 	return
+
 ##########
 ## MAIN ##
 ##########

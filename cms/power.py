@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.13.2017	vitti@broadinstitute.org
+##	last updated 02.27.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -610,6 +610,9 @@ def execute_normsims(args):
 					writefile.close()
 	print("wrote to eg: " + normedfile)	
 	return
+
+	#move the above to likes_from_model? after trimming?
+	#move the below to composite?
 
 ########	Manipulate empirical data
 ########	and provide composite scores

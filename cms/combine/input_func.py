@@ -1,5 +1,5 @@
 ## functions for composite
-## last updated: 	02.10.2017	vitti@broadinstitute.org
+## last updated: 	02.27.2017	vitti@broadinstitute.org
 
 import sys
 
@@ -54,3 +54,20 @@ def get_likesfiles_frommaster(masterfile, modelselpop, vs="neut"):
 		fst_hit_filename, fst_miss_filename = fst_selfiles[0], fst_neutfiles[0]	
 		deldaf_hit_filename, deldaf_miss_filename = deldaf_selfiles[0], deldaf_neutfiles[0]
 	return ihs_hit_filename, ihs_miss_filename, nsl_hit_filename, nsl_miss_filename, delihh_hit_filename, delihh_miss_filename,  xpehh_hit_filename, xpehh_miss_filename, fst_hit_filename, fst_miss_filename, deldaf_hit_filename, deldaf_miss_filename
+def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
+	outfile = open(outfilename, 'w')
+	infile = open(infilename, 'r')
+	infile.readline() #header
+	for line in infile:
+		entries = line.split()
+		locus, pos, gpos, p1, ihh1, p2, ihh2, xpehh = entries
+
+		if popNum ==1:
+			writeline = pos + "\t" + gpos + "\t" + p1 + "\t" + ihh1 + "\n"
+		elif popNum == 2:
+			writeline = pos + "\t" + gpos + "\t" + p2 + "\t" + ihh2 + "\n"
+		outfile.write(writeline)
+	outfile.close()
+	infile.close()
+	print('wrote to: ' + outfilename)
+	return outfilename
