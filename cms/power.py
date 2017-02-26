@@ -9,8 +9,8 @@ from power.power_func import merge_windows, get_window, check_outliers, check_re
 from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
 						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
-from xlwt import Workbook, easyxf 
-from pybedtools import BedTool 
+#from xlwt import Workbook, easyxf #add to cms-venv 
+#from pybedtools import BedTool 
 import numpy as np
 import argparse
 import sys

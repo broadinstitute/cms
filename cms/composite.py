@@ -45,7 +45,7 @@ def full_parser_composite():
 	delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
 	delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
 
-	ihh_from_xp_parser = subparser.add_parser('ihh_from_xp', help="extract per-pop iHH values from XP-EHH and write to individual files to facilitate arbitrary population comparisons ")
+	ihh_from_xp_parser = subparsers.add_parser('ihh_from_xp', help="extract per-pop iHH values from XP-EHH and write to individual files to facilitate arbitrary population comparisons ")
 	ihh_from_xp_parser.add_argument('inXpehh', type=str, help="input xpehh file")
 	ihh_from_xp_parser.add_argument('outIhh', type=str, help="write to file")
 	ihh_from_xp_parser.add_argument('takePop', default=1, type=int, help="write for first (1) or second (2) pop in XP-EHH file?")
