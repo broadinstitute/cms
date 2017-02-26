@@ -5,6 +5,7 @@
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from power.parse_func import get_neut_repfile_name, get_emp_cms_file
 from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
@@ -17,6 +18,7 @@ import os
 #############################
 ## DEFINE ARGUMENT PARSER ###
 #############################
+#add composite_sims normsims composite_emp normemp from previous power_parser
 def full_parser_composite():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for manipulating and combining component statistics")
 	subparsers = parser.add_subparsers(help="sub-commands")
@@ -147,8 +149,8 @@ def execute_xp_from_ihh(args):
 	else:
 		subprocess.check_call( cmdstring.split() )	
 	return
-
-#check below
+#check below 
+# must import: write_run_paramfile check_create_dir write_pair_sourcefile  normalize load_empscores 
 def execute_composite_sims(args):
 	model = args.model
 	selpop = args.simpop
@@ -184,7 +186,9 @@ def execute_composite_sims(args):
 	selpop = int(selpop)
 	altpops.remove(selpop)
 
-	#ALL SEL SIMS
+	##################
+	## ALL SEL SIMS ##
+	##################
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	for sel_freq_bin in sel_freq_bins:
 		scoremodeldir = writedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
@@ -217,8 +221,9 @@ def execute_composite_sims(args):
 					print(fullcmd)
 					execute(fullcmd)
 
-	
-	#ALL NEUT
+	##############
+	## ALL NEUT ##
+	##############
 	scoremodeldir = writedir + "scores/" + model + "/neut/"
 	compositedir = writedir + "composite/" + model + "/neut/"
 	check_create_dir(compositedir)
@@ -336,9 +341,7 @@ def execute_composite_emp(args):
 	model = args.model
 	selPop = args.emppop
 	modelPop = args.simpop
-	#cmd = "python " + cmsdir + "composite.py outgroups"
 	chroms = range(1,23)
-
 
 	if args.cmsdir is not None:
 		cmd = args.cmsdir
@@ -372,12 +375,9 @@ def execute_composite_emp(args):
 	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
 	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
 
-
 	paramfilename = likesdir + "run_params.txt" + suffix
 	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
 	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
-
-
 
 	for chrom in chroms:
 		altpairs = []
@@ -388,9 +388,6 @@ def execute_composite_emp(args):
 			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 				altpairs.append(pairfilename)
-
-
-
 
 		if len(altpairs) !=0:
 			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
@@ -450,11 +447,8 @@ def execute_normemp(args):
 		readfile.close()
 		writefile.close
 		print('wrote to '  + normedfile)
-
 	return
 #check above
-
-
 def execute_ml_region(args):
 	''' perform within-region localization using machine learning algorithm '''
 	#chrom, startBp, endBp = args.chrom, args.startBp, args.endBp

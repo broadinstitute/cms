@@ -4,8 +4,9 @@
 
 import matplotlib as mp 
 mp.use('agg') 
+from power.power_func import write_master_likesfile
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
-from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_make_dir, write_bin_paramfile
+from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
 from util.parallel import slurm_array
 import argparse
@@ -25,6 +26,31 @@ def full_parser_likes_from_model():
 	###############################
 	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
 	get_sel_trajs_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time')
+	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='run additional neutral simulations to create test set')
+	run_sel_sims_parser = subparsers.add_parser('run_sel_sims')
+	for run_sims_parser in [run_neut_sims_parser, run_sel_sims_parser]:
+		run_sims_parser.add_argument('--startrep', type=int, action="store", help='replicate number at which to start', default=1)
+		run_sims_parser.add_argument('--paramfolder', type=str, action="store", help='location to read model parameters', default="/idi/sabeti-scratch/jvitti/params/")
+	run_sel_sims_parser.add_argument('--trajdir', action="store")
+	run_neut_repscores_parser = subparsers.add_parser('run_neut_repscores', help ='run per-replicate component scores')
+	run_sel_repscores_parser = subparsers.add_parser('run_sel_repscores', help='run per-replicate component scores')
+	for run_repscores_parser in [run_neut_repscores_parser, run_sel_repscores_parser]:
+		run_repscores_parser.add_argument('--irep', type=int, action="store", help="replicate number", default=1)
+		run_repscores_parser.add_argument('--tpedfolder', type=str, action="store", help="location of input tped data", default="/idi/sabeti-scratch/jvitti/clean/sims/")
+		run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/idi/sabeti-scratch/jvitti/params/test_recom.recom")
+
+	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
+	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)")
+	run_norm_neut_repscores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)")
+	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
+	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
+	for norm_parser in [run_norm_neut_repscores_parser,norm_from_binfile_parser, sel_norm_from_binfile_parser]:
+		norm_parser.add_argument('--score', action='store', default='')
+		norm_parser.add_argument('--altpop', action='store', default='')
+
+	for selbin_parser in [run_sel_sims_parser, sel_norm_from_binfile_parser]:
+		selbin_parser.add_argument('--selbin', action="store")
+
 	##########################
 	### COSI - SHARED ARGS  ##
 	##########################
@@ -67,21 +93,32 @@ def full_parser_likes_from_model():
 	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited, or passed as one file containing paths for each) with bins of probability density function to visualize.')	
 	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
 
+	write_master_likes_parser = subparsers.add_parser('write_master_likes', help="write file for demographic scenario and population pointing to files for all score likelihoods")
+	write_master_likes_parser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
+
 	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
 		likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
-	return parser
+	for common_parser in [run_neut_sims_parser, run_sel_sims_parser, run_neut_repscores_parser, run_sel_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, sel_norm_from_binfile_parser]:
+		common_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
+		common_parser.add_argument('--checkOverwrite', action="store_true", default=False)
+		common_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+		common_parser.add_argument('--model', type=str, default="nulldefault")
+		common_parser.add_argument('--nrep', type=int, default=1000)
 
+	return parser
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
+### Run simuates from specified demographic
+### model under various scenarios
 def execute_get_sel_trajs(args):
 	'''wraps call to run_traj.py to generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
 	selTrajDir = args.outputDir
 	if selTrajDir[-1] != "/":
 		selTrajDir += "/"
 	selTrajDir += "sel_trajs/"
-	runDir = check_make_dir(selTrajDir)
+	runDir = check_create_dir(selTrajDir)
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
 
 	print("running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
@@ -89,7 +126,7 @@ def execute_get_sel_trajs(args):
 
 	for ibin in range(args.nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
-		binDir = check_make_dir(populateDir)
+		binDir = check_create_dir(populateDir)
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
@@ -104,25 +141,6 @@ def execute_get_sel_trajs(args):
 		slurm_array(binDir + "run_sel_traj.sh", traj_cmd, args.n, dispatch=dispatch)
 
 	return #MAKE CLUSTER-INDEPENDENT
-
-
-##check below
-def execute_write_master_likes(args):
-	''' from write_master_likes.py'''
-	basedir = args.likes_basedir
-	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
-	selpops = [1, 2, 3, 4]
-	freqs = ['allfreq']#'hi', 'low', 'mid']
-	misses = ["neut"]#, "linked"]
-	for model in models:
-		for selpop in selpops:
-			for freq in freqs:
-				for miss in misses:					
-					writefiledir = basedir + model + "/master/"
-					check_create_dir(writefiledir)
-					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
-					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
-	return
 def execute_run_neut_sims(args):
 	'''from run_additional_sims.py'''
 	cmd = "coalescent"
@@ -196,6 +214,9 @@ def execute_run_sel_sims(args):
 
 	print("wrote simulates to e.g. " + renamed)
 	return
+
+### Calculate component scores from 
+### simulated data
 def execute_run_neut_repscores(args):
 	''' adapted from rerun_scores_onerep.py'''
 	model = args.model
@@ -515,8 +536,9 @@ def execute_sel_norm_from_binfile(args):
 			print(fullcmd)
 			execute(fullcmd)
 	return	
-#check above
 
+### Define component score likelihood 
+### functions as histograms of simulated scores
 def execute_likes_from_scores(args):
 	''' define likelihood function for component score based on histograms of score values from simulated data '''
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
@@ -610,6 +632,22 @@ def execute_likes_from_scores(args):
 	write_hists_to_files(args.outPrefix, histBins, n_causal, n_linked, n_neut)
 	print("wrote to " + args.outPrefix)
 	return #REVISIT CHOOSE METHOD?
+def execute_write_master_likes(args):
+	''' from write_master_likes.py'''
+	basedir = args.likes_basedir
+	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
+	selpops = [1, 2, 3, 4]
+	freqs = ['allfreq']#'hi', 'low', 'mid']
+	misses = ["neut"]#, "linked"]
+	for model in models:
+		for selpop in selpops:
+			for freq in freqs:
+				for miss in misses:					
+					writefiledir = basedir + model + "/master/"
+					check_create_dir(writefiledir)
+					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
+					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
+	return
 def execute_visualize_likes(args):
 	''' view likelihood function (i.e. score histograms) of CMS component scores for all models/populations '''
 	likesfilenames = args.likesFiles

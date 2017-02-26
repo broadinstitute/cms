@@ -4,11 +4,10 @@
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
-from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
-from power.parse_func import get_sim_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions, \
-						write_pair_sourcefile, write_run_paramfile, get_emp_component_score_files
+from power.power_func import merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist
+from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
+						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf 
 from pybedtools import BedTool 

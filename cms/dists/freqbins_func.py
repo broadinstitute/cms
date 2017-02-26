@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 09.05.16 vitti@broadinstitute.org
+## last updated: 02.26.17 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -54,33 +54,10 @@ def check_bin_filled(directory, numsims):
 ##################
 ### BOOKKEEPING ##
 ##################
-def check_make_dir(dirpath, warn=False):
-	"""function to handle creation of (sub)folders, avoiding duplication.
-	** COME BACK TO THIS JV 	"""
-	if os.path.exists(dirpath):
-		if warn:
-			print(dirpath + " already exists")
-		return dirpath
-		#contents = os.listdir(dirpath)
-		#if len(contents) == 0:
-		#	return dirpath
-		#else:
-		#	print(dirpath + " ALREADY EXISTS; creating alt folder...")
-		#	alt, iAlt = False, 1
-		#	altpath = dirpath + "alt" + str(iAlt) #best way to avoid recursive issues?
-		#	while alt == False:			
-		#		if os.path.exists(altpath):
-		#			iAlt +=1
-		#			altpath = dirpath + "alt" + str(iAlt) #best way to avoid recursive issues?
-		#		else:
-		#			alt = True
-		#	mkdircommand = "mkdir " + altpath
-		#	subprocess.check_output(mkdircommand.split())
-		#	return altpath
-	else:
-		mkdircommand = "mkdir " + dirpath
-		subprocess.check_output(mkdircommand.split())
-	return dirpath
+def check_create_dir(directory):
+	""" ensure that the directory exists; create it if it doesn't """
+	if not os.path.isdir(directory):
+		subprocess.check_output(['mkdir', '-p', directory])
 def check_file_len(filename):
 	'''counts number of lines in file'''
 	if os.path.isfile(filename) and os.path.getsize(filename) > 0:
@@ -92,3 +69,27 @@ def check_file_len(filename):
 		return iline
 	else:
 		return 0
+def check_create_file(filename, checkOverwrite):
+	""" useful to prevent overwriting, but easy to toggle in case one wants to mass-replace files """
+	if checkOverwrite == False:
+		return True #make it anyway
+	else:
+		if not os.path.isfile(filename) or os.path.getsize(filename) == 0:
+			return True
+		else:
+			return False
+	return False
+def execute(commandstring):
+	subprocess.check_output(commandstring.split())
+	return
+def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scratch/jvitti/clean/scores/"):
+	""" locates concatenated component score files to facilitate normalization to neutral replicates """
+	if score in ['ihs', 'delihh', 'nsl']:
+		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
+	elif score in ['xpehh', 'fst']:
+		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_" + str(altpop) + "_"
+	else:
+		concatfilebase = ""
+	concatfilename = concatfilebase + score + ".txt"
+	binfilename = concatfilebase + score + ".bins"
+	return concatfilename, binfilename
