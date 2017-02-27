@@ -1,744 +1,107 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.13.2017	vitti@broadinstitute.org
+##	last updated 02.27.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
-from power.power_parser import full_parser_power
-from power.power_func import normalize, merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, write_master_likesfile
-from power.parse_func import get_sim_component_score_files, get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, load_simscores, \
-						load_empscores, check_create_dir, execute, read_pr, get_likesfiles, check_create_file, get_concat_files, read_vals_lastcol, get_pr_filesnames, load_regions, \
-						write_pair_sourcefile, write_run_paramfile, get_emp_component_score_files
+from power.power_func import merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist
+from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
+						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
-from xlwt import Workbook, easyxf 
-from pybedtools import BedTool 
+#from xlwt import Workbook, easyxf #add to cms-venv 
+#from pybedtools import BedTool 
 import numpy as np
 import argparse
 import sys
 import os
 
+####################
+## DEFINE PARSER ###
+####################
+def full_parser_power():
+	parser=argparse.ArgumentParser(description="This script contains command-line utilities for calculating CMS 2.0 power from simulated data and significance for CMS scores from empirical data.")
+	subparsers = parser.add_subparsers(help="sub-commands")
+	
+	#######################
+	## VISUALIZE OUTPUT ###
+	#######################
+	repviz_parser = subparsers.add_parser('repviz', help="visualize component and combined scores")
+	repviz_parser.add_argument('--vizRep', type=int, help="rep number", default=1, action="store")
+	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS scores")
+	distviz_parser.add_argument('--oneFile', action="store", default=None, help="quick viz score dist from a single file")
+	distviz_parser.add_argument('--simsDist', action="store_true", default=False, help="visualize from all simulated replicates")
+	distviz_parser.add_argument('--empDist', action="store_true", default=False, help="visualize from empirical scores")
+	distviz_parser.add_argument('--normed_cms', action="store_true", help="normalized values", default = False)
+
+	#####################
+	## QUANTIFY POWER ###
+	#####################
+	cdf_parser = subparsers.add_parser('cdf', help = 'plot cumulative density function of causal rank')
+	fpr_parser = subparsers.add_parser('fpr', help='calculate false positive rate for CMS_gw based on neutral simulations')
+	tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
+	roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
+	roc_parser.add_argument('--plot_curve', action="store_true", default=False)
+	roc_parser.add_argument('--find_opt', action="store_true", default=False)
+	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
+	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
+	find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
+	find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
+	find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
+	find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
+
+	#############################
+	## EMPIRICAL SIGNIFICANCE ###
+	#############################
+	gw_regions_parser = subparsers.add_parser('gw_regions', help="pull designated significant regions from genome-wide normalized results")
+	gw_regions_parser.add_argument('--geneFile')
+	regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
+	regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/idi/sabeti-scratch/jvitti/knownGenes_110116.txt")
+	manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
+	manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
+	manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
+	manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
+	extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
+	extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
+	extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
+	extended_manhattan_parser.add_argument('--percentile', help="percentile to hilite")
+	extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
+	extended_manhattan_parser.add_argument('--dpi', help="resolution for matplotlib", type=int, default=100)
+
+	##################
+	## SHARED ARGS ###
+	##################
+
+	for write_parser in [fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser]:
+		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
+		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
+		write_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+
+	for regions_parser in [fpr_parser, gw_regions_parser, regionlog_parser, tpr_parser]:
+		regions_parser.add_argument('regionlen', type = int, action='store', help='length of region to query', default="100000")
+		regions_parser.add_argument('thresshold', type = float, action='store', help='percentage of region to exceed cutoff', default="30")
+		regions_parser.add_argument('cutoff', type = float, action='store', help='minimum significant value for region definition', default="3.0")
+		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
+
+	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
+
+	for suffixed_parser in [fpr_parser, tpr_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
+
+	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
+		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
+
+	for commonparser in [repviz_parser, distviz_parser, fpr_parser, gw_regions_parser, manhattan_parser,
+						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
+		commonparser.add_argument('--model', type=str, default="nulldefault")
+		commonparser.add_argument('--nrep', type=int, default=1000)
+
+	return parser
+
 #################################
 ## DEFINE EXECUTIVE FUNCTIONS ###
 #################################
-
-########	Manipulate simulated data 
-########	and provide composite scores.
-def execute_write_master_likes(args):
-	''' from write_master_likes.py'''
-	basedir = args.likes_basedir
-	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
-	selpops = [1, 2, 3, 4]
-	freqs = ['allfreq']#'hi', 'low', 'mid']
-	misses = ["neut"]#, "linked"]
-	for model in models:
-		for selpop in selpops:
-			for freq in freqs:
-				for miss in misses:					
-					writefiledir = basedir + model + "/master/"
-					check_create_dir(writefiledir)
-					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
-					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
-	return
-def execute_run_neut_sims(args):
-	'''from run_additional_sims.py'''
-	cmd = "coalescent"
-	model = args.model
-	nrep = args.nrep
-	nStart = args.startrep
-	nEnd = nStart + nrep
-	writefolder = args.writedir
-	paramfolder = args.paramfolder
-	paramfilename = paramfolder + model + ".par"
-	
-	for irep in range(nStart, nEnd + 1):
-		outbase = writefolder + "rep" + str(irep)
-		argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase
-		cosicreatefilename = outbase + "_0_1.tped"
-
-		proceed = check_create_file(cosicreatefilename, args.checkOverwrite)
-		if proceed:
-			fullCmd = cmd + " " + argstring
-			#print(fullCmd)
-			execute(fullCmd)
-			for ipop in [1, 2, 3, 4]:
-				torenamefile = outbase + "_0_" + str(ipop) + ".tped"
-				#print(torenamefile)
-				assert os.path.isfile(torenamefile)
-				renamed = outbase +"_" + str(ipop) + ".tped"
-				renamecmd = "mv "  + torenamefile + " " + renamed
-				execute(renamecmd)
-	print("wrote simulates to e.g. " + renamed)
-	return
-def execute_run_sel_sims(args):
-	'''from run_additional_sims.py'''
-	#cmd = "coalescent"
-	model = args.model
-	nrep = args.nrep
-	nStart = args.startrep
-	nEnd = nStart + nrep
-	writefolder = args.writedir
-	trajfolder = args.trajdir
-	paramfolder = args.paramfolder
-	selpop = args.simpop
-	selbin = args.selbin
-	
-	for foldername in [writefolder, trajfolder, paramfolder]:
-		assert(foldername != None)
-		if foldername[-1] != "/":
-			foldername += "/"
-	paramfilename = paramfolder + model + ".par"
-
-	for irep in range(nStart, nEnd + 1):
-		outbase = writefolder + "rep" + str(irep)
-		trajectory = trajfolder + "rep" + str(irep) + ".txt"
-		cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajectory + " coalescent"
-		argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase + " --output-gen-map"
-		#cosicreatefilename = outbase + "_0_1.tped"  	#previous implementation batch-ran sims then batch-renamed them.
-		cosi_movedfilename = outbase + "_1.tped"
-
-		proceed = check_create_file(cosi_movedfilename, args.checkOverwrite)
-		if proceed:
-			fullCmd = cmd + " " + argstring
-			print(fullCmd)
-			execute(fullCmd)
-
-			for ipop in [1, 2, 3, 4]:
-				torenamefile = outbase + "_0_" + str(ipop) + ".tped"
-				#print(torenamefile)
-				assert os.path.isfile(torenamefile)
-				renamed = outbase +"_" + str(ipop) + ".tped"
-				renamecmd = "mv "  + torenamefile + " " + renamed
-				execute(renamecmd)
-
-	print("wrote simulates to e.g. " + renamed)
-	return
-def execute_run_neut_repscores(args):
-	''' adapted from rerun_scores_onerep.py'''
-	model = args.model
-	pop = args.simpop
-	repNum = args.irep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	tpeddir = args.tpedfolder
-	simRecomFile = args.simRecomFile
-
-	tped = tpeddir + "rep_" + str(repNum) + "_" + str(pop) + ".tped" #temp quick fix
-	assert os.path.isfile(tped)
-	#in_ihs_file, in_delihh_file, in_xp_file, in_fst_deldaf_file  = get_sim_component_score_files(model, repNum, pop, altpop, scenario = "neut", filebase = basedir)
-		
-	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'fst_deldaf']:
-		#dircmd = "mkdir -p " + basedir + scorefiledir + "/"
-		#subprocess.check_output( dircmd.split() )
- 		check_create_dir(basedir + scorefiledir)
-
-	####### Calculate per-population
-	####### scores: iHS, delIHH, nSL
-	ihs_commandstring = "python " + cmsdir + "scans.py selscan_ihs"
-	ihs_outfileprefix = basedir + "ihs/rep" + str(repNum) + "_" + str(pop) 
-	ihs_unnormedfile = ihs_outfileprefix + ".ihs.out"
-	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 "
-	ihs_fullcmd = ihs_commandstring + " " + ihs_argstring
-	proceed = check_create_file(ihs_unnormedfile, args.checkOverwrite)
-	if proceed:
-		print(ihs_fullcmd)
-		execute(ihs_fullcmd)
-	delihh_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims --delIhh" #WAIT WHAT?
-	delihh_unnormedfile =  basedir + "delihh/rep" + str(repNum) + "_" + str(pop) + ".txt"
-	delihh_argstring = ihs_unnormedfile + " "+ delihh_unnormedfile
-	delihh_fullcmd = delihh_commandstring + " " + delihh_argstring + " --cmsdir " + args.cmsdir
-	proceed = check_create_file(delihh_unnormedfile, args.checkOverwrite)
-	if proceed:
-		print(delihh_fullcmd)
-		execute(delihh_fullcmd)		
-	nsl_commandstring = "python " + cmsdir + "scans.py selscan_nsl" 
-	nsl_unnormedfileprefix = basedir + "nsl/rep" + str(repNum) + "_" + str(pop)
-	nsl_argstring = tped + " " + nsl_unnormedfileprefix
-	nsl_fullcmd = nsl_commandstring + " " + nsl_argstring
-	nsl_unnormedfilename = nsl_unnormedfileprefix + ".nsl.out"
-	proceed = check_create_file(nsl_unnormedfilename, args.checkOverwrite)
-	if proceed:
-		print(nsl_fullcmd)
-		execute(nsl_fullcmd)	
-
-	####### Calculate per-population-pair
-	####### scores: XP-EHH, Fst, delDAF
-	pops = [1, 2, 3, 4]
-	altpops = pops[:]
-	altpops.remove(int(pop))
-	for altpop in altpops:
-		xpehh_commandstring = "python " + cmsdir + "scans.py selscan_xpehh --threads 7"
-		tped2 = tpeddir + "rep_" + str(repNum) + "_" + str(altpop) + ".tped"
-		xpehh_outfileprefix = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
-		xpehh_unnormedfile = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-		xpehh_argumentstring = tped + " " + xpehh_outfileprefix + " " + tped2
-		xpehh_fullcmd = xpehh_commandstring + " " + xpehh_argumentstring
-		proceed = check_create_file(xpehh_unnormedfile, args.checkOverwrite)
-		if proceed:
-			print(xpehh_fullcmd)
-			execute(xpehh_fullcmd)
-
-		fstdeldaf_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims"
-		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
-		fstdeldaf_argumentstring = tped + " --fst_deldaf " + tped2 + " " + fstdeldaf_outfilename + " --recomfile " + simRecomFile + " --cmsdir " + args.cmsdir
-		fstdeldaf_fullcmd = fstdeldaf_commandstring + " " + fstdeldaf_argumentstring 
-		proceed = check_create_file(fstdeldaf_outfilename, args.checkOverwrite)
-		if proceed:
-			print(fstdeldaf_fullcmd)
-			execute(fstdeldaf_fullcmd)
-	return
-def execute_run_sel_repscores(args):
-	''' adapted from rerun_scores_onerep.py'''
-	model = args.model
-	pop = args.simpop
-	repNum = args.irep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	tpeddir = args.tpedfolder
-	simRecomFile = args.simRecomFile
-	tped = tpeddir + "rep_" + str(repNum) + "_" + str(pop) + ".tped"
-	assert os.path.isfile(tped)
-
-	####### Calculate per-population
-	####### scores: iHS, delIHH, nSL
-	ihs_commandstring = "python " + cmsdir + "scans.py selscan_ihs"
-	ihs_outfileprefix = basedir + "ihs/rep" + str(repNum) + "_" + str(pop) 
-	ihs_unnormedfile = ihs_outfileprefix + ".ihs.out"
-	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 "
-	ihs_fullcmd = ihs_commandstring + " " + ihs_argstring
-	proceed = check_create_file(ihs_unnormedfile, args.checkOverwrite)
-	if proceed:
-		print(ihs_fullcmd)
-		execute(ihs_fullcmd)
-	delihh_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims --delIhh"
-	delihh_unnormedfile =  basedir + "delihh/rep" + str(repNum) + "_" + str(pop) + ".txt"
-	delihh_argstring = ihs_unnormedfile + " "+ delihh_unnormedfile
-	delihh_fullcmd = delihh_commandstring + " " + delihh_argstring
-	proceed = check_create_file(delihh_unnormedfile, args.checkOverwrite)
-	if proceed:
-		print(delihh_fullcmd)
-		execute(delihh_fullcmd)		
-	nsl_commandstring = "python " + cmsdir + "scans.py selscan_nsl" 
-	nsl_unnormedfileprefix = basedir + "nsl/rep" + str(repNum) + "_" + str(pop)
-	nsl_argstring = tped + " " + nsl_unnormedfileprefix
-	nsl_fullcmd = nsl_commandstring + " " + nsl_argstring
-	nsl_unnormedfilename = nsl_unnormedfileprefix + ".nsl.out"
-	proceed = check_create_file(nsl_unnormedfilename, args.checkOverwrite)
-	if proceed:
-		print(nsl_fullcmd)
-		execute(nsl_fullcmd)	
-
-	####### Calculate per-population-pair
-	####### scores: XP-EHH, Fst, delDAF
-	pops = [1, 2, 3, 4]
-	altpops = pops[:]
-	altpops.remove(int(pop))
-	for altpop in altpops:
-		xpehh_commandstring = "python " + cmsdir + "scans.py selscan_xpehh --threads 7"
-		tped2 = tpeddir + "rep_" + str(repNum) + "_" + str(altpop) + ".tped"
-		xpehh_outfileprefix = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
-		xpehh_unnormedfile = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-		xpehh_argumentstring = tped + " " + xpehh_outfileprefix + " " + tped2
-		xpehh_fullcmd = xpehh_commandstring + " " + xpehh_argumentstring
-		proceed = check_create_file(xpehh_unnormedfile, args.checkOverwrite)
-		if proceed:
-			print(xpehh_fullcmd)
-			execute(xpehh_fullcmd)	
-		fstdeldaf_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims"
-		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
-		fstdeldaf_argumentstring = tped + " --fst_deldaf " + tped2 + " " + fstdeldaf_outfilename + " --recomfile " + simRecomFile
-		fstdeldaf_fullcmd = fstdeldaf_commandstring + " " + fstdeldaf_argumentstring
-		proceed = check_create_file(fstdeldaf_outfilename, args.checkOverwrite)
-		if proceed:
-			print(fstdeldaf_fullcmd)
-			execute(fstdeldaf_fullcmd)
-	return	
-def execute_run_norm_neut_repscores(args):
-	''' creates a concatenated file and saves bin output if run for the first time;
-		if these already exist, run per-rep'''
-	model = args.model
-	pop = args.simpop
-	numReps = args.nrep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	score = args.score
-	altpop = args.altpop
-	chrlen, edge = args.chromlen, args.edge
-	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
-
-	if score in ['ihs', 'delihh', 'nsl']:
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
-	elif score in ['xpehh', 'fst']:
-		altpop = args.altpop
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_" + str(altpop) + "_"
-	else:
-		print('must call per composite score')
-		sys.exit(0)
-
-	concatfilename = concatfilebase + score + ".txt"
-	binfilename = concatfilebase + score + ".bins"
-
-	if not os.path.isfile(binfilename):
-		if not os.path.isfile(concatfilename):
-			repfiles = []
-			for irep in range(1, numReps+1):
-				if score == 'ihs':
-					unnormedfile = basedir + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop) + ".ihs.out"
-					physpos_ind = 1
-				elif score == "delihh":
-					unnormedfile = basedir + model + "/neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-					physpos_ind = 1
-				elif score == "nsl":
-					unnormedfile = basedir + model + "/neut/nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
-					physpos_ind = 1
-				elif score == "xpehh":
-					unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-					physpos_ind = 1
-				elif score == "fst":
-					unnormedfile = basedir + model + "/neut/fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
-					physpos_ind = 0
-				if os.path.isfile(unnormedfile):
-					repfiles.append(unnormedfile)
-				else:
-					print('missing: ' + unnormedfile)
-			concatfile = open(concatfilename, 'w')
-			for irepfile in range(len(repfiles)):
-				repfile = repfiles[irepfile]
-				readfile = open(repfile, 'r')
-				firstline = readfile.readline()
-				if score in ['xpehh', 'fst']: #header
-					if irepfile == 0:
-						concatfile.write(firstline)
-					else:
-						pass
-				for line in readfile:
-					entries = line.split()
-					physpos = int(entries[physpos_ind])
-					if physpos >= startbound and physpos <= endbound:
-						concatfile.write(line)
-				readfile.close()
-			concatfile.close()
-			print('wrote to: ' + concatfilename)
-
-		#already have concatfile
-		infilename = concatfilename
-		outfilename = concatfilename + ".norm"
-		argstring = infilename #+ " " + outfilename
-
-		if score in ['ihs', 'delihh']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_ihs"
-		elif score in ['nsl']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_nsl"
-		elif score in ['xpehh']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_xpehh"
-		else:
-			cmd = ""
-
-		fullcmd = cmd + " " + argstring
-	
-		print(fullcmd)
-		execute(fullcmd)
-		
-	return
-def execute_norm_from_binfile(args):
-	model = args.model
-	pop = args.simpop
-	numReps = args.nrep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	score = args.score
-	altpop = args.altpop
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
-	
-	for irep in range(numReps, 0, -1):
-		if score in ['ihs']:
-			unnormedfile = basedir  + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['delihh']:
-			unnormedfile = basedir + model + "/neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-			normedfilename = unnormedfile + ".norm"	
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['nsl']:
-			unnormedfile = basedir + model + "/neut/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
-			normedfilename = unnormedfile + ".norm"			
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['xpehh']:
-			unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['fst']:
-			print('currently handling this manually: rewrite_fst_bins.py')
-			pass
-
-		alreadyExists = False
-		if args.checkOverwrite:
-			if not os.path.isfile(normedfilename): #check for overwrite
-				alreadyExists = False
-			else:
-				alreadyExists = True				
-		if alreadyExists == False:	
-			fullcmd = commandstring + " " + argstring
-			print(fullcmd)
-			execute(fullcmd)
-	return
-def execute_sel_norm_from_binfile(args):
-	model = args.model
-	pop = args.simpop
-	numReps = args.nrep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	score = args.score
-	altpop = args.altpop
-	selbin = args.selbin
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
-	
-	for irep in range(numReps, 0, -1):
-		if score in ['ihs']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['delihh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-			normedfilename = unnormedfile + ".norm"	
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['nsl']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
-			normedfilename = unnormedfile + ".norm"			
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['xpehh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['fst']:
-			print('currently handling this manually: rewrite_fst_bins.py')
-			pass
-		fullcmd = commandstring + " " + argstring
-		alreadyExists = False
-		if args.checkOverwrite:
-			if not os.path.isfile(normedfilename): #check for overwrite
-				alreadyExists = False
-			else:
-				alreadyExists = True				
-		if alreadyExists == False:
-			print(fullcmd)
-			execute(fullcmd)
-	return	
-def execute_composite_sims(args):
-	model = args.model
-	selpop = args.simpop
-	likesdir = args.likes_basedir
-	cmsdir = args.cmsdir
-	writedir = args.writedir
-	numPerBin_sel = args.nrep_sel
-	numPerBin_neut = args.nrep_neut
-	suffix = args.suffix
-
-	if args.cmsdir is not None:
-		cmd = args.cmsdir
-	else:
-		cmd = ""
-	cmd += "combine/combine_scores"
-
-	#cmd = "python " + cmsdir + "composite.py outgroups"
-	#hi_likesfile = get_likesfiles(model, selpop, likesdir, allfreqs=True)
-	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
-	
-	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
-	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
-	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
-	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
-	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
-	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
-
-	paramfilename = likesdir + "run_params.txt" + suffix
-	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
-	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
-
-	altpops = [1, 2, 3, 4]
-	selpop = int(selpop)
-	altpops.remove(selpop)
-
-	#ALL SEL SIMS
-	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
-	for sel_freq_bin in sel_freq_bins:
-		scoremodeldir = writedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
-		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
-		check_create_dir(compositedir)
-		for irep in range(1, numPerBin_sel +1):
-			altpairs = []
-			for altpop in altpops:
-				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
-				pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-				
-				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
-					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-					altpairs.append(pairfilename)
-
-			if len(altpairs) !=0:
-				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
-				alreadyExists = False
-				if args.checkOverwrite:
-					if not os.path.isfile(outfile): #check for overwrite
-						alreadyExists = False
-					else:
-						alreadyExists = True				
-				if alreadyExists == False:
-					argstring = outfile + " " + paramfilename + " "
-					for pairfile in altpairs:
-						argstring += pairfile +" "
-					#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
-					fullcmd = cmd + " " + argstring
-					print(fullcmd)
-					execute(fullcmd)
-
-	
-	#ALL NEUT
-	scoremodeldir = writedir + "scores/" + model + "/neut/"
-	compositedir = writedir + "composite/" + model + "/neut/"
-	check_create_dir(compositedir)
-	for irep in range(1, numPerBin_neut +1):	
-		altpairs = []
-		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
-			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-			
-			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
-				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-				altpairs.append(pairfilename)
-		if len(altpairs) !=0:
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
-			alreadyExists = False
-			if args.checkOverwrite:
-				if not os.path.isfile(outfile): #check for overwrite
-					alreadyExists = False
-				else:
-					alreadyExists = True				
-			if alreadyExists == False:
-				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
-				argstring = outfile + " " + paramfilename + " "
-				for pairfile in altpairs:
-					argstring += pairfile + " "
-				fullcmd = cmd + " " + argstring
-				print(fullcmd)
-				execute(fullcmd)
-	return
-def execute_normsims(args):
-	model = args.model
-	selpop = args.simpop
-	numPerNeutBin, numPerSelBin = args.nrep_neut, args.nrep_sel
-	suffix = args.suffix
-	writedir = args.writedir
-	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
-	values = []
-	##############################
-	## LOAD STATS FROM NEUT SIMS #
-	##############################
-	for irep in range(1, numPerNeutBin +1):	
-		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
-		if os.path.isfile(outfile):
-			openfile = open(outfile, 'r')
-			for line in openfile:
-				entries = line.split()
-				rawscore = np.log(float(entries[-1]))
-				values.append(rawscore)
-			openfile.close()
-
-	print('loaded ' + str(len(values)) + ' values from neutral sims...')
-
-	#check for nans
-	values = np.array(values)
-	values = values[~np.isnan(values)]
-	mean = np.mean(values)
-	var = np.var(values)
-	sd = np.sqrt(var)
-
-	print("max: " + str(max(values)))
-	print("min: " + str(min(values)))
-	print("mean: " + str(np.mean(values)))
-	print("var: " + str(np.var(values)))
-
-	###############
-	## NORMALIZE ##
-	###############
-	#ALL NEUT
-	
-	for irep in range(1, numPerNeutBin +1):	
-		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
-
-		if os.path.isfile(outfile):
-			normedfile = outfile + ".norm"
-			if True:
-			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
-				openfile = open(outfile, 'r')
-				writefile = open(normedfile, 'w')
-				for line in openfile:
-					entries = line.split()
-					rawscore = np.log(float(entries[-1]))
-					normalized = normalize(rawscore, mean, sd)
-					writeline = line.strip('\n') + "\t" + str(normalized)+ "\n"
-					writefile.write(writeline)
-				openfile.close()
-				writefile.close()
-	print("wrote to eg: " + normedfile)	
-	
-	#ALL SEL SIMS
-	for sel_freq_bin in sel_freq_bins:
-		for irep in range(1, numPerSelBin +1):
-			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
-			if os.path.isfile(rawfile):
-				normedfile = rawfile + ".norm"
-				if True:
-				#if not os.path.isfile(normedfile):
-					openfile = open(rawfile, 'r')
-					writefile = open(normedfile, 'w')
-					for line in openfile:
-						entries = line.split()
-						rawscore = np.log(float(entries[-1]))
-						normalized = normalize(rawscore, mean, sd)
-						writeline = line.strip('\n') + "\t" + str(normalized) + "\n"
-						writefile.write(writeline)
-					openfile.close()
-					writefile.close()
-	print("wrote to eg: " + normedfile)	
-	return
-
-########	Manipulate empirical data
-########	and provide composite scores
-def execute_composite_emp(args):
-	''' from empirical_composite.py '''
-	cmsdir = args.cmsdir
-	basedir = args.basedir
-	likesdir = args.likes_basedir
-	suffix = args.likessuffix
-	model = args.model
-	selPop = args.emppop
-	modelPop = args.simpop
-	#cmd = "python " + cmsdir + "composite.py outgroups"
-	chroms = range(1,23)
-
-
-	if args.cmsdir is not None:
-		cmd = args.cmsdir
-	else:
-		cmd = ""
-	cmd += "combine/combine_scores"
-
-	#for each model_pop key: gives 1KG pops for that model_pop. exemplar subpop, superpop, other subpops...
-	model_popsdict = {1:["YRI", "AFR" "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
-						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS"],
-						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
-						4:["BEB", "SAS", "GIH", "PJL", "STU", "ITU"],
-						0:["MXL", "PUR", "CLM", "PEL"]} #American populations excluded from model
-
-	pops = [1, 2, 3, 4]
-
-	for pop in [1, 2, 3, 4, 0]:
-		if selPop in model_popsdict[pop]:
-			model_selpop = pop
-	if pop == 0: #what do we want to do with American populations? treat them as 4 (admixture)? for now implement this.
-		model_selpop = 4
-	altpops = pops.remove(model_selpop)
-
-	#hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
-	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #skip likesfre for now
-
-	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
-	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
-	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
-	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
-	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
-	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
-
-
-	paramfilename = likesdir + "run_params.txt" + suffix
-	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
-	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
-
-
-
-	for chrom in chroms:
-		altpairs = []
-		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(model, irep, selpop, altpop, filebase = writedir + "scores/", normed = True)
-			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-			
-			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
-				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-				altpairs.append(pairfilename)
-
-
-
-
-		if len(altpairs) !=0:
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
-			alreadyExists = False
-			if args.checkOverwrite:
-				if not os.path.isfile(outfile): #check for overwrite
-					alreadyExists = False
-				else:
-					alreadyExists = True				
-			if alreadyExists == False:
-				argstring = outfile + " " + paramfilename + " "
-				for pairfile in altpairs:
-					argstring += pairfile + " "
-				fullcmd = cmd + " " + argstring
-				print(fullcmd)
-				execute(fullcmd)	
-def execute_normemp(args):
-	selpop = args.emppop
-	model = args.model
-	suffix = args.suffix
-	
-	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix)
-	scores = [np.log(item) for item in scores2]
-
-	#check for nans
-	scores = np.array(scores)
-	scores = scores[~np.isnan(scores)]
-
-	print('loaded ' + str(len(scores)) + " scores")
-	print("max: " + str(max(scores)))
-	print("min: " + str(min(scores)))
-	print("mean: " + str(np.mean(scores)))
-	print("var: " + str(np.var(scores)))
-
-	mean = np.mean(scores)
-	var = np.var(scores)
-	sd = np.sqrt(var)
-
-	##############
-	## NORMALIZE #
-	##############
-	chroms = range(1,23)
-	for chrom in chroms:
-		unnormedfile = get_emp_cms_file(selpop, model, chrom, normed=False, suffix=suffix)
-		assert os.path.isfile(unnormedfile)
-		normedfile = unnormedfile + ".norm"
-
-		readfile = open(unnormedfile, 'r')
-		writefile = open(normedfile, 'w')
-		for line in readfile:
-			line = line.strip('\n')
-			entries=line.split()
-			rawscore = np.log(float(entries[-1]))
-			normedscore = normalize(rawscore, mean, sd)
-			writeline = line + "\t" + str(normedscore) + '\n'
-			writefile.write(writeline)
-		readfile.close()
-		writefile.close
-		print('wrote to '  + normedfile)
-
-	return
-
 ########	Visualize composite score 
 ########	output for a given CMS run.
 def execute_repviz(args):

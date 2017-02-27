@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 02.10.2017 	vitti@broadinstitute.org
+## last updated: 02.27.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from combine.input_func import get_likesfiles_frommaster, write_pair_sourcefile, write_run_paramfile
+from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, get_sim_component_score_files
+from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp, write_run_paramfile, write_pair_sourcefile, load_empscores, normalize
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
+from dists.freqbins_func import check_create_dir, execute #should put this somewhere else
+import numpy as np
 import subprocess
 import argparse
 import gzip
 import sys
 import os
-
 
 #############################
 ## DEFINE ARGUMENT PARSER ###
@@ -25,9 +27,9 @@ def full_parser_composite():
 	freqscores_parser = subparsers.add_parser('freqscores', help="Calculate allele frequency-based scores (Fst and delDAF) for a pair of populations.") 
 	freqscores_parser.add_argument('inTped1', type=str, action="store", help="input tped 1")			
 	freqscores_parser.add_argument('inTped2', type=str, action="store", help="input tped 2")
-	freqscores_parser.add_argument('recomFile', type=str, action="store", help="input recombination file")			 
+	freqscores_parser.add_argument('recomFile', type=str, action="store", help="input recombination file") #should work around this		 
 	freqscores_parser.add_argument('outfile', type=str, action="store", help="file to write")
-	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables")
+	freqscores_parser.add_argument('--modelpath', action='store', type=str, default='cms/cms/model/', help="path to model directory containing executables") #will become redundant with conda
 
 	hapviz_parser = subparsers.add_parser('hapviz', help="Visualize haplotypes for region")
 	hapviz_parser.add_argument('inputfile', type=str, action="store", help="input tped")
@@ -40,90 +42,396 @@ def full_parser_composite():
 	hapviz_parser.add_argument('--maf', type=str, default=None, help="filter on minor allele frequency (e.g. .01, .05)")			
 	hapviz_parser.add_argument('--dpi', type=str, default=300, help="image resolution")			
 
+	delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs', help="Calculate delIHH values from iHS output files.")
+	delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
+	delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
 
-	if True:
+	ihh_from_xp_parser = subparsers.add_parser('ihh_from_xp', help="extract per-pop iHH values from XP-EHH and write to individual files to facilitate arbitrary population comparisons ")
+	ihh_from_xp_parser.add_argument('inXpehh', type=str, help="input xpehh file")
+	ihh_from_xp_parser.add_argument('outIhh', type=str, help="write to file")
+	ihh_from_xp_parser.add_argument('takePop', default=1, type=int, help="write for first (1) or second (2) pop in XP-EHH file?")
 
-		win_haps_parser = subparsers.add_parser('win_haps', help='Perform window-based calculation of haplotype scores. ')
-		win_haps_parser.add_argument('infilename', type=str, action='store', help='file containing per-site scores')
-		win_haps_parser.add_argument('writefilename', type=str, action='store', help='file to write')
-		win_haps_parser.add_argument('--windowsize', default=30, type=int, help='number of SNPs per window')
-		win_haps_parser.add_argument('--jumplen', default=15, type=int, help='number of SNPs to distance windows')
-
-		interpolate_hapscores_parser = subparsers.add_parser('interpolate_hapscores', help="Fill (otherwise omitted) iHS values at low-freq sites based on sliding window averages.")
-		interpolate_hapscores_parser.add_argument('intpedfilename', type=str, action='store', help="input tped")
-		interpolate_hapscores_parser.add_argument('inihsfilename', type=str, action='store', help="input per-site score file")
-		interpolate_hapscores_parser.add_argument('inwinihsfilename', type=str, action='store', help="input window score file")
-		interpolate_hapscores_parser.add_argument('outfilename', type=str, action='store', help="file to write")			
-
-		delihh_from_ihs_parser = subparsers.add_parser('delihh_from_ihs', help="Calculate delIHH values from iHS output files.")
-		delihh_from_ihs_parser.add_argument('readfile', type=str, action='store', help='input ihs file')
-		delihh_from_ihs_parser.add_argument('writefile', type=str, action='store', help='delihh file to write')
-
-		xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="Calculate XP-EHH based on two per-pop iHH files.")
-		xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
-		xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
-		xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
-
-		###############
-		## POP PAIRS ##
-		###############
-		poppair_parser = subparsers.add_parser('poppair', help='Collate all component statistics for a given population pair (as a prerequisite to more sophisticated group comparisons).')
-		poppair_parser.add_argument('in_ihs_file', type=str, action='store', help="file with normalized iHS values for putative selpop")
-		poppair_parser.add_argument('in_nsl_file', type=str, action='store', help="file with normalized nSL values for putative selpop")
-		poppair_parser.add_argument('in_delihh_file', type=str, action='store', help="file with normalized delIhh values for putative selpop")	
-		poppair_parser.add_argument('in_xp_file', type=str, action='store', help="file with normalized XP-EHH values")
-		poppair_parser.add_argument('in_fst_deldaf_file', type=str, action='store', help="file with Fst, delDaf values for poppair")
-		poppair_parser.add_argument('--xp_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in XPEHH (and vice versa)")	
-		poppair_parser.add_argument('--fst_deldaf_reverse_pops', action="store_true", help="include if the putative selpop for outcome is the altpop in delDAF (and vice versa)") #reversed? 0T 1F
-		poppair_parser.add_argument('outfile', type=str, action='store', help="file to write with collated scores") 
+	xp_from_ihh_parser = subparsers.add_parser('xp_from_ihh', help="Calculate XP-EHH based on two per-pop iHH files.")
+	xp_from_ihh_parser.add_argument('inIhh1', type=str, action='store', help="input ihh file 1")
+	xp_from_ihh_parser.add_argument('inIhh2', type=str, action='store', help="input ihh file 2")
+	xp_from_ihh_parser.add_argument('outfilename', type=str, action='store', help="write to file")
+	xp_from_ihh_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
+	xp_from_ihh_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
 
 
-		########################
-		## LARGER COMPARISONS ##
-		########################
-		outgroups_parser = subparsers.add_parser('outgroups', help='Combine scores from comparisons of a putative selected pop to 2+ outgroups.')
-		outgroups_parser.add_argument('infiles', type=str, action="store", help="comma-delimited set of pop-pair comparisons")
-		outgroups_parser.add_argument('likesfile', type=str, action="store", help="text file where probability distributions are specified for component scores")
-		outgroups_parser.add_argument('--likesfile_low', type=str, action="store", help="text file where probability distributions are specified for component scores")
-		outgroups_parser.add_argument('--likesfile_mid', type=str, action="store", help="text file where probability distributions are specified for component scores")
-		outgroups_parser.add_argument('selpop_likes', type=int, action="store", help="model id for selected pop [1, 2, 3, 4]")
+	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
+	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
+	for sim_parser in [composite_sims_parser, normsims_parser]:
+		sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
+		sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
+	composite_emp_parser = subparsers.add_parser('composite_emp')	
+	composite_emp_parser.add_argument('--basedir', type=str, action='store', default='/idi/sabeti-scratch/jvitti/scores_composite4_b/"')
+	normemp_parser = subparsers.add_parser('normemp', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
 
-		outgroups_parser.add_argument('outfile', type=str, action="store", help="file to write with finalized scores") 
-		outgroups_parser.add_argument('--region', action="store_true", help="for within-region (rather than genome-wide) CMS") 
-		outgroups_parser.add_argument('--chrom', type=str, action="store", help="chromosome containing region") #FOR WITHIN-REGION CMS
-		outgroups_parser.add_argument('--startBp', type=int, action="store", help="start location of region in basepairs")
-		outgroups_parser.add_argument('--endBp', type=int, action="store", help="end location of region in basepairs")
+	for commonparser in [composite_sims_parser, normsims_parser, composite_emp_parser, normemp_parser]:
+		commonparser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
+		commonparser.add_argument('--checkOverwrite', action="store_true", default=False)
+		commonparser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
+		commonparser.add_argument('--suffix', type= str, action='store', default='')
+		commonparser.add_argument('--simpop', action='store', help='simulated population', default=1)
+		commonparser.add_argument('--model', type=str, default="nulldefault")
+		commonparser.add_argument('--nrep', type=int, default=1000)
+		commonparser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 
-		for common_parser in [xp_from_ihh_parser, poppair_parser, outgroups_parser]:
-			common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
-			common_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
-
-
-		ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
-		
-		ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
-		ucsc_viz_parser.add_argument('infile_prefix', type=str, action="store", help="prefix of file containing scores to be reformatted (e.g. 'score_chr' for files named scores_chr#.txt)")
-		ucsc_viz_parser.add_argument('outfile', type=str, action="store", help="file to write")
-		ucsc_viz_parser.add_argument('--posIndex', type=int, action="store", default=1, help="index for column of datafile containing physical position (zero-indexed)")
-		ucsc_viz_parser.add_argument('--scoreIndex', type=str, action="store", default=-2, help="index for column of datafile containing score (zero-indexed)")
-		ucsc_viz_parser.add_argument('--strip_header', action="store_true", help="if input files include header line")
+	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
+	
+	ucsc_viz_parser = subparsers.add_parser('ucsc_viz', help="Generate trackfiles of CMS scores for visualization in the UCSC genome browser.")
+	ucsc_viz_parser.add_argument('infile_prefix', type=str, action="store", help="prefix of file containing scores to be reformatted (e.g. 'score_chr' for files named scores_chr#.txt)")
+	ucsc_viz_parser.add_argument('outfile', type=str, action="store", help="file to write")
+	ucsc_viz_parser.add_argument('--posIndex', type=int, action="store", default=1, help="index for column of datafile containing physical position (zero-indexed)")
+	ucsc_viz_parser.add_argument('--scoreIndex', type=str, action="store", default=-2, help="index for column of datafile containing score (zero-indexed)")
+	ucsc_viz_parser.add_argument('--strip_header', action="store_true", help="if input files include header line")
 
 	return parser
 
 ############################
 ## DEFINE EXEC FUNCTIONS ###
 ############################
+### Recalculate ancillary scores 
+### from primary component scores
 def execute_freqscores(args):
-	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath)
+	''' python wrapper for program to calculate Fst and delDAF '''
+	calc_fst_deldaf(args.inTped1, args.inTped2, args.recomFile, args.outfile, args.modelpath) #should obviate need for recom file. 
 	return
+def execute_delihh_from_ihs(args):
+	''' python wrapper for program to calculate delIHH from iHS file (containing iHH0, iHH1) '''
+	calc_delihh(args.readfile, args.writefile)
+	return
+def execute_ihh_from_xp(args):
+	''' extract per-pop iHH scores from XP-EHH file and write to individual files to facilitate arbitrary population comparions '''
+	takefile = args.inXpehh
+	writefile = args.outIhh
+	popNum = args.takePop
+	write_perpop_ihh_from_xp(takefile, writefile, popNum)
+	return
+def execute_xp_from_ihh(args):
+	''' python wrapper for program to (re)calculate XP-EHH from per-pop iHH values '''
+	inputtped1 = args.inIhh1
+	inputtped2 = args.inIhh2
+	outfilename = args.outfilename
+	cmd = args.cmsdir + "combine/write_xpehh_from_ihh" #will become redundant with conda
+	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
+	cmdstring = cmd + " " + argstring
+	if args.printOnly:
+			print(cmdstring)
+	else:
+		subprocess.check_call( cmdstring.split() )	
+	return
+
+### Combine input component scores
+### in user-defined CMS statistic
+def execute_composite_sims(args):
+	model = args.model
+	selpop = args.simpop
+	likesdir = args.likes_basedir
+	cmsdir = args.cmsdir
+	writedir = args.writedir
+	numPerBin_sel = args.nrep_sel
+	numPerBin_neut = args.nrep_neut
+	suffix = args.suffix
+
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores"
+
+	#cmd = "python " + cmsdir + "composite.py outgroups"
+	#hi_likesfile = get_likesfiles(model, selpop, likesdir, allfreqs=True)
+	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #not using likesfreqs for now
+	
+	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
+	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
+	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
+	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
+	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
+	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
+
+	paramfilename = likesdir + "run_params.txt" + suffix
+	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
+	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
+
+	altpops = [1, 2, 3, 4]
+	selpop = int(selpop)
+	altpops.remove(selpop)
+
+	##################
+	## ALL SEL SIMS ##
+	##################
+	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	for sel_freq_bin in sel_freq_bins:
+		scoremodeldir = writedir + "scores/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
+		compositedir = writedir + "composite/" + model + "/sel" + str(selpop) + "/sel_" + str(sel_freq_bin) + "/"
+		check_create_dir(compositedir)
+		for irep in range(1, numPerBin_sel +1):
+			altpairs = []
+			for altpop in altpops:
+				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir + "scores/", normed = True)
+				pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+				
+				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+					altpairs.append(pairfilename)
+
+			if len(altpairs) !=0:
+				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+				alreadyExists = False
+				if args.checkOverwrite:
+					if not os.path.isfile(outfile): #check for overwrite
+						alreadyExists = False
+					else:
+						alreadyExists = True				
+				if alreadyExists == False:
+					argstring = outfile + " " + paramfilename + " "
+					for pairfile in altpairs:
+						argstring += pairfile +" "
+					#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile 
+					fullcmd = cmd + " " + argstring
+					print(fullcmd)
+					execute(fullcmd)
+
+	##############
+	## ALL NEUT ##
+	##############
+	scoremodeldir = writedir + "scores/" + model + "/neut/"
+	compositedir = writedir + "composite/" + model + "/neut/"
+	check_create_dir(compositedir)
+	for irep in range(1, numPerBin_neut +1):	
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			
+			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
+		if len(altpairs) !=0:
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+			alreadyExists = False
+			if args.checkOverwrite:
+				if not os.path.isfile(outfile): #check for overwrite
+					alreadyExists = False
+				else:
+					alreadyExists = True				
+			if alreadyExists == False:
+				#argstring = scorefilelist + " " + hi_likesfile + " --likesfile_low " + low_likesfile + " --likesfile_mid " + mid_likesfile + " " + str(selpop) + " " + outfile
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile + " "
+				fullcmd = cmd + " " + argstring
+				print(fullcmd)
+				execute(fullcmd)
+	return
+def execute_normsims(args):
+	model = args.model
+	selpop = args.simpop
+	numPerNeutBin, numPerSelBin = args.nrep_neut, args.nrep_sel
+	suffix = args.suffix
+	writedir = args.writedir
+	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	values = []
+	##############################
+	## LOAD STATS FROM NEUT SIMS #
+	##############################
+	for irep in range(1, numPerNeutBin +1):	
+		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
+		if os.path.isfile(outfile):
+			openfile = open(outfile, 'r')
+			for line in openfile:
+				entries = line.split()
+				rawscore = np.log(float(entries[-1]))
+				values.append(rawscore)
+			openfile.close()
+
+	print('loaded ' + str(len(values)) + ' values from neutral sims...')
+
+	#check for nans
+	values = np.array(values)
+	values = values[~np.isnan(values)]
+	mean = np.mean(values)
+	var = np.var(values)
+	sd = np.sqrt(var)
+
+	print("max: " + str(max(values)))
+	print("min: " + str(min(values)))
+	print("mean: " + str(np.mean(values)))
+	print("var: " + str(np.var(values)))
+
+	###############
+	## NORMALIZE ##
+	###############
+	#ALL NEUT
+	
+	for irep in range(1, numPerNeutBin +1):	
+		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
+
+		if os.path.isfile(outfile):
+			normedfile = outfile + ".norm"
+			if True:
+			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
+				openfile = open(outfile, 'r')
+				writefile = open(normedfile, 'w')
+				for line in openfile:
+					entries = line.split()
+					rawscore = np.log(float(entries[-1]))
+					normalized = normalize(rawscore, mean, sd)
+					writeline = line.strip('\n') + "\t" + str(normalized)+ "\n"
+					writefile.write(writeline)
+				openfile.close()
+				writefile.close()
+	print("wrote to eg: " + normedfile)	
+	
+	#ALL SEL SIMS
+	for sel_freq_bin in sel_freq_bins:
+		for irep in range(1, numPerSelBin +1):
+			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
+			if os.path.isfile(rawfile):
+				normedfile = rawfile + ".norm"
+				if True:
+				#if not os.path.isfile(normedfile):
+					openfile = open(rawfile, 'r')
+					writefile = open(normedfile, 'w')
+					for line in openfile:
+						entries = line.split()
+						rawscore = np.log(float(entries[-1]))
+						normalized = normalize(rawscore, mean, sd)
+						writeline = line.strip('\n') + "\t" + str(normalized) + "\n"
+						writefile.write(writeline)
+					openfile.close()
+					writefile.close()
+	print("wrote to eg: " + normedfile)	
+	return
+def execute_composite_emp(args):
+	''' from empirical_composite.py ''' #DIR!
+	cmsdir = args.cmsdir
+	basedir = args.basedir
+	likesdir = args.likes_basedir
+	suffix = args.likessuffix
+	model = args.model
+	selPop = args.emppop
+	modelPop = args.simpop
+	chroms = range(1,23)
+
+	if args.cmsdir is not None:
+		cmd = args.cmsdir
+	else:
+		cmd = ""
+	cmd += "combine/combine_scores"
+
+	#for each model_pop key: gives 1KG pops for that model_pop. exemplar subpop, superpop, other subpops...
+	model_popsdict = {1:["YRI", "AFR" "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
+						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS"],
+						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
+						4:["BEB", "SAS", "GIH", "PJL", "STU", "ITU"],
+						0:["MXL", "PUR", "CLM", "PEL"]} #American populations excluded from model
+
+	pops = [1, 2, 3, 4]
+
+	for pop in [1, 2, 3, 4, 0]:
+		if selPop in model_popsdict[pop]:
+			model_selpop = pop
+	if pop == 0: #what do we want to do with American populations? treat them as 4 (admixture)? for now implement this.
+		model_selpop = 4
+	altpops = pops.remove(model_selpop)
+
+	#hi_likesfile = get_likesfiles(model, modelPop, likessuffix, likesdir, allfreqs=True)
+	#mid_likesfile, low_likesfile = hi_likesfile, hi_likesfile #skip likesfre for now
+	selpop = selPop
+	ihs_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "ihs" + "_master.txt"
+	nsl_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "nsl" + "_master.txt"
+	delihh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "delihh" + "_master.txt"
+	xpehh_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "xpehh" + "_master.txt"		
+	fst_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "fst" + "_master.txt"
+	deldaf_master_likesfile = likesdir + "likes_" + model + "_" + str(selpop) + "_" + "deldaf" + "_master.txt"		
+
+	paramfilename = likesdir + "run_params.txt" + suffix
+	cutoffline, includeline = "250000\t1250000\t0", "0\t0\t0\t0\t0\t0"
+	paramfilename = write_run_paramfile(paramfilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline)
+
+	for chrom in chroms:
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(model, irep, selpop, altpop, filebase = writedir + "scores/", normed = True)
+			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			
+			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
+
+		if len(altpairs) !=0:
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+			alreadyExists = False
+			if args.checkOverwrite:
+				if not os.path.isfile(outfile): #check for overwrite
+					alreadyExists = False
+				else:
+					alreadyExists = True				
+			if alreadyExists == False:
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile + " "
+				fullcmd = cmd + " " + argstring
+				print(fullcmd)
+				execute(fullcmd)	
+def execute_normemp(args):
+	selpop = args.emppop
+	model = args.model
+	suffix = args.suffix
+	
+	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix)
+	scores = [np.log(item) for item in scores2]
+
+	#check for nans
+	scores = np.array(scores)
+	scores = scores[~np.isnan(scores)]
+
+	print('loaded ' + str(len(scores)) + " scores")
+	print("max: " + str(max(scores)))
+	print("min: " + str(min(scores)))
+	print("mean: " + str(np.mean(scores)))
+	print("var: " + str(np.var(scores)))
+
+	mean = np.mean(scores)
+	var = np.var(scores)
+	sd = np.sqrt(var)
+
+	##############
+	## NORMALIZE #
+	##############
+	chroms = range(1,23)
+	for chrom in chroms:
+		unnormedfile = get_emp_cms_file(selpop, model, chrom, normed=False, suffix=suffix)
+		assert os.path.isfile(unnormedfile)
+		normedfile = unnormedfile + ".norm"
+
+		readfile = open(unnormedfile, 'r')
+		writefile = open(normedfile, 'w')
+		for line in readfile:
+			line = line.strip('\n')
+			entries=line.split()
+			rawscore = np.log(float(entries[-1]))
+			normedscore = normalize(rawscore, mean, sd)
+			writeline = line + "\t" + str(normedscore) + '\n'
+			writefile.write(writeline)
+		readfile.close()
+		writefile.close
+		print('wrote to '  + normedfile)
+	return
+
+### Visualize and hone in 
+### on variants within regions
 def execute_hapviz(args):
-	"""original Shervin Tabrizi update Joe Vitti"""
+	''' view haplotype data as a colored grid. original Shervin Tabrizi update Joe Vitti ''' 
 	##############
 	## LOAD DATA##
 	##############
 	inputfilename = args.inputfile
-
 	if ".hap" in inputfilename:
 		haplotypes, coreindex, physpositions = load_from_hap(inputfilename, args.maf, corePos = args.corepos)
 	else:
@@ -134,7 +442,6 @@ def execute_hapviz(args):
 			startpos = int(args.startpos)
 			endpos = int(args.endpos)
 			haplotypes, coreindex, physpositions = pullRegion(inputfilename, startpos, endpos, args.maf, corePos = args.corepos)
-
 	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
 
 	########################
@@ -151,7 +458,6 @@ def execute_hapviz(args):
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
 	hapViz(ax, hap[0], args.out)
-
 	if args.annotate is not None:
 		positions, annotations = readAnnotations(args.annotate)
 		ylim = ax.axis()[-1]
@@ -163,82 +469,20 @@ def execute_hapviz(args):
 				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
 				ax.plot(foundindex, -5, "^", color="black", markersize=1)
 				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
-
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
-
 	plt.tight_layout()
 	plt.savefig(args.out, dpi=float(args.dpi))
+	print("plotted to: " + args.out)
 	plt.close()
 	return	
-def execute_win_haps(args):
-	windowsize = args.windowsize
-	jumplen = args.jumplen
-	infilename = args.infilename
-	writefilename = args.writefilename
-	windows(windowsize, jumplen, infilename, writefilename)
-	return
-def execute_delihh_from_ihs(args):
-	calc_delihh(args.readfile, args.writefile)
-	return
-def execute_xp_from_ihh(args):
-	inputtped1 = args.inIhh1
-	inputtped2 = args.inIhh2
-	outfilename = args.outfilename
-
-	cmd = args.cmsdir + "combine/write_xpehh_from_ihh"
-	argstring = inputtped1 + " " + inputtped2 + " " + outfilename
-	cmdstring = cmd + " " + argstring
-	if args.printOnly:
-			print(cmdstring)
-	else:
-		subprocess.check_call( cmdstring.split() )	
-	return
-def execute_outgroups(args):
-	''' nix this? execute_composite in power.py '''
-	''' composites scores from input components and likelihood tables '''
-	ihs_hit_hi_filename, ihs_miss_hi_filename, nsl_hit_hi_filename, nsl_miss_hi_filename, delihh_hit_hi_filename, delihh_miss_hi_filename, xpehh_hit_hi_filename, xpehh_miss_hi_filename, fst_hit_hi_filename, fst_miss_hi_filename, deldaf_hit_hi_filename, deldaf_miss_hi_filename = get_likesfiles_frommaster(args.likesfile, args.selpop_likes)
-	usefreqs = []
-	if args.likesfile_low is not None:
-		ihs_hit_low_filename, ihs_miss_low_filename, nsl_hit_low_filename, nsl_miss_low_filename, delihh_hit_low_filename, delihh_miss_low_filename, xpehh_hit_low_filename, xpehh_miss_low_filename, fst_hit_low_filename, fst_miss_low_filename, deldaf_hit_low_filename, deldaf_miss_low_filename = get_likesfiles_frommaster(args.likesfile_low, args.selpop_likes)
-		usefreqs.append('low')
-	if args.likesfile_mid is not None:
-		ihs_hit_mid_filename, ihs_miss_mid_filename, nsl_hit_mid_filename, nsl_miss_mid_filename, delihh_hit_mid_filename, delihh_miss_mid_filename,  xpehh_hit_mid_filename, xpehh_miss_mid_filename, fst_hit_mid_filename, fst_miss_mid_filename, deldaf_hit_mid_filename, deldaf_miss_mid_filename = get_likesfiles_frommaster(args.likesfile_mid, args.selpop_likes)
-		usefreqs.append('mid')
-	while len(usefreqs) < 3:	#HI-FREQ by default
-		usefreqs.append('hi')
-
-	if args.cmsdir is not None:
-		cmd = args.cmsdir
-	else:
-		cmd = ""
-	cmd += "combine/combine_scores"
-	argstring = args.outfile 
-	
-	#for score in ['ihs', 'nsl', 'delihh', 'xpehh', 'fst', 'deldaf']:
-	#	for dist_type in ['hit', 'miss']:
-	#		for freq in usefreqs: #['low', 'mid', 'hi']:
-	#			argument = eval(score + "_" + dist_type + "_" + freq + "_filename")
-	#			argstring += " " + argument 
-
-	argstring += " " + cms_run_paramfilename
-
-
-	#write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
-	for pairfile in args.infiles.split(','):
-		argstring += " " + pairfile
-
-	cmdstring = cmd + " " + argstring
-	if args.printOnly:
-			print(cmdstring)
-	else:
-		subprocess.check_call( cmdstring.split() )	
-	return
 def execute_ml_region(args):
-	chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
+	''' perform within-region localization using machine learning algorithm '''
+	#chrom, startBp, endBp = args.chrom, args.startBp, args.endBp
 	#IN PROGRESS
 	return
 def execute_ucsc_viz(args):
+	''' write score/position data to file for visualization in UCSC genome browser '''
 	#convertBedGraph
 	inprefix = args.infile_prefix
 	outfilename = args.outfile

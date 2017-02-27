@@ -2,11 +2,11 @@
 ## last updated: 11.4.16 vitti@broadinstitute.org
 
 import matplotlib as mp 
-#mp.use('TkAgg') #set backend
 import matplotlib.pyplot as plt
 from random import choice
 import numpy as np
 import os
+
 def get_hist_bins(score,numBins):
 	if score == "ihs":
 		scorerange = [-4., 4.]
