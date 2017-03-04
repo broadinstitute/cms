@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 02.27.2017	vitti@broadinstitute.org
+##	last updated 03.04.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -9,8 +9,8 @@ from power.power_func import merge_windows, get_window, check_outliers, check_re
 from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
 						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
-#from xlwt import Workbook, easyxf #add to cms-venv 
-#from pybedtools import BedTool 
+from xlwt import Workbook, easyxf #add to cms-venv (?)
+from pybedtools import BedTool 
 import numpy as np
 import argparse
 import sys
@@ -42,7 +42,7 @@ def full_parser_power():
 	tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
 	roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
 	roc_parser.add_argument('--plot_curve', action="store_true", default=False)
-	roc_parser.add_argument('--find_opt', action="store_true", default=False)
+	roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
 	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
 	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
 	find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
@@ -54,9 +54,11 @@ def full_parser_power():
 	## EMPIRICAL SIGNIFICANCE ###
 	#############################
 	gw_regions_parser = subparsers.add_parser('gw_regions', help="pull designated significant regions from genome-wide normalized results")
-	gw_regions_parser.add_argument('--geneFile')
+	gw_regions_parser.add_argument('--geneFile', help="input file containing bounds ")
 	regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
-	regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/idi/sabeti-scratch/jvitti/knownGenes_110116.txt")
+	regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
+	regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
+	
 	manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
 	manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
 	manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
@@ -72,15 +74,16 @@ def full_parser_power():
 	## SHARED ARGS ###
 	##################
 
-	for write_parser in [fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser]:
+	for write_parser in [fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 		write_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
 
-	for regions_parser in [fpr_parser, gw_regions_parser, regionlog_parser, tpr_parser]:
+	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser]:
 		regions_parser.add_argument('regionlen', type = int, action='store', help='length of region to query', default="100000")
 		regions_parser.add_argument('thresshold', type = float, action='store', help='percentage of region to exceed cutoff', default="30")
 		regions_parser.add_argument('cutoff', type = float, action='store', help='minimum significant value for region definition', default="3.0")
+	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
 
 	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
@@ -106,6 +109,7 @@ def full_parser_power():
 ########	output for a given CMS run.
 def execute_repviz(args):
 	'''visualize CMS scores for simulated data as individual replicates (w/ component and combined scores vs. pos)'''
+	##should revisit this; maybe make it work for arbitrary input? emp/sim
 	causal_index = -1
 	model, pop = args.model, args.simpop
 	irep = args.vizRep
@@ -142,6 +146,10 @@ def execute_repviz(args):
 def execute_distviz(args):
 	"""from explore_p3_dists.py"""
 	reps = args.nrep
+
+	## Overhaul this. Pass a list of filenames and an index for value
+	## -> easy flexibility for sim/emp/etc.
+	# should then run for score_likes also (make new c program?)
 
 	############################
 	## VIEW DIST FROM 1 FILE  ##
@@ -206,6 +214,7 @@ def execute_manhattan(args):
 	model = args.model
 	savename = args.savefilename
 	suffix = args.suffix
+	basedir = args.writedir
 	#nRep = args.nrep
 	###############################
 	### LOAD NEUTRAL SIM VALUES ###
@@ -233,7 +242,7 @@ def execute_manhattan(args):
 	nSnps = 0
 	for chrom in range(1,23):
 		thesepos, thesescores = [], []
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -261,13 +270,17 @@ def execute_extended_manhattan(args):
 	plotscore = args.plotscore
 	selpop = args.emppop
 	model = args.model
+	basedir = args.writedir
 	suffix = args.suffix
 	savename = args.savefilename
 	dpi = args.dpi
 	numChr = 22
 	titlestring = args.titlestring
 
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
+	modelpops = {'YRI':1, 'GWD':1, 'LWK':1, 'MSL':1, 'ESN':1, 
+				'CEU':2, 'FIN':2, 'IBS':2, 'TSI':2, 'GBR':2,
+				'CHB':3, 'JPT':3, 'KHV':3, 'CDX':3, 'CHS':3, 
+				'BEB':4, 'STU':4, 'ITU':4, 'PJL':4, 'GIH':4}
 	pop = modelpops[selpop]
 	#colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'} #1000 Genomes group color scheme
 	colorDict = {1:'#cec627', 2:'#0EBFF0', 3:'#65ff00', 4:'#8B08B0'} #make it pop-!
@@ -281,7 +294,7 @@ def execute_extended_manhattan(args):
 
 	all_emp_pos, all_emp_scores = [], []
 	for chrom in range(1,numChr +1):
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix)
+		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -576,7 +589,7 @@ def execute_roc(args):
 	#####################
 	## COMPARE CUTOFFS ##
 	#####################
-	if find_opt:
+	if find_opt: #nix this?
 		for model in models:
 			print(model)
 			for regionlen in regionlens:
@@ -647,6 +660,7 @@ def execute_gw_regions(args):
 	regionlen = args.regionlen
 	thresshold = args.thresshold
 	cutoff = args.cutoff
+	basedir = args.writedir
 	pop = args.emppop
 	windowlen = args.regionlen
 	suffix = args.suffix
@@ -658,7 +672,7 @@ def execute_gw_regions(args):
 	####################
 	for chrom in chroms:
 		chrom_signif = []
-		normedempfilename = get_emp_cms_file(pop, model, chrom, normed=True, suffix = suffix)
+		normedempfilename = get_emp_cms_file(pop, model, chrom, normed=True, suffix = suffix, basedir=basedir)
 		if not os.path.isfile(normedempfilename):
 			print("missing: " + normedempfilename)
 		else:
@@ -705,13 +719,14 @@ def execute_gw_regions(args):
 		print('wrote to ' + writefilename)	
 	return
 def execute_regionlog(args):
-	''' writes an excel file '''
+	''' writes an excel file ''' #maybe, instead, pass an arbitrary number of regionfiles? and takepops?
+	stringency = args.stringency
 	model = args.model	
 	regionfiles = []
-	pops = ['YRI', 'CEU', 'CHB', 'BEB']
+	pops = ['YRI', 'GWD', 'LWK', 'MSL', 'ESN', 'CEU', 'FIN', 'IBS', 'TSI', 'GBR', 'CHB', 'JPT', 'KHV', 'CDX', 'CHS', 'BEB', 'STU', 'ITU', 'PJL', 'GIH']
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
-		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_regions/" + model + "/" + pop + "_" + str(int(args.regionlen)) + "_" + str(int(args.thresshold)) + "_" + str(int(args.cutoff)) + ".txt" #or _alt
+		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
 		print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
@@ -720,6 +735,7 @@ def execute_regionlog(args):
 		print("found no regions")
 		return
 	else:
+	
 		totalselregions = 0
 		print('loaded regions from ' + str(len(regionfiles)) + " files...")
 		boldstyle = easyxf('font: bold 1;')
