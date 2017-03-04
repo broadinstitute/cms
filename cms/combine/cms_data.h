@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 1.02.17 	vitti@broadinstitute.org
+// last updated: 03.04.17 	vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -91,6 +91,8 @@ float getHitProb(likes_data_multiple* data, int likesIndex, double value);
 float getMissProb(likes_data_multiple* data, double value);
 float getMaxBf(likes_data_multiple* data, int likesIndex);
 float getMinBf(likes_data_multiple* data,  int likesIndex);
+float getMaxProb(likes_data_multiple* data, int likesIndex, double prior);
+float getMinProb(likes_data_multiple* data,  int likesIndex, double prior);
 
 /*************************/
 /***TWO-POP COMPARISON***/

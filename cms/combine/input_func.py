@@ -1,5 +1,5 @@
 ## functions for composite  	#REORG?
-## last updated: 	02.27.2017	vitti@broadinstitute.org
+## last updated: 	02.28.2017	vitti@broadinstitute.org
 
 import sys
 import os
@@ -96,7 +96,7 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 		openfile.write(includeline + "\n")		
 		openfile.close()
 	return writefilename
-def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
+def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/", suffix = ""):
 	""" locates CMS files for empirical data """
 	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
 	if normed:
@@ -104,12 +104,12 @@ def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/s
 	if not os.path.isfile(filename):
 		print("MISSING empirical file : " + filename)
 	return filename
-def load_empscores(model, selpop, normed = False, suffix = '', takeIndex = -1):
+def load_empscores(model, selpop, normed = False, suffix = '', takeIndex = -1, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/"):
 	""" for genome-wide empirical CMS data, loads a value according to takeIndex """	
 	chroms = range(1,23)
 	scores = []
 	for chrom in chroms:
-		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix)
+		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix, basedir=basedir)
 		print('loading from ' + scorefile)
 		assert os.path.isfile(scorefile)
 		openfile = open(scorefile, 'r')

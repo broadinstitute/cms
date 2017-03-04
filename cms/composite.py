@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 02.27.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 02.28.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
@@ -65,7 +65,7 @@ def full_parser_composite():
 		sim_parser.add_argument('--nrep_sel', type= int, action='store', default='500')
 		sim_parser.add_argument('--nrep_neut', type= int, action='store', default='1000')
 
-	composite_emp_parser = subparsers.add_parser('composite_emp')	
+	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
 	composite_emp_parser.add_argument('--basedir', type=str, action='store', default='/idi/sabeti-scratch/jvitti/scores_composite4_b/"')
 	normemp_parser = subparsers.add_parser('normemp', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
 
@@ -75,8 +75,9 @@ def full_parser_composite():
 		commonparser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
 		commonparser.add_argument('--suffix', type= str, action='store', default='')
 		commonparser.add_argument('--simpop', action='store', help='simulated population', default=1)
+		commonparser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 		commonparser.add_argument('--model', type=str, default="nulldefault")
-		commonparser.add_argument('--nrep', type=int, default=1000)
+		commonparser.add_argument('--nrep', type=int, default=1000) #hmm remove for normemp
 		commonparser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 
 	ml_region_parser = subparsers.add_parser('ml_region', help='machine learning algorithm (within-region)')
@@ -383,8 +384,9 @@ def execute_normemp(args):
 	selpop = args.emppop
 	model = args.model
 	suffix = args.suffix
-	
-	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix)
+	basedir = args.writedir
+
+	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix, basedir=basedir)
 	scores = [np.log(item) for item in scores2]
 
 	#check for nans
@@ -406,7 +408,7 @@ def execute_normemp(args):
 	##############
 	chroms = range(1,23)
 	for chrom in chroms:
-		unnormedfile = get_emp_cms_file(selpop, model, chrom, normed=False, suffix=suffix)
+		unnormedfile = get_emp_cms_file(selpop, model, chrom, normed=False, suffix=suffix, basedir = basedir)
 		assert os.path.isfile(unnormedfile)
 		normedfile = unnormedfile + ".norm"
 
