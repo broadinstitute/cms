@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 2.10.2017 	vitti@broadinstitute.org
+// last updated: 03.04.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -593,6 +593,37 @@ float getMinBf(likes_data_multiple* data, int likesIndex){
 	//fprintf(stderr, "found min bf: %f\n", minBf);	
 	return minBf;
 }//end function
+
+
+float getMaxProb(likes_data_multiple* data, int likesIndex, double prior){
+	int ibin;
+	float thisProb;
+	float maxProb = 0.;
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if(data->hit_probs[likesIndex][ibin] > 1e-10 && data->miss_probs[ibin] > 1e-10){
+			thisProb = (prior * data->hit_probs[likesIndex][ibin]) / ((prior * data->hit_probs[likesIndex][ibin]) + ((1. - prior) * data->miss_probs[ibin]));
+			if (thisProb > maxProb){maxProb = thisProb;}
+		}
+	}//end ibin
+	//fprintf(stderr, "found max prob: %f\n", maxProb);
+	return maxProb;
+}//end function
+float getMinProb(likes_data_multiple* data, int likesIndex, double prior){
+	int ibin;
+	float thisProb;
+	float minProb = 1.;
+	for (ibin = 0; ibin < data->nbins; ibin++){
+		if(data->hit_probs[likesIndex][ibin] > 1e-10 && data->miss_probs[ibin] > 1e-10){
+			thisProb = (prior * data->hit_probs[likesIndex][ibin]) / ((prior * data->hit_probs[likesIndex][ibin]) + ((1. - prior) * data->miss_probs[ibin]));
+			if (thisProb < minProb){minProb = thisProb;}
+		}
+	}//end ibin
+	//fprintf(stderr, "found min prob: %f\n", minProb);	
+	return minProb;
+}//end function
+
+
+
 
 /****************/
 /***POP PAIR****/

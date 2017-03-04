@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
 	//char takeScoreString[6];
 	double prior; // = 1/nSNP for region
+	int nsnps_regional;
 
 	if (argc <= 3) {
 		fprintf(stderr, "Usage: ./combine_scores_local <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
@@ -112,9 +113,36 @@ int main(int argc, char **argv) {
 	/////////////////////
 	/// DEFINE REGION ///
 	/////////////////////
-
-
-	//prior = 1. / score_data.nsnps;
+	nsnps_regional = 0;
+	for (isnp = 0; isnp < score_data.nsnps; isnp++){
+		//////////////////////////////////
+		//HANDLE POPULATION COMPARISONS //
+		//////////////////////////////////
+		iComp = 0; 
+		for (iComp = 0; iComp < score_data.ncomp; iComp++){
+			if (score_data.physpos[iComp][isnp] != 0){break;}
+		} //advance to the first comparison for which we have any data
+		thisihs = score_data.ihs_normed[iComp][isnp];
+		thisihh = score_data.delihh_normed[iComp][isnp];
+		thisnsl = score_data.nsl_normed[iComp][isnp];
+		thisxpehh = compareXp(&score_data, isnp); //determine others by comparison. XP: take maximum.
+		thisfst = compareFst(&score_data, isnp);	//Do I want to rewrite this to calculate LSBL? Should be easy since I'm passing the whole data object.
+		thisdelDaf = comparedelDaf(&score_data, isnp);	//Similarly, it would be easy to rewrite this function to give us (daf - AVE(outgroup daf)). 
+		//Will also need to redo likelihood tables similarly. For now, leave as-is.
+		
+		proceed = 0;
+		//check position
+		thisPos = score_data.physpos[iComp][isnp];
+		if (thisPos < minPos){proceed=1;}
+		if (thisPos > maxPos){proceed=1;}
+		//check daf
+		thisdaf = score_data.daf_selpop[iComp][isnp];
+		if (thisdaf < minDaf){proceed=1;} 
+		//if still a go...
+		if(proceed == 0){nsnps_regional++;
+		}
+	} //end for isnp
+	prior = 1. / nsnps_regional;
 
 	////////////////////////
 	// ITERATE OVER SNPS ///
@@ -171,46 +199,46 @@ int main(int argc, char **argv) {
 			deldaf_missprob = getMissProb(&deldaf_likes_data, thisdelDaf);
 			xpehh_missprob = getMissProb(&xpehh_likes_data, thisxpehh);
 
-			delihh_minprob = getMinProb(&delihh_likes_data, likesFreqIndex);
-			nsl_minprob = getMinProb(&nsl_likes_data, likesFreqIndex);
-			ihs_minprob = getMinProb(&ihs_likes_data, likesFreqIndex);	
-			fst_minprob = getMinProb(&fst_likes_data, likesFreqIndex);
-			deldaf_minprob = getMinProb(&deldaf_likes_data, likesFreqIndex);
-			xpehh_minprob = getMinProb(&xpehh_likes_data, likesFreqIndex);			
+			delihh_minprob = getMinProb(&delihh_likes_data, likesFreqIndex, prior);
+			nsl_minprob = getMinProb(&nsl_likes_data, likesFreqIndex, prior);
+			ihs_minprob = getMinProb(&ihs_likes_data, likesFreqIndex, prior);	
+			fst_minprob = getMinProb(&fst_likes_data, likesFreqIndex, prior);
+			deldaf_minprob = getMinProb(&deldaf_likes_data, likesFreqIndex, prior);
+			xpehh_minprob = getMinProb(&xpehh_likes_data, likesFreqIndex, prior);			
 			
-			delihh_maxprob = getMaxProb(&delihh_likes_data, likesFreqIndex);
-			nsl_maxprob = getMaxProb(&nsl_likes_data, likesFreqIndex);
-			ihs_maxprob = getMaxProb(&ihs_likes_data, likesFreqIndex);	
-			fst_maxprob = getMaxProb(&fst_likes_data, likesFreqIndex);
-			deldaf_maxprob = getMaxProb(&deldaf_likes_data, likesFreqIndex);
-			xpehh_maxprob = getMaxProb(&xpehh_likes_data, likesFreqIndex);			
+			delihh_maxprob = getMaxProb(&delihh_likes_data, likesFreqIndex, prior);
+			nsl_maxprob = getMaxProb(&nsl_likes_data, likesFreqIndex, prior);
+			ihs_maxprob = getMaxProb(&ihs_likes_data, likesFreqIndex, prior);	
+			fst_maxprob = getMaxProb(&fst_likes_data, likesFreqIndex, prior);
+			deldaf_maxprob = getMaxProb(&deldaf_likes_data, likesFreqIndex, prior);
+			xpehh_maxprob = getMaxProb(&xpehh_likes_data, likesFreqIndex, prior);			
 			
 			///////////////////////////////////////////////////////
 			//catch pseudocounts per SG/IS CMS 1.0 implementation// make this toggleable as well?
 			///////////////////////////////////////////////////////
 			if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){delihh_prob = delihh_maxprob;}
 			if (delihh_hitprob < 2e-10 && delihh_missprob > 2e-10){delihh_prob = delihh_minprob;}
-			else{delihh_prob = //delihh_hitprob / delihh_missprob;} //NEIN!!!! 
+			else{delihh_prob = (prior*delihh_hitprob) / ((prior*delihh_hitprob) + ((1.-prior)*delihh_missprob));} 
 
 			if (nsl_missprob < 2e-10 && nsl_hitprob > 2e-10){nsl_prob = nsl_maxprob;}
 			if (nsl_hitprob < 2e-10 && nsl_missprob > 2e-10){nsl_prob = nsl_minprob;}
-			else{nsl_prob = nsl_hitprob / nsl_missprob;}
+			else{nsl_prob = (prior*nsl_hitprob) / ((prior*nsl_hitprob) + ((1.-prior)*nsl_missprob));} 
 
 			if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){ihs_prob = ihs_maxprob;}
 			if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){ihs_prob = ihs_minprob;}
-			else {ihs_prob = ihs_hitprob / ihs_missprob;}
+			else {ihs_prob = (prior*ihs_hitprob) / ((prior*ihs_hitprob) + ((1.-prior)*ihs_missprob));} 
 
 			if (fst_missprob < 2e-10 && fst_hitprob > 2e-10){fst_prob = fst_maxprob;}
 			if (fst_hitprob < 2e-10 && fst_missprob > 2e-10){fst_prob = fst_minprob;}
-			else{fst_prob = fst_hitprob / fst_missprob;}
+			else{fst_prob = (prior*fst_hitprob) / ((prior*fst_hitprob) + ((1.-prior)*fst_missprob));} 
 
 			if (deldaf_missprob < 2e-10 && deldaf_hitprob > 2e-10){deldaf_prob = deldaf_maxprob;}
 			if (deldaf_hitprob < 2e-10 && deldaf_missprob > 2e-10){deldaf_prob = deldaf_minprob;}
-			else{deldaf_prob = deldaf_hitprob / deldaf_missprob;}
+			else{deldaf_prob = (prior*deldaf_hitprob) / ((prior*deldaf_hitprob) + ((1.-prior)*deldaf_missprob));} 
 
 			if (xpehh_missprob < 2e-10 && xpehh_hitprob > 2e-10){xpehh_prob = xpehh_maxprob;}
 			if (xpehh_hitprob < 2e-10 && xpehh_missprob > 2e-10){xpehh_prob = xpehh_minprob;}
-			else{xpehh_prob = xpehh_hitprob / xpehh_missprob;}
+			else{xpehh_prob = (prior*xpehh_hitprob) / ((prior*xpehh_hitprob) + ((1.-prior)*xpehh_missprob));} 
 			
 			/////////////////////
 			/// GET CMS SCORE ///
