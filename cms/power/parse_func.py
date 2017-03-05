@@ -39,7 +39,7 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 ## LOCATE FILES ##
 ##################
 def get_emp_component_score_files(filebase = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = "clear-synth-"):
-	''' IN PROGRES '''
+	''' ? version control issue? ''' #NO I just need to patch this in; I swapped to dispatch_1kg_composite.py on RC; being lazy with dispatch_cms_local.py for now but come back to this
 	in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + ".ihs.out"
 	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
 	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"

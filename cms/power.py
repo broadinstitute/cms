@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 03.04.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 03.05.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -26,55 +26,57 @@ def full_parser_power():
 	#######################
 	## VISUALIZE OUTPUT ###
 	#######################
-	repviz_parser = subparsers.add_parser('repviz', help="visualize component and combined scores")
-	repviz_parser.add_argument('--vizRep', type=int, help="rep number", default=1, action="store")
-	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS scores")
-	distviz_parser.add_argument('--oneFile', action="store", default=None, help="quick viz score dist from a single file")
-	distviz_parser.add_argument('--simsDist', action="store_true", default=False, help="visualize from all simulated replicates")
-	distviz_parser.add_argument('--empDist', action="store_true", default=False, help="visualize from empirical scores")
-	distviz_parser.add_argument('--normed_cms', action="store_true", help="normalized values", default = False)
+	regionviz_parser = subparsers.add_parser('regionviz', help="visualize component and combined scores across a region of simulated or empirical data")
+	regionviz_parser.add_argument('--cmsInfile', action='store', type=str, help="input .cms file to visualize")
+	regionviz_parser.add_argument('--causalPos', action='store', type=int, help="hilite causal SNP (e.g. if known from simulated data)")
+	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS component or composite scores for simulated or empirical data")
+	distviz_parser.add_argument('--takeIndex', action='store', type=int, help="zero-based index of datacolumn to aggregate", default=-1)
+	distviz_parser.add_argument('--infile_singular', action='store', type=str, help="visualize distribution from this singular .cms file")
+	distviz_parser.add_argument('--infile_list', action='store', type=str, help="pass a file with a list of input files to view distributions pooled across multiples chromosomes, multiple replicates, etc.")
 
 	#####################
 	## QUANTIFY POWER ###
 	#####################
-	cdf_parser = subparsers.add_parser('cdf', help = 'plot cumulative density function of causal rank')
-	fpr_parser = subparsers.add_parser('fpr', help='calculate false positive rate for CMS_gw based on neutral simulations')
-	tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
-	roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
-	roc_parser.add_argument('--plot_curve', action="store_true", default=False)
-	roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
-	roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
-	cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
-	find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
-	find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
-	find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
-	find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
+	if True:
+		cdf_parser = subparsers.add_parser('cdf', help = 'plot cumulative density function of causal rank')
+		fpr_parser = subparsers.add_parser('fpr', help='calculate false positive rate for CMS_gw based on neutral simulations')
+		tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
+		roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
+		roc_parser.add_argument('--plot_curve', action="store_true", default=False)
+		roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
+		roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
+		cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
+		find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
+		find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
+		find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
+		find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
 	#############################
-	gw_regions_parser = subparsers.add_parser('gw_regions', help="pull designated significant regions from genome-wide normalized results")
-	gw_regions_parser.add_argument('--geneFile', help="input file containing bounds ")
-	regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
-	regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
-	regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
-	
-	manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
-	manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
-	manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
-	manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
-	extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
-	extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
-	extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
-	extended_manhattan_parser.add_argument('--percentile', help="percentile to hilite")
-	extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
-	extended_manhattan_parser.add_argument('--dpi', help="resolution for matplotlib", type=int, default=100)
+	if True:
+		gw_regions_parser = subparsers.add_parser('gw_regions', help="pull designated significant regions from genome-wide normalized results")
+		gw_regions_parser.add_argument('--geneFile', help="input file containing bounds ")
+		regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
+		regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
+		regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
+		
+		manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
+		manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
+		manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
+		manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
+		extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
+		extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
+		extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
+		extended_manhattan_parser.add_argument('--percentile', help="percentile to hilite")
+		extended_manhattan_parser.add_argument('--titlestring', help="title for plot")
+		extended_manhattan_parser.add_argument('--dpi', help="resolution for matplotlib", type=int, default=100)
 
 	##################
 	## SHARED ARGS ###
 	##################
 
-	for write_parser in [fpr_parser, tpr_parser, roc_parser, repviz_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
+	for write_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 		write_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
@@ -86,16 +88,16 @@ def full_parser_power():
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
 
-	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 
-	for suffixed_parser in [fpr_parser, tpr_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, distviz_parser]:
+	for suffixed_parser in [fpr_parser, tpr_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
 
-	for plot_parser in [repviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
+	for plot_parser in [regionviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
 
-	for commonparser in [repviz_parser, distviz_parser, fpr_parser, gw_regions_parser, manhattan_parser,
+	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser,
 						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
@@ -107,107 +109,73 @@ def full_parser_power():
 #################################
 ########	Visualize composite score 
 ########	output for a given CMS run.
-def execute_repviz(args):
-	'''visualize CMS scores for simulated data as individual replicates (w/ component and combined scores vs. pos)'''
-	##should revisit this; maybe make it work for arbitrary input? emp/sim
+def execute_regionviz(args):
+	''' visualize component and composite scores for a region '''
+
 	causal_index = -1
-	model, pop = args.model, args.simpop
-	irep = args.vizRep
 	savefilename = args.savefilename
-	writedir = args.writedir
-	#CURRENTLY JUST NEUT
-	scenars = ['neut']#'neut', '0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
-	for scenar in scenars:
-		if scenar == "neut":
-			cmsfilename = get_neut_repfile_name(model, irep, pop, normed = True, basedir=writedir)
-		else:
-			cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, vsNeut = True, basedir=writedir)
-			#print(cmsfilename)
-		if os.path.isfile(cmsfilename):
-			print('loading from... ' + cmsfilename)
-			physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+	cmsfilename = args.cmsInfile
 
-			f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
-			quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
-			quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
-			quick_plot(ax3, physpos, nsl_normed, "nsl_normed", causal_index)
-			quick_plot(ax4, physpos, xpehh_normed, "xpehh_normed", causal_index)
-			quick_plot(ax5, physpos, fst, "fst", causal_index)
-			quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
-			quick_plot(ax7, physpos, cms_unnormed, "cms_unnormed", causal_index)
-			quick_plot(ax8, physpos, cms_normed, "cms_normed", causal_index)				
-			savefilename = args.savefilename + "_"+ model + "_" + str(pop) + "_" + str(scenar) + "_" + str(irep) + ".png"
+	if os.path.isfile(cmsfilename):
+		print('loading from... ' + cmsfilename)
+		physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
 
-			plt.savefig(savefilename)
-			#if irep == 1:
-			print("plotted to " + savefilename)
-			plt.close()
+		if args.causalPos is not None:
+			if causalPos in physpos:
+				causal_index = physpos.index(causalPos)
+
+		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
+		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
+		quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
+		quick_plot(ax3, physpos, nsl_normed, "nsl_normed", causal_index)
+		quick_plot(ax4, physpos, xpehh_normed, "xpehh_normed", causal_index)
+		quick_plot(ax5, physpos, fst, "fst", causal_index)
+		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
+		quick_plot(ax7, physpos, cms_unnormed, "cms_unnormed", causal_index)
+		quick_plot(ax8, physpos, cms_normed, "cms_normed", causal_index)				
+		savefilename = args.savefilename + "_"+ model + "_" + str(pop) + "_" + str(scenar) + "_" + str(irep) + ".png"
+
+		plt.savefig(savefilename)
+		print("plotted to " + savefilename)
+		plt.close()
+
 	return
 def execute_distviz(args):
-	"""from explore_p3_dists.py"""
-	reps = args.nrep
+	''' visualize the distribution of a component/composite statistic in empirical/simulated data '''
+	allfiles = []
+	if args.infile_list is not None:
+		infile = open(args.infile_list)
+		for line in file:
+			filename = line.strip('\n')
+			assert(os.path.isfile(infile))
+			allfiles.append(filename)
+		infile.close()
+	if args.infile_singular is not None:
+		if infile_singular not in allfiles:
+			allfiles.append(infile_singular)
 
-	## Overhaul this. Pass a list of filenames and an index for value
-	## -> easy flexibility for sim/emp/etc.
-	# should then run for score_likes also (make new c program?)
+	if len(allfiles) == 0:
+		print('must supply input .cms files')
+		sys.exit(0)
 
-	############################
-	## VIEW DIST FROM 1 FILE  ##
-	############################
-	if args.oneFile is not None:
-		savefilename = args.savefilename
-		infilename = args.oneFile
-		if os.path.isfile(infilename):
-			values = read_vals_lastcol(infilename)
-			plot_dist(values, savefilename)
+	print('loading cms values from ' + str(len(allfiles)) + " files...")
 
-	#########################
-	## VIEW DIST FROM SIMS ##
-	#########################
-	if args.simsDist:
-		#### SHOULD USE DISPATCH TO PASS MODEL AND MODELPPOP
-		#	argstring = "--simpop " + str(simpop) + " --model " + model
-		#models = [ 'gradient_101915_treebase_6_best', 'default_default_101715_12pm', 'default_112115_825am','nulldefault_constantsize', 'nulldefault', ]
-		#modelpops = [1, 2, 3, 4]
-		models = [args.model]
-		modelpops = [args.simpop]
+	#pass index, expectedlen?
+	savefilename = args.savefilename
+	takeIndex = args.takeIndex
+	allvals = []
+	for infilename in allfiles:
+		infile = open(infilename, 'r')
+		for line in infile:
+			entries = line.split()
+			if len(entries) > takeIndex:
+				if not np.isnan(float(entries[takeIndex])):
+					allvals.append(float(entries[takeIndex]))
+			else:
+				print('check input datafile and argument takeIndex')
+		infile.close()
 
-		for model in models:		
-			for pop in modelpops:
-				allvals = []
-				#NEUT REPS
-				for irep in range(1, reps+1):
-					filebase = "/idi/sabeti-scratch/jvitti/clean/scores/"
-					infilename = filebase + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out"
-					if os.path.isfile(infilename):
-						values = read_vals_lastcol(infilename)
-						allvals.extend(values)
-				plot_dist(allvals, "/web/personal/vitti/sim_dists/" + model +"_" + str(pop) + "_justneut.png")
-
-				#SEL REPS
-				#for selbin in selbins:	
-				#	for irep in range(1,501):
-				#		infilename = filebase + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/rep" + str(irep) + "_" + str(pop) + "_vsneut.cms.out"
-				#		if os.path.isfile(infilename):
-				#			values = read_vals_lastcol(infilename)
-				#			allvals.extend(values)
-			
-				#plot_dist(allvals, savefilename)
-
-	#############################
-	## VIEW DIST FROM EMP DATA ##
-	#############################
-	elif args.empDist:
-		for model in models:
-			for pop in emppops:
-				savefilename = "/web/personal/vitti/" + model +"_" + str(pop) + ".png"
-				allvals = []
-				for chrom in chroms:
-					infilename = filebase + pop + "_" + model + "_" + "neut" + ".chr" + str(chrom) + ".txt"
-					if os.path.isfile(infilename):
-						values = read_vals_lastcol(infilename)
-						allvals.extend(values)
-				plot_dist(allvals, savefilename)
+	plot_dist(allvals, savefilename)
 	return
 def execute_manhattan(args):
 	selpop = args.emppop
