@@ -27,7 +27,10 @@ def full_parser_power():
 	## VISUALIZE OUTPUT ###
 	#######################
 	regionviz_parser = subparsers.add_parser('regionviz', help="visualize component and combined scores across a region of simulated or empirical data")
+	regionviz_parser.add_argument('--cmsInfile', action='store', type=str, help="input .cms file to visualize")
+	regionviz_parser.add_argument('--causalPos', action='store', type=int, help="hilite causal SNP (e.g. if known from simulated data)")
 	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS component or composite scores for simulated or empirical data")
+	distviz_parser.add_argument('--takeIndex', action='store', type=int, help="zero-based index of datacolumn to aggregate", default=-1)
 	distviz_parser.add_argument('--infile_singular', action='store', type=str, help="visualize distribution from this singular .cms file")
 	distviz_parser.add_argument('--infile_list', action='store', type=str, help="pass a file with a list of input files to view distributions pooled across multiples chromosomes, multiple replicates, etc.")
 
@@ -107,25 +110,19 @@ def full_parser_power():
 ########	Visualize composite score 
 ########	output for a given CMS run.
 def execute_regionviz(args):
-	'''visualize CMS scores for simulated data as individual replicates (w/ component and combined scores vs. pos)'''
-	##should revisit this; maybe make it work for arbitrary input? emp/sim pass input bounds
+	''' visualize component and composite scores for a region '''
 
 	causal_index = -1
-	model, pop = args.model, args.simpop
-	#irep = args.vizRep
 	savefilename = args.savefilename
-	writedir = args.writedir
-	#CURRENTLY JUST NEUT
-	#scenars = ['neut']#'neut', '0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
-	#for scenar in scenars:
-		#if scenar == "neut":
-		#	cmsfilename = get_neut_repfile_name(model, irep, pop, normed = True, basedir=writedir)
-		#else:
-		#	cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, vsNeut = True, basedir=writedir)
-			#print(cmsfilename)
+	cmsfilename = args.cmsInfile
+
 	if os.path.isfile(cmsfilename):
 		print('loading from... ' + cmsfilename)
-		physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
+		physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
+
+		if args.causalPos is not None:
+			if causalPos in physpos:
+				causal_index = physpos.index(causalPos)
 
 		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
 		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
@@ -139,7 +136,6 @@ def execute_regionviz(args):
 		savefilename = args.savefilename + "_"+ model + "_" + str(pop) + "_" + str(scenar) + "_" + str(irep) + ".png"
 
 		plt.savefig(savefilename)
-		#if irep == 1:
 		print("plotted to " + savefilename)
 		plt.close()
 
@@ -164,11 +160,20 @@ def execute_distviz(args):
 
 	print('loading cms values from ' + str(len(allfiles)) + " files...")
 
-	
-
-	## Overhaul this. Pass a list of filenames and an index for value
-	## -> easy flexibility for sim/emp/etc.
-	# should then run for score_likes also (make new c program?)
+	#pass index, expectedlen?
+	savefilename = args.savefilename
+	takeIndex = args.takeIndex
+	allvals = []
+	for infilename in allfiles:
+		infile = open(infilename, 'r')
+		for line in infile:
+			entries = line.split()
+			if len(entries) > takeIndex:
+				if not np.isnan(float(entries[takeIndex])):
+					allvals.append(float(entries[takeIndex]))
+			else:
+				print('check input datafile and argument takeIndex')
+		infile.close()
 
 	plot_dist(allvals, savefilename)
 	return
