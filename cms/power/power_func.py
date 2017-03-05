@@ -1,6 +1,9 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 02.27.2017		vitti@broadinstitute.org
+##	last updated 03.05.2017		vitti@broadinstitute.org
 
+import matplotlib as mp 
+mp.use('agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 

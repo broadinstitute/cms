@@ -118,12 +118,10 @@ def execute_regionviz(args):
 
 	if os.path.isfile(cmsfilename):
 		print('loading from... ' + cmsfilename)
-		physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
-
+		physpos, genpos, daf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
 		if args.causalPos is not None:
 			if causalPos in physpos:
 				causal_index = physpos.index(causalPos)
-
 		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
 		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
 		quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
@@ -133,8 +131,6 @@ def execute_regionviz(args):
 		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
 		quick_plot(ax7, physpos, cms_unnormed, "cms_unnormed", causal_index)
 		quick_plot(ax8, physpos, cms_normed, "cms_normed", causal_index)				
-		savefilename = args.savefilename + "_"+ model + "_" + str(pop) + "_" + str(scenar) + "_" + str(irep) + ".png"
-
 		plt.savefig(savefilename)
 		print("plotted to " + savefilename)
 		plt.close()
@@ -151,8 +147,8 @@ def execute_distviz(args):
 			allfiles.append(filename)
 		infile.close()
 	if args.infile_singular is not None:
-		if infile_singular not in allfiles:
-			allfiles.append(infile_singular)
+		if args.infile_singular not in allfiles:
+			allfiles.append(args.infile_singular)
 
 	if len(allfiles) == 0:
 		print('must supply input .cms files')
