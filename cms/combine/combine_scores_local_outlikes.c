@@ -1,8 +1,6 @@
-// last updated 3.4.17: perform within-region CMS calculations as in CMS 1.0 		vitti@broadinstitute.org
-// gcc -O0 -ggdb3 -lm -Wall -o combine_scores_local combine_scores_local.c cms_data.c
-// ./combine_scores_local test_out.txt test_masterlikes_params.txt testpair1.txt testpair2.txt
-// CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss;  //NB! Miss = LINKED!!!
-// optional next line: (minPos, maxPos, minDaf); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
+// 03.05.17: quick duplicate program of combine_scores with per-component likelihood contribution given 
+// gcc -O0 -ggdb3 -lm -Wall -o combine_scores_local_outlikes combine_scores_outlikes_local.c cms_data.c
+// ./combine_scores_local_outlikes test_out.txt test_masterlikes_params.txt testpair1.txt testpair2.txt
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -45,7 +43,7 @@ int main(int argc, char **argv) {
 	int nsnps_regional;
 
 	if (argc <= 3) {
-		fprintf(stderr, "Usage: ./combine_scores_local <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
+		fprintf(stderr, "Usage: ./combine_scores_local_outlikes <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
 		exit(0);
 	}
 	nComparisons = argc - 3;
@@ -258,7 +256,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "xp %f\t hit %e\tmiss %e\tbf %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob, xpehh_prob); //debug
 			fprintf(stderr, "clr: %e\n", compLike);
 			fprintf(stderr, "%d\t%f\t%f\t%f\t%f\t%f\t%f\n", score_data.physpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf);*/
-			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLike);
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, ihs_prob, delihh_prob, nsl_prob, xpehh_prob, fst_prob, deldaf_prob, compLike);
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);
