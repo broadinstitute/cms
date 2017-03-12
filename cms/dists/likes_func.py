@@ -1,5 +1,5 @@
 ## helper functions for visualizing component score prior likelihoods
-## last updated: 11.4.16 vitti@broadinstitute.org
+## last updated: 03.12.17 vitti@broadinstitute.org
 
 import matplotlib as mp 
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ def get_hist_bins(score,numBins):
 		print("error: " + score)
 	binlen = (scorerange[1] - scorerange[0])/float(numBins)
 	bins = [scorerange[0] + binlen * i for i in range(numBins+1)]
-	return bins, scorerange, ylims
+	return bins, scorerange, ylims #move this to freqbins
 def read_likes_file(likesfilename):
 	'''parses a file from e.g. write_hists_to_files'''
 	starts, ends, vals = [], [], []

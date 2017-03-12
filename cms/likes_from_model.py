@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 02.27.2017 	vitti@broadinstitute.org #must update docstrings
+## last updated: 03.12.2017 	vitti@broadinstitute.org #must update docstrings
 
 import matplotlib as mp 
 mp.use('agg') 
-from power.power_func import write_master_likesfile 
+from power.power_func import write_master_likesfile  #consolidate
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
-from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files
+from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_bin_filled, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
-from util.parallel import slurm_array #nix this
+#from util.parallel import slurm_array #nix this
 import argparse
 import sys, os
 import matplotlib.pyplot as plt
@@ -23,17 +23,31 @@ def full_parser_likes_from_model():
 	###############################
 	## RUN SELECTION SIMULATIONS ##
 	###############################
-	get_sel_trajs_parser = subparsers.add_parser('get_sel_trajs', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
-	get_sel_trajs_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time')
-	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='run additional neutral simulations to create test set')
-	run_sel_sims_parser = subparsers.add_parser('run_sel_sims')
-	for run_sims_parser in [run_neut_sims_parser, run_sel_sims_parser]:
-		run_sims_parser.add_argument('--startrep', type=int, action="store", help='replicate number at which to start', default=1)
-		run_sims_parser.add_argument('--paramfolder', type=str, action="store", help='location to read model parameters', default="/idi/sabeti-scratch/jvitti/params/")
-	run_sel_sims_parser.add_argument('--trajdir', action="store")
+	generate_sel_bins_parser = subparsers.add_parser('generate_sel_bins', help="Pre-processing step: generate directories with parameter files divided by selDAF, according to specified bins")
+	generate_sel_bins_parser.add_argument('outputDir', action='store', help='location to write cosi output')
+	#cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
+	#cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
+	#cosi_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
+	get_sel_traj_parser = subparsers.add_parser('get_sel_traj', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
+	get_sel_traj_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
+	get_sel_traj_parser.add_argument('traj_outputname', action='store', help="write to file")	
+	get_sel_traj_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time', default=100)
+	get_sel_traj_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
+
+	run_neut_sims_parser = subparsers.add_parser('run_neut_sims', help='run neutral simulations')
+	run_sel_sims_parser = subparsers.add_parser('run_sel_sims', help='run sims with selection')
+	run_sel_sims_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
+	run_sel_sims_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
+	run_sel_sims_parser.add_argument('trajFile', action='store', help="selection trajectory")
+	run_sel_sims_parser.add_argument('writeBase', action='store', help="write prefix")
+
+	#for run_sims_parser in [run_neut_sims_parser, run_sel_sims_parser]:
+	#	run_sims_parser.add_argument('--startrep', type=int, action="store", help='replicate number at which to start', default=1)
+	#	run_sims_parser.add_argument('--paramfolder', type=str, action="store", help='location to read model parameters', default="/idi/sabeti-scratch/jvitti/params/")
+	#run_sel_sims_parser.add_argument('--trajdir', action="store")
 	run_neut_repscores_parser = subparsers.add_parser('run_neut_repscores', help ='run per-replicate component scores')
-	run_sel_repscores_parser = subparsers.add_parser('run_sel_repscores', help='run per-replicate component scores')
-	for run_repscores_parser in [run_neut_repscores_parser, run_sel_repscores_parser]:
+	#run_sel_repscores_parser = subparsers.add_parser('run_sel_repscores', help='run per-replicate component scores')
+	for run_repscores_parser in [run_neut_repscores_parser]:#, run_sel_repscores_parser]:
 		run_repscores_parser.add_argument('--irep', type=int, action="store", help="replicate number", default=1)
 		run_repscores_parser.add_argument('--tpedfolder', type=str, action="store", help="location of input tped data", default="/idi/sabeti-scratch/jvitti/clean/sims/")
 		run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/idi/sabeti-scratch/jvitti/params/test_recom.recom")
@@ -47,19 +61,9 @@ def full_parser_likes_from_model():
 		norm_parser.add_argument('--score', action='store', default='')
 		norm_parser.add_argument('--altpop', action='store', default='')
 
-	for selbin_parser in [run_sel_sims_parser, sel_norm_from_binfile_parser]:
+	for selbin_parser in [sel_norm_from_binfile_parser]: #run_sel_sims_parser
 		selbin_parser.add_argument('--selbin', action="store")
 
-	##########################
-	### COSI - SHARED ARGS  ##
-	##########################
-	for cosi_parser in [get_sel_trajs_parser]:
-		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
-		cosi_parser.add_argument('outputDir', action='store', help='location to write cosi output')
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
-		cosi_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias')
-		cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')
-		cosi_parser.add_argument('n', action='store', type=int, help='num replicates to run') 
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
@@ -84,7 +88,7 @@ def full_parser_likes_from_model():
 	##############
 	## SEL BINS ##
 	##############
-	for sel_parser in [get_sel_trajs_parser, likes_from_scores_parser]:
+	for sel_parser in [generate_sel_bins_parser, get_sel_traj_parser, likes_from_scores_parser]:
 		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
 		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
 
@@ -98,7 +102,7 @@ def full_parser_likes_from_model():
 	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
 		likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
 
-	for common_parser in [run_neut_sims_parser, run_sel_sims_parser, run_neut_repscores_parser, run_sel_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, sel_norm_from_binfile_parser]:
+	for common_parser in [run_neut_sims_parser, run_sel_sims_parser, run_neut_repscores_parser, run_norm_neut_repscores_parser, norm_from_binfile_parser, sel_norm_from_binfile_parser]:
 		common_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		common_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 		common_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
@@ -112,35 +116,29 @@ def full_parser_likes_from_model():
 ############################
 ### Run simuates from specified demographic
 ### model under various scenarios
-def execute_get_sel_trajs(args):
-	'''wraps call to run_traj.py to generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
-	selTrajDir = args.outputDirs
-	if selTrajDir[-1] != "/":
-		selTrajDir += "/"
-	selTrajDir += "sel_trajs/"
-	runDir = check_create_dir(selTrajDir)
-	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins)
-
-	print("running " + str(args.n) + " selection trajectories per for each of " + str(args.nBins) + " frequency bins, using model: \n\t\t" + args.inputParamFile)
-	print("outputting to " + runDir)
-
-	for ibin in range(args.nBins):
+def execute_generate_sel_bins(args):
+	''' pre-processing step for sel_trajs(->sel_sims) '''
+	freqRange = args.freqRange
+	nBins = args.nBins
+	runDir = args.outputDir
+	neutParamfile = args.inputParamFile
+	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(freqRange, nBins)
+	for ibin in range(nBins):
 		populateDir = runDir + "sel_" + bin_medians_str[ibin]
 		binDir = check_create_dir(populateDir)
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
-		write_bin_paramfile(args.inputParamFile, paramfilename, bounds)		#rewrite paramfile here? to give rejection sampling 
-		if binDir[-1] != "/":
-			binDir += "/"
-		traj_outputname = binDir + 'rep' + taskIndexStr + '.txt'
-		traj_cmd = "python cms/run_traj.py " + traj_outputname + " " + args.cosiBuild + " " + paramfilename + " " + str(args.maxAttempts) +'\n'#
-		if args.printOnly:
-			dispatch = False
-		else:
-			dispatch = True
-		slurm_array(binDir + "run_sel_traj.sh", traj_cmd, args.n, dispatch=dispatch)
-
-	return #MAKE CLUSTER-INDEPENDENT
+		write_bin_paramfile(neutParamfile, paramfilename, bounds)
+		print('wrote to: ' + paramfilename)	
+	return
+def execute_get_sel_traj(args):
+	'''generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
+	traj_outputname = args.traj_outputname
+	cosibuild = args.cosiBuild
+	paramfilename = args.inputParamFile
+	maxattempts = args.maxAttempts
+	run_traj(traj_outputname, cosibuild, paramfilename, maxattempts)
+	return
 def execute_run_neut_sims(args):
 	'''from run_additional_sims.py'''
 	cmd = "coalescent"
@@ -157,8 +155,9 @@ def execute_run_neut_sims(args):
 		argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase
 		cosicreatefilename = outbase + "_0_1.tped"
 
-		proceed = check_create_file(cosicreatefilename, args.checkOverwrite)
-		if proceed:
+		#proceed = check_create_file(cosicreatefilename, args.checkOverwrite)
+		#if proceed:
+		if not os.path.isfile(cosicreatefilename):
 			fullCmd = cmd + " " + argstring
 			#print(fullCmd)
 			execute(fullCmd)
@@ -173,46 +172,30 @@ def execute_run_neut_sims(args):
 	return
 def execute_run_sel_sims(args):
 	'''from run_additional_sims.py'''
-	#cmd = "coalescent"
-	model = args.model
-	nrep = args.nrep
-	nStart = args.startrep
-	nEnd = nStart + nrep
-	writefolder = args.writedir
-	trajfolder = args.trajdir
-	paramfolder = args.paramfolder
-	selpop = args.simpop
-	selbin = args.selbin
+	trajectory = args.trajFile
+	cosibuild = args.cosiBuild
+	outbase = args.writeBase
+	paramfilename = args.inputParamFile
+	cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajectory + " " + cosibuild #+ "coalescent"
+	argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase + " --output-gen-map"
+	cosicreatefilename = outbase + "_0_1.tped"  	#previous implementation batch-ran sims then batch-renamed them.
+	cosi_movedfilename = outbase + "_1.tped"
+	#print(cmd + " " + argstring)
+	proceed = check_create_file(cosi_movedfilename, args.checkOverwrite)
+	if proceed:
+		fullCmd = cmd + " " + argstring
+		print(fullCmd)
+		execute(fullCmd)
+
+		for ipop in [1, 2, 3, 4]:
+			torenamefile = outbase + "_0_" + str(ipop) + ".tped"
+			#print(torenamefile)
+			assert os.path.isfile(torenamefile)
+			renamed = outbase +"_" + str(ipop) + ".tped"
+			renamecmd = "mv "  + torenamefile + " " + renamed
+			execute(renamecmd)
 	
-	for foldername in [writefolder, trajfolder, paramfolder]:
-		assert(foldername != None)
-		if foldername[-1] != "/":
-			foldername += "/"
-	paramfilename = paramfolder + model + ".par"
-
-	for irep in range(nStart, nEnd + 1):
-		outbase = writefolder + "rep" + str(irep)
-		trajectory = trajfolder + "rep" + str(irep) + ".txt"
-		cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajectory + " coalescent"
-		argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons .25 --tped " + outbase + " --output-gen-map"
-		#cosicreatefilename = outbase + "_0_1.tped"  	#previous implementation batch-ran sims then batch-renamed them.
-		cosi_movedfilename = outbase + "_1.tped"
-
-		proceed = check_create_file(cosi_movedfilename, args.checkOverwrite)
-		if proceed:
-			fullCmd = cmd + " " + argstring
-			print(fullCmd)
-			execute(fullCmd)
-
-			for ipop in [1, 2, 3, 4]:
-				torenamefile = outbase + "_0_" + str(ipop) + ".tped"
-				#print(torenamefile)
-				assert os.path.isfile(torenamefile)
-				renamed = outbase +"_" + str(ipop) + ".tped"
-				renamecmd = "mv "  + torenamefile + " " + renamed
-				execute(renamecmd)
-
-	print("wrote simulates to e.g. " + renamed)
+	#print("wrote simulates to e.g. " + renamed)
 	return
 
 ### Calculate component scores from 

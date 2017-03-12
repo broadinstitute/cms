@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 02.26.17 vitti@broadinstitute.org
+## last updated: 03.12.17 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -24,7 +24,23 @@ def write_bin_paramfile(readfilename, writefilename, bounds):
 	if foundSweep == False:
 		print("ERROR: did not find sweep parameters in inputfile.")
 	return
+def run_traj(output, cosibuild, params, maxAttempts=100):
+	commandstring = "env COSI_NEWSIM=1 COSI_MAXATTEMPTS=" + str(maxAttempts) + " COSI_SAVE_TRAJ=" + output + " " + cosibuild + " -p " + params + " --traj-only"   
+	print(commandstring)
 
+	itWorked, nAttempts = False, 0
+
+	while itWorked == False:
+		nAttempts +=1
+		try:
+			subprocess.check_output(commandstring.split())
+		except:
+			continue
+		itWorked = True	
+
+	print("found a trajectory in " + str(nAttempts) + " attempts.")
+	assert os.path.isfile(output)
+	return
 ###################
 ### SELFREQ BINS ##
 ###################
