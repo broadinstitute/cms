@@ -120,8 +120,8 @@ def execute_regionviz(args):
 		print('loading from... ' + cmsfilename)
 		physpos, genpos, daf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
 		if args.causalPos is not None:
-			if causalPos in physpos:
-				causal_index = physpos.index(causalPos)
+			if args.causalPos in physpos:
+				causal_index = physpos.index(args.causalPos)
 		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
 		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
 		quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
@@ -141,9 +141,9 @@ def execute_distviz(args):
 	allfiles = []
 	if args.infile_list is not None:
 		infile = open(args.infile_list)
-		for line in file:
+		for line in infile:
 			filename = line.strip('\n')
-			assert(os.path.isfile(infile))
+			assert(os.path.isfile(filename))
 			allfiles.append(filename)
 		infile.close()
 	if args.infile_singular is not None:
@@ -166,7 +166,7 @@ def execute_distviz(args):
 			entries = line.split()
 			if len(entries) > takeIndex:
 				if not np.isnan(float(entries[takeIndex])):
-					allvals.append(float(entries[takeIndex]))
+					allvals.append(np.log(float(entries[takeIndex])))
 			else:
 				print('check input datafile and argument takeIndex')
 		infile.close()
@@ -570,6 +570,7 @@ def execute_roc(args):
 	return
 def execute_find_cutoff(args):
 	''' a little cleaner and simpler '''
+	minRegionLen = 10000 #
 
 	maxFPR = args.maxFPR
 	fpr_loc = args.fprloc
@@ -588,12 +589,13 @@ def execute_find_cutoff(args):
 			regionlen, thresshold, cutoff = int(entries[1]), int(entries[2]), int(entries[3])
 			fprkey = (regionlen, thresshold, cutoff)
 			all_fpr[fprkey] = fpr
-			for freq_class in freq_classes:
-				tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
-				if os.path.isfile(tprfile):			
-					tpr = read_pr(tprfile)
-					tprkey = (regionlen, thresshold, cutoff, freq_class)
-					all_tpr[tprkey] = tpr
+			if regionlen > minRegionLen:
+				for freq_class in freq_classes:
+					tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
+					if os.path.isfile(tprfile):			
+						tpr = read_pr(tprfile)
+						tprkey = (regionlen, thresshold, cutoff, freq_class)
+						all_tpr[tprkey] = tpr
 	#############################
 	## CHOOSE OPT MEETING CRIT ##
 	#############################

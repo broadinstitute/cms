@@ -4,11 +4,11 @@
 
 import matplotlib as mp 
 mp.use('agg') 
-from power.power_func import write_master_likesfile
+from power.power_func import write_master_likesfile 
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import get_bin_strings, get_bins, check_bin_filled, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
-from util.parallel import slurm_array
+from util.parallel import slurm_array #nix this
 import argparse
 import sys, os
 import matplotlib.pyplot as plt
