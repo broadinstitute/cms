@@ -3,6 +3,9 @@
 
 import os, subprocess
 
+###################
+### SELFREQ BINS ##
+###################
 def write_bin_paramfile(readfilename, writefilename, bounds):
 	'''given an inclusive cosi sweep parameter file, writes another with stricter final frequency rejection criteria'''
 	readfile = open(readfilename, 'r')
@@ -25,11 +28,10 @@ def write_bin_paramfile(readfilename, writefilename, bounds):
 		print("ERROR: did not find sweep parameters in inputfile.")
 	return
 def run_traj(output, cosibuild, params, maxAttempts=100):
+	''' iteratively launches new seeds for coalescent simulation with cosi until a sweep trajectory is found matching user specifications '''
 	commandstring = "env COSI_NEWSIM=1 COSI_MAXATTEMPTS=" + str(maxAttempts) + " COSI_SAVE_TRAJ=" + output + " " + cosibuild + " -p " + params + " --traj-only"   
 	print(commandstring)
-
 	itWorked, nAttempts = False, 0
-
 	while itWorked == False:
 		nAttempts +=1
 		try:
@@ -37,13 +39,9 @@ def run_traj(output, cosibuild, params, maxAttempts=100):
 		except:
 			continue
 		itWorked = True	
-
 	print("found a trajectory in " + str(nAttempts) + " attempts.")
 	assert os.path.isfile(output)
 	return
-###################
-### SELFREQ BINS ##
-###################
 def get_bin_strings(bin_medians):
 	'''given input bin medians, returns minimal len strs needed to create unique bin labels'''
 	stringlen = 3 #minimum is '0.x' -- not necessarily the most descriptive way to round these, but it's functional.
@@ -51,6 +49,7 @@ def get_bin_strings(bin_medians):
 	bin_medians_rewritten = ["%.2f" % a for a in bin_medians]
 	return bin_medians_rewritten
 def get_bins(freqRange=".05-.95", numbins=9):
+	''' translates (range, nbins) --> {starts,ends,medians}'''
 	fullrange = [float (x) for x in freqRange.split('-')]
 	binlen = (fullrange[1] - fullrange[0]) / float(numbins)
 	bin_starts = [fullrange[0] + binlen*i for i in range(numbins)]
@@ -58,14 +57,6 @@ def get_bins(freqRange=".05-.95", numbins=9):
 	bin_medians = [(float(bin_starts[i]) + float(bin_ends[i]))/2. for i in range(len(bin_starts))]
 	bin_medians_str = get_bin_strings(bin_medians)
 	return fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str	
-def check_bin_filled(directory, numsims):
-	'''counts all non-empty files in directory, returns True if >= numsims'''
-	filenames = os.listdir(directory)
-	nonempty = [x for x in filenames if check_file_len(x) !=0]
-	if len(filenames) < numsims:
-		return False
-	else:
-		return True
 
 ##################
 ### BOOKKEEPING ##
@@ -110,3 +101,6 @@ def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scra
 	concatfilename = concatfilebase + score + ".txt"
 	binfilename = concatfilebase + score + ".bins"
 	return concatfilename, binfilename
+
+	##not sure about these functions. relocate?
+	## get_concat_files hmmmmmm
