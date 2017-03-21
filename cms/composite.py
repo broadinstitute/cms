@@ -58,7 +58,6 @@ def full_parser_composite():
 	xp_from_ihh_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 	xp_from_ihh_parser.add_argument('--cmsdir', type=str, action='store', help="TEMP; will become redundant with conda packaging", default="/n/home08/jvitti/cms/cms/") 
 
-
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
 	for sim_parser in [composite_sims_parser, normsims_parser]:

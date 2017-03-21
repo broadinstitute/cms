@@ -1,4 +1,4 @@
-// last updated 03.13.17 	vitti@broadinstitute.org 
+// last updated 03.13.17    vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     int nSkip; 
     
     if (argc != 5) {
-        fprintf(stderr, "Usage: calc_fst_deldaf <inTped1> <inTped2> <recomfilename> <writefilename>\n");
+        fprintf(stderr, "Usage: calc_fst_deldaf_fromzipped <inTped1> <inTped2> <recomfilename> <writefilename>\n");
         exit(0);
     }
     
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     fst_sum = 0;
     nfst = 0;
     //count alleles for pop0
-    get_coal_data_tped_vers(&data, inTped1, inRecomfile);
+    get_coal_data_tped_vers_gz(&data, inTped1, inRecomfile);
     //if (data.nsample == 0) {continue;}
     
     nall0[0] = calloc(data.nsnp, sizeof(int));
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     free_coal_data(&data);
     
     //count alleles for pop1
-    get_coal_data_tped_vers(&data, inTped2, inRecomfile);
+    get_coal_data_tped_vers_gz(&data, inTped2, inRecomfile);
     //if (data.nsample == 0) {continue;}
     
     nall0[1] = calloc(data.nsnp, sizeof(int));

@@ -1,11 +1,11 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 03.05.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 03.21.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
 from power.power_func import merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, normalize_local
 from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
 						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
 from tempfile import TemporaryFile
@@ -28,7 +28,8 @@ def full_parser_power():
 	#######################
 	regionviz_parser = subparsers.add_parser('regionviz', help="visualize component and combined scores across a region of simulated or empirical data")
 	regionviz_parser.add_argument('--cmsInfile', action='store', type=str, help="input .cms file to visualize")
-	regionviz_parser.add_argument('--causalPos', action='store', type=int, help="hilite causal SNP (e.g. if known from simulated data)")
+	regionviz_parser.add_argument('--hilitePos', action='store', type=int, help="hilite one SNP (e.g. if causal variant known from simulated data)")
+	
 	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS component or composite scores for simulated or empirical data")
 	distviz_parser.add_argument('--takeIndex', action='store', type=int, help="zero-based index of datacolumn to aggregate", default=-1)
 	distviz_parser.add_argument('--infile_singular', action='store', type=str, help="visualize distribution from this singular .cms file")
@@ -80,25 +81,19 @@ def full_parser_power():
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 		write_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
-
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser]:
 		regions_parser.add_argument('regionlen', type = int, action='store', help='length of region to query', default="100000")
 		regions_parser.add_argument('thresshold', type = float, action='store', help='percentage of region to exceed cutoff', default="30")
 		regions_parser.add_argument('cutoff', type = float, action='store', help='minimum significant value for region definition', default="3.0")
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
-
 	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
-
 	for suffixed_parser in [fpr_parser, tpr_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
-
 	for plot_parser in [regionviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
-
-	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser,
-						regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
+	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
 
@@ -111,17 +106,15 @@ def full_parser_power():
 ########	output for a given CMS run.
 def execute_regionviz(args):
 	''' visualize component and composite scores for a region '''
-
-	causal_index = -1
 	savefilename = args.savefilename
 	cmsfilename = args.cmsInfile
-
 	if os.path.isfile(cmsfilename):
 		print('loading from... ' + cmsfilename)
 		physpos, genpos, daf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
-		if args.causalPos is not None:
-			if causalPos in physpos:
-				causal_index = physpos.index(causalPos)
+		causal_index = -1
+		if args.hilitePos is not None:
+			if args.hilitePos in physpos:
+				causal_index = physpos.index(args.hilitePos)
 		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
 		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
 		quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
@@ -129,21 +122,22 @@ def execute_regionviz(args):
 		quick_plot(ax4, physpos, xpehh_normed, "xpehh_normed", causal_index)
 		quick_plot(ax5, physpos, fst, "fst", causal_index)
 		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
-		quick_plot(ax7, physpos, cms_unnormed, "cms_unnormed", causal_index)
+		log_unnormed = [np.log(item) for item in cms_unnormed]
+		quick_plot(ax7, physpos, cms_unnormed, "ln(rawcms)", causal_index)
+		cms_normed = normalize_local(cms_unnormed)
 		quick_plot(ax8, physpos, cms_normed, "cms_normed", causal_index)				
 		plt.savefig(savefilename)
 		print("plotted to " + savefilename)
 		plt.close()
-
 	return
 def execute_distviz(args):
 	''' visualize the distribution of a component/composite statistic in empirical/simulated data '''
 	allfiles = []
 	if args.infile_list is not None:
 		infile = open(args.infile_list)
-		for line in file:
+		for line in infile:
 			filename = line.strip('\n')
-			assert(os.path.isfile(infile))
+			assert(os.path.isfile(filename))
 			allfiles.append(filename)
 		infile.close()
 	if args.infile_singular is not None:
@@ -166,7 +160,7 @@ def execute_distviz(args):
 			entries = line.split()
 			if len(entries) > takeIndex:
 				if not np.isnan(float(entries[takeIndex])):
-					allvals.append(float(entries[takeIndex]))
+					allvals.append(np.log(float(entries[takeIndex])))
 			else:
 				print('check input datafile and argument takeIndex')
 		infile.close()
@@ -174,6 +168,7 @@ def execute_distviz(args):
 	plot_dist(allvals, savefilename)
 	return
 def execute_manhattan(args):
+	""" remove this? """
 	selpop = args.emppop
 	model = args.model
 	savename = args.savefilename
@@ -185,7 +180,6 @@ def execute_manhattan(args):
 	###############################
 	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
 	pop = modelpops[selpop]
-
 	#EXPERIMENTAL
 	#This is not how Shari actually normalized for figure 1 2013.
 	#if args.poolModels:
@@ -224,13 +218,12 @@ def execute_manhattan(args):
 		calc_zscores = True
 	else:
 		calc_zscores = False
-
 	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
-
 	plt.savefig(savename)
 	print('saved to: ' + savename)
 	return
 def execute_extended_manhattan(args):
+	""" generate a genome-wide plot of CMS scores with option to hilight outlier regions """
 	plotscore = args.plotscore
 	selpop = args.emppop
 	model = args.model
@@ -324,6 +317,7 @@ def execute_extended_manhattan(args):
 ########	Quantify and visualize power
 ########	across significance cutoffs.
 def execute_cdf(args):
+	""" visualize power to localize variants: estimate p(causal variant captured | signif thresshold includes x top SNPs) from simulates. plot as cumulative density function"""
 	reps = args.nrep
 	savefilename = args.savefilename
 	writedir = args.writedir
@@ -377,6 +371,7 @@ def execute_cdf(args):
 	print('plotted to ' + savefilename)
 	return
 def execute_fpr(args):
+	''' estimate false positive rate for region identification '''
 	model = args.model
 	regionlen = args.regionlen
 	thresshold = args.thresshold
@@ -420,6 +415,7 @@ def execute_fpr(args):
 		print('wrote to :  ' + str(writefilename))
 	return
 def execute_tpr(args):
+	''' estimate true positive rate for region detection '''
 	model = args.model
 	regionlen = args.regionlen
 	thresshold = args.thresshold
@@ -570,6 +566,7 @@ def execute_roc(args):
 	return
 def execute_find_cutoff(args):
 	''' a little cleaner and simpler '''
+	minRegionLen = 10000 #
 
 	maxFPR = args.maxFPR
 	fpr_loc = args.fprloc
@@ -588,12 +585,13 @@ def execute_find_cutoff(args):
 			regionlen, thresshold, cutoff = int(entries[1]), int(entries[2]), int(entries[3])
 			fprkey = (regionlen, thresshold, cutoff)
 			all_fpr[fprkey] = fpr
-			for freq_class in freq_classes:
-				tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
-				if os.path.isfile(tprfile):			
-					tpr = read_pr(tprfile)
-					tprkey = (regionlen, thresshold, cutoff, freq_class)
-					all_tpr[tprkey] = tpr
+			if regionlen > minRegionLen:
+				for freq_class in freq_classes:
+					tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
+					if os.path.isfile(tprfile):			
+						tpr = read_pr(tprfile)
+						tprkey = (regionlen, thresshold, cutoff, freq_class)
+						all_tpr[tprkey] = tpr
 	#############################
 	## CHOOSE OPT MEETING CRIT ##
 	#############################
@@ -620,6 +618,7 @@ def execute_find_cutoff(args):
 ########	Apply significance cutoffs
 ########	to empirical results.
 def execute_gw_regions(args):
+	''' apply significance cutoff to genome-wide data to identify regions '''
 	model = args.model
 	regionlen = args.regionlen
 	thresshold = args.thresshold

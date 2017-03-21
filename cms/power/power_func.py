@@ -1,5 +1,5 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 03.05.2017		vitti@broadinstitute.org
+##	last updated 03.21.2017		vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -26,11 +26,17 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 	writefile.close()
 	print("wrote to: " + writefilename)
 	return
-def normalize(rawscore, mean, sd):
+def normalize_global(rawscore, mean, sd):
+	''' cms_gw '''
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
 	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue
-
+def normalize_local(values):
+	mean = np.mean(values)
+	var = np.var(values)
+	stddev = var**.5
+	normalized = [(item-mean)/stddev for item in values]
+	return normalized
 ###############
 ## REGION ID ##
 ###############
@@ -143,7 +149,7 @@ def quick_plot(ax, pos, val, ylabel,causal_index=-1):
 	for tick in ax.yaxis.get_major_ticks():
 		tick.label.set_fontsize('6')
 	ax.set_ylabel(ylabel, fontsize='6')
-	ax.set_xlim([0, 1500000])
+	#ax.set_xlim([0, 1500000]) #make flexible?
 	ax.yaxis.set_label_position('right')
 	return ax
 def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=10000):
