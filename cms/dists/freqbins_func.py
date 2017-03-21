@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.13.17 vitti@broadinstitute.org
+## last updated: 03.21.17 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -101,12 +101,12 @@ def get_info_from_tped_name(filename):
 	rep, pop = int(needed[0]), int(needed[1])
 	#print('inferred pop and rep: ' + str(pop) + " " + str(rep) + "\n") #for debug
 	return rep, pop, tped_dir
-def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scratch/jvitti/clean/scores/"):
+def get_concat_files(pop, score, altpop, basedir):
 	""" locates concatenated component score files to facilitate normalization to neutral replicates """
 	if score in ['ihs', 'delihh', 'nsl']:
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
+		concatfilebase = basedir + "neut/concat_" + str(pop) + "_"
 	elif score in ['xpehh', 'fst']:
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_" + str(altpop) + "_"
+		concatfilebase = basedir + "neut/concat_" + str(pop) + "_" + str(altpop) + "_"
 	else:
 		concatfilebase = ""
 	concatfilename = concatfilebase + score + ".txt"

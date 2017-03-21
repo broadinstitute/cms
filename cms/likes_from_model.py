@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 03.14.2017 	vitti@broadinstitute.org #must update docstrings
+## last updated: 03.21.2017 	vitti@broadinstitute.org #must update docstrings
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -35,18 +35,25 @@ def full_parser_likes_from_model():
 	run_sel_sim_parser = subparsers.add_parser('run_sel_sim', help='run sims with selection')
 	run_sel_sim_parser.add_argument('traj_infilename', type=str, action='store', help="selection trajectory")
 
-	#######################
-	## ANALYZE SIMULATES ##
-	#######################
+	####################################
+	## GENERATE SCORES FROM SIMULATES ##
+	####################################
 	run_repscores_parser = subparsers.add_parser('run_repscores', help="run composite score calculations for simulated tped")
 	run_repscores_parser.add_argument('score_basedir', type=str, action='store', help="parent directory in which to generate/populate folders for each composite score")
 	run_repscores_parser.add_argument('inputTpedFile', type=str, action='store', help="TPED file with simulate data for putative selected population") 
 	run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/n/home08/jvitti/params/test_recom.recom")
+	get_neut_norm_params_parser = subparsers.add_parser('get_neut_norm_params')	 #run_norm_neut_repscores_parser
+	get_neut_norm_params_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)", default=250000)
+	get_neut_norm_params_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
+	norm_from_neut_params_parser = subparsers.add_parser('norm_from_neut_params')
+	norm_from_neut_params_parser.add_argument('--selbin', action='store', help="e.g. 0.10 -- if excluded, normalize neutral simulates")
+	for norm_sims_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser]:
+		norm_sims_parser.add_argument('modeldir', type=str, action="store", help="location of component score folders for demographic scenario")
 
 	#################
 	## SHARED ARGS ## 
 	################# 
-	for common_parser in [run_neut_sim_parser, run_sel_sim_parser, run_repscores_parser]:
+	for common_parser in [run_neut_sim_parser, run_sel_sim_parser, run_repscores_parser, get_neut_norm_params_parser, norm_from_neut_params_parser]:
 		common_parser.add_argument('--checkOverwrite', action="store_true", default=True)
 	for run_sim_parser in [run_neut_sim_parser, run_sel_sim_parser]:
 		run_sim_parser.add_argument('writeBase', type=str, action='store', help="write prefix")
@@ -55,21 +62,16 @@ def full_parser_likes_from_model():
 		cosi_parser.add_argument('--cosiBuild', type=str, action='store', help='which version of cosi to run', default="coalescent")
 		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
 		#cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')	
-	for cms_preconda_parser in [run_repscores_parser]: #TEMPORARY; conda will obviate
+	for cms_preconda_parser in [run_repscores_parser, get_neut_norm_params_parser, norm_from_neut_params_parser]: #TEMPORARY; conda will obviate
 		cms_preconda_parser.add_argument('--cmsdir', type=str, action='store', help="location of CMS scripts (TEMPORARY; conda will obviate)", default="/n/home08/jvitti/cms/cms/") 
-
-
-	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
-	run_norm_neut_repscores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)")
-	run_norm_neut_repscores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)")
-	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
-	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
-	for norm_parser in [run_norm_neut_repscores_parser,norm_from_binfile_parser, sel_norm_from_binfile_parser]:
-		norm_parser.add_argument('--score', type=str, action='store', default='')
-		norm_parser.add_argument('--altpop', type=int, action='store', default='')
-	for selbin_parser in [sel_norm_from_binfile_parser]: #run_sel_sim_parser
-		selbin_parser.add_argument('--selbin', action="store")
-
+	for norm_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser]:
+		norm_parser.add_argument('--score', type=str, action='store', default='ihs')
+		norm_parser.add_argument('--simpop', type=int, action='store', default=1)
+		norm_parser.add_argument('--altpop', type=int, action='store', default=2)
+		norm_parser.add_argument('--nrep', type=int, action='store', default=100)
+	for sel_parser in [generate_sel_bins_parser, get_sel_traj_parser]:#, likes_from_scores_parser]:
+		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
+		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)		
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
@@ -95,17 +97,9 @@ def full_parser_likes_from_model():
 
 		likes_from_scores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)", default=25000)
 		likes_from_scores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
-
-	##############
-	## SEL BINS ##
-	##############
-	for sel_parser in [generate_sel_bins_parser, get_sel_traj_parser, likes_from_scores_parser]:
-		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
-		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)
-	for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
-		likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
-
-	
+		for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
+			likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
+		
 	return parser
 
 ############################
@@ -260,14 +254,13 @@ def execute_run_repscores(args):
 			print(fstdeldaf_fullcmd)
 			execute(fstdeldaf_fullcmd)
 	return
-
-def execute_run_norm_neut_repscores(args):
-	''' creates a concatenated file and saves bin output if run for the first time;
-		if these already exist, run per-rep'''
-	model = args.model
+def execute_get_neut_norm_params(args):
+	''' creates a concatenated file and saves bin output if run for the first time'''
 	pop = args.simpop
 	numReps = args.nrep
-	basedir = args.writedir
+	basedir = args.modeldir 
+	if basedir[-1] != "/":
+		basedir += "/"
 	cmsdir = args.cmsdir
 	score = args.score
 	altpop = args.altpop
@@ -275,10 +268,10 @@ def execute_run_norm_neut_repscores(args):
 	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
 
 	if score in ['ihs', 'delihh', 'nsl']:
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_"
+		concatfilebase = basedir + "neut/concat_" + str(pop) + "_"
 	elif score in ['xpehh', 'fst']:
 		altpop = args.altpop
-		concatfilebase = basedir + model + "/neut/concat_" + str(pop) + "_" + str(altpop) + "_"
+		concatfilebase = basedir + "neut/concat_" + str(pop) + "_" + str(altpop) + "_"
 	else:
 		print('must call per composite score')
 		sys.exit(0)
@@ -291,19 +284,19 @@ def execute_run_norm_neut_repscores(args):
 			repfiles = []
 			for irep in range(1, numReps+1):
 				if score == 'ihs':
-					unnormedfile = basedir + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop) + ".ihs.out"
+					unnormedfile = basedir + "neut/ihs/rep" + str(irep) + "_" + str(pop) + ".ihs.out"
 					physpos_ind = 1
 				elif score == "delihh":
-					unnormedfile = basedir + model + "/neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
+					unnormedfile = basedir + "neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
 					physpos_ind = 1
 				elif score == "nsl":
-					unnormedfile = basedir + model + "/neut/nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
+					unnormedfile = basedir + "neut/nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
 					physpos_ind = 1
 				elif score == "xpehh":
-					unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
+					unnormedfile = basedir + "neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
 					physpos_ind = 1
 				elif score == "fst":
-					unnormedfile = basedir + model + "/neut/fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+					unnormedfile = basedir + "neut/fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
 					physpos_ind = 0
 				if os.path.isfile(unnormedfile):
 					repfiles.append(unnormedfile)
@@ -330,115 +323,69 @@ def execute_run_norm_neut_repscores(args):
 
 		#already have concatfile
 		infilename = concatfilename
-		outfilename = concatfilename + ".norm"
+		outfilename = concatfilename + ".norm" #or just write to /tmp ?
 		argstring = infilename #+ " " + outfilename
-
 		if score in ['ihs', 'delihh']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_ihs"
+			cmd = "python " + cmsdir + "scans.py selscan_norm_ihs"
 		elif score in ['nsl']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_nsl"
+			cmd = "python " + cmsdir + "scans.py selscan_norm_nsl"
 		elif score in ['xpehh']:
-			cmd = "python " + args.cmsdir + "scans.py selscan_norm_xpehh"
+			cmd = "python " + cmsdir + "scans.py selscan_norm_xpehh"
 		else:
 			cmd = ""
-
 		fullcmd = cmd + " " + argstring
 	
-		print(fullcmd)
-		execute(fullcmd)
-		
-	return
-def execute_norm_from_binfile(args):
-	model = args.model
-	pop = args.simpop
-	numReps = args.nrep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	score = args.score
-	altpop = args.altpop
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
-	
-	for irep in range(numReps, 0, -1):
-		if score in ['ihs']:
-			unnormedfile = basedir  + model + "/neut/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['delihh']:
-			unnormedfile = basedir + model + "/neut/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-			normedfilename = unnormedfile + ".norm"	
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['nsl']:
-			unnormedfile = basedir + model + "/neut/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
-			normedfilename = unnormedfile + ".norm"			
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['xpehh']:
-			unnormedfile = basedir + model + "/neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['fst']:
-			print('currently handling this manually: rewrite_fst_bins.py')
-			pass
-
 		alreadyExists = False
 		if args.checkOverwrite:
-			if not os.path.isfile(normedfilename): #check for overwrite
-				alreadyExists = False
-			else:
-				alreadyExists = True				
-		if alreadyExists == False:	
-			fullcmd = commandstring + " " + argstring
-			print(fullcmd)
-			execute(fullcmd)
-	return
-def execute_sel_norm_from_binfile(args):
-	model = args.model
-	pop = args.simpop
-	numReps = args.nrep
-	basedir = args.writedir
-	cmsdir = args.cmsdir
-	score = args.score
-	altpop = args.altpop
-	selbin = args.selbin
-	concatfilename, binfilename = get_concat_files(model, pop, score, altpop, basedir=basedir)
-	
-	for irep in range(numReps, 0, -1):
-		if score in ['ihs']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['delihh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-			normedfilename = unnormedfile + ".norm"	
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['nsl']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
-			normedfilename = unnormedfile + ".norm"			
-			argstring = "--normalizeIhs " + unnormedfile + " " + normedfilename + " --neutIhsNormParams " + binfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['xpehh']:
-			unnormedfile = basedir  + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-			normedfilename = unnormedfile + ".norm"
-			argstring = "--normalizeXpehh --neutXpehhNormParams " + binfilename + " " + unnormedfile + " " + normedfilename
-			commandstring = "python " + args.cmsdir + "likes_from_model.py scores_from_sims"
-		elif score in ['fst']:
-			print('currently handling this manually: rewrite_fst_bins.py')
-			pass
-		fullcmd = commandstring + " " + argstring
-		alreadyExists = False
-		if args.checkOverwrite:
-			if not os.path.isfile(normedfilename): #check for overwrite
+			if not os.path.isfile(binfilename): #check for overwrite
 				alreadyExists = False
 			else:
 				alreadyExists = True				
 		if alreadyExists == False:
 			print(fullcmd)
-			execute(fullcmd)
+			#execute(fullcmd)
+			with open(binfilename, 'w') as outfile:
+				subprocess.check_output( fullcmd.split(), stderr=outfile)
+			outfile.close()
+			print('wrote to: ' + binfilename)
+	return
+def execute_norm_from_neut_params(args): 
+	''' using parameters from neutral simulates, normalizes component scores '''
+	pop = args.simpop
+	numReps = args.nrep
+	basedir = args.modeldir
+	if basedir[-1] != "/":
+		basedir += "/"
+	cmsdir = args.cmsdir
+	score = args.score
+	altpop = args.altpop
+	if args.selbin is None:
+		scenario_dir = "neut/"
+	else:
+		scenario_dir = "sel" + str(pop) + "/sel_" + str(args.selbin) + "/"
+	concatfilename, binfilename = get_concat_files(pop, score, altpop, basedir=basedir)
+	print('loading normalization parameters from ' + binfilename + "...")
+	###############
+	## NORMALIZE ##
+	###############
+	for irep in range(0, numReps+1):
+		if score in ['ihs']:
+			unnormedfile = basedir + scenario_dir + "ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
+			norm_sel_ihs(unnormedfile, binfilename)
+		elif score in ['delihh']:
+			unnormedfile = basedir + scenario_dir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
+			norm_sel_ihs(args.inputFilename, binfilename)
+		elif score in ['nsl']:
+			unnormedfile = basedir + scenario_dir + "nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
+			norm_sel_ihs(unnormedfile, binfilename)
+		elif score in ['xpehh']:
+			unnormedfile = basedir + scenario_dir + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
+			norm_sel_xpehh(unnormedfile, binfilename)
+		else: #if score in ['fst']:
+			print('currently handling this manually: rewrite_fst_bins.py')
+			pass
+		if irep%100 == 0:
+			print("currently rep: " + str(irep))
 	return	
 
 ### Define component score likelihood 
