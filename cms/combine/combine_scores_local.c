@@ -1,8 +1,8 @@
-// last updated 3.4.17: perform within-region CMS calculations as in CMS 1.0 		vitti@broadinstitute.org
+// last updated 3.18.17: perform within-region CMS calculations as in CMS 1.0 		vitti@broadinstitute.org
 // gcc -O0 -ggdb3 -lm -Wall -o combine_scores_local combine_scores_local.c cms_data.c
 // ./combine_scores_local test_out.txt test_masterlikes_params.txt testpair1.txt testpair2.txt
 // CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss;  //NB! Miss = LINKED!!!
-// optional next line: (minPos, maxPos, minDaf); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
+// optional next line: (minPos, maxPos, minDaf, minGenLen); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -36,13 +36,15 @@ int main(int argc, char **argv) {
 	int isnp, iComp, itoken, thisPos, likesFreqIndex, nComparisons, maxPos, minPos;
 	double thisihs, thisihh, thisnsl; // per-pop
 	double thisfst, thisxpehh, thisdelDaf, thisdaf;
-	double compLike, minDaf;
+	double compLike, minDaf, minGenLen;
 	//int ibin;  //for debug
 	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
 	//char takeScoreString[6];
 	double prior; // = 1/nSNP for region
 	int nsnps_regional;
+	int istart, iend;
+	double gendist;
 
 	if (argc <= 3) {
 		fprintf(stderr, "Usage: ./combine_scores_local <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
@@ -81,13 +83,15 @@ int main(int argc, char **argv) {
 	minPos = -1;		
 	maxPos = 2147483647;
 	minDaf = 0;
+	minGenLen = 0.;
 	takeIhs = takeDelihh = takeNsl = takeXpehh = takeFst = takeDeldaf = 0; //all T by default
 	//if additional lines is included, parse 
 	if (fgets(paramline, line_size, inf) != NULL){
 		for (running = paramline, itoken=0; (token = strsep(&running, " \t")) != NULL; itoken++){
 			if (itoken == 0) {minPos = atoi(token);}
 			else if (itoken == 1){maxPos = atoi(token);}
-			else if (itoken == 2){minDaf = atof(token);}			
+			else if (itoken == 2){minDaf = atof(token);}
+			else if (itoken == 3){minGenLen = atof(token);}			
 		} // end for running
 	}  //end if fgets paramline
 	if (fgets(paramline, line_size, inf) != NULL){
@@ -101,7 +105,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f\n", minPos, maxPos, minDaf);		
+	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -111,8 +115,29 @@ int main(int argc, char **argv) {
 	//for (ibin = 0; ibin < ihs_likes_data.nbins; ibin++){fprintf(stderr, "%f\t%f\t%f\t%f\t%f\t%f\n", ihs_likes_data.start_bin[ibin], ihs_likes_data.end_bin[ibin], ihs_likes_data.miss_probs[ibin], ihs_likes_data.hit_probs_hi[ibin], ihs_likes_data.hit_probs_mid[ibin], ihs_likes_data.hit_probs_low[ibin]);} // DEBUG
 
 	/////////////////////
-	/// DEFINE REGION ///
-	/////////////////////
+	/// DEFINE REGION /// 
+	///////////////////// 
+	if (minGenLen > 0){ //enforce minimum genetic length of region, if specified
+		//get index of current bounds
+		istart = 0;
+		iend = 0;
+		for (isnp = 0; isnp < score_data.nsnps; isnp++){
+			thisPos = score_data.physpos[0][isnp];
+			if (thisPos <= minPos){istart=isnp;}
+			if (thisPos >= maxPos){iend=isnp; break;}
+		}
+		gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
+		fprintf(stderr,"starting gendist: %f\n", gendist);
+		while(gendist < minGenLen){
+			istart-=1;  //move out one SNP on each end
+			iend+=1;
+			gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
+		}	
+		minPos = score_data.physpos[0][istart];
+		maxPos = score_data.physpos[0][iend];
+		fprintf(stderr," %d\t%d\n", minPos, maxPos);
+		fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
+	} // end adjust region bounds
 	nsnps_regional = 0;
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////

@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 03.13.2017 	vitti@broadinstitute.org #must update docstrings
+## last updated: 03.14.2017 	vitti@broadinstitute.org #must update docstrings
 
 import matplotlib as mp 
 mp.use('agg') 
 from power.power_func import write_master_likesfile  #consolidate
 from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
-from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files
+from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files, get_info_from_tped_name
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
 import argparse
 import sys, os
@@ -19,45 +19,44 @@ def full_parser_likes_from_model():
 	parser=argparse.ArgumentParser(description="This script contains command-line utilities for generating probability distributions for component scores from pre-specified demographic model(s).")
 	subparsers = parser.add_subparsers(help="sub-commands")
 	generate_sel_bins_parser = subparsers.add_parser('generate_sel_bins', help="Pre-processing step: generate directories with parameter files divided by selDAF, according to specified bins") #nix or clean
-	generate_sel_bins_parser.add_argument('outputDir', action='store', help='location to write cosi output')
+	generate_sel_bins_parser.add_argument('outputDir', type=str, action='store', help='location to write cosi output')
 	
 	#####################################
 	## SIMULATE SELECTION TRAJECTORIES ##
 	#####################################
 	get_sel_traj_parser = subparsers.add_parser('get_sel_traj', help='Run forward simulations of selection trajectories to populate selscenarios by final allele frequency before running coalescent simulations for entire sample.')
-	get_sel_traj_parser.add_argument('traj_outputname', action='store', help="write to file")	
-	get_sel_traj_parser.add_argument('--maxAttempts', action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time', default=100)
+	get_sel_traj_parser.add_argument('traj_outputname', type=str, action='store', help="write to file")	
+	get_sel_traj_parser.add_argument('--maxAttempts', type=int, action='store', help='maximum number of attempts to generate a trajectory before re-sampling selection coefficient / start time', default=100)
 	
 	##########################
 	## RUN FULL SIMULATIONS ##
 	##########################
 	run_neut_sim_parser = subparsers.add_parser('run_neut_sim', help='run neutral simulations')
 	run_sel_sim_parser = subparsers.add_parser('run_sel_sim', help='run sims with selection')
-	run_sel_sim_parser.add_argument('traj_infilename', action='store', help="selection trajectory")
+	run_sel_sim_parser.add_argument('traj_infilename', type=str, action='store', help="selection trajectory")
 
 	#######################
 	## ANALYZE SIMULATES ##
 	#######################
 	run_repscores_parser = subparsers.add_parser('run_repscores', help="run composite score calculations for simulated tped")
-	run_repscores_parser.add_argument('score_basedir', action='store', type='str', help="parent directory in which to generate/populate folders for each composite score")
-	run_repscores_parser.add_argument('inputTpedFile', action='store', type='str', help="TPED file with simulate data for putative selected population") 
-	run_repscores_parser.add_argument('modelPop', type=int, action='store', help='model index of putative selected population', default=1)
-	run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/n/home08/jvitti/test_recom.recom")
+	run_repscores_parser.add_argument('score_basedir', type=str, action='store', help="parent directory in which to generate/populate folders for each composite score")
+	run_repscores_parser.add_argument('inputTpedFile', type=str, action='store', help="TPED file with simulate data for putative selected population") 
+	run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/n/home08/jvitti/params/test_recom.recom")
 
 	#################
 	## SHARED ARGS ## 
 	################# 
 	for common_parser in [run_neut_sim_parser, run_sel_sim_parser, run_repscores_parser]:
-		common_parser.add_argument('--checkOverwrite', action="store_true", default=False)
+		common_parser.add_argument('--checkOverwrite', action="store_true", default=True)
 	for run_sim_parser in [run_neut_sim_parser, run_sel_sim_parser]:
-		run_sim_parser.add_argument('writeBase', action='store', help="write prefix")
-		run_sim_parser.add_argument('--dropSings', action='store', type=float, help='randomly thin global singletons from output dataset to model ascertainment bias', default=.25)	
+		run_sim_parser.add_argument('writeBase', type=str, action='store', help="write prefix")
+		run_sim_parser.add_argument('--dropSings', type=float, action='store',  help='randomly thin global singletons from output dataset to model ascertainment bias', default=.25)	
 	for cosi_parser in [get_sel_traj_parser, run_neut_sim_parser, run_sel_sim_parser]:
-		cosi_parser.add_argument('--cosiBuild', action='store', help='which version of cosi to run', default="coalescent")
-		cosi_parser.add_argument('inputParamFile', action='store', help='file with model specifications for input')
+		cosi_parser.add_argument('--cosiBuild', type=str, action='store', help='which version of cosi to run', default="coalescent")
+		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
 		#cosi_parser.add_argument('--genmapRandomRegions', action='store_true', help='cosi option to sub-sample genetic map randomly from input')	
 	for cms_preconda_parser in [run_repscores_parser]: #TEMPORARY; conda will obviate
-		cms_preconda_parser.add_argument('--cmsdir', action='store', type='str', help="location of CMS scripts (TEMPORARY; conda will obviate)") 
+		cms_preconda_parser.add_argument('--cmsdir', type=str, action='store', help="location of CMS scripts (TEMPORARY; conda will obviate)", default="/n/home08/jvitti/cms/cms/") 
 
 
 	run_norm_neut_repscores_parser = subparsers.add_parser('run_norm_neut_repscores')
@@ -66,8 +65,8 @@ def full_parser_likes_from_model():
 	norm_from_binfile_parser = subparsers.add_parser('norm_from_binfile')
 	sel_norm_from_binfile_parser = subparsers.add_parser('sel_norm_from_binfile')
 	for norm_parser in [run_norm_neut_repscores_parser,norm_from_binfile_parser, sel_norm_from_binfile_parser]:
-		norm_parser.add_argument('--score', action='store', default='')
-		norm_parser.add_argument('--altpop', action='store', default='')
+		norm_parser.add_argument('--score', type=str, action='store', default='')
+		norm_parser.add_argument('--altpop', type=int, action='store', default='')
 	for selbin_parser in [sel_norm_from_binfile_parser]: #run_sel_sim_parser
 		selbin_parser.add_argument('--selbin', action="store")
 
@@ -196,10 +195,10 @@ def execute_run_repscores(args):
 	''' for one simulated replicate (agnostic wrt neut/sel), generate all component scores '''
 	basedir = args.score_basedir
 	cmsdir = args.cmsdir 
- 	tped = args.inputTpedFile
- 	pop = args.modelPop 
- 	checkOverwrite = args.checkOverwrite #nix/fix
- 	simRecomFile = args.simRecomFile
+	tped = args.inputTpedFile
+	repNum, pop, tpeddir = get_info_from_tped_name(tped)
+	checkOverwrite = args.checkOverwrite #nix/fix
+	simRecomFile = args.simRecomFile
 	assert os.path.isfile(tped)
 	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'fst_deldaf']:
 		#dircmd = "mkdir -p " + basedir + scorefiledir + "/"
@@ -217,10 +216,10 @@ def execute_run_repscores(args):
 	if proceed:
 		print(ihs_fullcmd)
 		execute(ihs_fullcmd)
-	delihh_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims --delIhh" #WAIT WHAT?
+	delihh_commandstring = "python " + cmsdir + "composite.py delihh_from_ihs"
 	delihh_unnormedfile =  basedir + "delihh/rep" + str(repNum) + "_" + str(pop) + ".txt"
 	delihh_argstring = ihs_unnormedfile + " "+ delihh_unnormedfile
-	delihh_fullcmd = delihh_commandstring + " " + delihh_argstring + " --cmsdir " + args.cmsdir
+	delihh_fullcmd = delihh_commandstring + " " + delihh_argstring 
 	proceed = check_create_file(delihh_unnormedfile, args.checkOverwrite)
 	if proceed:
 		print(delihh_fullcmd)
@@ -242,7 +241,7 @@ def execute_run_repscores(args):
 	altpops.remove(int(pop))
 	for altpop in altpops:
 		xpehh_commandstring = "python " + cmsdir + "scans.py selscan_xpehh --threads 7"
-		tped2 = tpeddir + "rep_" + str(repNum) + "_" + str(altpop) + ".tped"
+		tped2 = tpeddir + "rep" + str(repNum) + "_" + str(altpop) + ".tped"
 		xpehh_outfileprefix = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
 		xpehh_unnormedfile = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
 		xpehh_argumentstring = tped + " " + xpehh_outfileprefix + " " + tped2
@@ -252,9 +251,9 @@ def execute_run_repscores(args):
 			print(xpehh_fullcmd)
 			execute(xpehh_fullcmd)
 
-		fstdeldaf_commandstring = "python " + cmsdir + "likes_from_model.py scores_from_sims"
+		fstdeldaf_commandstring = "python " + cmsdir + "composite.py freqscores"
 		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
-		fstdeldaf_argumentstring = tped + " --fst_deldaf " + tped2 + " " + fstdeldaf_outfilename + " --recomfile " + simRecomFile + " --cmsdir " + args.cmsdir
+		fstdeldaf_argumentstring = tped + " " + tped2 + " " + simRecomFile + " " + fstdeldaf_outfilename 
 		fstdeldaf_fullcmd = fstdeldaf_commandstring + " " + fstdeldaf_argumentstring 
 		proceed = check_create_file(fstdeldaf_outfilename, args.checkOverwrite)
 		if proceed:

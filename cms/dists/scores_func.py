@@ -9,8 +9,8 @@ import sys
 import os
 
 #####################
-## CALCS FROM SIMS ## 
-#####################
+## CALCS FROM SIMS ## are these necessary? maybe replace with 
+##################### all-in-one function
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_ihs " + inputTped + " " + outputFile + " --threads " + str(numThreads)
@@ -51,7 +51,7 @@ def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
 	commandstring = modelpath + "calc_fst_deldaf"
 	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
 	fullcommand = commandstring + " " + argstring
-	#print(fullcommand)
+	print(fullcommand)
 	subprocess.check_call( fullcommand.split() )
 	return
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):

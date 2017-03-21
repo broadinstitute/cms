@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.12.17 vitti@broadinstitute.org
+## last updated: 03.13.17 vitti@broadinstitute.org
 
 import os, subprocess
 
@@ -90,6 +90,17 @@ def check_create_file(filename, checkOverwrite):
 def execute(commandstring):
 	subprocess.check_output(commandstring.split())
 	return
+def get_info_from_tped_name(filename):
+	assert(".tped" in filename)
+	entries = filename.split('rep')
+	tped_dir = entries[0]
+	rep_info = entries[-1]
+	info_2 = rep_info.split('.tped')
+	infostring = info_2[0]
+	needed = infostring.split('_')
+	rep, pop = int(needed[0]), int(needed[1])
+	#print('inferred pop and rep: ' + str(pop) + " " + str(rep) + "\n") #for debug
+	return rep, pop, tped_dir
 def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scratch/jvitti/clean/scores/"):
 	""" locates concatenated component score files to facilitate normalization to neutral replicates """
 	if score in ['ihs', 'delihh', 'nsl']:
@@ -103,4 +114,4 @@ def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scra
 	return concatfilename, binfilename
 
 	##not sure about these functions. relocate?
-	## get_concat_files hmmmmmm
+	## get_concat_files hmmmmmm this should definitely move.
