@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 03.21.2017 	vitti@broadinstitute.org #must update docstrings
+## last updated: 03.24.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
-from power.power_func import write_master_likesfile  #consolidate
-from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
+#from power.power_func import write_master_likesfile  #consolidate
+#from dists.likes_func import get_old_likes, read_likes_file, plot_likes, get_hist_bins, read_demographics_from_filename, define_axes
 from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files, get_info_from_tped_name
-from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
+from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, get_sim_compscore_files, get_scores_from_files, get_compscores_from_files, plot_pdf_comparison_from_scores, get_plot_pdf_params#, calc_hist_from_scores, write_hists_to_files, get_indices, load_vals_from_files, choose_vals_from_files
 import argparse
-import sys, os
+import sys, os, subprocess
 import matplotlib.pyplot as plt
 
 #############################
@@ -42,14 +42,29 @@ def full_parser_likes_from_model():
 	run_repscores_parser.add_argument('score_basedir', type=str, action='store', help="parent directory in which to generate/populate folders for each composite score")
 	run_repscores_parser.add_argument('inputTpedFile', type=str, action='store', help="TPED file with simulate data for putative selected population") 
 	run_repscores_parser.add_argument('--simRecomFile', type=str, action="store", help="location of input recom file", default="/n/home08/jvitti/params/test_recom.recom")
-	get_neut_norm_params_parser = subparsers.add_parser('get_neut_norm_params')	 #run_norm_neut_repscores_parser
+	get_neut_norm_params_parser = subparsers.add_parser('get_neut_norm_params', help="jointly normalize scores from neutral replicates to get parameters with which to normalize all replicates")	 #run_norm_neut_repscores_parser
 	get_neut_norm_params_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)", default=250000)
 	get_neut_norm_params_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
-	norm_from_neut_params_parser = subparsers.add_parser('norm_from_neut_params')
+	norm_from_neut_params_parser = subparsers.add_parser('norm_from_neut_params', help="normalize component scores according to neutral distribution")
 	norm_from_neut_params_parser.add_argument('--selbin', action='store', help="e.g. 0.10 -- if excluded, normalize neutral simulates")
-	for norm_sims_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser]:
-		norm_sims_parser.add_argument('modeldir', type=str, action="store", help="location of component score folders for demographic scenario")
 
+	##################################################
+	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
+	##################################################
+	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
+	likes_from_scores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)", default=25000)
+	likes_from_scores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
+	likes_from_scores_parser.add_argument('--nrep_neut', type=int, action="store", help="number of neutral replicates", default=1000)
+	likes_from_scores_parser.add_argument('--nrep_sel', type=int, action="store", help="number of replicates per selection scenario bin", default=500)
+	#likes_from_scores_parser.add_argument('--plotDir', type=str, action="store", help="where to save plot", default="")
+	if True:
+		likes_from_scores_parser.add_argument('--ihs', action="store_true", help="visualize likelihoods for iHS", default=False)
+		likes_from_scores_parser.add_argument('--delihh', action="store_true", help="visualize likelihoods for delIHH", default=False)
+		likes_from_scores_parser.add_argument('--nsl', action="store_true", help="visualize likelihoods for nSL", default=False)
+		likes_from_scores_parser.add_argument('--xpehh', action="store_true", help="visualize likelihoods for XP-EHH", default=False)
+		likes_from_scores_parser.add_argument('--deldaf', action="store_true", help="visualize likelihoods for delDAF", default=False)
+		likes_from_scores_parser.add_argument('--fst', action="store_true", help="visualize likelihoods for Fst", default=False)
+	
 	#################
 	## SHARED ARGS ## 
 	################# 
@@ -69,37 +84,11 @@ def full_parser_likes_from_model():
 		norm_parser.add_argument('--simpop', type=int, action='store', default=1)
 		norm_parser.add_argument('--altpop', type=int, action='store', default=2)
 		norm_parser.add_argument('--nrep', type=int, action='store', default=100)
-	for sel_parser in [generate_sel_bins_parser, get_sel_traj_parser]:#, likes_from_scores_parser]:
-		sel_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
-		sel_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)		
-
-	##################################################
-	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
-	##################################################
-	likes_from_scores_parser = subparsers.add_parser('likes_from_scores', help='Collate scores from simulated data in order to generate component test probability distributions.')
-	visualize_likes_parser = subparsers.add_parser('visualize_likes', help='Visualize likelihood tables generated from simulated data.')
-	visualize_likes_parser.add_argument('likesFiles', help='input files (comma-delimited, or passed as one file containing paths for each) with bins of probability density function to visualize.')	
-	visualize_likes_parser.add_argument('--oldLikes', help='visualize likelihood tables from previous run')
-	write_master_likes_parser = subparsers.add_parser('write_master_likes', help="write file for demographic scenario and population pointing to files for all score likelihoods")
-	write_master_likes_parser.add_argument('--likes_basedir', default="/idi/sabeti-scratch/jvitti/likes_111516_b/", help="location of likelihood tables ")
-	if True:
-		likes_from_scores_parser.add_argument('neutFile', action='store', help='file with scores for neutral scenarios (normalized if necessary). May be a file containing a list of files (e.g. multiple replicates) if suffix is <.list>.')
-		likes_from_scores_parser.add_argument('selFile', action='store', help='file with scores for selected scenarios (normalized if necessary). May be a file containing a list of files (e.g. multiple replicates) if suffix is <.list>.')
-		likes_from_scores_parser.add_argument('selPos', action='store', type=int, help='position of causal variant', default=500000)
-		likes_from_scores_parser.add_argument('outPrefix', action='store', help='save file as')
-		likes_from_scores_parser.add_argument('--thinToSize', action='store_true', help='subsample from simulated SNPs (since nSel << nLinked < nNeut)', default=False)	
-		likes_from_scores_parser.add_argument('--ihs', action='store_true', help='define probability distribution for iHS')	
-		likes_from_scores_parser.add_argument('--delihh', action='store_true', help='define probability distribution for delIHH')	
-		likes_from_scores_parser.add_argument('--nsl', action='store_true', help='define probability distribution for nSl')	
-		likes_from_scores_parser.add_argument('--xpehh', action='store_true', help='define probability distribution for XP-EHH')	
-		likes_from_scores_parser.add_argument('--deldaf', action='store_true', help='define probability distribution for delDAF')	
-		likes_from_scores_parser.add_argument('--fst', action='store_true', help='define probability distribution for Fst')	
-
-		likes_from_scores_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 25000)", default=25000)
-		likes_from_scores_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
-		for likes_parser in [likes_from_scores_parser, visualize_likes_parser]:
-			likes_parser.add_argument('--nLikesBins', action='store', type=int, help='number of bins to use for histogram to approximate probability density function', default=60)
-		
+	for norm_sims_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser, likes_from_scores_parser]:
+		norm_sims_parser.add_argument('modeldir', type=str, action="store", help="location of component score folders for demographic scenario")
+	for selbin_parser in [generate_sel_bins_parser, get_sel_traj_parser, likes_from_scores_parser]:
+		selbin_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
+		selbin_parser.add_argument('--nBins', type=int, help="number of frequency bins", default=9)		
 	return parser
 
 ############################
@@ -363,18 +352,18 @@ def execute_norm_from_neut_params(args):
 		scenario_dir = "neut/"
 	else:
 		scenario_dir = "sel" + str(pop) + "/sel_" + str(args.selbin) + "/"
-	concatfilename, binfilename = get_concat_files(pop, score, altpop, basedir=basedir)
+	concatfilename, binfilename = get_concat_files(pop, score, altpop, basedir=basedir) #I NEED TO MAKE THIS HANDLE SEL SITUATION
 	print('loading normalization parameters from ' + binfilename + "...")
 	###############
 	## NORMALIZE ##
 	###############
-	for irep in range(0, numReps+1):
+	for irep in range(1, numReps+1):
 		if score in ['ihs']:
 			unnormedfile = basedir + scenario_dir + "ihs/rep" + str(irep) + "_" + str(pop)  + ".ihs.out"
 			norm_sel_ihs(unnormedfile, binfilename)
 		elif score in ['delihh']:
 			unnormedfile = basedir + scenario_dir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-			norm_sel_ihs(args.inputFilename, binfilename)
+			norm_sel_ihs(unnormedfile, binfilename)
 		elif score in ['nsl']:
 			unnormedfile = basedir + scenario_dir + "nsl/rep" + str(irep) + "_" + str(pop)+ ".nsl.out"
 			norm_sel_ihs(unnormedfile, binfilename)
@@ -390,219 +379,153 @@ def execute_norm_from_neut_params(args):
 
 ### Define component score likelihood 
 ### functions as histograms of simulated scores
-def execute_likes_from_scores(args):
+def execute_likes_from_scores(args): #each run is per-score, per-scenario #does all pops / poppairs 
 	''' define likelihood function for component score based on histograms of score values from simulated data '''
-	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(args.freqRange, args.nBins) #selfreq bins
-	numLikesBins = args.nLikesBins #histogram bins
-
-	chrlen, edge = args.chromlen, args.edge
-	startbound, endbound = int(edge), chrlen - int(edge) #define replicate interior (conservative strategy to avoid edge effects)
-
-	datatypes = []
-	for status in ['causal', 'linked', 'neutral']:
-		for dpoint in ['positions', 'score_final']:
-			datatypes.append(status + "_" + dpoint)
-
-	#################
-	## LOAD SCORES ##
-	#################
-	data = {}
-	if args.ihs:
-		comparison, stripHeader = False, False
-		expectedlen_neut, indices_neut = get_indices('ihs', "neut")
-		expectedlen_sel, indices_sel = get_indices('ihs', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('ihs', numLikesBins)
-	elif args.delihh:
-		comparison, stripHeader = False, False
-		expectedlen_neut, indices_neut = get_indices('delihh', "neut")
-		expectedlen_sel, indices_sel = get_indices('delihh', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('delihh', numLikesBins)
-	elif args.xpehh:
-		comparison, stripHeader = True, True
-		expectedlen_neut, indices_neut = get_indices('xp', "neut")
-		expectedlen_sel, indices_sel = get_indices('xp', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('xp', numLikesBins)
-	elif args.deldaf:
-		comparison, stripHeader = True, True
-		expectedlen_neut, indices_neut = get_indices('deldaf', "neut")
-		expectedlen_sel, indices_sel = get_indices('deldaf', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('deldaf', numLikesBins)
-	elif args.fst:
-		comparison, stripHeader = True, True
-		expectedlen_neut, indices_neut = get_indices('fst', "neut")
-		expectedlen_sel, indices_sel = get_indices('fst', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('fst', numLikesBins)
-	elif args.nsl:
-		comparison, stripHeader = False, False
-		expectedlen_neut, indices_neut = get_indices('nsl', "neut")
-		expectedlen_sel, indices_sel = get_indices('nsl', "sel")
-		histBins,scoreRange,yLims = get_hist_bins('nsl', numLikesBins)				
-	else:
-		print("Must specify score (e.g. --ihs)")
+	modeldir, pops = args.modeldir, [1, 2, 3, 4]
+	if modeldir[-1] != "/":
+		modeldir += "/"
+	nPerBin_Neut, nPerBin_Sel = args.nrep_neut, args.nrep_sel
+	#plotDir = args.plotDir
+	#if plotdir[-1] != "/":
+	#	plotdir += "/"
+	freqRange, nBins = args.freqRange, args.nBins #define selscenario bins
+	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(freqRange, nBins)
+	chrlen, edge = args.chromlen, args.edge #define replicate interior (conservative strategy to avoid edge effects)
+	startbound, endbound = int(edge), chrlen - int(edge) 
+	#print(str([args.ihs, args.delihh, args.nsl, args.xpehh, args.deldaf, args.fst]))
+	if [args.ihs, args.delihh, args.nsl, args.xpehh, args.deldaf, args.fst].count(True) != 1:
+		print('must call one score at a time')
 		sys.exit(0)
+	#####################
+	## LOAD NEUT FILES ##
+	#####################
+	neutdir = modeldir + "neut/"
+	all_completed_neut = []
+	for pop in pops:
+		completed_neut = []
+		for irep in range(1, nPerBin_Neut+1):
+			loaded_neut_files = get_sim_compscore_files(pop, irep, neutdir)
+			all_present = [os.path.isfile(item) for item in loaded_neut_files]
+			if (all_present.count(True)) == 9: #replicate done
+				completed_neut.append(loaded_neut_files)
+		all_completed_neut.append(completed_neut)
+	print("loaded " + str(sum([len(item) for item in all_completed_neut])) + " neutral replicates with complete component scores from " + neutdir)
+	####################
+	## LOAD SEL FILES ##
+	####################
+	binlabels = bin_medians_str 
+	all_completed_sel, selcounter = [], 0
+	for pop in pops:
+		seldir = modeldir + "sel" + str(pop) + "/"
+		completed_sel = []
+		for selbin in binlabels:
+			bindir = seldir + "sel_" + str(selbin) + "/"
+			completed_bin = []
+			for irep in range(1, nPerBin_Sel+1):
+				loaded_sel_files = get_sim_compscore_files(pop, irep, bindir)
+				all_present = [os.path.isfile(item) for item in loaded_sel_files]
+				if (all_present.count(True)) == 9: #replicate done
+					completed_bin.append(loaded_sel_files)
+					selcounter +=1
+			completed_sel.append(completed_bin)
+		all_completed_sel.append(completed_sel) #[ipop][ibin][irep][iscore]
+	print("loaded " + str(selcounter) + " selection replicates with complete component scores")
+	#################################
+	## SORT SCORES INTO HISTOGRAMS ##
+	#################################
+	for ibin in range(nBins): #iterate over selfreqs
+		binstring = bin_medians_str[ibin]
+		####################
+		## PER POP SCORES ##
+		####################
+		if (args.ihs or args.delihh or args.nsl): #per pop
+			###########
+			### SORT ##
+			###########
+			if args.ihs:
+				score = "ihs"
+				print('binning iHS scores...')
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 0, ibin)
+			if args.delihh:
+				score = "delihh"
+				print('binning delIHH scores...')
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 1, ibin)	
+			if args.nsl:
+				score = "nsl"
+				print('binning nSL scores...')
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 2, ibin)
+			pop1vals, pop2vals, pop3vals, pop4vals = values
+			neut_1, causal_1, linked_1 = pop1vals
+			neut_2, causal_2, linked_2 = pop2vals
+			neut_3, causal_3, linked_3 = pop3vals
+			neut_4, causal_4, linked_4 = pop4vals
+			##########
+			## PLOT ##
+			##########
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)#-3, 3, 60, False
+			savefilename = modeldir + "likes/" + score + "_sel" + binstring + ".png"
+			f1, (ax1, ax2, ax3, ax4)  = plt.subplots(4, sharex=True)
+			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, annotate)
+			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, annotate)
+			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, annotate)
+			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, annotate)
+			plt.savefig(savefilename)
+			plt.close()
+			print('saved to ' + savefilename)
 
-	xlims = scoreRange	
-
-	val_array = load_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, stripHeader)		
-	neut_positions, neut_score_final, neut_anc_freq = val_array[0], val_array[1], val_array[2]
-
-	val_array = load_vals_from_files(args.selFile, expectedlen_sel, indices_sel, stripHeader)		
-	sel_positions, sel_score_final, sel_anc_freq = val_array[0], val_array[1], val_array[2]
-
-	#if not args.xpehh and not args.deldaf and not args.fst: 
-	#else:
-	#	if args.xpehh:
-	#		chooseMethod = "max" 
-	#		comp = "xpehh"
-	#	elif args.deldaf:
-	#		chooseMethod = "daf"
-	#		comp = "deldaf"
-	#	elif args.fst:
-	#		chooseMethod = "mean"
-	#		comp = "fst"
-
-	#	val_array = choose_vals_from_files(args.neutFile, expectedlen_neut, indices_neut, comp = comp, stripHeader = stripHeader, method=chooseMethod)
-	#	neut_positions, neut_score_final = val_array[0], val_array[1]
-
-	#	val_array = choose_vals_from_files(args.selFile, expectedlen_sel, indices_sel, comp = comp, stripHeader = stripHeader, method=chooseMethod)		
-	#	sel_positions, sel_score_final = val_array[0], val_array[1]
-
-	causal_indices = [i for i, x in enumerate(sel_positions) if x == args.selPos]
-	linked_indices = [i for i, x in enumerate(sel_positions) if x != args.selPos and x > startbound and x < endbound] 
-
-	print("loaded " + str(len(neut_positions)) + " neutral variants from : "  + args.neutFile)
-	print(" and  "+str(len(causal_indices)) + " causal variants, and " + str(len(linked_indices)) + " linked variants from: " + args.selFile)
-
-	causal_positions = [sel_positions[variant] for variant in causal_indices]
-	causal_score_final = [sel_score_final[variant] for variant in causal_indices]
-
-	linked_positions = [sel_positions[variant] for variant in linked_indices]
-	linked_score_final = [sel_score_final[variant] for variant in linked_indices]
-
-	n_causal, n_linked, n_neut, bin_causal, bins_linked, bins_neut = calc_hist_from_scores(causal_score_final, linked_score_final, neut_score_final, xlims, int(numLikesBins), args.thinToSize)
-	write_hists_to_files(args.outPrefix, histBins, n_causal, n_linked, n_neut)
-	print("wrote to " + args.outPrefix)
-	return #REVISIT CHOOSE METHOD?
-def execute_write_master_likes(args):
-	''' from write_master_likes.py'''
-	basedir = args.likes_basedir
-	models = ['nulldefault_constantsize', 'default_112115_825am', 'gradient_101915_treebase_6_best', 'nulldefault', 'default_default_101715_12pm']
-	selpops = [1, 2, 3, 4]
-	freqs = ['allfreq']#'hi', 'low', 'mid']
-	misses = ["neut"]#, "linked"]
-	for model in models:
-		for selpop in selpops:
-			for freq in freqs:
-				for miss in misses:					
-					writefiledir = basedir + model + "/master/"
-					check_create_dir(writefiledir)
-					writefilename = writefiledir + "likes_" + str(selpop) + "_" + str(freq) + "_vs_" + str(miss) + ".txt"
-					write_master_likesfile(writefilename, model, selpop, freq, basedir, miss)
-	return
-def execute_visualize_likes(args):
-	''' view likelihood function (i.e. score histograms) of CMS component scores for all models/populations '''
-	likesfilenames = args.likesFiles
-	likesfilenames = likesfilenames.split(',')
-	if len(likesfilenames) == 1:
-		file_paths = []
-		openfile=open(likesfilenames[0], 'r')
-		for line in openfile:
-			file_path = line.strip('\n')
-			file_paths.append(file_path)
-		openfile.close()
-		likesfilenames = file_paths
-
-	print('loading ' + str(len(likesfilenames)) + " likelihood tables..." )
-
-	if args.oldLikes:
-		likes_dict = get_old_likes()
-	else:		
-		likes_dict = {}
-		for likesfilename in likesfilenames:
-			if not os.path.isfile(likesfilename):
-				print('must first run likes_from_scores: ' + likesfilename)
-			else:
-				starts, ends, vals = read_likes_file(likesfilename)
-				key = read_demographics_from_filename(likesfilename) #key = (model, score, dist, pop)
-				likes_dict[key] = [starts, ends, vals]
-				for item in key:
-					if str(item) not in likesfilename:
-						print("ERROR: " + str(item) + " " + likesfilename)
-
-	keys = likes_dict.keys()
-	scores, pops, models, dists = [], [], [], []
-	for key in keys:
-		models.append(key[0])
-		scores.append(key[1])
-		dists.append(key[2])
-		pops.append(key[3])
-
-	scores = set(scores)
-	scores = list(scores)
-	models = set(models)
-	models = list(models)
-	pops = set(pops)
-	pops = list(pops)
-	dists = set(dists)
-	dists = list(dists)
-
-	print('loaded likes for ' + str(len(scores)) + " scores...")
-	print('loaded likes for ' + str(len(models)) + " models...")
-	print('loaded likes for ' + str(len(pops)) + " pops...")	
-	print('loaded likes for ' + str(len(dists)) + " dists...")	
-
-	colorDict = {'causal':'red', 'linked':'green', 'neut':'blue'}
-		
-	for score in scores: #each score gets its own figure
-		bins, scorerange, ylims = get_hist_bins(score, args.nLikesBins)
-
-		f, axes = plt.subplots(len(models), len(pops), sharex='col', sharey='row')
-		f.suptitle("p( component score | demographic model + putative selpop )\n" + score)
-		iAxis = 1
-
-		for imodel in range(len(models)): #rows
-			model = models[imodel]
-			
-			for ipop in range(len(pops)): #columns
+		##################
+		## PER POP COMP ##
+		##################
+		if (args.xpehh or args.deldaf or args.fst): #per pop-comp
+			###########
+			### SORT ##
+			###########
+			if args.xpehh:
+				score = "xpehh"
+				print('binning XP-EHH scores...')
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "xpehh", ibin)
+			if args.deldaf:
+				score = "deldaf"
+				print('binning delDAF scores...')
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "deldaf", ibin)	
+			if args.fst:
+				score = "fst"
+				print('binning Fst scores...')
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "fst", ibin)
+			pop1vals, pop2vals, pop3vals, pop4vals = values
+			vals1a, vals1b, vals1c = pop1vals
+			vals2a, vals2b, vals2c = pop2vals
+			vals3a, vals3b, vals3c = pop3vals
+			vals4a, vals4b, vals4c = pop4vals
+			neut1a, causal1a, linked1a = vals1a
+			neut1b, causal1b, linked1b = vals1b
+			neut1c, causal1c, linked1c = vals1c
+			neut2a, causal2a, linked2a = vals2a
+			neut2b, causal2b, linked2b = vals2b
+			neut2c, causal2c, linked2c = vals2c
+			neut3a, causal3a, linked3a = vals3a
+			neut3b, causal3b, linked3b = vals3b
+			neut3c, causal3c, linked3c = vals3c
+			neut4a, causal4a, linked4a = vals4a
+			neut4b, causal4b, linked4b = vals4b
+			neut4c, causal4c, linked4c = vals4c
+			##########
+			## PLOT ##
+			##########
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)# -3, 3, 60, False
+			for pop in pops:
+				neuta, neutb, neutc = eval('neut' + str(pop) + "a"), eval('neut' + str(pop) + "b"), eval('neut' + str(pop) + "c")
+				causala, causalb, causalc = eval('causal' + str(pop) + "a"), eval('causal' + str(pop) + "b"), eval('causal' + str(pop) + "c")
+				linkeda, linkedb, linkedc = eval('linked' + str(pop) + "a"), eval('linked' + str(pop) + "b"), eval('linked' + str(pop) + "c")
 				
-				if len(models) == 1:
-					ax = axes[ipop]
-				else:
-					ax = axes[imodel, ipop]
-				pop = pops[ipop]
-
-				causalkey = (model, score, 'causal', pop)
-				linkedkey = (model, score, 'linked', pop)
-				neutkey = (model, score, 'neut', pop)
-				if causalkey in keys:
-					starts_causal, ends_causal, vals_causal = likes_dict[causalkey]
-					plot_likes(starts_causal, ends_causal, vals_causal, ax, xlims=scorerange, ylims=ylims, color=colorDict['causal'])
-				if linkedkey in keys:
-					starts_linked, ends_linked, vals_linked = likes_dict[linkedkey]
-					plot_likes(starts_linked, ends_linked, vals_linked, ax, xlims=scorerange, ylims=ylims, color=colorDict['linked'])
-				if neutkey in keys:
-					starts_neut, ends_neut, vals_neut = likes_dict[neutkey]				
-					plot_likes(starts_neut, ends_neut, vals_neut, ax, xlims=scorerange, ylims=ylims, color=colorDict['neut'])		
-		
-				if causalkey in keys and neutkey in keys:
-					assert starts_causal == starts_neut
-				if neutkey in keys and linkedkey in keys:
-					assert starts_neut == starts_linked
-				if causalkey in keys and linkedkey in keys:
-					assert starts_causal == starts_linked
-
-				iAxis +=1
-				if imodel == (len(models)-1):
-					ax.set_xlabel(pop)
-				if ipop == (len(pops)-1):
-					entries = model.split("_")
-					label = ""
-					for item in entries:
-						label += item +"\n"
-					label.strip('\n')
-					ax.set_ylabel(label, fontsize=7)
-					ax.yaxis.set_label_position("right")
-		plt.show()	
+				savefilename = modeldir + "likes/" + score + "_" + str(pop) + "_sel" + str(binstring) + ".png"
+				f1, (ax1, ax2, ax3)  = plt.subplots(3, sharex=True)
+				plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, annotate)
+				plot_pdf_comparison_from_scores(ax2, neutb, causalb, linkedb, minVal, maxVal, nProbBins, annotate)
+				plot_pdf_comparison_from_scores(ax3, neutc, causalc, linkedc, minVal, maxVal, nProbBins, annotate)
+				plt.savefig(savefilename)
+				plt.close()
+				print('saved to ' + savefilename)
 	return
 
 ##########

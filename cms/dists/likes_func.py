@@ -7,6 +7,7 @@ from random import choice
 import numpy as np
 import os
 
+"""
 def get_hist_bins(score,numBins):
 	if score == "ihs":
 		scorerange = [-4., 4.]
@@ -131,3 +132,4 @@ def define_axes(numPops, numModels):
 	returnstring = returnstring.replace('[', '(')
 	returnstring = returnstring.replace(']', ')')
 	return returnstring
+"""

@@ -1,6 +1,7 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 12.15.16 vitti@broadinstitute.org
+## last updated: 03.24.17 vitti@broadinstitute.org
 
+from scipy.stats.kde import gaussian_kde
 from math import fabs, sqrt
 from random import randint
 import numpy as np
@@ -153,8 +154,222 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 ##################
 ## HISTOGRAMS ###
 ###################
+def get_sim_compscore_files(pop, repNum, basedir):
+	''' pulls all replicates with complete normalized component score files'''
+	pops = [1, 2, 3, 4]
+	altpops = pops[:]
+	altpops.remove(int(pop))
+	check_files = []
+	ihs_normedfile = basedir + "ihs/rep" + str(repNum) + "_" + str(pop) + ".ihs.out.norm"
+	delihh_normedfile =  basedir + "delihh/rep" + str(repNum) + "_" + str(pop) + ".txt.norm"
+	nsl_normedfileprefix = basedir + "nsl/rep" + str(repNum) + "_" + str(pop) + ".nsl.out.norm"
+	check_files.extend([ihs_normedfile, delihh_normedfile, nsl_normedfileprefix])
+	for altpop in altpops:
+		xpehh_normedfile = basedir + "xpehh/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out.norm"
+		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
+		check_files.extend([xpehh_normedfile, fstdeldaf_outfilename])
+	return check_files
+def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel_bin_index):
+	''' '''
+	neut_files1 = [all_completed_neut[0][irep][scoreindex] for irep in range(len(all_completed_neut[0]))]
+	neut_files2 = [all_completed_neut[1][irep][scoreindex] for irep in range(len(all_completed_neut[1]))]
+	neut_files3 = [all_completed_neut[2][irep][scoreindex] for irep in range(len(all_completed_neut[2]))]
+	neut_files4 = [all_completed_neut[3][irep][scoreindex] for irep in range(len(all_completed_neut[3]))]
+	neut_values1 = load_from_files(neut_files1)
+	neut_values2 = load_from_files(neut_files2)
+	neut_values3 = load_from_files(neut_files3)
+	neut_values4 = load_from_files(neut_files4)
+	print("loaded " + str(len(neut_values1)) + " neutral values for pop 1...")
+	print("loaded " + str(len(neut_values2)) + " neutral values for pop 2...")	
+	print("loaded " + str(len(neut_values3)) + " neutral values for pop 3...")			
+	print("loaded " + str(len(neut_values4)) + " neutral values for pop 4...")
+
+	sel_files1 = [all_completed_sel[0][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+	sel_files2 = [all_completed_sel[1][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+	sel_files3 = [all_completed_sel[2][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+	sel_files4 = [all_completed_sel[3][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[3][sel_bin_index]))]		
+	causal_values1, linked_values1 = load_from_files_discriminate_causal(sel_files1)
+	causal_values2, linked_values2 = load_from_files_discriminate_causal(sel_files2)
+	causal_values3, linked_values3 = load_from_files_discriminate_causal(sel_files3)
+	causal_values4, linked_values4 = load_from_files_discriminate_causal(sel_files4)
+	print("loaded " + str(len(causal_values1)) + " causal SNP and " + str(len(linked_values1)) + " linked SNP iHS values for pop 1...")
+	print("loaded " + str(len(causal_values2)) + " causal SNP and " + str(len(linked_values2)) + " linked SNP iHS values for pop 2...")
+	print("loaded " + str(len(causal_values3)) + " causal SNP and " + str(len(linked_values3)) + " linked SNP iHS values for pop 3...")
+	print("loaded " + str(len(causal_values4)) + " causal SNP and " + str(len(linked_values4)) + " linked SNP iHS values for pop 4...")
+
+	all_score_values = [[neut_values1, causal_values1, linked_values1],
+						[neut_values2, causal_values2, linked_values2],
+						[neut_values3, causal_values3, linked_values3],
+						[neut_values4, causal_values4, linked_values4],]
+	return all_score_values
+def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring, sel_bin_index):
+	''' '''
+	if scorestring in ['fst', 'deldaf']:
+		physIndex = 0
+		neut_files1a = [all_completed_neut[0][irep][4] for irep in range(len(all_completed_neut[0]))]
+		neut_files1b = [all_completed_neut[0][irep][6] for irep in range(len(all_completed_neut[0]))]
+		neut_files1c = [all_completed_neut[0][irep][8] for irep in range(len(all_completed_neut[0]))]
+		neut_files2a = [all_completed_neut[1][irep][4] for irep in range(len(all_completed_neut[1]))]
+		neut_files2b = [all_completed_neut[1][irep][6] for irep in range(len(all_completed_neut[1]))]
+		neut_files2c = [all_completed_neut[1][irep][8] for irep in range(len(all_completed_neut[1]))]
+		neut_files3a = [all_completed_neut[2][irep][4] for irep in range(len(all_completed_neut[2]))]
+		neut_files3b = [all_completed_neut[2][irep][6] for irep in range(len(all_completed_neut[2]))]
+		neut_files3c = [all_completed_neut[2][irep][8] for irep in range(len(all_completed_neut[2]))]
+		neut_files4a = [all_completed_neut[3][irep][4] for irep in range(len(all_completed_neut[3]))]
+		neut_files4b = [all_completed_neut[3][irep][6] for irep in range(len(all_completed_neut[3]))]
+		neut_files4c = [all_completed_neut[3][irep][8] for irep in range(len(all_completed_neut[3]))]
+		sel_files1a = [all_completed_sel[0][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files1b = [all_completed_sel[0][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files1c = [all_completed_sel[0][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files2a = [all_completed_sel[1][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files2b = [all_completed_sel[1][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files2c = [all_completed_sel[1][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files3a = [all_completed_sel[2][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files3b = [all_completed_sel[2][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files3c = [all_completed_sel[2][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files4a = [all_completed_sel[3][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
+		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
+		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[3][sel_bin_index]))] 
+	else:
+		assert(scorestring == "xpehh") #this could be made efficient
+		physIndex = 1
+		neut_files1a = [all_completed_neut[0][irep][3] for irep in range(len(all_completed_neut[0]))]
+		neut_files1b = [all_completed_neut[0][irep][5] for irep in range(len(all_completed_neut[0]))]
+		neut_files1c = [all_completed_neut[0][irep][7] for irep in range(len(all_completed_neut[0]))]
+		neut_files2a = [all_completed_neut[1][irep][3] for irep in range(len(all_completed_neut[1]))]
+		neut_files2b = [all_completed_neut[1][irep][5] for irep in range(len(all_completed_neut[1]))]
+		neut_files2c = [all_completed_neut[1][irep][7] for irep in range(len(all_completed_neut[1]))]
+		neut_files3a = [all_completed_neut[2][irep][3] for irep in range(len(all_completed_neut[2]))]
+		neut_files3b = [all_completed_neut[2][irep][5] for irep in range(len(all_completed_neut[2]))]
+		neut_files3c = [all_completed_neut[2][irep][7] for irep in range(len(all_completed_neut[2]))]
+		neut_files4a = [all_completed_neut[3][irep][3] for irep in range(len(all_completed_neut[3]))]
+		neut_files4b = [all_completed_neut[3][irep][5] for irep in range(len(all_completed_neut[3]))]
+		neut_files4c = [all_completed_neut[3][irep][7] for irep in range(len(all_completed_neut[3]))]
+		sel_files1a = [all_completed_sel[0][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files1b = [all_completed_sel[0][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files1c = [all_completed_sel[0][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
+		sel_files2a = [all_completed_sel[1][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files2b = [all_completed_sel[1][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files2c = [all_completed_sel[1][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
+		sel_files3a = [all_completed_sel[2][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files3b = [all_completed_sel[2][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files3c = [all_completed_sel[2][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
+		sel_files4a = [all_completed_sel[3][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
+		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
+		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
+
+	neut_values1a = load_from_files(neut_files1a, stripHeader=True)
+	neut_values1b = load_from_files(neut_files1b, stripHeader=True)
+	neut_values1c = load_from_files(neut_files1c, stripHeader=True)
+	neut_values2a = load_from_files(neut_files2a, stripHeader=True)
+	neut_values2b = load_from_files(neut_files2b, stripHeader=True)
+	neut_values2c = load_from_files(neut_files2c, stripHeader=True)
+	neut_values3a = load_from_files(neut_files3a, stripHeader=True)
+	neut_values3b = load_from_files(neut_files3b, stripHeader=True)
+	neut_values3c = load_from_files(neut_files3c, stripHeader=True)
+	neut_values4a = load_from_files(neut_files4a, stripHeader=True)
+	neut_values4b = load_from_files(neut_files4b, stripHeader=True)
+	neut_values4c = load_from_files(neut_files4c, stripHeader=True)
+	causal_values1a, linked_values1a = load_from_files_discriminate_causal(sel_files1a, stripHeader=True, physIndex=physIndex)
+	causal_values1b, linked_values1b = load_from_files_discriminate_causal(sel_files1b, stripHeader=True, physIndex=physIndex)
+	causal_values1c, linked_values1c = load_from_files_discriminate_causal(sel_files1c, stripHeader=True, physIndex=physIndex)
+	causal_values2a, linked_values2a = load_from_files_discriminate_causal(sel_files2a, stripHeader=True, physIndex=physIndex)
+	causal_values2b, linked_values2b = load_from_files_discriminate_causal(sel_files2b, stripHeader=True, physIndex=physIndex)
+	causal_values2c, linked_values2c = load_from_files_discriminate_causal(sel_files2c, stripHeader=True, physIndex=physIndex)
+	causal_values3a, linked_values3a = load_from_files_discriminate_causal(sel_files3a, stripHeader=True, physIndex=physIndex)
+	causal_values3b, linked_values3b = load_from_files_discriminate_causal(sel_files3b, stripHeader=True, physIndex=physIndex)
+	causal_values3c, linked_values3c = load_from_files_discriminate_causal(sel_files3c, stripHeader=True, physIndex=physIndex)
+	causal_values4a, linked_values4a = load_from_files_discriminate_causal(sel_files4a, stripHeader=True, physIndex=physIndex)
+	causal_values4b, linked_values4b = load_from_files_discriminate_causal(sel_files4b, stripHeader=True, physIndex=physIndex)
+	causal_values4c, linked_values4c = load_from_files_discriminate_causal(sel_files4c, stripHeader=True, physIndex=physIndex)
+	print("loaded " + str(sum([len(neut_values1a), len(neut_values1b), len(neut_values1c)])) + " neutral values for pop 1 vs three outgroups...")
+	print("loaded " + str(sum([len(neut_values2a), len(neut_values2b), len(neut_values2c)])) + " neutral values for pop 2 vs three outgroups...")
+	print("loaded " + str(sum([len(neut_values3a), len(neut_values3b), len(neut_values3c)])) + " neutral values for pop 3 vs three outgroups...")
+	print("loaded " + str(sum([len(neut_values4a), len(neut_values4b), len(neut_values4c)])) + " neutral values for pop 4 vs three outgroups...")
+	
+	print("loaded " + str(sum([len(linked_values1a), len(linked_values1b), len(linked_values1c)])) + " linked values for pop 1 vs three outgroups...")
+	print("loaded " + str(sum([len(linked_values2a), len(linked_values2b), len(linked_values2c)])) + " linked values for pop 2 vs three outgroups...")
+	print("loaded " + str(sum([len(linked_values3a), len(linked_values3b), len(linked_values3c)])) + " linked values for pop 3 vs three outgroups...")
+	print("loaded " + str(sum([len(linked_values4a), len(linked_values4b), len(linked_values4c)])) + " linked values for pop 4 vs three outgroups...")
+
+	print("loaded " + str(sum([len(causal_values1a), len(causal_values1b), len(causal_values1c)])) + " causal values for pop 1 vs three outgroups...")
+	print("loaded " + str(sum([len(causal_values2a), len(causal_values2b), len(causal_values2c)])) + " causal values for pop 2 vs three outgroups...")
+	print("loaded " + str(sum([len(causal_values3a), len(causal_values3b), len(causal_values3c)])) + " causal values for pop 3 vs three outgroups...")
+	print("loaded " + str(sum([len(causal_values4a), len(causal_values4b), len(causal_values4c)])) + " causal values for pop 4 vs three outgroups...")
+
+	all_score_values = [[[neut_values1a, causal_values1a, linked_values1a],[neut_values1b, causal_values1b, linked_values1b],
+						[neut_values1c, causal_values1c, linked_values1c]],
+						[[neut_values2a, causal_values2a, linked_values2a],[neut_values2b, causal_values2b, linked_values2b],
+						[neut_values2c, causal_values2c, linked_values2c]],
+						[[neut_values3a, causal_values3a, linked_values3a],[neut_values3b, causal_values3b, linked_values3b],
+						[neut_values3c, causal_values3c, linked_values3c]],
+						[[neut_values4a, causal_values4a, linked_values4a],[neut_values4b, causal_values4b, linked_values4b],
+						[neut_values4c, causal_values4c, linked_values4c]],
+						] #[pop][outgroup][type]
+	return all_score_values
+def load_from_files(files, takeIndex = -1, stripHeader = False):
+	#print('loading from ' + str(len(files)) + " files...")
+	values = []
+	for file in files:
+		openfile = open(file, 'r')
+		if stripHeader:
+			openfile.readline()
+		for line in openfile:
+			entries = line.split()
+			value = float(entries[takeIndex])
+			values.append(value)
+		openfile.close()
+	return values
+def load_from_files_discriminate_causal(files, takeIndex = -1, stripHeader = False, causalLoc = 750000, physIndex = 1):
+	#print('loading from ' + str(len(files)) + " files...")
+	causal_values, linked_values = [], []
+	for file in files:
+		openfile = open(file, 'r')
+		if stripHeader:
+			openfile.readline()
+		for line in openfile:
+			entries = line.split()
+			value = float(entries[takeIndex])
+			if int(entries[physIndex]) == causalLoc:
+				causal_values.append(value)
+			else:
+				linked_values.append(value)
+		openfile.close()
+	return causal_values, linked_values	
+def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, annotate = False):
+	neutvals = np.array(neutvals)
+	neutvals = neutvals[~np.isnan(neutvals)]
+	causalvals = np.array(causalvals)
+	causalvals = causalvals[~np.isnan(causalvals)]
+	linkedvals = np.array(linkedvals)
+	linkedvals = linkedvals[~np.isnan(linkedvals)]
+	if annotate:
+		mean = np.mean(neutvalues)
+		var = np.var(neutvalues)
+		sd = np.sqrt(var)
+		annotationstring = "NEUT max: " + str(max(values)) + "\nmin: " + str(min(values)) + "\nmean: " + str(np.mean(values)) + "\nvar: " + str(np.var(values))
+		xlims = ax.get_xlim()
+		ylims = ax.get_ylim()
+		fullxrange = xlims[1] - xlims[0]
+		fullyrange = ylims[1] - ylims[0]
+		anno_x = xlims[1] - (fullxrange/3)
+		anno_y = ylims[1] - (fullyrange/2)
+		ax.annotate(annotationstring, xy=(anno_x, anno_y), fontsize=6)
+	kde_neut = gaussian_kde( neutvals )
+	kde_causal = gaussian_kde( causalvals )
+	kde_linked = gaussian_kde( linkedvals )
+	dist_space = np.linspace(minVal, maxVal, nProbBins)
+	ax.plot( dist_space, kde_neut(dist_space) , color='blue')
+	ax.plot( dist_space, kde_causal(dist_space) , color='red')
+	ax.plot( dist_space, kde_linked(dist_space) , color='green')
+	return
+def get_plot_pdf_params(score):
+	#for now a placeholder -- merge with old hist func? 
+	return 3, 3, 60, False
+
+"""
 def get_indices(score, dem_scenario):
-	"""CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype. also returns anc_freq_index"""
+	#CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype. also returns anc_freq_index
 	if score == "ihs":
 		physpos_index, freq_anc_index = 1, 2
 		#if "sel" in dem_scenario:
@@ -442,3 +657,4 @@ def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 			writefile.write(towritestring)
 		writefile.close()
 	return
+"""
