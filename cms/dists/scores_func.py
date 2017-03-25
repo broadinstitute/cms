@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.24.17 vitti@broadinstitute.org
+## last updated: 03.25.17 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from math import fabs, sqrt
@@ -336,7 +336,7 @@ def load_from_files_discriminate_causal(files, takeIndex = -1, stripHeader = Fal
 				linked_values.append(value)
 		openfile.close()
 	return causal_values, linked_values	
-def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, annotate = False):
+def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, ax_ylabel, annotate = False):
 	neutvals = np.array(neutvals)
 	neutvals = neutvals[~np.isnan(neutvals)]
 	causalvals = np.array(causalvals)
@@ -359,68 +359,42 @@ def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal
 	kde_causal = gaussian_kde( causalvals )
 	kde_linked = gaussian_kde( linkedvals )
 	dist_space = np.linspace(minVal, maxVal, nProbBins)
+	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
+	ax.set_ylabel(ax_ylabel, color=colorDict[int(ax_ylabel[0])], fontsize=8)
+	ax.yaxis.set_label_position("right")
 	ax.plot( dist_space, kde_neut(dist_space) , color='blue')
 	ax.plot( dist_space, kde_causal(dist_space) , color='red')
 	ax.plot( dist_space, kde_linked(dist_space) , color='green')
+	max_bound = max(max(kde_neut(dist_space)), max(kde_causal(dist_space)), max(kde_linked(dist_space)))
+	this_bound = .5
+	while this_bound < max_bound:
+		this_bound += .1
+	ax.set_ylim([0,this_bound])
+	ax.tick_params(labelsize=6)
+	#ax.set_yticks(fontsize=6)
+	ax.grid()
+
 	return
 def get_plot_pdf_params(score):
-	#for now a placeholder -- merge with old hist func? 
-	return 3, 3, 60, False
+	if score == "ihs":
+		scorerange = [-4., 4.]
+	elif score == "delihh":
+		scorerange = [-3., 6.]
+	elif score == "fst":
+		scorerange = [-.05, 1.]
+	elif score == "deldaf" or score =="fst_deldaf":
+		scorerange = [-1., 1.]
+	elif score == "xp" or score =="xpehh":
+		scorerange = [-5., 8.]
+	elif score=="nsl":
+		scorerange = [-5., 5.]
+	minVal, maxVal = scorerange
+	nProbBins = 100 
+	annotate = False
+	return minVal, maxVal, nProbBins, annotate
+	
 
 """
-def get_indices(score, dem_scenario):
-	#CRUCIAL FUNC; tells loadVals which columns to grab and return; changes with filetype. also returns anc_freq_index
-	if score == "ihs":
-		physpos_index, freq_anc_index = 1, 2
-		#if "sel" in dem_scenario:
-		if True: #PULL FROM NORMED FILE / flexible to old format
-			ihs_unnormed_index, ihs_normed_index, expectedlen = -2, -1, 11 #these files have 11 columns
-		#else: #neutral
-		#	ihs_unnormed_index, ihs_normed_index, expectedlen = 5, 6, 10 #these files have 8 columns; last one is binary variable
-		indices = [physpos_index, ihs_normed_index, freq_anc_index]#freq_anc_index, ihs_unnormed_index, ihs_normed_index] 
-	elif score == "delihh":
-		if "sel" in dem_scenario:
-			expectedlen = 7
-		else:
-			expectedlen = 8
-		physpos_index, freq_anc_index = 1, 2
-		delihh_unnormed_index, delihh_normed_index = 5, 6
-		indices = [physpos_index, delihh_normed_index, freq_anc_index]#freq_anc_index, delihh_unnormed_index, delihh_normed_index]
-	elif score == "nsl":
-		physpos_index, freq_anc_index = 1, 2
-		normedscoreindex = 6
-		if "sel" in dem_scenario:
-			expectedlen = 7
-		else:
-			expectedlen = 8
-		indices = [physpos_index, normedscoreindex, freq_anc_index]		
-	elif score == "fst": #revert#PULL FROM COMP (.CMS FILE)
-		#expectedlen = 8
-		#physpos_index, scoreindex, freq_anc_index = 0, 5, float('nan')
-		expectedlen = 3#2
-		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
-		
-		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "deldaf":#revert#PULL FROM COMP (.CMS FILE)
-		#expectedlen = 8
-		#physpos_index, scoreindex, freq_anc_index = 0, 6, float('nan')	
-		expectedlen = 3#2
-		physpos_index, scoreindex, freq_anc_index = 0, 1, 2
-		indices = [physpos_index, scoreindex, freq_anc_index]
-	elif score == "xp": #revert#PULL FROM COMP (.CMS FILE)
-		#expectedlen = 8
-		#physpos_index, scoreindex, freq_anc_index = 0, 4, float('nan')	
-		physpos_index, freq_anc_index = 1, 2
-		xp_unnormed_index, xp_normed_index, = 7, 8
-		expectedlen=9
-		scoreindex = xp_normed_index
-		#if "sel" in dem_scenario:
-		#	expectedlen = 9
-		#else:
-		#	expectedlen = 10
-		indices = [physpos_index, scoreindex, freq_anc_index]
-
-	return expectedlen, indices
 def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
 	''' if filename is .list, opens and parses multiple files '''
 

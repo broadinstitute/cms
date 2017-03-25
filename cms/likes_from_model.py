@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 03.24.2017 	vitti@broadinstitute.org
+## last updated: 03.25.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -454,21 +454,27 @@ def execute_likes_from_scores(args): #each run is per-score, per-scenario #does 
 				score = "nsl"
 				print('binning nSL scores...')
 				values = get_scores_from_files(all_completed_neut, all_completed_sel, 2, ibin)
-			pop1vals, pop2vals, pop3vals, pop4vals = values
-			neut_1, causal_1, linked_1 = pop1vals
-			neut_2, causal_2, linked_2 = pop2vals
-			neut_3, causal_3, linked_3 = pop3vals
-			neut_4, causal_4, linked_4 = pop4vals
+			if True:
+				pop1vals, pop2vals, pop3vals, pop4vals = values
+				neut_1, causal_1, linked_1 = pop1vals
+				neut_2, causal_2, linked_2 = pop2vals
+				neut_3, causal_3, linked_3 = pop3vals
+				neut_4, causal_4, linked_4 = pop4vals
 			##########
 			## PLOT ##
 			##########
-			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)#-3, 3, 60, False
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)
+			plot_title = "PDF for " + score + ", sel" + str(binstring)
 			savefilename = modeldir + "likes/" + score + "_sel" + binstring + ".png"
-			f1, (ax1, ax2, ax3, ax4)  = plt.subplots(4, sharex=True)
-			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, annotate)
-			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, annotate)
-			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, annotate)
-			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, annotate)
+			f1, (ax1, ax2, ax3, ax4)  = plt.subplots(4, sharex=True, sharey=True)
+			plt.suptitle(plot_title)
+			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, "1 (AFR)", annotate)
+			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, "2 (EUR)", annotate)
+			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, "3 (EAS)", annotate)
+			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, "4 (SAS)", annotate)
+			ax4.set_xlabel('score value')
+			#f1.subplots_adjust(hspace=0)
+			#f1.ylabel("p(score)")
 			plt.savefig(savefilename)
 			plt.close()
 			print('saved to ' + savefilename)
@@ -492,38 +498,48 @@ def execute_likes_from_scores(args): #each run is per-score, per-scenario #does 
 				score = "fst"
 				print('binning Fst scores...')
 				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "fst", ibin)
-			pop1vals, pop2vals, pop3vals, pop4vals = values
-			vals1a, vals1b, vals1c = pop1vals
-			vals2a, vals2b, vals2c = pop2vals
-			vals3a, vals3b, vals3c = pop3vals
-			vals4a, vals4b, vals4c = pop4vals
-			neut1a, causal1a, linked1a = vals1a
-			neut1b, causal1b, linked1b = vals1b
-			neut1c, causal1c, linked1c = vals1c
-			neut2a, causal2a, linked2a = vals2a
-			neut2b, causal2b, linked2b = vals2b
-			neut2c, causal2c, linked2c = vals2c
-			neut3a, causal3a, linked3a = vals3a
-			neut3b, causal3b, linked3b = vals3b
-			neut3c, causal3c, linked3c = vals3c
-			neut4a, causal4a, linked4a = vals4a
-			neut4b, causal4b, linked4b = vals4b
-			neut4c, causal4c, linked4c = vals4c
+			if True:
+				pop1vals, pop2vals, pop3vals, pop4vals = values
+				vals1a, vals1b, vals1c = pop1vals
+				vals2a, vals2b, vals2c = pop2vals
+				vals3a, vals3b, vals3c = pop3vals
+				vals4a, vals4b, vals4c = pop4vals
+				neut1a, causal1a, linked1a = vals1a
+				neut1b, causal1b, linked1b = vals1b
+				neut1c, causal1c, linked1c = vals1c
+				neut2a, causal2a, linked2a = vals2a
+				neut2b, causal2b, linked2b = vals2b
+				neut2c, causal2c, linked2c = vals2c
+				neut3a, causal3a, linked3a = vals3a
+				neut3b, causal3b, linked3b = vals3b
+				neut3c, causal3c, linked3c = vals3c
+				neut4a, causal4a, linked4a = vals4a
+				neut4b, causal4b, linked4b = vals4b
+				neut4c, causal4c, linked4c = vals4c
 			##########
 			## PLOT ##
 			##########
-			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)# -3, 3, 60, False
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)
 			for pop in pops:
 				neuta, neutb, neutc = eval('neut' + str(pop) + "a"), eval('neut' + str(pop) + "b"), eval('neut' + str(pop) + "c")
 				causala, causalb, causalc = eval('causal' + str(pop) + "a"), eval('causal' + str(pop) + "b"), eval('causal' + str(pop) + "c")
 				linkeda, linkedb, linkedc = eval('linked' + str(pop) + "a"), eval('linked' + str(pop) + "b"), eval('linked' + str(pop) + "c")
-				
 				savefilename = modeldir + "likes/" + score + "_" + str(pop) + "_sel" + str(binstring) + ".png"
-				f1, (ax1, ax2, ax3)  = plt.subplots(3, sharex=True)
-				plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, annotate)
-				plot_pdf_comparison_from_scores(ax2, neutb, causalb, linkedb, minVal, maxVal, nProbBins, annotate)
-				plot_pdf_comparison_from_scores(ax3, neutc, causalc, linkedc, minVal, maxVal, nProbBins, annotate)
+				plot_title = "PDF for " + score + ", sel" + str(pop) +"_" + str(binstring)
+				f1, (ax1, ax2, ax3)  = plt.subplots(3, sharex=True, sharey=True)
+				plt.suptitle(plot_title)
+				altpops = pops[:]
+				altpops.remove(pop)
+				ax_ylabela = str(pop) + "_" + str(altpops[0])
+				ax_ylabelb = str(pop) + "_" + str(altpops[2])
+				ax_ylabelc = str(pop) + "_" + str(altpops[2])
+				plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, ax_ylabela, annotate)
+				plot_pdf_comparison_from_scores(ax2, neutb, causalb, linkedb, minVal, maxVal, nProbBins, ax_ylabelb, annotate)
+				plot_pdf_comparison_from_scores(ax3, neutc, causalc, linkedc, minVal, maxVal, nProbBins, ax_ylabelc, annotate)
+				ax3.set_xlabel('score value')
+				f1.subplots_adjust(hspace=0)
 				plt.savefig(savefilename)
+
 				plt.close()
 				print('saved to ' + savefilename)
 	return

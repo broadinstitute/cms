@@ -7,7 +7,7 @@ from random import choice
 import numpy as np
 import os
 
-"""
+
 def get_hist_bins(score,numBins):
 	if score == "ihs":
 		scorerange = [-4., 4.]
@@ -32,6 +32,7 @@ def get_hist_bins(score,numBins):
 	binlen = (scorerange[1] - scorerange[0])/float(numBins)
 	bins = [scorerange[0] + binlen * i for i in range(numBins+1)]
 	return bins, scorerange, ylims #move this to freqbins
+"""
 def read_likes_file(likesfilename):
 	'''parses a file from e.g. write_hists_to_files'''
 	starts, ends, vals = [], [], []
