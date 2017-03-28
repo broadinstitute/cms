@@ -1,7 +1,6 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.25.17 vitti@broadinstitute.org
+## last updated: 03.28.2017 vitti@broadinstitute.org
 
-from scipy.stats.kde import gaussian_kde
 from math import fabs, sqrt
 from random import randint
 import numpy as np
@@ -10,8 +9,8 @@ import sys
 import os
 
 #####################
-## CALCS FROM SIMS ## are these necessary? maybe replace with 
-##################### all-in-one function
+## CALCS FROM SIMS ##  
+##################### 
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_ihs " + inputTped + " " + outputFile + " --threads " + str(numThreads)
@@ -151,9 +150,9 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 	print("wrote to: " + normfilename)
 	return
 
-##################
-## HISTOGRAMS ###
-###################
+#############################
+## MANIPULATE SCORE FILES ###
+#############################
 def get_sim_compscore_files(pop, repNum, basedir):
 	''' pulls all replicates with complete normalized component score files'''
 	pops = [1, 2, 3, 4]
@@ -169,16 +168,16 @@ def get_sim_compscore_files(pop, repNum, basedir):
 		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
 		check_files.extend([xpehh_normedfile, fstdeldaf_outfilename])
 	return check_files
-def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel_bin_index):
+def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel_bin_index, startbound, endbound, foldDists = False):
 	''' '''
 	neut_files1 = [all_completed_neut[0][irep][scoreindex] for irep in range(len(all_completed_neut[0]))]
 	neut_files2 = [all_completed_neut[1][irep][scoreindex] for irep in range(len(all_completed_neut[1]))]
 	neut_files3 = [all_completed_neut[2][irep][scoreindex] for irep in range(len(all_completed_neut[2]))]
 	neut_files4 = [all_completed_neut[3][irep][scoreindex] for irep in range(len(all_completed_neut[3]))]
-	neut_values1 = load_from_files(neut_files1)
-	neut_values2 = load_from_files(neut_files2)
-	neut_values3 = load_from_files(neut_files3)
-	neut_values4 = load_from_files(neut_files4)
+	neut_values1 = load_from_files(neut_files1,  startbound, endbound, absVal = foldDists)
+	neut_values2 = load_from_files(neut_files2,  startbound, endbound, absVal = foldDists)
+	neut_values3 = load_from_files(neut_files3,  startbound, endbound, absVal = foldDists)
+	neut_values4 = load_from_files(neut_files4,  startbound, endbound, absVal = foldDists)
 	print("loaded " + str(len(neut_values1)) + " neutral values for pop 1...")
 	print("loaded " + str(len(neut_values2)) + " neutral values for pop 2...")	
 	print("loaded " + str(len(neut_values3)) + " neutral values for pop 3...")			
@@ -188,10 +187,10 @@ def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel
 	sel_files2 = [all_completed_sel[1][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
 	sel_files3 = [all_completed_sel[2][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
 	sel_files4 = [all_completed_sel[3][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[3][sel_bin_index]))]		
-	causal_values1, linked_values1 = load_from_files_discriminate_causal(sel_files1)
-	causal_values2, linked_values2 = load_from_files_discriminate_causal(sel_files2)
-	causal_values3, linked_values3 = load_from_files_discriminate_causal(sel_files3)
-	causal_values4, linked_values4 = load_from_files_discriminate_causal(sel_files4)
+	causal_values1, linked_values1 = load_from_files_discriminate_causal(sel_files1,  startbound, endbound, absVal = foldDists)
+	causal_values2, linked_values2 = load_from_files_discriminate_causal(sel_files2,  startbound, endbound, absVal = foldDists)
+	causal_values3, linked_values3 = load_from_files_discriminate_causal(sel_files3,  startbound, endbound, absVal = foldDists)
+	causal_values4, linked_values4 = load_from_files_discriminate_causal(sel_files4,  startbound, endbound, absVal = foldDists)
 	print("loaded " + str(len(causal_values1)) + " causal SNP and " + str(len(linked_values1)) + " linked SNP iHS values for pop 1...")
 	print("loaded " + str(len(causal_values2)) + " causal SNP and " + str(len(linked_values2)) + " linked SNP iHS values for pop 2...")
 	print("loaded " + str(len(causal_values3)) + " causal SNP and " + str(len(linked_values3)) + " linked SNP iHS values for pop 3...")
@@ -202,8 +201,7 @@ def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel
 						[neut_values3, causal_values3, linked_values3],
 						[neut_values4, causal_values4, linked_values4],]
 	return all_score_values
-def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring, sel_bin_index):
-	''' '''
+def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring, sel_bin_index, startbound, endbound, foldDists = False):
 	if scorestring in ['fst', 'deldaf']:
 		physIndex = 0
 		neut_files1a = [all_completed_neut[0][irep][4] for irep in range(len(all_completed_neut[0]))]
@@ -258,30 +256,30 @@ def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring
 		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
 		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
 
-	neut_values1a = load_from_files(neut_files1a, stripHeader=True)
-	neut_values1b = load_from_files(neut_files1b, stripHeader=True)
-	neut_values1c = load_from_files(neut_files1c, stripHeader=True)
-	neut_values2a = load_from_files(neut_files2a, stripHeader=True)
-	neut_values2b = load_from_files(neut_files2b, stripHeader=True)
-	neut_values2c = load_from_files(neut_files2c, stripHeader=True)
-	neut_values3a = load_from_files(neut_files3a, stripHeader=True)
-	neut_values3b = load_from_files(neut_files3b, stripHeader=True)
-	neut_values3c = load_from_files(neut_files3c, stripHeader=True)
-	neut_values4a = load_from_files(neut_files4a, stripHeader=True)
-	neut_values4b = load_from_files(neut_files4b, stripHeader=True)
-	neut_values4c = load_from_files(neut_files4c, stripHeader=True)
-	causal_values1a, linked_values1a = load_from_files_discriminate_causal(sel_files1a, stripHeader=True, physIndex=physIndex)
-	causal_values1b, linked_values1b = load_from_files_discriminate_causal(sel_files1b, stripHeader=True, physIndex=physIndex)
-	causal_values1c, linked_values1c = load_from_files_discriminate_causal(sel_files1c, stripHeader=True, physIndex=physIndex)
-	causal_values2a, linked_values2a = load_from_files_discriminate_causal(sel_files2a, stripHeader=True, physIndex=physIndex)
-	causal_values2b, linked_values2b = load_from_files_discriminate_causal(sel_files2b, stripHeader=True, physIndex=physIndex)
-	causal_values2c, linked_values2c = load_from_files_discriminate_causal(sel_files2c, stripHeader=True, physIndex=physIndex)
-	causal_values3a, linked_values3a = load_from_files_discriminate_causal(sel_files3a, stripHeader=True, physIndex=physIndex)
-	causal_values3b, linked_values3b = load_from_files_discriminate_causal(sel_files3b, stripHeader=True, physIndex=physIndex)
-	causal_values3c, linked_values3c = load_from_files_discriminate_causal(sel_files3c, stripHeader=True, physIndex=physIndex)
-	causal_values4a, linked_values4a = load_from_files_discriminate_causal(sel_files4a, stripHeader=True, physIndex=physIndex)
-	causal_values4b, linked_values4b = load_from_files_discriminate_causal(sel_files4b, stripHeader=True, physIndex=physIndex)
-	causal_values4c, linked_values4c = load_from_files_discriminate_causal(sel_files4c, stripHeader=True, physIndex=physIndex)
+	neut_values1a = load_from_files(neut_files1a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values1b = load_from_files(neut_files1b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values1c = load_from_files(neut_files1c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values2a = load_from_files(neut_files2a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values2b = load_from_files(neut_files2b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values2c = load_from_files(neut_files2c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values3a = load_from_files(neut_files3a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values3b = load_from_files(neut_files3b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values3c = load_from_files(neut_files3c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values4a = load_from_files(neut_files4a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values4b = load_from_files(neut_files4b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	neut_values4c = load_from_files(neut_files4c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values1a, linked_values1a = load_from_files_discriminate_causal(sel_files1a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values1b, linked_values1b = load_from_files_discriminate_causal(sel_files1b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values1c, linked_values1c = load_from_files_discriminate_causal(sel_files1c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values2a, linked_values2a = load_from_files_discriminate_causal(sel_files2a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values2b, linked_values2b = load_from_files_discriminate_causal(sel_files2b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values2c, linked_values2c = load_from_files_discriminate_causal(sel_files2c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values3a, linked_values3a = load_from_files_discriminate_causal(sel_files3a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values3b, linked_values3b = load_from_files_discriminate_causal(sel_files3b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values3c, linked_values3c = load_from_files_discriminate_causal(sel_files3c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values4a, linked_values4a = load_from_files_discriminate_causal(sel_files4a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values4b, linked_values4b = load_from_files_discriminate_causal(sel_files4b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
+	causal_values4c, linked_values4c = load_from_files_discriminate_causal(sel_files4c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
 	print("loaded " + str(sum([len(neut_values1a), len(neut_values1b), len(neut_values1c)])) + " neutral values for pop 1 vs three outgroups...")
 	print("loaded " + str(sum([len(neut_values2a), len(neut_values2b), len(neut_values2c)])) + " neutral values for pop 2 vs three outgroups...")
 	print("loaded " + str(sum([len(neut_values3a), len(neut_values3b), len(neut_values3c)])) + " neutral values for pop 3 vs three outgroups...")
@@ -307,8 +305,9 @@ def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring
 						[neut_values4c, causal_values4c, linked_values4c]],
 						] #[pop][outgroup][type]
 	return all_score_values
-def load_from_files(files, takeIndex = -1, stripHeader = False):
+def load_from_files(files, startbound, endbound, takeIndex = -1, stripHeader = False, physIndex = 1, absVal = False):
 	#print('loading from ' + str(len(files)) + " files...")
+	#print("startbound: " + str(startbound) + ", endbound: " + str(endbound))
 	values = []
 	for file in files:
 		openfile = open(file, 'r')
@@ -317,11 +316,16 @@ def load_from_files(files, takeIndex = -1, stripHeader = False):
 		for line in openfile:
 			entries = line.split()
 			value = float(entries[takeIndex])
-			values.append(value)
+			if absVal:
+				value = fabs(value)
+			thisPhysPos = int(entries[physIndex])
+			if thisPhysPos >= startbound and thisPhysPos <= endbound:
+				values.append(value)
 		openfile.close()
 	return values
-def load_from_files_discriminate_causal(files, takeIndex = -1, stripHeader = False, causalLoc = 750000, physIndex = 1):
+def load_from_files_discriminate_causal(files,  startbound, endbound, takeIndex = -1, stripHeader = False, causalLoc = 750000, physIndex = 1, absVal = False):
 	#print('loading from ' + str(len(files)) + " files...")
+	#print("startbound: " + str(startbound) + ", endbound: " + str(endbound))
 	causal_values, linked_values = [], []
 	for file in files:
 		openfile = open(file, 'r')
@@ -330,305 +334,13 @@ def load_from_files_discriminate_causal(files, takeIndex = -1, stripHeader = Fal
 		for line in openfile:
 			entries = line.split()
 			value = float(entries[takeIndex])
-			if int(entries[physIndex]) == causalLoc:
-				causal_values.append(value)
-			else:
-				linked_values.append(value)
+			if absVal:
+				value = fabs(value)
+			thisPhysPos = int(entries[physIndex])
+			if thisPhysPos >= startbound and thisPhysPos <= endbound:
+				if thisPhysPos == causalLoc:
+					causal_values.append(value)
+				else:
+					linked_values.append(value)
 		openfile.close()
 	return causal_values, linked_values	
-def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, ax_ylabel, annotate = False):
-	neutvals = np.array(neutvals)
-	neutvals = neutvals[~np.isnan(neutvals)]
-	causalvals = np.array(causalvals)
-	causalvals = causalvals[~np.isnan(causalvals)]
-	linkedvals = np.array(linkedvals)
-	linkedvals = linkedvals[~np.isnan(linkedvals)]
-	if annotate:
-		mean = np.mean(neutvalues)
-		var = np.var(neutvalues)
-		sd = np.sqrt(var)
-		annotationstring = "NEUT max: " + str(max(values)) + "\nmin: " + str(min(values)) + "\nmean: " + str(np.mean(values)) + "\nvar: " + str(np.var(values))
-		xlims = ax.get_xlim()
-		ylims = ax.get_ylim()
-		fullxrange = xlims[1] - xlims[0]
-		fullyrange = ylims[1] - ylims[0]
-		anno_x = xlims[1] - (fullxrange/3)
-		anno_y = ylims[1] - (fullyrange/2)
-		ax.annotate(annotationstring, xy=(anno_x, anno_y), fontsize=6)
-	kde_neut = gaussian_kde( neutvals )
-	kde_causal = gaussian_kde( causalvals )
-	kde_linked = gaussian_kde( linkedvals )
-	dist_space = np.linspace(minVal, maxVal, nProbBins)
-	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
-	ax.set_ylabel(ax_ylabel, color=colorDict[int(ax_ylabel[0])], fontsize=8)
-	ax.yaxis.set_label_position("right")
-	ax.plot( dist_space, kde_neut(dist_space) , color='blue')
-	ax.plot( dist_space, kde_causal(dist_space) , color='red')
-	ax.plot( dist_space, kde_linked(dist_space) , color='green')
-	max_bound = max(max(kde_neut(dist_space)), max(kde_causal(dist_space)), max(kde_linked(dist_space)))
-	this_bound = .5
-	while this_bound < max_bound:
-		this_bound += .1
-	ax.set_ylim([0,this_bound])
-	ax.tick_params(labelsize=6)
-	#ax.set_yticks(fontsize=6)
-	ax.grid()
-
-	return
-def get_plot_pdf_params(score):
-	if score == "ihs":
-		scorerange = [-4., 4.]
-	elif score == "delihh":
-		scorerange = [-3., 6.]
-	elif score == "fst":
-		scorerange = [-.05, 1.]
-	elif score == "deldaf" or score =="fst_deldaf":
-		scorerange = [-1., 1.]
-	elif score == "xp" or score =="xpehh":
-		scorerange = [-5., 8.]
-	elif score=="nsl":
-		scorerange = [-5., 5.]
-	minVal, maxVal = scorerange
-	nProbBins = 100 
-	annotate = False
-	return minVal, maxVal, nProbBins, annotate
-	
-
-"""
-def load_vals_from_files(filename, numCols, takeindices, stripHeader = False, printProgress = False, checkCols = False):
-	''' if filename is .list, opens and parses multiple files '''
-
-	toreturn, incompleteData = [[] for index in takeindices], 0
-
-	entries = filename.split('.')
-	if entries[-1] == "list":
-		allfilenames = []
-		openfile = open(filename, 'r')
-		for line in openfile:
-			repfilename = line.strip('\n')
-			if os.path.isfile(repfilename):
-				allfilenames.append(repfilename)
-		openfile.close()
-
-	else:
-		allfilenames = [filename]
-	print('loading data from ' + str(len(allfilenames)) + ' files...')
-
-	for ifilename in range(len(allfilenames)):
-		filename = allfilenames[ifilename]
-		if printProgress:
-			if ifilename % 100 == 0: 
-				print("now file " + str(ifilename) + " out of " + str(len(allfilenames)))
-		if os.path.getsize(filename) > 0:
-			openfile = open(filename, 'r')
-			if stripHeader:
-				header = openfile.readline()
-			for line in openfile:
-				entries = line.split()
-				if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
-					if checkCols and (len(entries) != numCols):
-						print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
-						incompleteData +=1
-						break
-					if np.isnan(takeindices[-1]):
-						fullrange = len(takeindices) - 1
-					else:
-						fullrange = len(takeindices)
-					for iIndex in range(fullrange):
-						index = takeindices[iIndex]
-						thisValue = float(entries[index])
-						toreturn[iIndex].append(thisValue)
-			openfile.close()
-	return toreturn
-def choose_vals_from_files(filename, numCols, takeindices, comp, stripHeader = False, checkCols = False, method = "max"):
-	''' expects a .list file with multiple records (i.e., same replicate, different poppairs) on the same line as input '''
-
-	entries = filename.split('.')
-	if entries[-1] == "list":
-		allfilenames = []
-		openfile = open(filename, 'r')
-		for line in openfile:
-			thisrepfiles = []
-			repfilenames = line.split()
-			for repfilename in repfilenames:
-				if os.path.isfile(repfilename):
-					thisrepfiles.append(repfilename)
-			allfilenames.append(thisrepfiles)
-		openfile.close()
-
-	else:
-		print('check input file.')
-		sys.exit(0)
-		#allfilenames = [filename]
-	print('loading data from ' + str(len(allfilenames)) + ' replicates...')
-	
-	#assert len(takeindices) == 3
-	#print(takeindices)
-	#sys.exit()
-
-	posIndex, takeIndex, ancfreqIndex = takeindices
-	#if comp == "fst":
-	#	posIndex, takeIndex = 0, 1
-	#elif comp == "deldaf":
-	#	posIndex, takeIndex = 0, 2
-	#else:
-	#	posIndex, takeIndex = takeindices[0], takeindices[1]
-	
-	allpos, allscores = [], []
-
-	for ireplicate in range(len(allfilenames)):
-		filelist = allfilenames[ireplicate]
-		repscores = []
-		reppositions = []
-		repanc = []
-		for filename in filelist:
-			#print(filename)
-			#print(str(takeIndex))
-			vals = []
-			positions =[]
-			ancs = []
-			openfile = open(filename, 'r')
-			if stripHeader:
-				header = openfile.readline()
-			for line in openfile:
-				entries = line.split()
-				if entries[0] != "chrom": #quick patch for calc_fst_deldaf printing chrom-wide average
-					if checkCols and (len(entries) != numCols):
-						print("ERROR: numCols " + str(numCols) + " " + str(len(entries)) + " " + filename)
-						incompleteData +=1
-						break
-					val = float(entries[takeIndex])
-					pos = int(entries[posIndex])
-					anc = float(entries[ancfreqIndex])
-					vals.append(val)
-					positions.append(pos)
-					ancs.append(anc)
-			openfile.close()
-			repscores.append(vals)
-			reppositions.append(positions)
-			repanc.append(ancs)
-		#choose here
-		chosen, chosenpos = choose_from_reps(repscores, reppositions,  repanc, mode = method)
-		allscores.extend(chosen)
-		allpos.extend(chosenpos)
-	alltoreturn = [allpos, allscores]
-	return alltoreturn
-def choose_from_reps(repscores, reppositions, repanc, mode="max"):
-	'''flexible function to choose for likes '''
-	ncomp = len(repscores)
-	allpositions = []
-	for reppositionlist in reppositions:
-		allpositions.extend(reppositionlist)
-	allpositions = set(allpositions)
-	toreturn = []
-	for position in allpositions:
-		scores = []
-		freqs = []
-		for icomp in range(ncomp):
-			if position in reppositions[icomp]:
-				thisindex = reppositions[icomp].index(position)
-				scores.append(repscores[icomp][thisindex])		
-				freqs.append(repanc[icomp][thisindex])
-		#this is where choosing happens
-	
-		if mode == "max":
-			itemtoreturn = max(scores)
-		elif mode in ['mean', 'ave', 'average']:
-			itemtoreturn = np.mean(scores)
-		elif mode == "min":
-			itemtoreturn = min(scores)
-		elif mode == "daf" or mode == "deldaf": #
-			itemtoreturn = np.mean(scores)
-			#print('testing...')
-			#thispop_anc = float(freqs[0])
-			#print(thispop_anc)
-			#thispop_der = 1. - thispop_anc
-			#otherpops_anc = freqs[1:]
-			#otherpops_der = [1. - float(item) for item in otherpops_anc]
-			#otherpops_ave = np.mean(otherpops_der)
-			#daf_val = thispop_der - otherpops_ave
-			#itemtoreturn = daf_val
-			#print(freqs)
-			#print(daf_val)
-
-		toreturn.append(itemtoreturn)
-		#print(scores)
-		#print(itemtoreturn)
-	return toreturn, allpositions
-def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
-	if thinToSize:
-		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
-		print("Thinning data to " + str(limiting) + " SNPs...")
-		short_causal, short_linked, short_neut = [], [], []
-
-		for parentlist in ['causal', 'linked', 'neut']:
-			shortlist = eval('short_' + parentlist)
-			takenindices = []
-			while len(takenindices) < limiting:
-				chosenIndex = randint(0, limiting-1)
-				if chosenIndex not in takenindices:
-					shortlist.append(eval(parentlist + "_scores")[chosenIndex])
-					takenindices.append(chosenIndex)
-
-		causal_scores, linked_scores, neut_scores = short_causal, short_linked, short_neut
-
-	#print(causal_scores)
-
-	#check for nans
-	causal_scores = np.array(causal_scores)
-	linked_scores = np.array(linked_scores)
-	neut_scores = np.array(neut_scores)
-	causal_scores = causal_scores[~np.isnan(causal_scores)]
-	linked_scores = linked_scores[~np.isnan(linked_scores)]
-	neut_scores = neut_scores[~np.isnan(neut_scores)]
-
-	#get weights to plot pdf from hist
-	#weights_causal = np.ones_like(causal_scores)/len(causal_scores)
-	#weights_linked = np.ones_like(linked_scores)/len(linked_scores)
-	#weights_neut = np.ones_like(neut_scores)/len(neut_scores)
-
-	causal_scores = np.clip(causal_scores, xlims[0], xlims[1]) #np.clip
-	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
-	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
-
-	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins)#, weights = weights_causal)
-	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins)#, weights = weights_linked)
-	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins)#, weights = weights_neut)
-
-	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
-	#print(debug_array)
-
-	#totalNsnps = len(causal_scores) + len(linked_scores) + len(neut_scores)
-
-	#for ibin in range(len(n_causal)):
-	#	if n_causal[ibin] <= 1:
-	#		n_causal[ibin] = 1e-10
-	#	if n_linked[ibin] <= 1:
-	#		n_linked[ibin] = 1e-10
-	#	if n_neut[ibin] <=1:
-	#		n_neut[ibin] = 1e-10
-
-	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
-def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
-	assert len(givenBins) == (len(n_causal) + 1)
-	for status in ['causal', 'linked', 'neut']:
-		writefilename = writePrefix + "_" + status + ".txt"
-		writefile = open(writefilename, 'w')
-		n_scores = eval('n_' + status)
-		for index in range(len(n_scores)):
-			num_in_bin = n_scores[index]
-			if (num_in_bin <= 1):
-				writeprob = 1e-10
-			else:
-				if (index < (len(n_scores) - 1) and index > 0): #check neighbors
-					if (n_scores[index+1] == n_scores[index-1]) and (n_scores[index+1] <=1):
-						writeprob = 1e-10
-					else:
-						writeprob = float(n_scores[index])/(sum(n_scores)) #
-				else:
-					writeprob = float(n_scores[index])/(sum(n_scores)) #
-			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(writeprob)+ "\n"
-			writefile.write(towritestring)
-		writefile.close()
-	return
-"""

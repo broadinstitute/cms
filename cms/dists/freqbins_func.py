@@ -1,7 +1,8 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.21.17 vitti@broadinstitute.org
+## last updated: 03.28.2017 vitti@broadinstitute.org
 
-import os, subprocess
+import subprocess
+import os
 
 ###################
 ### SELFREQ BINS ##
@@ -112,6 +113,3 @@ def get_concat_files(pop, score, altpop, basedir):
 	concatfilename = concatfilebase + score + ".txt"
 	binfilename = concatfilebase + score + ".bins"
 	return concatfilename, binfilename
-
-	##not sure about these functions. relocate?
-	## get_concat_files hmmmmmm this should definitely move.
