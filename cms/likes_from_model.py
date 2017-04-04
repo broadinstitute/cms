@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 03.28.2017 	vitti@broadinstitute.org
+## last updated: 04.04.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
 from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files, get_info_from_tped_name
 from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, get_sim_compscore_files, get_scores_from_files, get_compscores_from_files
-from dists.likes_func import plot_pdf_comparison_from_scores, get_plot_pdf_params
+from dists.likes_func import plot_pdf_comparison_from_scores, get_plot_pdf_params, quick_load_likes, quick_cl_from_likes, quick_clr_from_likes
+import numpy as np
 import argparse
 import sys, os, subprocess
 import matplotlib.pyplot as plt
@@ -53,6 +54,9 @@ def full_parser_likes_from_model():
 	likes_from_scores_parser.add_argument('--nrep_sel', type=int, action="store", help="number of replicates per selection scenario bin", default=500)
 	likes_from_scores_parser.add_argument('--binMerge', action="store_true", help="if included, generate higher-order groupings of selscenario frequency bins")
 	likes_from_scores_parser.add_argument('--foldDist', action="store_true", help="if included, take absolute value of score values (fold distribution over y-axis)", default=False)
+	likes_from_scores_parser.add_argument('--save_suffix', type=str, action="store", help="optional string to add to filenames (e.g. to avoid overwrite)", default=None)
+	likes_from_scores_parser.add_argument('--save_dir', type=str, action="store", help="if included, specify alternate outpot location", default=None)
+	likes_from_scores_parser.add_argument('--save_likelihoods', action="store_true", help="in addition to plotting, save data", default=False)
 	if True:
 		likes_from_scores_parser.add_argument('--ihs', action="store_true", help="visualize likelihoods for iHS", default=False)
 		likes_from_scores_parser.add_argument('--delihh', action="store_true", help="visualize likelihoods for delIHH", default=False)
@@ -387,6 +391,8 @@ def execute_likes_from_scores(args):
 	modeldir, pops = args.modeldir, [1, 2, 3, 4]
 	if modeldir[-1] != "/":
 		modeldir += "/"
+	modeldir_entries = modeldir.split('/')
+	model = modeldir_entries[-2]
 	nPerBin_Neut, nPerBin_Sel = args.nrep_neut, args.nrep_sel
 	freqRange, nBins = args.freqRange, args.nBins #define selscenario bins
 	fullrange, bin_starts, bin_ends, bin_medians, bin_medians_str = get_bins(freqRange, nBins)
@@ -470,15 +476,15 @@ def execute_likes_from_scores(args):
 			if args.ihs:
 				score = "ihs"
 				print('binning iHS scores...')
-				values = get_scores_from_files(all_completed_neut, all_completed_sel, 0, ichunk, startbound, endbound, foldDists = args.foldDists)
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 0, ichunk, startbound, endbound, foldDists = args.foldDist)
 			if args.delihh:
 				score = "delihh"
 				print('binning delIHH scores...')
-				values = get_scores_from_files(all_completed_neut, all_completed_sel, 1, ichunk, startbound, endbound, foldDists = args.foldDists)	
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 1, ichunk, startbound, endbound, foldDists = args.foldDist)	
 			if args.nsl:
 				score = "nsl"
 				print('binning nSL scores...')
-				values = get_scores_from_files(all_completed_neut, all_completed_sel, 2, ichunk, startbound, endbound, foldDists = args.foldDists)
+				values = get_scores_from_files(all_completed_neut, all_completed_sel, 2, ichunk, startbound, endbound, foldDists = args.foldDist)
 			if True:
 				pop1vals, pop2vals, pop3vals, pop4vals = values
 				neut_1, causal_1, linked_1 = pop1vals
@@ -490,14 +496,34 @@ def execute_likes_from_scores(args):
 			##########
 			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)
 			plot_title = "PDF for " + score + ", sel_" + str(chunkstring)
-			savefilename = modeldir + "likes/" + score + "_sel_" + chunkstring + ".png"
-			savefilebase = modeldir + "likes/" + score + "_sel_" + chunkstring
+			output_dir = ""
+			if args.save_dir is not None:
+				output_dir = args.save_dir + model + "_"
+			else:
+				output_dir = modeldir + "likes/"
+
+			savefilebase = output_dir + score + "_sel_" + chunkstring 
+			if args.save_suffix is not None:
+				savefilebase += "_" + args.save_suffix
+
+			savefilename = savefilebase + ".png"
+			#savefilebase = modeldir + "likes/" + score + "_sel_" + chunkstring
+			likes_savebase_1 = output_dir + score + "_sel1_" + chunkstring + "_" 
+			likes_savebase_2 = output_dir + score + "_sel2_" + chunkstring + "_" #+ args.save_suffix + "_"
+			likes_savebase_3 = output_dir + score + "_sel3_" + chunkstring + "_" #+ args.save_suffix + "_"
+			likes_savebase_4 = output_dir + score + "_sel4_" + chunkstring + "_" #+ args.save_suffix + "_"
+			if args.save_suffix is not None:
+				likes_savebase_1 += args.save_suffix + "_"
+				likes_savebase_2 += args.save_suffix + "_"
+				likes_savebase_3 += args.save_suffix + "_"
+				likes_savebase_4 += args.save_suffix + "_"
+
 			f1, (ax1, ax2, ax3, ax4)  = plt.subplots(4, sharex=True, sharey=True)
 			plt.suptitle(plot_title)
-			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, "1 (AFR)", modeldir + "likes/" + score + "_sel1_" + chunkstring + "_", annotate)
-			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, "2 (EUR)", modeldir + "likes/" + score + "_sel2_" + chunkstring + "_", annotate)
-			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, "3 (EAS)", modeldir + "likes/" + score + "_sel3_" + chunkstring + "_", annotate)
-			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, "4 (SAS)", modeldir + "likes/" + score + "_sel4_" + chunkstring + "_", annotate)
+			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, "1 (AFR)", likes_savebase_1, saveFiles = args.save_likelihoods, annotate = annotate)
+			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, "2 (EUR)", likes_savebase_2, saveFiles = args.save_likelihoods, annotate = annotate)
+			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, "3 (EAS)", likes_savebase_3, annotate = annotate, saveFiles = args.save_likelihoods)
+			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, "4 (SAS)", likes_savebase_4, annotate = annotate, saveFiles = args.save_likelihoods)
 			ax4.set_xlabel('score value')
 			#f1.subplots_adjust(hspace=0)
 			#f1.ylabel("p(score)")
@@ -515,15 +541,15 @@ def execute_likes_from_scores(args):
 			if args.xpehh:
 				score = "xpehh"
 				print('binning XP-EHH scores...')
-				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "xpehh", ichunk, startbound, endbound, foldDists = args.foldDists)
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "xpehh", ichunk, startbound, endbound, foldDists = args.foldDist)
 			if args.deldaf:
 				score = "deldaf"
 				print('binning delDAF scores...')
-				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "deldaf", ichunk, startbound, endbound, foldDists = args.foldDists)	
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "deldaf", ichunk, startbound, endbound, foldDists = args.foldDist)	
 			if args.fst:
 				score = "fst"
 				print('binning Fst scores...')
-				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "fst", ichunk, startbound, endbound, foldDists = args.foldDists)
+				values = get_compscores_from_files(all_completed_neut, all_completed_sel, "fst", ichunk, startbound, endbound, foldDists = args.foldDist)
 			if True:
 				pop1vals, pop2vals, pop3vals, pop4vals = values
 				vals1a, vals1b, vals1c = pop1vals
@@ -550,7 +576,18 @@ def execute_likes_from_scores(args):
 				neuta, neutb, neutc = eval('neut' + str(pop) + "a"), eval('neut' + str(pop) + "b"), eval('neut' + str(pop) + "c")
 				causala, causalb, causalc = eval('causal' + str(pop) + "a"), eval('causal' + str(pop) + "b"), eval('causal' + str(pop) + "c")
 				linkeda, linkedb, linkedc = eval('linked' + str(pop) + "a"), eval('linked' + str(pop) + "b"), eval('linked' + str(pop) + "c")
-				savefilename = modeldir + "likes/" + score + "_" + str(pop) + "_sel_" + str(chunkstring) + ".png"
+				
+				output_dir = ""
+				if args.save_dir is not None:
+					output_dir = args.save_dir + model + "_"
+				else:
+					output_dir = modeldir + "likes/"
+
+				savefilebase = output_dir + score + "_" + str(pop) + "_sel_" + str(chunkstring)
+				if args.save_suffix is not None:
+					savefilebase += "_" + args.save_suffix
+				savefilename = savefilebase + ".png"
+				# + ".png"
 				plot_title = "PDF for " + score + ", sel" + str(pop) +"_" + str(chunkstring)
 				f1, (ax1, ax2, ax3)  = plt.subplots(3, sharex=True, sharey=True)
 				plt.suptitle(plot_title)
@@ -559,9 +596,16 @@ def execute_likes_from_scores(args):
 				ax_ylabela = str(pop) + "_" + str(altpops[0])
 				ax_ylabelb = str(pop) + "_" + str(altpops[1])
 				ax_ylabelc = str(pop) + "_" + str(altpops[2])
-				plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, ax_ylabela, modeldir + "likes/" + score + "_sel" + ax_ylabela +"_" + str(chunkstring) + "_",annotate)
-				plot_pdf_comparison_from_scores(ax2, neutb, causalb, linkedb, minVal, maxVal, nProbBins, ax_ylabelb, modeldir + "likes/" + score + "_sel" + ax_ylabelb +"_" + str(chunkstring) + "_", annotate)
-				plot_pdf_comparison_from_scores(ax3, neutc, causalc, linkedc, minVal, maxVal, nProbBins, ax_ylabelc, modeldir + "likes/" + score + "_sel" + ax_ylabelc +"_" + str(chunkstring) + "_", annotate)
+				savefilename_a = output_dir + score + "_sel" + ax_ylabela +"_" + str(chunkstring) + "_" #+ args.save_suffix + "_"
+				savefilename_b = output_dir + score + "_sel" + ax_ylabelb +"_" + str(chunkstring) + "_" #+ args.save_suffix + "_"
+				savefilename_c = output_dir + score + "_sel" + ax_ylabelc +"_" + str(chunkstring) + "_" #+ args.save_suffix + "_"
+				if args.save_suffix is not None:
+					savefilename_a += args.save_suffix + "_"
+					savefilename_b += args.save_suffix + "_"
+					savefilename_c += args.save_suffix + "_"
+				plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, ax_ylabela, savefilename_a, annotate = annotate, saveFiles = args.save_likelihoods)
+				plot_pdf_comparison_from_scores(ax2, neutb, causalb, linkedb, minVal, maxVal, nProbBins, ax_ylabelb, savefilename_b, annotate = annotate, saveFiles = args.save_likelihoods)
+				plot_pdf_comparison_from_scores(ax3, neutc, causalc, linkedc, minVal, maxVal, nProbBins, ax_ylabelc, savefilename_c, annotate = annotate, saveFiles = args.save_likelihoods)
 				ax3.set_xlabel('score value')
 				f1.subplots_adjust(hspace=0)
 				plt.savefig(savefilename)

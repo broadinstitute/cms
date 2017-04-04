@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 03.28.2017 vitti@broadinstitute.org
+## last updated: 04.02.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -11,8 +11,15 @@ import os
 ######################################
 def get_plot_pdf_params(score):
 	''' defines likelihood score ranges etc. '''
+	"""For within-region localization, the value ranges used to define the bins were as follows: 
+	iHS, [-3,3]; XP-EHH, [-3,3]; iHH difference, [-3,3]; FST, [-2,2]; and DDAF, [-1,1]; 
+	for CMSGW, the value ranges were as follows: 
+	iHS, [-6,6]; XP-EHH, [-3,8]; iHH difference, [-3,5]; FST, [-1,6]; and DDAF, [-1,1]. 
+	Values outside the range were binned into the nearest bin at the end of the range.
+	"""
+
 	if score == "ihs":
-		scorerange = [-6., 6.]
+		scorerange = [0,6.] #folding for region-detection: the ancestral allele at this SNP may tag a nearby causal derived variant, so polarity isn't useful to us #[-6., 6.]
 	elif score == "delihh":
 		scorerange = [-3., 5.]
 	elif score == "fst":
@@ -22,12 +29,12 @@ def get_plot_pdf_params(score):
 	elif score == "xp" or score =="xpehh":
 		scorerange = [-3., 8.]
 	elif score=="nsl":
-		scorerange = [-5., 5.]
+		scorerange = [0,5.]#[-5., 5.]
 	minVal, maxVal = scorerange
-	nProbBins = 100 
+	nProbBins = 50 
 	annotate = False
 	return minVal, maxVal, nProbBins, annotate
-def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, ax_ylabel, savebase, annotate = False):
+def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, ax_ylabel, savebase, annotate = False, saveFiles=False, heuristic=False):
 	''' inputs arrays of sorted scores and outputs estimated probability density function for component score (as image and datafile)'''
 	colorDict = {1:'#FFB933', 2:'#0EBFF0', 3:'#ADCD00', 4:'#8B08B0'}
 	################### 
@@ -46,22 +53,80 @@ def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal
 	##################### 
 	### CALCULATE PDF ###
 	#####################
-	dist_space = np.linspace(minVal, maxVal, nProbBins)
-	kde_neut = gaussian_kde( neutvals )
-	kde_causal = gaussian_kde( causalvals )
-	kde_linked = gaussian_kde( linkedvals )
+	if heuristic: #plot both smoothed function and coarse-grained histogram
+		dist_space = np.linspace(minVal, maxVal, nProbBins)
+		kde_neut = gaussian_kde( neutvals )
+		kde_causal = gaussian_kde( causalvals )
+		kde_linked = gaussian_kde( linkedvals )
+		neut_dist = kde_neut(dist_space)
+		causal_dist = kde_causal(dist_space)
+		linked_dist = kde_linked(dist_space)
+		ax.plot( dist_space,  neut_dist, color='blue',)
+		ax.plot( dist_space, causal_dist , color='red')
+		ax.plot( dist_space, linked_dist , color='green')
+		ax.hist(neutvals, color="blue", alpha=.5, normed=True)
+		ax.hist(causalvals, color='red', alpha=.5, normed=True)
+		ax.hist(linkedvals, color='green', alpha=.5, normed=True)
+
+	else: #plot fine-grained histogram
+		#get weights to plot pdf from hist
+		weights_neut = np.ones_like(neutvals)/len(neutvals) 
+		weights_causal = np.ones_like(causalvals)/len(causalvals)
+		weights_linked = np.ones_like(linkedvals)/len(linkedvals)
+
+		score_range = float(maxVal) - float(minVal)
+		interval = score_range / float(nProbBins)
+		givenBins =[float(minVal) + ibin * interval for ibin in range(nProbBins+1)] #starts and ends
+		# minVal maxVal, nPro
+		starts = givenBins[:-1]
+		ends = givenBins[1:]
+		#for i_bin in range(len(starts)):
+		#	print(str(starts[i_bin]) + "\t" + str(ends[i_bin]))
+		#print(str(givenBins))
+
+		xlims = [minVal, maxVal]
+		n_causal, bins_causal = np.histogram(causalvals, range=xlims, bins=givenBins, weights = weights_causal)
+		n_linked, bins_linked = np.histogram(linkedvals, range=xlims,  bins=givenBins, weights = weights_linked)
+		n_neut, bins_neut = np.histogram(neutvals,range=xlims, bins=givenBins, weights = weights_neut)
+
+		#midpoints = [float(minVal) + (interval/2) + (ibin * interval) for ibin in range(nProbBins)]
+		midpoints = []
+		for i in range(nProbBins):
+			midpoint = (givenBins[i] + givenBins[i+1])/2.
+			midpoints.append(midpoint)
+		#print(midpoints)
+		bar_width = interval
+		#print(str(bar_width))
+		#print(str(n_neut))
+		ax.bar(midpoints, n_neut, bar_width, alpha=.5, color="blue")
+		ax.bar(midpoints, n_linked, bar_width, alpha=.5, color="green")
+		ax.bar(midpoints, n_causal, bar_width, alpha=.5, color="red")
+
+		#midpoints = [(starts[i] + ends[i])/2 for i in range(len(starts))]
+		#bar_width = (starts[0] - ends[0])/5
+		#if color == "blue":
+		#	offset = 0
+		#elif color == "red":
+		#	offset = bar_width
+		#elif color == "green":
+		#	offset = (-1 * bar_width)
+		#plot_xvals = [midpoints[i] + offset for i in range(len(midpoints))]
+		#ax.scatter(midpoints, vals, color=color)
+		#ax.bar(plot_xvals, vals, bar_width, color=color, edgecolor=color)
+		#ax.set_xlim(xlims)
+		#ax.set_ylim(ylims)
+		linked_dist, causal_dist, neut_dist = n_linked, n_causal, n_neut #unsmoothed
+		
 	ax.set_ylabel(ax_ylabel, color=colorDict[int(ax_ylabel[0])], fontsize=8)
 	ax.yaxis.set_label_position("right")
-	neut_dist = kde_neut(dist_space)
-	causal_dist = kde_causal(dist_space)
-	linked_dist = kde_linked(dist_space)
-	ax.plot( dist_space,  neut_dist, color='blue',)
-	ax.plot( dist_space, causal_dist , color='red')
-	ax.plot( dist_space, linked_dist , color='green')
-	ax.hist(neutvals, color="blue", alpha=.5, normed=True)
-	ax.hist(causalvals, color='red', alpha=.5, normed=True)
-	ax.hist(linkedvals, color='green', alpha=.5, normed=True)
-
+	max_bound = max(max(linked_dist), max(causal_dist), max(neut_dist))
+	this_bound = .1#.5 #pad out y-limits to accomodate maximum 
+	while this_bound < max_bound:
+		this_bound += .01
+	ax.set_ylim([0,this_bound])
+	ax.tick_params(labelsize=6)
+	#ax.set_yticks(fontsize=6)
+	ax.grid()
 	if annotate:
 		mean = np.mean(neutvalues)
 		var = np.var(neutvalues)
@@ -74,38 +139,31 @@ def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal
 		anno_x = xlims[1] - (fullxrange/3)
 		anno_y = ylims[1] - (fullyrange/2)
 		ax.annotate(annotationstring, xy=(anno_x, anno_y), fontsize=6)
-	max_bound = max(max(linked_dist), max(causal_dist), max(neut_dist))
-	this_bound = .5 #pad out y-limits to accomodate maximum 
-	while this_bound < max_bound:
-		this_bound += .1
-	ax.set_ylim([0,this_bound])
-	ax.tick_params(labelsize=6)
-	#ax.set_yticks(fontsize=6)
-	ax.grid()
 
 	#################
 	### SAVE DIST ### (this becomes its own functionality?)
 	#################
-	neutwritefilename = savebase + "likes_neut.txt"
-	causalwritefilename = savebase + "likes_causal.txt"
-	linkedwritefilename = savebase + "likes_linked.txt"
-	neutfile = open(neutwritefilename, 'w')
-	causalfile = open(causalwritefilename, 'w')
-	linkedfile = open(linkedwritefilename, 'w')
-	#for item in dist_space:
-	for ibin in range(len(dist_space)): #convert midpoints to bin bounds?
-		writeprefix = str(dist_space[ibin])  + "\t" #+ str(kde_neut(dist_space)[ibin] + "\n")
-		#writefile.write(str(writestring))
-		neutline = writeprefix + str(neut_dist[ibin]) + "\n"
-		causalline = writeprefix + str(causal_dist[ibin]) + "\n"
-		linkedline = writeprefix + str(linked_dist[ibin]) + "\n"				
-		neutfile.write(neutline)
-		causalfile.write(causalline)
-		linkedfile.write(linkedline)
-	neutfile.close()
-	causalfile.close()
-	linkedfile.close()
-	print('wrote to e.g.: ' + neutwritefilename)
+	if saveFiles:
+		neutwritefilename = savebase + "likes_neut.txt"
+		causalwritefilename = savebase + "likes_causal.txt"
+		linkedwritefilename = savebase + "likes_linked.txt"
+		neutfile = open(neutwritefilename, 'w')
+		causalfile = open(causalwritefilename, 'w')
+		linkedfile = open(linkedwritefilename, 'w')
+		#for item in dist_space:
+		for ibin in range(len(starts)): #convert midpoints to bin bounds?
+			writeprefix = str(starts[ibin])  + "\t" + str(ends[ibin]) + "\t" #+ str(kde_neut(dist_space)[ibin] + "\n")
+			#writefile.write(str(writestring))
+			neutline = writeprefix + str(neut_dist[ibin]) + "\n"
+			causalline = writeprefix + str(causal_dist[ibin]) + "\n"
+			linkedline = writeprefix + str(linked_dist[ibin]) + "\n"				
+			neutfile.write(neutline)
+			causalfile.write(causalline)
+			linkedfile.write(linkedline)
+		neutfile.close()
+		causalfile.close()
+		linkedfile.close()
+		print('wrote to e.g.: ' + neutwritefilename)
 	return
 
 ##########################
@@ -118,7 +176,10 @@ def quick_cl_from_likes(causallikes, linkedlikes, nSnp = 1000, takeLn = True):
 	for ibin in range(len(causallikes)):
 		numerator = causallikes[ibin] * prior
 		denominator = (causallikes[ibin] * prior) + (linkedlikes[ibin] * (1-prior))
-		cl = numerator / denominator
+		if denominator != 0:
+			cl = numerator / denominator
+		else:
+			cl = float('nan')
 		#if cl < 1e-5:
 		#	pass
 		if takeLn:
@@ -129,7 +190,10 @@ def quick_clr_from_likes(causallikes, neutlikes, takeLn = True):
 	assert len(causallikes) == len(neutlikes)
 	composite_like_ratios = []
 	for ibin in range(len(causallikes)):
-		clr = causallikes[ibin] / neutlikes[ibin]
+		if neutlikes[ibin] != 0:
+			clr = causallikes[ibin] / neutlikes[ibin]
+		else:
+			clr = float('nan')
 		#if clr < 1e-5:
 		#	pass
 		if takeLn:
@@ -150,60 +214,6 @@ def quick_load_likes(infilename, prob_index = -1):
 
 
 """
-def calc_hist_from_scores(causal_scores, linked_scores, neut_scores, xlims, givenBins, thinToSize = False):
-	if thinToSize:
-		limiting = min(len(causal_scores), len(linked_scores), len(neut_scores))
-		print("Thinning data to " + str(limiting) + " SNPs...")
-		short_causal, short_linked, short_neut = [], [], []
-
-		for parentlist in ['causal', 'linked', 'neut']:
-			shortlist = eval('short_' + parentlist)
-			takenindices = []
-			while len(takenindices) < limiting:
-				chosenIndex = randint(0, limiting-1)
-				if chosenIndex not in takenindices:
-					shortlist.append(eval(parentlist + "_scores")[chosenIndex])
-					takenindices.append(chosenIndex)
-
-		causal_scores, linked_scores, neut_scores = short_causal, short_linked, short_neut
-
-	#print(causal_scores)
-
-	#check for nans
-	causal_scores = np.array(causal_scores)
-	linked_scores = np.array(linked_scores)
-	neut_scores = np.array(neut_scores)
-	causal_scores = causal_scores[~np.isnan(causal_scores)]
-	linked_scores = linked_scores[~np.isnan(linked_scores)]
-	neut_scores = neut_scores[~np.isnan(neut_scores)]
-
-	#get weights to plot pdf from hist
-	#weights_causal = np.ones_like(causal_scores)/len(causal_scores)
-	#weights_linked = np.ones_like(linked_scores)/len(linked_scores)
-	#weights_neut = np.ones_like(neut_scores)/len(neut_scores)
-
-	causal_scores = np.clip(causal_scores, xlims[0], xlims[1]) #np.clip
-	linked_scores = np.clip(linked_scores, xlims[0], xlims[1])
-	neut_scores = np.clip(neut_scores, xlims[0], xlims[1])
-
-	n_causal, bins_causal = np.histogram(causal_scores, range=xlims, bins=givenBins)#, weights = weights_causal)
-	n_linked, bins_linked = np.histogram(linked_scores, range=xlims,  bins=givenBins)#, weights = weights_linked)
-	n_neut, bins_neut = np.histogram(neut_scores,range=xlims, bins=givenBins)#, weights = weights_neut)
-
-	#debug_array = [n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut]
-	#print(debug_array)
-
-	#totalNsnps = len(causal_scores) + len(linked_scores) + len(neut_scores)
-
-	#for ibin in range(len(n_causal)):
-	#	if n_causal[ibin] <= 1:
-	#		n_causal[ibin] = 1e-10
-	#	if n_linked[ibin] <= 1:
-	#		n_linked[ibin] = 1e-10
-	#	if n_neut[ibin] <=1:
-	#		n_neut[ibin] = 1e-10
-
-	return n_causal, n_linked, n_neut, bins_causal, bins_linked, bins_neut
 def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
 	assert len(givenBins) == (len(n_causal) + 1)
 	for status in ['causal', 'linked', 'neut']:
