@@ -1,4 +1,4 @@
-// last updated 03.13.17 	vitti@broadinstitute.org 
+// last updated 04.04.17: print fourth column with DAF in putative selpop.	vitti@broadinstitute.org 
 
 #include <stdio.h>
 #include <string.h>
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     
     nsnp = data.nsnp;
     
-    fprintf(outf, "pos\tfst\tdelDAF\n");
+    fprintf(outf, "pos\tfst\tdelDAF\tselpopDAF\n");
 
     for (isnp = 0; isnp < nsnp; isnp++) {
         //fprintf(stderr, "snp: %d\n", isnp);
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
             } // end if denom != 0
             else{fst = NAN;}
             //fprintf(stderr, "%d\t%f\t%f\n", data.pos[isnp],fst,delDAF);
-            fprintf(outf, "%d\t%f\t%f\n", data.pos[isnp],fst,delDAF);
+            fprintf(outf, "%d\t%f\t%f\t%f\n", data.pos[isnp],fst,delDAF,p[0]);
         } //end Weir Hill estimator
 
     } //end snp loop

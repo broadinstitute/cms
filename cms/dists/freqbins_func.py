@@ -1,7 +1,8 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 03.21.17 vitti@broadinstitute.org
+## last updated: 03.28.2017 vitti@broadinstitute.org
 
-import os, subprocess
+import subprocess
+import os
 
 ###################
 ### SELFREQ BINS ##
@@ -66,6 +67,16 @@ def check_create_dir(directory):
 	if not os.path.isdir(directory):
 		subprocess.check_output(['mkdir', '-p', directory])
 	return
+def check_create_file(filename, checkOverwrite):
+	""" useful to prevent overwriting, but easy to toggle in case one wants to mass-replace files """
+	if checkOverwrite == False:
+		return True #make it anyway
+	else:
+		if not os.path.isfile(filename) or os.path.getsize(filename) == 0:
+			return True
+		else:
+			return False
+	return False
 def check_file_len(filename):
 	'''counts number of lines in file'''
 	if os.path.isfile(filename) and os.path.getsize(filename) > 0:
@@ -77,16 +88,6 @@ def check_file_len(filename):
 		return iline
 	else:
 		return 0
-def check_create_file(filename, checkOverwrite):
-	""" useful to prevent overwriting, but easy to toggle in case one wants to mass-replace files """
-	if checkOverwrite == False:
-		return True #make it anyway
-	else:
-		if not os.path.isfile(filename) or os.path.getsize(filename) == 0:
-			return True
-		else:
-			return False
-	return False
 def execute(commandstring):
 	subprocess.check_output(commandstring.split())
 	return
@@ -112,6 +113,3 @@ def get_concat_files(pop, score, altpop, basedir):
 	concatfilename = concatfilebase + score + ".txt"
 	binfilename = concatfilebase + score + ".bins"
 	return concatfilename, binfilename
-
-	##not sure about these functions. relocate?
-	## get_concat_files hmmmmmm this should definitely move.
