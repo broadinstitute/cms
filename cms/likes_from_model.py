@@ -412,7 +412,7 @@ def execute_likes_from_scores(args):
 	for pop in pops:
 		completed_neut = []
 		for irep in range(1, nPerBin_Neut+1):
-			loaded_neut_files = get_sim_compscore_files(pop, irep, neutdir)
+			loaded_neut_files = get_sim_compscore_files(pop, irep, neutdir) 
 			all_present = [os.path.isfile(item) for item in loaded_neut_files]
 			if (all_present.count(True)) == 9: #replicate done
 				completed_neut.append(loaded_neut_files)
@@ -587,10 +587,10 @@ def execute_likes_from_scores(args):
 				likes_savebase_4 += args.save_suffix + "_"
 			f1, (ax1, ax2, ax3, ax4)  = plt.subplots(4, sharex=True, sharey=True)
 			plt.suptitle(plot_title)
-			plot_pdf_comparison_from_scores(ax1, neut_1, causal_1, linked_1, minVal, maxVal, nProbBins, "1 (AFR)", likes_savebase_1, saveFiles = args.save_likelihoods, annotate = annotate)
-			plot_pdf_comparison_from_scores(ax2, neut_2, causal_2, linked_2, minVal, maxVal, nProbBins, "2 (EUR)", likes_savebase_2, saveFiles = args.save_likelihoods, annotate = annotate)
-			plot_pdf_comparison_from_scores(ax3, neut_3, causal_3, linked_3, minVal, maxVal, nProbBins, "3 (EAS)", likes_savebase_3, annotate = annotate, saveFiles = args.save_likelihoods)
-			plot_pdf_comparison_from_scores(ax4, neut_4, causal_4, linked_4, minVal, maxVal, nProbBins, "4 (SAS)", likes_savebase_4, annotate = annotate, saveFiles = args.save_likelihoods)
+			plot_pdf_comparison_from_scores(ax1, neutvals1, causalvals1, linkedvals1, minVal, maxVal, nProbBins, "1 (AFR)", likes_savebase_1, saveFiles = args.save_likelihoods, annotate = annotate)
+			plot_pdf_comparison_from_scores(ax2, neutvals2, causalvals2, linkedvals2, minVal, maxVal, nProbBins, "2 (EUR)", likes_savebase_2, saveFiles = args.save_likelihoods, annotate = annotate)
+			plot_pdf_comparison_from_scores(ax3, neutvals3, causalvals3, linkedvals3, minVal, maxVal, nProbBins, "3 (EAS)", likes_savebase_3, annotate = annotate, saveFiles = args.save_likelihoods)
+			plot_pdf_comparison_from_scores(ax4, neutvals4, causalvals4, linkedvals4, minVal, maxVal, nProbBins, "4 (SAS)", likes_savebase_4, annotate = annotate, saveFiles = args.save_likelihoods)
 			ax4.set_xlabel('score value')
 			#plot_pdf_comparison_from_scores(ax1, neuta, causala, linkeda, minVal, maxVal, nProbBins, ax_ylabela, savefilename_a, annotate = annotate, saveFiles = args.save_likelihoods)
 			#ax3.set_xlabel('score value')

@@ -140,6 +140,10 @@ def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal
 		anno_y = ylims[1] - (fullyrange/2)
 		ax.annotate(annotationstring, xy=(anno_x, anno_y), fontsize=6)
 
+	####
+	#### Should build in a check here to enforce
+	#### monotonicity/smoothness, bounds etc.
+
 	#################
 	### SAVE DIST ### (this becomes its own functionality?)
 	#################
