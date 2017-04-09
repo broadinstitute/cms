@@ -4,6 +4,7 @@
 import matplotlib
 import numpy as np
 import os
+
 def load_from_hap(inputfilename, filter_maf=None, corePos = None):
 	#openfile = open(inputfilename)
 	#header = openfile.readline()

@@ -31,12 +31,29 @@ def normalize_global(rawscore, mean, sd):
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
 	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue
-def normalize_local(values):
-	mean = np.mean(values)
-	var = np.var(values)
-	stddev = var**.5
-	normalized = [(item-mean)/stddev for item in values]
-	return normalized
+def normalize_local(values, physpos):
+	#mean = np.mean(values)
+	#var = np.var(values)
+	#stddev = var**.5
+	#normalized = [(item-mean)/stddev for item in values]
+	#print(values)
+
+	clean_vals, clean_phys = [], []
+	for i in range(len(values)):
+		item = values[i]
+		phys = physpos[i]
+		if not np.isnan(item) and not np.isinf(item):
+			clean_vals.append(item)
+			clean_phys.append(phys)
+
+	maxVal, minVal = max(clean_vals), min(clean_vals)
+	normalized = [(unnormed - minVal)/maxVal for unnormed in clean_vals]
+	#print(normalized)
+	#if len(normalized) !=len(clean_phys):
+	#print(str(len(normalized)))
+	#print(str(len(clean_phys)))
+	assert len(normalized) == len(clean_phys)
+	return normalized, clean_phys
 ###############
 ## REGION ID ##
 ###############
@@ -143,6 +160,7 @@ def get_pval(all_simscores, thisScore):
 ## VISUALIZE ##
 ###############
 def quick_plot(ax, pos, val, ylabel,causal_index=-1):
+	
 	ax.scatter(pos, val, s=.8)
 	if causal_index != -1:
 		ax.scatter(pos[causal_index], val[causal_index], color='r', s=4)
@@ -151,11 +169,22 @@ def quick_plot(ax, pos, val, ylabel,causal_index=-1):
 	ax.set_ylabel(ylabel, fontsize='6')
 	#ax.set_xlim([0, 1500000]) #make flexible?
 	ax.yaxis.set_label_position('right')
+	#ax.set_ylim([min(val), max(val)])
 	return ax
-def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=10000):
+def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=1000):
+	#print(allvals)
+
+	#get rid of nans and infs
+	#cleanvals = [item for item in allvals if not np.isnan(item)]
+	#allvals = cleanvals
+	allvals = np.array(allvals)
+	allvals = allvals[~np.isnan(allvals)]
+	allvals = allvals[~np.isinf(allvals)]
+	#allvals = list(allvals)
+	#print(allvals)
 	if len(allvals) > 0:
 		f, ax = plt.subplots(1)
-		ax.hist(allvals, bins=10000)
+		ax.hist(allvals, bins=numBins)
 		plt.savefig(savefilename)
 		print('plotted to ' + savefilename)
 	return

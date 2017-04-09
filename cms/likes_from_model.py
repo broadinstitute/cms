@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 04.04.2017 	vitti@broadinstitute.org
+## last updated: 04.09.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
 from dists.freqbins_func import run_traj, get_bin_strings, get_bins, check_create_dir, check_create_file, write_bin_paramfile, execute, get_concat_files, get_info_from_tped_name
-from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, get_sim_compscore_files, get_scores_from_files, get_compscores_from_files_flatten#get_compscores_from_files
-from dists.likes_func import plot_pdf_comparison_from_scores, get_plot_pdf_params, quick_load_likes, quick_cl_from_likes, quick_clr_from_likes
+from dists.scores_func import calc_ihs, calc_delihh, calc_xpehh, calc_fst_deldaf, read_neut_normfile, norm_neut_ihs, norm_sel_ihs, norm_neut_xpehh, norm_sel_xpehh, get_sim_compscore_files, get_scores_from_files, get_compscores_from_files_flatten
+from dists.likes_func import plot_pdf_comparison_from_scores, get_plot_pdf_params, quick_load_likes, quick_cl_from_likes, quick_clr_from_likes,  write_master_likesfile, get_master_likefiles
 import numpy as np
 import argparse
 import sys, os, subprocess
@@ -64,9 +64,18 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('--xpehh', action="store_true", help="visualize likelihoods for XP-EHH", default=False)
 		likes_from_scores_parser.add_argument('--deldaf', action="store_true", help="visualize likelihoods for delDAF", default=False)
 		likes_from_scores_parser.add_argument('--fst', action="store_true", help="visualize likelihoods for Fst", default=False)
+
+	########################################################
+	## ANALYZE AND BUNDLE SCORE PROBABILITY DISTRIBUTIONS ##
+	########################################################
 	plot_likes_vs_scores_parser = subparsers.add_parser('plot_likes_vs_scores', help='useful QC step; visualize the function that converts score values into likelihood contributions towards composite scores')
 	plot_likes_vs_scores_parser.add_argument('inputLikesPrefix', action="store", help="filename minus causal/linked/neutral.txt")
 	plot_likes_vs_scores_parser.add_argument('--default_nregion_snps', type=int, action="store", help="presumptive number of SNPs in region (determines prior distributions for within-region CMS calculations)", default=5000)
+	write_master_likes_parser = subparsers.add_argument('write_master_likes', help='specify and bundle together input distributions to pass to CMS. This allows the user to specify models, frequency of SNPs used to generated p(score|sel), etc.')
+	write_master_likes_parser.add_argument('--likes_masterDir', type=str, default="/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_masters/", help="location of likelihood tables, defined")
+	write_master_likes_parser.add_argument('--likes_nonSel', type=str, default="vsNeut", help='do we use completely neutral, or linked neutral SNPs for our non-causal distributions? by default, uses strict neutral (CMSgw)')
+	write_master_likes_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
+
 
 	#################
 	## SHARED ARGS ## 
@@ -85,12 +94,12 @@ def full_parser_likes_from_model():
 	for interior_score_parser in [get_neut_norm_params_parser, likes_from_scores_parser]:
 		interior_score_parser.add_argument('--edge', type=int, action="store", help="use interior of replicates; define per-end bp. (e.g. 1.5Mb -> 1Mb: 250000)", default=250000)
 		interior_score_parser.add_argument('--chromlen', type=int, action="store", help="per bp (1.5mb = 1500000)", default=1500000)
-	for norm_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser]:
+	for norm_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser, write_master_likes_parser]:
 		norm_parser.add_argument('--score', type=str, action='store', default='ihs')
 		norm_parser.add_argument('--simpop', type=int, action='store', default=1)
 		norm_parser.add_argument('--altpop', type=int, action='store', default=2)
 		norm_parser.add_argument('--nrep', type=int, action='store', default=100)
-	for norm_sims_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser, likes_from_scores_parser]:
+	for norm_sims_parser in [get_neut_norm_params_parser, norm_from_neut_params_parser, likes_from_scores_parser, write_master_likes_parser]:
 		norm_sims_parser.add_argument('modeldir', type=str, action="store", help="location of component score folders for demographic scenario")
 	for selbin_parser in [generate_sel_bins_parser, get_sel_traj_parser, likes_from_scores_parser]:
 		selbin_parser.add_argument('--freqRange', type=str, help="range of final selected allele frequencies to simulate, e.g. .05-.95", default='.05-.95')
@@ -430,8 +439,8 @@ def execute_likes_from_scores(args):
 		## from multiple frequency bins
 		if args.binMerge:  
 			#need: input bins and name of cluster
-			selbin_clusters = [["0.10", "0.20", "0.30"], ["0.40", "0.50", "0.60",], ["0.70", "0.80", "0.90",],["0.10", "0.20", "0.30", "0.40", "0.50", "0.60", "0.70", "0.80", "0.90"]] 
-			cluster_names = ["low", "mid", "hi","allfreq"]
+			selbin_clusters = [["0.10", "0.20", "0.30", "0.40", "0.50", "0.60", "0.70", "0.80", "0.90"],["0.70", "0.80", "0.90",], ["0.40", "0.50", "0.60",], ["0.10", "0.20", "0.30"],] 
+			cluster_names = ["allfreq", "hi", "mid", "low"] 
 			for icluster in range(len(selbin_clusters)):
 				cluster, clustername = selbin_clusters[icluster], cluster_names[icluster]
 				completed_cluster = []
@@ -509,7 +518,7 @@ def execute_likes_from_scores(args):
 				savefilebase += "_" + args.save_suffix
 
 			savefilename = savefilebase + ".png"
-			#savefilebase = modeldir + "likes/" + score + "_sel_" + chunkstring
+			#savefilebase = modeldir + "likes/" + score + "_sel_" + chunkstring #ensure consistency with get_likes_filenames
 			likes_savebase_1 = output_dir + score + "_sel1_" + chunkstring + "_" 
 			likes_savebase_2 = output_dir + score + "_sel2_" + chunkstring + "_" #+ args.save_suffix + "_"
 			likes_savebase_3 = output_dir + score + "_sel3_" + chunkstring + "_" #+ args.save_suffix + "_"
@@ -614,7 +623,7 @@ def execute_plot_likes_vs_scores(args):
 
 	savefilename = inputprefix + "_clr_likes_vs_likesscores.png"
 	fig, ax = plt.subplots()
-	ax.scatter(np.arange(len(comp_like_ratios)), comp_like_ratios)
+	ax.scatter(np.arange(len(comp_like_ratios)), comp_like_ratios) #I want to make this use the actual score ranges.
 	plt.savefig(savefilename)
 	print('saved to: ' + savefilename)
 	plt.close()
@@ -626,6 +635,42 @@ def execute_plot_likes_vs_scores(args):
 	print('saved to: ' + savefilename)
 	plt.close()
 	return
+def execute_write_master_likes(args):
+	""" given granular output from likes_from_scores, bundle together into groups of distributions with which to composite """
+	folded_scores, unfolded_scores = ['ihs', 'nsl'], ['delihh','xpehh', 'fst', 'deldaf'] #pass these as args?
+	hiCausalScores = ['xpehh', 'nsl'] 
+	score = args.score
+	if score in folded_scores:
+		masters_sourceloc = "/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_040217_b/" + model + "_"
+		like_savestring = "folded_penult_b" #what was used before
+
+	if score in unfolded_scores:
+		masters_sourceloc = "/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_040517/" + model + "_"
+		like_savestring = "penult_b_short" #what was used before
+		if score == "delihh":
+			like_savestring = "penult_b" #what was used before
+
+	writeloc = args.likes_masterDir
+	basedir = args.modeldir 
+	if basedir[-1] != "/":
+		basedir += "/"
+	if writeloc[-1] != "/":
+		writeloc += "/"
+	selpop = args.simpop
+	model = args.model
+
+	neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename = get_likes_filenames(baseloc, model, score, pop, like_savestring = "vsNeut"): 
+
+	#cf get_master_likefiles()
+	likesFreqs_master_writefilename_global = master_writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_likesFreqs.master.txt"
+	likesFreqs_master_writefilename_local = master_writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_likesFreqs.master.txt"
+	allFreqs_master_writefilename_global = master_writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_allFreqs.master.txt"
+	allFreqs_master_writefilename_local = master_writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_allFreqs.master.txt"
+	write_master_likesfile(likesFreqs_master_writefilename_global, neut_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
+	write_master_likesfile(likesFreqs_master_writefilename_local, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
+	write_master_likesfile(allFreqs_master_writefilename_global, neut_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
+	write_master_likesfile(allFreqs_master_writefilename_local, linked_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
+	return 
 
 ##########
 ## MAIN ##

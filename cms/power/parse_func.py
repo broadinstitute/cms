@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 02.13.2017	vitti@broadinstitute.org
+##	last updated 04.07.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -22,7 +22,8 @@ def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilenam
 	return writefilename
 def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile,
 	fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline):
-	if not os.path.isfile(writefilename):
+	#if not os.path.isfile(writefilename):
+	if True:
 		openfile = open(writefilename, 'w')
 		openfile.write(ihs_master_likesfile + "\n")
 		openfile.write(nsl_master_likesfile + "\n") #CHANGE ORDER
@@ -79,13 +80,13 @@ def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scra
 	return concatfilename, binfilename
 def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", suffix = ""):
 	""" locates neutral simulated composite score file """
-	repfilename = basedir +"composite/"+ model + "/neut/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
+	repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
 def get_sel_repfile_name(model, irep, pop, freqbin, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix =""):
 	""" locate simulated composite score file in scenario with selection """
-	repfilename = basedir + "composite/"+ model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/rep" + str(irep) + "_" + str(pop) + ".cms" + suffix
+	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
@@ -231,3 +232,4 @@ def check_create_dir(directory):
 	""" ensure that the directory exists; create it if it doesn't """
 	if not os.path.isdir(directory):
 		subprocess.check_output(['mkdir', '-p', directory])
+	return
