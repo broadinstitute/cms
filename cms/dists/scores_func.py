@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 04.09.2017 vitti@broadinstitute.org
+## last updated: 04.09.2017 vitti@broadinstitute.org 
 
 from math import fabs, sqrt
 from random import randint
@@ -12,13 +12,13 @@ import os
 ## CALCS FROM SIMS ##  
 ##################### 
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
-	'''from func_clean.py'''
+	''' wrapper function calls scans.py '''
 	cmdStr = "python " + runProgram + " selscan_ihs " + inputTped + " " + outputFile + " --threads " + str(numThreads)
 	print(cmdStr)
 	subprocess.check_call( cmdStr.split() )
 	return
 def calc_delihh(readfilename, writefilename):
-	"""taken from JV func_scores.py. given a selscan iHS file, parses it and writes delihh file"""
+	"""given a selscan iHS file, parses it and writes delihh file"""
 	readfile = open(readfilename, 'r')
 	writefile = open(writefilename, 'w')
 	for line in readfile:
@@ -41,12 +41,13 @@ def calc_delihh(readfilename, writefilename):
 	readfile.close()
 	return
 def calc_xpehh(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
-	'''from func_clean.py'''
+	''' wrapper function calls scans.py '''
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
 	print(cmdStr)
 	subprocess.check_call( cmdStr.split() )
 	return	
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
+	''' wrapper function calls calc_fst_deldaf ''' 
 	if modelpath[-1] != "/":
 		modelpath += "/"
 	commandstring = modelpath + "calc_fst_deldaf"
@@ -55,8 +56,34 @@ def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
 	print(fullcommand)
 	subprocess.check_call( fullcommand.split() )
 	return
+def get_pbs_from_dafs(seldaf, outdaf_1, outdaf_2):
+	''' approximates PBS calculations (see cms_data.c) in quick python for simulates '''
+	in_fst_1 = quick_fst_estimator(seldaf, outdaf_1) #could build in a check here to ensure
+	in_fst_2 = quick_fst_estimator(seldaf, outdaf_2) #that these align with previous calculations
+	out_fst = quick_fst_estimator(outdaf_1, outdaf_2)
+	in_t_1 = -1 * np.log(1.-in_fst_1)
+	in_t_2 = -1 * np.log(1.-in_fst_2)
+	out_t = -1 * np.log(1.-out_fst)
+	pbs = (in_t_1 + in_t_2 - out_t) / 2.
+	return pbs
+def quick_fst_estimator(daf1, daf2, nperPop=172):
+	''' helper method to get_pbs_from_dafs '''
+	daf_mean = (daf1 + daf2) / 2.
+	msp = nperPop * (daf1 - daf_mean) * (daf1 - daf_mean) + nperPop * (daf2 - daf_mean) * (daf2 - daf_mean)
+	msg = (nperPop * daf1 * (1. - daf1) + nperPop * daf2 * (1. - daf2)) / (nperPop - 1 + nperPop - 1)
+	num = msp - msg
+	denom = msp + ((nperPop) - 1) * msg
+	if denom != 0:
+		fst_hat = num / denom
+	else:
+		fst_hat = 0
+	return fst_hat
+
+##########################
+## NORMALIZE TO NEUTRAL ##  
+##########################
 def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
-	"""pulls means and vars so that we can normalize sel scenarios with the same parameters. pulled from func_clean.py"""
+	"""pulls means and vars so that we can normalize sel scenarios with the same parameters. """
 	openfile = open(neutNormfilename)
 	line = openfile.readline()
 	entries = line.split()
@@ -91,13 +118,13 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 		return num, mean, var
 	openfile.close()
 	return
-def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "cms/cms/scans.py"):
-	'''from func_clean.py'''
+def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "cms/cms/scans.py"): ##JV: I found the way to properly write to file; should implement here
+	'''wraps call to scans.py ''' 		
 	cmdStr = "python " + runProgram + " selscan_norm_ihs " + inputScoreFile + " > " + outfileName
 	print(cmdStr)
 	return
 def norm_sel_ihs(inputScoreFile, neutNormfilename):
-	''' from normalize_Ihs_manually() in func_scores.py''' 
+	''' normalize iHS component score for selection scenarios to neutral parameters ''' 
 	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
 	#print(str(means))
@@ -126,13 +153,13 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	normfile.close()
 	print("wrote to: " + normfilename)
 	return
-def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
-	'''from func_clean.py'''
+def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):##JV: I found the way to properly write to file; should implement here
+	'''wraps call to scans.py'''
 	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName #return to this
 	print(cmdStr)
 	return
 def norm_sel_xpehh(inputScoreFile, neutNormfilename):
-	''' from normalize_Xp_manually in func_scores.py'''
+	''' normalize XPEHH component score for selection scenarios to neutral parameters ''' 
 	num, mean, var = read_neut_normfile(neutNormfilename, scoretype = 'xp')
 	normfilename = inputScoreFile + ".norm"
 	openfile = open(inputScoreFile, 'r')
@@ -150,27 +177,6 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 	normfile.close()
 	print("wrote to: " + normfilename)
 	return
-def get_pbs_from_dafs(seldaf, outdaf_1, outdaf_2):
-	in_fst_1 = quick_fst_estimator(seldaf, outdaf_1) #could build in a check here to ensure
-	in_fst_2 = quick_fst_estimator(seldaf, outdaf_2) #that these align with previous calculations
-	out_fst = quick_fst_estimator(outdaf_1, outdaf_2)
-	in_t_1 = -1 * np.log(1.-in_fst_1)
-	in_t_2 = -1 * np.log(1.-in_fst_2)
-	out_t = -1 * np.log(1.-out_fst)
-	pbs = (in_t_1 + in_t_2 - out_t) / 2.
-	return pbs
-def quick_fst_estimator(daf1, daf2, nperPop=172):
-	''' helper method to get_pbs_from_dafs '''
-	daf_mean = (daf1 + daf2) / 2.
-	msp = nperPop * (daf1 - daf_mean) * (daf1 - daf_mean) + nperPop * (daf2 - daf_mean) * (daf2 - daf_mean)
-	msg = (nperPop * daf1 * (1. - daf1) + nperPop * daf2 * (1. - daf2)) / (nperPop - 1 + nperPop - 1)
-	num = msp - msg
-	denom = msp + ((nperPop) - 1) * msg
-	if denom != 0:
-		fst_hat = num / denom
-	else:
-		fst_hat = 0
-	return fst_hat
 
 #############################
 ## MANIPULATE SCORE FILES ###
@@ -546,112 +552,3 @@ def choose_from_options(values, score, seldaf):
 			#pass
 		#print("VALUE: " + str(value))
 	return value
-
-
-"""
-def get_compscores_from_files(all_completed_neut, all_completed_sel, scorestring, sel_bin_index, startbound, endbound, foldDists = False):
-	#original version: generates separate likelihood distributions for separate population comparisons 
-	if scorestring in ['fst', 'deldaf']:
-		physIndex = 0
-		neut_files1a = [all_completed_neut[0][irep][4] for irep in range(len(all_completed_neut[0]))]
-		neut_files1b = [all_completed_neut[0][irep][6] for irep in range(len(all_completed_neut[0]))]
-		neut_files1c = [all_completed_neut[0][irep][8] for irep in range(len(all_completed_neut[0]))]
-		neut_files2a = [all_completed_neut[1][irep][4] for irep in range(len(all_completed_neut[1]))]
-		neut_files2b = [all_completed_neut[1][irep][6] for irep in range(len(all_completed_neut[1]))]
-		neut_files2c = [all_completed_neut[1][irep][8] for irep in range(len(all_completed_neut[1]))]
-		neut_files3a = [all_completed_neut[2][irep][4] for irep in range(len(all_completed_neut[2]))]
-		neut_files3b = [all_completed_neut[2][irep][6] for irep in range(len(all_completed_neut[2]))]
-		neut_files3c = [all_completed_neut[2][irep][8] for irep in range(len(all_completed_neut[2]))]
-		neut_files4a = [all_completed_neut[3][irep][4] for irep in range(len(all_completed_neut[3]))]
-		neut_files4b = [all_completed_neut[3][irep][6] for irep in range(len(all_completed_neut[3]))]
-		neut_files4c = [all_completed_neut[3][irep][8] for irep in range(len(all_completed_neut[3]))]
-		sel_files1a = [all_completed_sel[0][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files1b = [all_completed_sel[0][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files1c = [all_completed_sel[0][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files2a = [all_completed_sel[1][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files2b = [all_completed_sel[1][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files2c = [all_completed_sel[1][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files3a = [all_completed_sel[2][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files3b = [all_completed_sel[2][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files3c = [all_completed_sel[2][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files4a = [all_completed_sel[3][sel_bin_index][irep][4] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
-		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][6] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
-		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][8] for irep in range(len(all_completed_sel[3][sel_bin_index]))] 
-	else:
-		assert(scorestring == "xpehh") #this could be made efficient
-		physIndex = 1
-		neut_files1a = [all_completed_neut[0][irep][3] for irep in range(len(all_completed_neut[0]))]
-		neut_files1b = [all_completed_neut[0][irep][5] for irep in range(len(all_completed_neut[0]))]
-		neut_files1c = [all_completed_neut[0][irep][7] for irep in range(len(all_completed_neut[0]))]
-		neut_files2a = [all_completed_neut[1][irep][3] for irep in range(len(all_completed_neut[1]))]
-		neut_files2b = [all_completed_neut[1][irep][5] for irep in range(len(all_completed_neut[1]))]
-		neut_files2c = [all_completed_neut[1][irep][7] for irep in range(len(all_completed_neut[1]))]
-		neut_files3a = [all_completed_neut[2][irep][3] for irep in range(len(all_completed_neut[2]))]
-		neut_files3b = [all_completed_neut[2][irep][5] for irep in range(len(all_completed_neut[2]))]
-		neut_files3c = [all_completed_neut[2][irep][7] for irep in range(len(all_completed_neut[2]))]
-		neut_files4a = [all_completed_neut[3][irep][3] for irep in range(len(all_completed_neut[3]))]
-		neut_files4b = [all_completed_neut[3][irep][5] for irep in range(len(all_completed_neut[3]))]
-		neut_files4c = [all_completed_neut[3][irep][7] for irep in range(len(all_completed_neut[3]))]
-		sel_files1a = [all_completed_sel[0][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files1b = [all_completed_sel[0][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files1c = [all_completed_sel[0][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
-		sel_files2a = [all_completed_sel[1][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files2b = [all_completed_sel[1][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files2c = [all_completed_sel[1][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
-		sel_files3a = [all_completed_sel[2][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files3b = [all_completed_sel[2][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files3c = [all_completed_sel[2][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[2][sel_bin_index]))]
-		sel_files4a = [all_completed_sel[3][sel_bin_index][irep][3] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
-		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
-		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
-
-	neut_values1a = load_from_files(neut_files1a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values1b = load_from_files(neut_files1b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values1c = load_from_files(neut_files1c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values2a = load_from_files(neut_files2a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values2b = load_from_files(neut_files2b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values2c = load_from_files(neut_files2c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values3a = load_from_files(neut_files3a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values3b = load_from_files(neut_files3b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values3c = load_from_files(neut_files3c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values4a = load_from_files(neut_files4a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values4b = load_from_files(neut_files4b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	neut_values4c = load_from_files(neut_files4c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values1a, linked_values1a = load_from_files_discriminate_causal(sel_files1a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values1b, linked_values1b = load_from_files_discriminate_causal(sel_files1b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values1c, linked_values1c = load_from_files_discriminate_causal(sel_files1c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values2a, linked_values2a = load_from_files_discriminate_causal(sel_files2a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values2b, linked_values2b = load_from_files_discriminate_causal(sel_files2b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values2c, linked_values2c = load_from_files_discriminate_causal(sel_files2c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values3a, linked_values3a = load_from_files_discriminate_causal(sel_files3a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values3b, linked_values3b = load_from_files_discriminate_causal(sel_files3b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values3c, linked_values3c = load_from_files_discriminate_causal(sel_files3c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values4a, linked_values4a = load_from_files_discriminate_causal(sel_files4a, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values4b, linked_values4b = load_from_files_discriminate_causal(sel_files4b, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	causal_values4c, linked_values4c = load_from_files_discriminate_causal(sel_files4c, startbound, endbound, stripHeader=True, physIndex=physIndex, absVal = foldDists)
-	print("loaded " + str(sum([len(neut_values1a), len(neut_values1b), len(neut_values1c)])) + " neutral values for pop 1 vs three outgroups...")
-	print("loaded " + str(sum([len(neut_values2a), len(neut_values2b), len(neut_values2c)])) + " neutral values for pop 2 vs three outgroups...")
-	print("loaded " + str(sum([len(neut_values3a), len(neut_values3b), len(neut_values3c)])) + " neutral values for pop 3 vs three outgroups...")
-	print("loaded " + str(sum([len(neut_values4a), len(neut_values4b), len(neut_values4c)])) + " neutral values for pop 4 vs three outgroups...")
-	
-	print("loaded " + str(sum([len(linked_values1a), len(linked_values1b), len(linked_values1c)])) + " linked values for pop 1 vs three outgroups...")
-	print("loaded " + str(sum([len(linked_values2a), len(linked_values2b), len(linked_values2c)])) + " linked values for pop 2 vs three outgroups...")
-	print("loaded " + str(sum([len(linked_values3a), len(linked_values3b), len(linked_values3c)])) + " linked values for pop 3 vs three outgroups...")
-	print("loaded " + str(sum([len(linked_values4a), len(linked_values4b), len(linked_values4c)])) + " linked values for pop 4 vs three outgroups...")
-
-	print("loaded " + str(sum([len(causal_values1a), len(causal_values1b), len(causal_values1c)])) + " causal values for pop 1 vs three outgroups...")
-	print("loaded " + str(sum([len(causal_values2a), len(causal_values2b), len(causal_values2c)])) + " causal values for pop 2 vs three outgroups...")
-	print("loaded " + str(sum([len(causal_values3a), len(causal_values3b), len(causal_values3c)])) + " causal values for pop 3 vs three outgroups...")
-	print("loaded " + str(sum([len(causal_values4a), len(causal_values4b), len(causal_values4c)])) + " causal values for pop 4 vs three outgroups...")
-
-	all_score_values = [[[neut_values1a, causal_values1a, linked_values1a],[neut_values1b, causal_values1b, linked_values1b],
-						[neut_values1c, causal_values1c, linked_values1c]],
-						[[neut_values2a, causal_values2a, linked_values2a],[neut_values2b, causal_values2b, linked_values2b],
-						[neut_values2c, causal_values2c, linked_values2c]],
-						[[neut_values3a, causal_values3a, linked_values3a],[neut_values3b, causal_values3b, linked_values3b],
-						[neut_values3c, causal_values3c, linked_values3c]],
-						[[neut_values4a, causal_values4a, linked_values4a],[neut_values4b, causal_values4b, linked_values4b],
-						[neut_values4c, causal_values4c, linked_values4c]],
-						] #[pop][outgroup][type]
-	return all_score_values
-"""

@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 03.21.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 04.09.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -29,7 +29,6 @@ def full_parser_power():
 	regionviz_parser = subparsers.add_parser('regionviz', help="visualize component and combined scores across a region of simulated or empirical data")
 	regionviz_parser.add_argument('--cmsInfile', action='store', type=str, help="input .cms file to visualize")
 	regionviz_parser.add_argument('--hilitePos', action='store', type=int, help="hilite one SNP (e.g. if causal variant known from simulated data)")
-	
 	distviz_parser = subparsers.add_parser('distviz', help="visualize distribution of CMS component or composite scores for simulated or empirical data")
 	distviz_parser.add_argument('--takeIndex', action='store', type=int, help="zero-based index of datacolumn to aggregate", default=-1)
 	distviz_parser.add_argument('--infile_singular', action='store', type=str, help="visualize distribution from this singular .cms file")
@@ -61,7 +60,6 @@ def full_parser_power():
 		regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
 		regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
 		regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
-		
 		manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
 		manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
 		manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
@@ -76,7 +74,6 @@ def full_parser_power():
 	##################
 	## SHARED ARGS ###
 	##################
-
 	for write_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
@@ -124,8 +121,8 @@ def execute_regionviz(args):
 		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
 		log_unnormed = [np.log(item) for item in cms_unnormed]
 		quick_plot(ax7, physpos, cms_unnormed, "ln(rawcms)", causal_index)
-		cms_normed = normalize_local(cms_unnormed)
-		quick_plot(ax8, physpos, cms_normed, "cms_normed", causal_index)				
+		cms_normed, physpos_normed = normalize_local(cms_unnormed, physpos)
+		quick_plot(ax8, physpos_normed, cms_normed, "cms_normed", causal_index)				
 		plt.savefig(savefilename)
 		print("plotted to " + savefilename)
 		plt.close()

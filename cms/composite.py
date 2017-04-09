@@ -9,7 +9,7 @@ from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_em
 from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp, write_run_paramfile, write_pair_sourcefile, load_empscores, normalize
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
-from dists.freqbins_func import check_create_dir, execute #should put this somewhere else
+from dists.freqbins_func import check_create_dir, execute 
 from dists.likes_func import get_master_likefiles
 import numpy as np
 import subprocess
