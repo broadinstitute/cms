@@ -73,7 +73,8 @@ def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
 	print('wrote to: ' + outfilename)
 	return outfilename
 def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
-	if not os.path.isfile(writefilename):
+	#if not os.path.isfile(writefilename):
+	if True:
 		openfile = open(writefilename, 'w')
 		openfile.write(ihsfilename+ "\n")
 		openfile.write(delihhfilename+ "\n")
@@ -84,7 +85,8 @@ def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilenam
 	return writefilename
 def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile,
 	fst_master_likesfile, deldaf_master_likesfile, cutoffline, includeline):
-	if not os.path.isfile(writefilename):
+	#if not os.path.isfile(writefilename):
+	if True:
 		openfile = open(writefilename, 'w')
 		openfile.write(ihs_master_likesfile + "\n")
 		openfile.write(nsl_master_likesfile + "\n") #CHANGE ORDER
