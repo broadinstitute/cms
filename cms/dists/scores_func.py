@@ -293,7 +293,6 @@ def get_compscores_from_files_flatten(all_completed_neut, all_completed_sel, sco
 		sel_files4b = [all_completed_sel[3][sel_bin_index][irep][5] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
 		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
 
-	#THis is not handling pops right????
 	neut_values1 = load_from_files_flatten(neut_files1a, neut_files1b, neut_files1c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
 	print("loaded " + str(len(neut_values1)) + " neutral values for pop 1 ... (chosen from among three pop comps)")
 	neut_values2 = load_from_files_flatten(neut_files2a, neut_files2b, neut_files2c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
@@ -302,7 +301,6 @@ def get_compscores_from_files_flatten(all_completed_neut, all_completed_sel, sco
 	print("loaded " + str(len(neut_values3)) + " neutral values for pop 3 ... (chosen from among three pop comps)")
 	neut_values4 = load_from_files_flatten(neut_files4a, neut_files4b, neut_files4c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
 	print("loaded " + str(len(neut_values4)) + " neutral values for pop 4 ... (chosen from among three pop comps)")
-
 
 	causal_values1, linked_values1 = load_from_files_discriminate_causal_flatten(sel_files1a, sel_files1b, sel_files1c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
 	print("loaded " + str(len(causal_values1)) + " causal values for pop 1 ... (chosen from among three pop comps)")
@@ -383,7 +381,9 @@ def load_from_files_discriminate_causal(files,  startbound, endbound, causalLoc 
 		openfile.close()
 	return causal_values, linked_values	
 
-#these must go replicate by replicate
+##################################################
+## MANIPULATE SCORE FILES - ITERATE REPLICATES ###
+##################################################
 def load_from_files_flatten(filesa, filesb, filesc, startbound, endbound, score, stripHeader = False,  takeIndex = -1, physIndex = 1, selDafIndex=2,  absVal = False):
 	""" as above, but implements a method to select xpop scores for the same snp(/replicate) from comparisons with multiple populations.
 	this must match the method implemented in combine_scores"""
@@ -392,7 +392,6 @@ def load_from_files_flatten(filesa, filesb, filesc, startbound, endbound, score,
 	assert(len(filesb) == nfiles)
 	assert(len(filesc) == nfiles)
 	for ifile in range(nfiles):
-		#print("neut:" + str(ifile))
 		filea = filesa[ifile]
 		fileb = filesb[ifile]
 		filec = filesc[ifile] 
@@ -426,7 +425,6 @@ def load_from_files_flatten(filesa, filesb, filesc, startbound, endbound, score,
 				seldaf_c = seldafs_c[index_c]
 				thissnp_all_seldafs.append(seldaf_c)
 				availValues.append(value_c)			
-
 			#all_seldafs = [seldaf_a, seldaf_b, seldaf_c]
 			all_seldafs = set(thissnp_all_seldafs)
 			all_seldafs = list(all_seldafs)
