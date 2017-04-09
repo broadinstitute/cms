@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 04.07.2017 vitti@broadinstitute.org
+## last updated: 04.09.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -208,40 +208,19 @@ def quick_load_likes(infilename, prob_index = -1):
 	openfile.close()
 	return likes
 
-
-
-"""
-def write_hists_to_files(writePrefix, givenBins, n_causal, n_linked, n_neut):
-	assert len(givenBins) == (len(n_causal) + 1)
-	for status in ['causal', 'linked', 'neut']:
-		writefilename = writePrefix + "_" + status + ".txt"
-		writefile = open(writefilename, 'w')
-		n_scores = eval('n_' + status)
-		for index in range(len(n_scores)):
-			num_in_bin = n_scores[index]
-			if (num_in_bin <= 1):
-				writeprob = 1e-10
-			else:
-				if (index < (len(n_scores) - 1) and index > 0): #check neighbors
-					if (n_scores[index+1] == n_scores[index-1]) and (n_scores[index+1] <=1):
-						writeprob = 1e-10
-					else:
-						writeprob = float(n_scores[index])/(sum(n_scores)) #
-				else:
-					writeprob = float(n_scores[index])/(sum(n_scores)) #
-			towritestring =  str(givenBins[index]) + "\t" + str(givenBins[index+1]) + "\t" + str(writeprob)+ "\n"
-			writefile.write(towritestring)
-		writefile.close()
-	return
-def read_likes_file(likesfilename):
-	'''parses a file from e.g. write_hists_to_files'''
-	starts, ends, vals = [], [], []
-	openfile = open(likesfilename, 'r')
-	for line in openfile:
-		entries = line.split()
-		start, end, val = [float(x) for x in entries]
-		for item in ['start', 'end', 'val']:
-			eval(item + "s").append(eval(item))
-	openfile.close()
-	return starts, ends, vals
-"""
+##########################
+## PACKAGE LIKELIHOODS ##
+##########################
+def get_master_likefiles(likesdir, model, selpop, alt_likes = "vsNeut", likes_suffix = "allFreqs", checkExists = False):
+	''' can toggle checkExists to for creating vs. reading masterlikes files'''
+	ihs_master_likesfile = likesdir + model + "_ihs_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	nsl_master_likesfile = likesdir + model + "_nsl_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	delihh_master_likesfile = likesdir + model + "_delihh_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	xpehh_master_likesfile = likesdir + model + "_xpehh_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	fst_master_likesfile = likesdir + model + "_fst_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	deldaf_master_likesfile = likesdir + model + "_deldaf_sel" + str(selpop) + "_" + alt_likes + "_" + likes_suffix + ".master.txt"
+	if checkExists:
+		for masterlikesfile in [ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile]:
+			if not os.path.isfile(masterlikesfile):
+				print("MISSING: " + masterlikesfile)
+	return ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile

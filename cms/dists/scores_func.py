@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 04.05.2017 vitti@broadinstitute.org
+## last updated: 04.09.2017 vitti@broadinstitute.org
 
 from math import fabs, sqrt
 from random import randint
@@ -14,7 +14,7 @@ import os
 def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_ihs " + inputTped + " " + outputFile + " --threads " + str(numThreads)
-	#print(cmdStr)
+	print(cmdStr)
 	subprocess.check_call( cmdStr.split() )
 	return
 def calc_delihh(readfilename, writefilename):
@@ -39,10 +39,11 @@ def calc_delihh(readfilename, writefilename):
 	writefile.close()
 	#print("wrote to " + writefilename)
 	readfile.close()
+	return
 def calc_xpehh(inputTped, inputTped2, outputFile, runProgram = "scans.py", numThreads = 7):
 	'''from func_clean.py'''
 	cmdStr = "python " + runProgram + " selscan_xpehh " + inputTped + " " + outputFile + " " + inputTped2 + " --threads " + str(numThreads)
-	#print(cmdStr)
+	print(cmdStr)
 	subprocess.check_call( cmdStr.split() )
 	return	
 def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
@@ -127,7 +128,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	return
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):
 	'''from func_clean.py'''
-	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName
+	cmdStr = "python " + runProgram + " selscan_norm_xpehh " + inputScoreFile + " > " + outfileName #return to this
 	print(cmdStr)
 	return
 def norm_sel_xpehh(inputScoreFile, neutNormfilename):
@@ -385,7 +386,7 @@ def load_from_files_flatten(filesa, filesb, filesc, startbound, endbound, score,
 	assert(len(filesb) == nfiles)
 	assert(len(filesc) == nfiles)
 	for ifile in range(nfiles):
-		print("neut:" + str(ifile))
+		#print("neut:" + str(ifile))
 		filea = filesa[ifile]
 		fileb = filesb[ifile]
 		filec = filesc[ifile] 
@@ -423,9 +424,9 @@ def load_from_files_flatten(filesa, filesb, filesc, startbound, endbound, score,
 			#all_seldafs = [seldaf_a, seldaf_b, seldaf_c]
 			all_seldafs = set(thissnp_all_seldafs)
 			all_seldafs = list(all_seldafs)
-			#assert(len(all_seldafs) == 1)
-			if (len(all_seldafs) != 1): # I need to figure out what's wrong with my process here.
-				print(thissnp_all_seldafs)		
+			assert(len(all_seldafs) == 1)
+			#if (len(all_seldafs) != 1): # I need to figure out what's wrong with my process here.
+			#	print(thissnp_all_seldafs)		
 			value = choose_from_options(availValues, score, all_seldafs[0])
 			values.append(value)
 	return values
@@ -437,7 +438,7 @@ def load_from_files_discriminate_causal_flatten(filesa, filesb, filesc, startbou
 	assert(len(filesb) == nfiles)
 	assert(len(filesc) == nfiles)
 	for ifile in range(nfiles):
-		print("sel:" + str(ifile))
+		#print("sel:" + str(ifile))
 		filea = filesa[ifile]
 		fileb = filesb[ifile]
 		filec = filesc[ifile] 

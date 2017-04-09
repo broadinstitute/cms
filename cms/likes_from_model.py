@@ -64,9 +64,19 @@ def full_parser_likes_from_model():
 		likes_from_scores_parser.add_argument('--xpehh', action="store_true", help="visualize likelihoods for XP-EHH", default=False)
 		likes_from_scores_parser.add_argument('--deldaf', action="store_true", help="visualize likelihoods for delDAF", default=False)
 		likes_from_scores_parser.add_argument('--fst', action="store_true", help="visualize likelihoods for Fst", default=False)
+
+	########################################################
+	## ANALYZE AND BUNDLE SCORE PROBABILITY DISTRIBUTIONS ##
+	########################################################
 	plot_likes_vs_scores_parser = subparsers.add_parser('plot_likes_vs_scores', help='useful QC step; visualize the function that converts score values into likelihood contributions towards composite scores')
 	plot_likes_vs_scores_parser.add_argument('inputLikesPrefix', action="store", help="filename minus causal/linked/neutral.txt")
 	plot_likes_vs_scores_parser.add_argument('--default_nregion_snps', type=int, action="store", help="presumptive number of SNPs in region (determines prior distributions for within-region CMS calculations)", default=5000)
+	write_master_likes_parser = subparsers.add_argument('write_master_likes', help='specify and bundle together input distributions to pass to CMS. This allows the user to specify models, frequency of SNPs used to generated p(score|sel), etc.')
+	write_master_likes_parser.add_argument('placeholder', help = "!!!!!!!!!!!!!") #JV: return to this, and connect through to composite.py
+		#composite_parser.add_argument('--likes_masterDir', type=str, default="/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_masters/", help="location of likelihood tables, defined")
+		#composite_parser.add_argument('--likes_nonSel', type=str, default="vsNeut", help='do we use completely neutral, or linked neutral SNPs for our non-causal distributions? by default, uses strict neutral (CMSgw)')
+		#composite_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
+
 
 	#################
 	## SHARED ARGS ## 
@@ -625,6 +635,10 @@ def execute_plot_likes_vs_scores(args):
 	plt.savefig(savefilename)
 	print('saved to: ' + savefilename)
 	plt.close()
+	return
+def execute_write_master_likes(args):
+	""" placeholder """
+	#connect to IO for composite.py 
 	return
 
 ##########
