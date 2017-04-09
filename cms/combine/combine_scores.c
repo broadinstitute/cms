@@ -4,6 +4,8 @@
 // CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
 // optional next line: (minPos, maxPos, minDaf); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
 
+//abs val for ihs, nsl: 4.8.17
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -124,8 +126,10 @@ int main(int argc, char **argv) {
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
 		thisihs = score_data.ihs_normed[iComp][isnp];
+		if (thisihs < 0){thisihs*=-1.;} //ABS VAL
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];
+		if (thisnsl < 0){thisnsl*=-1.;} //ABS VAL		
 		thisxpehh = compareXp(&score_data, isnp); //determine others by comparison. XP: take maximum.
 		thisfst = compareFst(&score_data, isnp);	//Do I want to rewrite this to calculate LSBL? Should be easy since I'm passing the whole data object.
 		thisdelDaf = comparedelDaf(&score_data, isnp);	//Similarly, it would be easy to rewrite this function to give us (daf - AVE(outgroup daf)). 
