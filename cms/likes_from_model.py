@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 04.04.2017 	vitti@broadinstitute.org
+## last updated: 04.09.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -430,8 +430,8 @@ def execute_likes_from_scores(args):
 		## from multiple frequency bins
 		if args.binMerge:  
 			#need: input bins and name of cluster
-			selbin_clusters = [["0.10", "0.20", "0.30"], ["0.40", "0.50", "0.60",], ["0.70", "0.80", "0.90",],["0.10", "0.20", "0.30", "0.40", "0.50", "0.60", "0.70", "0.80", "0.90"]] 
-			cluster_names = ["low", "mid", "hi","allfreq"]
+			selbin_clusters = [["0.10", "0.20", "0.30", "0.40", "0.50", "0.60", "0.70", "0.80", "0.90"],["0.70", "0.80", "0.90",], ["0.40", "0.50", "0.60",], ["0.10", "0.20", "0.30"],] 
+			cluster_names = ["allfreq", "hi", "mid", "low"] 
 			for icluster in range(len(selbin_clusters)):
 				cluster, clustername = selbin_clusters[icluster], cluster_names[icluster]
 				completed_cluster = []
@@ -614,7 +614,7 @@ def execute_plot_likes_vs_scores(args):
 
 	savefilename = inputprefix + "_clr_likes_vs_likesscores.png"
 	fig, ax = plt.subplots()
-	ax.scatter(np.arange(len(comp_like_ratios)), comp_like_ratios)
+	ax.scatter(np.arange(len(comp_like_ratios)), comp_like_ratios) #I want to make this use the actual score ranges.
 	plt.savefig(savefilename)
 	print('saved to: ' + savefilename)
 	plt.close()

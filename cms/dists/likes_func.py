@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 04.02.2017 vitti@broadinstitute.org
+## last updated: 04.07.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -11,15 +11,8 @@ import os
 ######################################
 def get_plot_pdf_params(score):
 	''' defines likelihood score ranges etc. '''
-	"""For within-region localization, the value ranges used to define the bins were as follows: 
-	iHS, [-3,3]; XP-EHH, [-3,3]; iHH difference, [-3,3]; FST, [-2,2]; and DDAF, [-1,1]; 
-	for CMSGW, the value ranges were as follows: 
-	iHS, [-6,6]; XP-EHH, [-3,8]; iHH difference, [-3,5]; FST, [-1,6]; and DDAF, [-1,1]. 
-	Values outside the range were binned into the nearest bin at the end of the range.
-	"""
-
 	if score == "ihs":
-		scorerange = [0,6.] #folding for region-detection: the ancestral allele at this SNP may tag a nearby causal derived variant, so polarity isn't useful to us #[-6., 6.]
+		scorerange = [0,5.] #folding for region-detection: the ancestral allele at this SNP may tag a nearby causal derived variant, so polarity isn't useful to us #[-6., 6.]
 	elif score == "delihh":
 		scorerange = [-3., 5.]
 	elif score == "fst":
@@ -27,11 +20,11 @@ def get_plot_pdf_params(score):
 	elif score == "deldaf" or score =="fst_deldaf":
 		scorerange = [-1., 1.]
 	elif score == "xp" or score =="xpehh":
-		scorerange = [-3., 8.]
+		scorerange = [-3., 6.]
 	elif score=="nsl":
-		scorerange = [0,5.]#[-5., 5.]
+		scorerange = [0,3.]#[-5., 5.]
 	minVal, maxVal = scorerange
-	nProbBins = 50 
+	nProbBins = 60 
 	annotate = False
 	return minVal, maxVal, nProbBins, annotate
 def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal, maxVal, nProbBins, ax_ylabel, savebase, annotate = False, saveFiles=False, heuristic=False):
