@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 04.09.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 04.13.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -43,7 +43,7 @@ def full_parser_power():
 		tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
 		roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
 		roc_parser.add_argument('--plot_curve', action="store_true", default=False)
-		roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
+		#roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
 		roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
 		cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
 		find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
@@ -64,6 +64,7 @@ def full_parser_power():
 		manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
 		manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
 		manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
+		manhattan_parser.add_argument('--runSuffix', help="string included to locate specific .cms files")
 		extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
 		extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
 		extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
@@ -169,7 +170,7 @@ def execute_manhattan(args):
 	selpop = args.emppop
 	model = args.model
 	savename = args.savefilename
-	suffix = args.suffix
+	#suffix = args.runSuffix
 	basedir = args.writedir
 	#nRep = args.nrep
 	###############################
@@ -197,7 +198,9 @@ def execute_manhattan(args):
 	nSnps = 0
 	for chrom in range(1,23):
 		thesepos, thesescores = [], []
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
+
+		#get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a")
+		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, basedir=basedir, suffix=runSuffix)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -248,7 +251,7 @@ def execute_extended_manhattan(args):
 
 	all_emp_pos, all_emp_scores = [], []
 	for chrom in range(1,numChr +1):
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
+		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, suffix=suffix, basedir=basedir)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -472,7 +475,6 @@ def execute_tpr(args):
 def execute_roc(args):
 	''' from quick_roc.py '''
 	plot_roc = args.plot_curve
-	find_opt = args.find_opt
 	maxFPR = args.maxFPR
 	writedir = args.writedir
 
@@ -543,23 +545,6 @@ def execute_roc(args):
 		print("plotted to " + savefilename)
 		plt.close()
 			
-	#####################
-	## COMPARE CUTOFFS ##
-	#####################
-	if find_opt: #nix this?
-		for model in models:
-			print(model)
-			for regionlen in regionlens:
-				for percentage in thressholds:
-					for cutoff in cutoffs:
-						avekey = (regionlen, percentage, cutoff, model, "ave")
-						#FPR passes thresshold. What's the best TPR we can get?
-						if allfpr[avekey] <= maxFPR:
-							print(avekey)
-							print(str(alltpr[avekey]))
-
-	
-
 	return
 def execute_find_cutoff(args):
 	''' a little cleaner and simpler '''
@@ -579,7 +564,8 @@ def execute_find_cutoff(args):
 		if "alt" not in fprfile:
 			fpr = read_pr(fpr_loc + fprfile)
 			entries = fprfile.split("_")
-			regionlen, thresshold, cutoff = int(entries[1]), int(entries[2]), int(entries[3])
+			#print(entries)
+			regionlen, thresshold, cutoff = int(entries[2]), int(entries[3]), int(entries[4])
 			fprkey = (regionlen, thresshold, cutoff)
 			all_fpr[fprkey] = fpr
 			if regionlen > minRegionLen:
@@ -632,7 +618,8 @@ def execute_gw_regions(args):
 	####################
 	for chrom in chroms:
 		chrom_signif = []
-		normedempfilename = get_emp_cms_file(pop, model, chrom, normed=True, suffix = suffix, basedir=basedir)
+		normedempfilename = get_emp_cms_file(pop, chrom, normed=True, suffix = suffix, basedir=basedir)
+
 		if not os.path.isfile(normedempfilename):
 			print("missing: " + normedempfilename)
 		else:
@@ -680,14 +667,15 @@ def execute_gw_regions(args):
 	return
 def execute_regionlog(args):
 	''' writes an excel file ''' #maybe, instead, pass an arbitrary number of regionfiles? and takepops?
-	stringency = args.stringency
-	model = args.model	
+	#stringency = args.stringency
+	#model = args.model	
 	regionfiles = []
 	pops = ['YRI', 'GWD', 'LWK', 'MSL', 'ESN', 'CEU', 'FIN', 'IBS', 'TSI', 'GBR', 'CHB', 'JPT', 'KHV', 'CDX', 'CHS', 'BEB', 'STU', 'ITU', 'PJL', 'GIH']
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
-		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
-		print(regionfilename)
+		#regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
+		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/TESTregions_041117_modela__" + pop + ".txt"
+		#print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
 			takepops.append(pop)
