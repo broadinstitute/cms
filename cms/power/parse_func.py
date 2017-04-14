@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.10.2017	vitti@broadinstitute.org
+##	last updated 04.13.2017	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -104,28 +104,17 @@ def get_likesfiles(model, selpop, likesdir, allfreqs = True, likessuffix= "neut"
 		likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_allfreq_vs_" + likessuffix + ".txt_2"
 		return likesfile
 	return
-def get_pr_filesnames(key, basedir):
+def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 	""" locates files with true/false positive rate data for CMS 2.0 """
-	regionlen, percentage, cutoff, model, pop = key
-	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
-	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	regionlen, percentage, cutoff, pop, selFreq = key
+	fprfile = modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
 			print("missing: " + filename)
 		else:
 			pass
 	return fprfile, tprfile 
-"""
-old - remove?
-def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
-	# locates CMS files for empirical data 
-	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
-	if normed:
-		filename += ".norm"
-	if not os.path.isfile(filename):
-		print("MISSING empirical file : " + filename)
-	return filename
-"""
 def get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a"): #CONNECT "MODEL" TO "RUNSUFFIX"
 	""" locates CMS files for empirical data """
 	#filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
@@ -135,8 +124,6 @@ def get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_l
 	if not os.path.isfile(filename):
 		print("MISSING empirical file : " + filename)
 	return filename
-
-
 
 ##################
 ## FILE PARSING ##
@@ -228,6 +215,39 @@ def load_regions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
+def load_power_dict(modeldir, likes_dir_suffix = ""):
+	""" top-level function called by ROC, find_opt """
+	regionlens = [25000, 50000, 75000, 100000] #should soft-code
+	thressholds = [25, 30, 35, 40, 45, 50]	
+	cutoffs = [10, 15, 20, 25, 30, 35, 40]
+	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
+	freq_classes = ['hi', 'highest', 'mid', 'lo']
+
+	allfpr = {}
+	alltpr = {}
+	for regionlen in regionlens:
+		for percentage in thressholds:
+			for cutoff in cutoffs:
+				allpops_fpr, allpops_tpr = [], []
+				for pop in pops:
+					for freq_class in freq_classes:
+						this_key = (regionlen, percentage, cutoff, pop, freq_class)
+						fprfile, tprfile = get_pr_filesnames(this_key, modeldir, likes_dir_suffix = likes_dir_suffix)
+						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
+							fpr = read_pr(fprfile)
+							tpr = read_pr(tprfile)
+							allfpr[this_key] = fpr
+							alltpr[this_key] = tpr
+							allpops_fpr.append(fpr)
+							allpops_tpr.append(tpr)
+						else:
+							print("missing " + tprfile + "\t" + fprfile)				
+					ave_fpr = np.average(allpops_fpr)
+					ave_tpr = np.average(allpops_tpr)
+					popave_key = (regionlen, percentage, cutoff, "ave")
+					allfpr[popave_key] = ave_fpr
+					alltpr[popave_key] = ave_tpr	
+	return allfpr, alltpr
 
 #################
 ## BOOKKEEPING ##

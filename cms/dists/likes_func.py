@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 04.09.2017 vitti@broadinstitute.org
+## last updated: 04.14.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -18,7 +18,7 @@ def get_plot_pdf_params(score):
 	elif score == "fst":
 		scorerange = [0, 1.]
 	elif score == "deldaf" or score =="fst_deldaf":
-		scorerange = [-1., 1.]
+		scorerange = [-.1,.9]#[-1., 1.]
 	elif score == "xp" or score =="xpehh":
 		scorerange = [-3., 6.]
 	elif score=="nsl":

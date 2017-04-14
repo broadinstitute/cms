@@ -1,5 +1,5 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 03.21.2017		vitti@broadinstitute.org
+##	last updated 04.13.2017		vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -26,12 +26,13 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 	writefile.close()
 	print("wrote to: " + writefilename)
 	return
-def normalize_global(rawscore, mean, sd):
-	''' cms_gw '''
+'''def normalize_global(rawscore, mean, sd):
+	#cms_gw 
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
 	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue
-def normalize_local(values, physpos):
+'''
+def normalize_local(values, physpos): #called by regionviz - replace?
 	#mean = np.mean(values)
 	#var = np.var(values)
 	#stddev = var**.5

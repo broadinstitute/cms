@@ -2,6 +2,9 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
 ## last updated: 04.09.2017 	vitti@broadinstitute.org #update docstrings
 
+# TEMP CHANGE: NORM AS Z (TESTING POWER)
+
+
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -417,10 +420,11 @@ def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that
 	############################
 	## NORMALIZE NEUTRAL SIMS ##
 	############################
+	
 	for irep in range(1, numPerBin_neut +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
-			normedfile = outfile + ".norm"
+			normedfile = outfile + "_z.norm"
 			if True:
 			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
 				openfile = open(outfile, 'r')
@@ -441,8 +445,9 @@ def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that
 	for sel_freq_bin in sel_freq_bins:
 		for irep in range(1, numPerBin_sel +1):
 			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
+			#print(rawfile)
 			if os.path.isfile(rawfile):
-				normedfile = rawfile + ".norm"
+				normedfile = rawfile + "_z.norm"
 				if True:
 				#if not os.path.isfile(normedfile):
 					openfile = open(rawfile, 'r')
