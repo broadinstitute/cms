@@ -655,6 +655,9 @@ def execute_write_master_likes(args):
 	like_savestring = "ult"
 	if score in folded_scores:
 		like_savestring = "folded_ult" 
+	if score == "deldaf":
+		like_savestring = "folded_ult_quick"
+		basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_041417/"
 	neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename = get_likes_filenames(basedir, model, score, pop, like_savestring = like_savestring)
 
 	#cf get_master_likefiles()

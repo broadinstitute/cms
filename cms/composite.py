@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 04.09.2017 	vitti@broadinstitute.org #update docstrings
-
-# TEMP CHANGE: NORM AS Z (TESTING POWER)
-
+## last updated: 04.25.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
@@ -103,7 +100,7 @@ def full_parser_composite():
 		composite_parser.add_argument('--likes_masterDir', type=str, default="/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_masters/", help="location of likelihood tables, defined")
 		composite_parser.add_argument('--likes_nonSel', type=str, default="vsNeut", help='do we use completely neutral, or linked neutral SNPs for our non-causal distributions? by default, uses strict neutral (CMSgw)')
 		composite_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
-		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0", help='specify bounds to include/exclude in calculations, along with MAF filter')
+		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0\t1", help='specify bounds to include/exclude in calculations, along with MAF filter and likes decomposition')
 		composite_parser.add_argument('--includeline', type=str, default="0\t0\t0\t0\t0\t0", help='specify (0:yes; 1:no) which scores to include: iHS,  ... ') #JV complete
 
 	for cms_parser in [composite_sims_parser, composite_emp_parser, normsims_parser, normemp_parser]:
@@ -197,7 +194,7 @@ def execute_composite_sims(args):
 	########################################################
 	writedir = args.writedir
 	cutoffline = args.cutoffline
-	includeline = args.includeline #"250000\t1250000\t0"
+	includeline = args.includeline 
 	paramfilename = writedir + "run_params.txt"
 	if args.runSuffix is not None:
 		paramfilename += args.runSuffix
@@ -219,7 +216,7 @@ def execute_composite_sims(args):
 		this_bindir = scoremodeldir + "sel_" + str(sel_freq_bin) + "/"
 		#check_create_dir(this_bindir)
 		compositedir = this_bindir + "composite/" 
-		pairdir = scoremodeldir + "pairs/"
+		pairdir = this_bindir + "pairs/"
 		check_create_dir(compositedir)
 		check_create_dir(pairdir)
 		for irep in range(1, numPerBin_sel +1):
@@ -251,7 +248,7 @@ def execute_composite_sims(args):
 	##################################
 	scoremodeldir = writedir + model + "/neut/"
 	compositedir = scoremodeldir + "composite/" 
-	pairdir = scoremodeldir + "pairs/"
+	pairdir = this_bindir + "pairs/"
 	check_create_dir(compositedir)
 	check_create_dir(pairdir)
 	for irep in range(1, numPerBin_neut +1):	
@@ -278,13 +275,13 @@ def execute_composite_sims(args):
 				print(fullcmd)
 				execute(fullcmd)
 
-	print('calculated CMS scores for ' + str(nrep_neut) + ' neutral replicates and ' + str(nrep_sel) + " selection replicates per bin.")
+	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
 	return
 def execute_composite_emp(args):
 	''' given component scores from empirical data (e.g. from scans.py) together with likelihood tables, generate CMS scores '''
 	chroms = range(1,23)
 	model_popsdict = {1:["YRI", "AFR", "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
-						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS"],
+						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS", "IRN"],
 						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
 						4:["BEB", "SAS", "GIH", "PJL", "STU", "ITU"],
 						0:["MXL", "AMR", "PUR", "CLM", "PEL"]} #American populations excluded from model

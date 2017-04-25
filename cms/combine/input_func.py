@@ -135,5 +135,5 @@ def load_empscores(model, selpop, normed = False,takeIndex = -1, basedir = "/n/r
 #THIS PERHAPS MOVES? collapse others.
 def normalize(rawscore, mean, sd):
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
-	normalizedvalue = (rawscore - mean) / sd
+	normalizedvalue = (rawscore - mean) #/ sd
 	return normalizedvalue

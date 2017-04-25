@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.13.2017	vitti@broadinstitute.org
+##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -41,11 +41,19 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 ##################
 def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_clear-synth-20161227"):
 	''' points to normalized input files for component scores for empirical data '''
-	in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".ihs.out.100bins.norm"
-	in_delihh_file =  basedir + "delihh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".delihh.out.100bins.norm"
-	in_nsl_file =  basedir + "nsl/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".nsl.out.100bins.norm"
-	in_xp_file = basedir + "xpehh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
-	in_fst_deldaf_file = basedir + "fst_deldaf/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + str(altpop)
+	if pop not in ['IRN']: #1kg pops
+		in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".ihs.out.100bins.norm"
+		in_delihh_file =  basedir + "delihh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".delihh.out.100bins.norm"
+		in_nsl_file =  basedir + "nsl/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".nsl.out.100bins.norm"
+		in_xp_file = basedir + "xpehh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
+		in_fst_deldaf_file = basedir + "fst_deldaf/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + str(altpop)
+	else: #these are rsync'd to RC from local desktop from old calcs
+		basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/IRN/resync/"
+		in_ihs_file = basedir + "IRN_ihs_nsl/IRN_ihs_gw.txt.100bins.norm.chr" + str(chrom) + ".txt" #IRN_dryrun_060716_chr" + str(chrom) +".ihs.out" #NORM!!!
+		in_delihh_file =  basedir + "IRN_ihs_nsl/IRN_delihh_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
+		in_nsl_file = basedir + "IRN_ihs_nsl/IRN_nsl_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
+		in_xp_file = basedir + "xp_IRN/xp_IRN_" + altpop + "_gw.txt.norm.chr" + str(chrom) + ".txt" #xp_IRN_" + altpop + "_chr" + str(chrom) + ".xpehh.out" #NORM!!!
+		in_fst_deldaf_file = basedir + "freqscores_IRN/freqs_IRN_" + altpop + ".chr" + str(chrom) + ".txt"
 	for filename in [in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(filename):
 			print("MISSING: " + filename)
@@ -118,7 +126,10 @@ def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 def get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a"): #CONNECT "MODEL" TO "RUNSUFFIX"
 	""" locates CMS files for empirical data """
 	#filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
-	filename = basedir + "composite/chr" + str(chrom) + "_" + str(selpop) + ".cms.out" + suffix
+	if selpop not in ['IRN']:
+		filename = basedir + "composite/chr" + str(chrom) + "_" + str(selpop) + ".cms.out" + suffix
+	else:
+		filename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/composite/IRN_composite_041817/chr" + str(chrom) + "_IRN.cms.out" + suffix
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
@@ -215,11 +226,14 @@ def load_regions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
-def load_power_dict(modeldir, likes_dir_suffix = ""):
+def load_power_dict(modeldir, likes_dir_suffix = "", zscore = False):
 	""" top-level function called by ROC, find_opt """
 	regionlens = [25000, 50000, 75000, 100000] #should soft-code
 	thressholds = [25, 30, 35, 40, 45, 50]	
-	cutoffs = [10, 15, 20, 25, 30, 35, 40]
+	if zscore:
+		cutoffs = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+	else:
+		cutoffs = [10, 15, 20, 25, 30, 35, 40]
 	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
 	freq_classes = ['hi', 'highest', 'mid', 'lo']
 

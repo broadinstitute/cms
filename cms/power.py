@@ -244,7 +244,7 @@ def execute_extended_manhattan(args):
 	titlestring = args.titlestring
 
 	modelpops = {'YRI':1, 'GWD':1, 'LWK':1, 'MSL':1, 'ESN':1, 
-				'CEU':2, 'FIN':2, 'IBS':2, 'TSI':2, 'GBR':2,
+				'CEU':2, 'FIN':2, 'IBS':2, 'TSI':2, 'GBR':2, 'IRN':2,
 				'CHB':3, 'JPT':3, 'KHV':3, 'CDX':3, 'CHS':3, 
 				'BEB':4, 'STU':4, 'ITU':4, 'PJL':4, 'GIH':4}
 	pop = modelpops[selpop]
@@ -330,7 +330,7 @@ def execute_cdf(args):
 	reps = args.nrep
 	savefilename = args.savefilename
 	writedir = args.writedir
-	scenars = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	scenars = ['0.70', '0.80', '0.90']#'0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
 	causalPos = args.selPos
 	suffix = args.suffix
@@ -351,8 +351,8 @@ def execute_cdf(args):
 						#causal_ranks.append(causal_rank)
 						this_array = eval('causal_ranks_' + str(pop))
 						this_array.append(causal_rank)
-				#else:
-				#	print("missing; " + cmsfilename)
+				else:
+					print("missing; " + cmsfilename)
 	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")
 	print("for pop 2, loaded " + str(len(causal_ranks_2)) + " replicates.")
 	print("for pop 3, loaded " + str(len(causal_ranks_3)) + " replicates.")
@@ -489,8 +489,11 @@ def execute_roc(args):
 	modeldir = writedir + model + "/"
 	#make selFreq toggleable? pass to get_pr_filenames
 	savefilename = args.savefilename
-
-	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix)
+	if "_z" in likes_dir_suffix:
+		zscore = True
+	else:
+		zscore = False
+	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix, zscore = zscore)
 	fpr_keys = allfpr.keys()
 	tpr_keys = alltpr.keys()
 	
@@ -531,22 +534,26 @@ def execute_roc(args):
 	plt.close()
 	print("plotted to " + savefilename)
 	return
-def execute_find_cutoff(args):
+def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 	''' given FPR and TPR calculations, select an optimal significance cutoff subject to a specified criterion '''
 	writedir = args.writedir 
 	likes_dir_suffix = args.suffix #e.g. _maf20
 	model = args.model 	
 	modeldir = writedir + model + "/"
 	maxFPR = args.maxFPR
+	if "_z" in likes_dir_suffix:
+		zscore = True
+	else:
+		zscore = False
 
 	#############################
 	## CHOOSE OPT MEETING CRIT ##
 	#############################
-	all_fpr, all_tpr = load_power_dict(modeldir,likes_dir_suffix )
+	all_fpr, all_tpr = load_power_dict(modeldir,likes_dir_suffix, zscore = zscore)
 	for pop in [1, 2, 3, 4, "ave"]:
 		best_tpr, best_fpr = 0, 0
 		best_cutoff = 0
-		print("Now finding optimal with a maximum FPR of " + str(maxFPR) + " for pop " + str(pop))
+		print("Now finding optimal with a maximum FPR of " + str(maxFPR) + " for pop " + str(pop) + " using demographic model: " + model)
 		fpr_keys = all_fpr.keys()
 		tpr_keys = all_tpr.keys()
 		thesekeys_fpr = [key for key in fpr_keys if pop in key]
@@ -639,10 +646,12 @@ def execute_regionlog(args):
 	#model = args.model	
 	regionfiles = []
 	pops = ['YRI', 'GWD', 'LWK', 'MSL', 'ESN', 'CEU', 'FIN', 'IBS', 'TSI', 'GBR', 'CHB', 'JPT', 'KHV', 'CDX', 'CHS', 'BEB', 'STU', 'ITU', 'PJL', 'GIH']
+	#pops = ['IRN']
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
 		#regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
-		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/TESTregions_041117_modela__" + pop + ".txt"
+		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/regions_reeval/regions_042317/regions_042317_" + pop + ".txt_15_b"
+		#regionfilename = "/n/home08/jvitti/test_IRN_regions.txt"
 		#print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
