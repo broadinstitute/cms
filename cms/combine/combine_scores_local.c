@@ -1,6 +1,6 @@
 // last updated 04.25.17: perform within-region CMS calculations as in CMS 1.0 		vitti@broadinstitute.org
 // CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss;  //NB! Miss = LINKED!!!
-// optional next line: (minPos, maxPos, minDaf, minGenLen); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
+// optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
 	//int ibin;  //for debug
 	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
+	int writeLikes;
 	//char takeScoreString[6];
 	double prior; // = 1/nSNP for region
 	int nsnps_regional;
@@ -81,7 +82,7 @@ int main(int argc, char **argv) {
 	minPos = -1;		
 	maxPos = 2147483647;
 	minDaf = 0;
-	minGenLen = 0.;
+	minGenLen = .5; //take no regions < .5 cM
 	takeIhs = takeDelihh = takeNsl = takeXpehh = takeFst = takeDeldaf = 0; //all T by default
 	//if additional lines is included, parse 
 	if (fgets(paramline, line_size, inf) != NULL){
@@ -89,7 +90,7 @@ int main(int argc, char **argv) {
 			if (itoken == 0) {minPos = atoi(token);}
 			else if (itoken == 1){maxPos = atoi(token);}
 			else if (itoken == 2){minDaf = atof(token);}
-			else if (itoken == 3){minGenLen = atof(token);}	 // #else if (itoken == 3){writeLikes = atoi(token);}	 DO WANT KEEP OR LOSE?		
+			else if (itoken == 3){writeLikes = atof(token);}	
 		} // end for running
 	}  //end if fgets paramline
 	if (fgets(paramline, line_size, inf) != NULL){
@@ -103,7 +104,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
+	//fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -254,7 +255,7 @@ int main(int argc, char **argv) {
 			if (nsl_hitprob < 2e-10 && nsl_missprob > 2e-10){nsl_prob = nsl_minprob;}
 			ihs_prob = 0;
 			if (ihs_missprob > 2e-10 && ihs_hitprob > 2e-10){ihs_prob = (prior*ihs_hitprob) / ((prior*ihs_hitprob) + ((1.-prior)*ihs_missprob));}
-			if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){ihs_prob = ihs_maxprob}
+			if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){ihs_prob = ihs_maxprob;}
 			if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){ihs_prob = ihs_minprob;}
 			fst_prob = 0;
 			if (fst_missprob > 2e-10 && fst_hitprob > 2e-10){fst_prob = (prior*fst_hitprob) / ((prior*fst_hitprob) + ((1.-prior)*fst_missprob));} 

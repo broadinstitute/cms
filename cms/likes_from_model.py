@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 04.09.2017 	vitti@broadinstitute.org
+## last updated: 04.25.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -651,7 +651,10 @@ def execute_write_master_likes(args):
 	pop = args.simpop
 	model = args.model
 
-	#hard-coded for now - going to be iterating this process.
+	###############################
+	## CMS_GW : FOLDED, VS. NEUT ##
+	################## #############
+	"""
 	like_savestring = "ult"
 	if score in folded_scores:
 		like_savestring = "folded_ult" 
@@ -662,12 +665,21 @@ def execute_write_master_likes(args):
 
 	#cf get_master_likefiles()
 	likesFreqs_master_writefilename_global = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_likesFreqs.master.txt"
-	likesFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_likesFreqs.master.txt"
 	allFreqs_master_writefilename_global = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_allFreqs.master.txt"
-	allFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_allFreqs.master.txt"
 	write_master_likesfile(likesFreqs_master_writefilename_global, neut_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
-	write_master_likesfile(likesFreqs_master_writefilename_local, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
 	write_master_likesfile(allFreqs_master_writefilename_global, neut_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
+	"""
+
+	######################################
+	## CMS_LOCAL : UNFOLDED, VS. LINKED ##
+	######################################
+
+	like_savestring = "ult"
+	neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename = get_likes_filenames(basedir, model, score, pop, like_savestring = like_savestring)
+
+	likesFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_likesFreqs.master.txt"
+	allFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_allFreqs.master.txt"
+	write_master_likesfile(likesFreqs_master_writefilename_local, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
 	write_master_likesfile(allFreqs_master_writefilename_local, linked_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
 	return 
 

@@ -56,6 +56,7 @@ def full_parser_composite():
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
 	composite_emp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
+	composite_emp_parser.add_argument('--regional_cms_chrom', type=int, action="store", help="if included, calculate within-region CMS (rather than CMS_gw) for specified bounds at this chromosome")
 	
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
 	normemp_parser = subparsers.add_parser('normemp', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
@@ -279,7 +280,6 @@ def execute_composite_sims(args):
 	return
 def execute_composite_emp(args):
 	''' given component scores from empirical data (e.g. from scans.py) together with likelihood tables, generate CMS scores '''
-	chroms = range(1,23)
 	model_popsdict = {1:["YRI", "AFR", "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
 						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS", "IRN"],
 						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
@@ -290,7 +290,13 @@ def execute_composite_emp(args):
 		cmd = args.cmsdir 			#once conda packaging is complete
 	else:							#but for now, keep things smooth.
 		cmd = ""
-	cmd += "combine/combine_scores"
+
+	if args.regional_cms_chrom is None:
+		cmd += "combine/combine_scores" #genome-wide
+		chroms = range(1,23)
+	else:
+		cmd += "combine/combine_scores_local" #within-region
+		chroms = [args.regional_cms_chrom]
 
 	model = args.model
 	modelPop = args.simpop
@@ -303,6 +309,7 @@ def execute_composite_emp(args):
 	likes_nonSel = args.likes_nonSel				
 	likes_freqSuffix = args.likes_freqSuffix
 	ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master = get_master_likefiles(likes_masterDir, model, modelPop, likes_nonSel, likes_freqSuffix)
+	#build in a check here to enforce correct likes for within-region vs. genomew-wide?
 
 	#########################
 	## DESIGNATE OUTGROUPS ##
@@ -312,16 +319,14 @@ def execute_composite_emp(args):
 	for modelpop in [1, 2, 3, 4, 0]:
 		if emp_selpop in model_popsdict[modelpop]:
 			model_selpop = modelpop
-	if model_selpop == 0: #what do we want to do with American populations? treat them as 4 (admixture)? for now implement this.
+	if model_selpop == 0: 
 		model_selpop = 4
-	#print(str(emp_selpop) + "\t" + str(model_selpop))
 
 	altmodelpops = [1, 2, 3, 4]
 	altmodelpops.remove(model_selpop)
 	altpops = []
 	for altpop in altmodelpops:
 		altpops.append(model_popsdict[altpop][0])
-	#print(altpops)
 
 	########################################################
 	## RECORD INPUT PARAMETERS (scores, MAF filter, etc.) ##
@@ -335,6 +340,7 @@ def execute_composite_emp(args):
 		suffix = args.runSuffix
 	else:
 		suffix = ""
+	paramfilename += "_" + str(model_selpop)
 	paramfilename = write_run_paramfile(paramfilename, ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master, cutoffline, includeline)
 	print("wrote CMS run parameters to: " + paramfilename)
 
@@ -350,7 +356,10 @@ def execute_composite_emp(args):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 				altpairs.append(pairfilename)
 		if len(altpairs) !=0:
-			outfile = score_basedir + "composite/chr" + str(chrom) + "_" + str(emp_selpop) + ".cms.out" + suffix
+			outfile = score_basedir + "composite/"
+			if args.regional_cms_chrom is not None:
+				outfile += "regional/"
+			outfile += "chr" + str(chrom) + "_" + str(emp_selpop) + ".cms.out" + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -364,10 +373,10 @@ def execute_composite_emp(args):
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				execute(fullcmd)	
-
 	print('calculated CMS scores for ' + str(len(chroms)) + ' chromosomes.')
+
 	return
-def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that flexible, yah?
+def execute_normsims(args):
 	""" given output from composite_sims, normalize all replicates to neutral parameters """ 
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
