@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 04.09.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 04.25.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, get_sim_component_score_files
+from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, get_sim_component_score_files, get_emp_component_score_files
 from combine.input_func import get_likesfiles_frommaster, write_perpop_ihh_from_xp, write_run_paramfile, write_pair_sourcefile, load_empscores, normalize
 from combine.viz_func import hapSort_coreallele, hapSort, hapViz, readAnnotations, find_snp_index, pullRegion, load_from_hap
 from dists.scores_func import calc_fst_deldaf, calc_delihh
@@ -55,8 +55,13 @@ def full_parser_composite():
 	######################################
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
+	composite_emp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
+	composite_emp_parser.add_argument('--regional_cms_chrom', type=int, action="store", help="if included, calculate within-region CMS (rather than CMS_gw) for specified bounds at this chromosome")
+	
 	normsims_parser = subparsers.add_parser('normsims', help="normalize simulated composite scores to neutral")
 	normemp_parser = subparsers.add_parser('normemp', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
+	normemp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
+
 
 	###############
 	## VISUALIZE ##
@@ -84,7 +89,7 @@ def full_parser_composite():
 	################# 
 	## SHARED ARGS ##
 	################# 
-	for commonparser in [xp_from_ihh_parser, composite_sims_parser, composite_emp_parser]:
+	for commonparser in [xp_from_ihh_parser, composite_sims_parser, composite_emp_parser, normemp_parser]:
 		commonparser.add_argument('--cmsdir', help='TEMPORARY, will become redundant with conda packaging', action = 'store', default= "/idi/sabeti-scratch/jvitti/cms/cms/")
 		commonparser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
 
@@ -96,16 +101,25 @@ def full_parser_composite():
 		composite_parser.add_argument('--likes_masterDir', type=str, default="/n/regal/sabeti_lab/jvitti/clear-synth/sims_reeval/likes_masters/", help="location of likelihood tables, defined")
 		composite_parser.add_argument('--likes_nonSel', type=str, default="vsNeut", help='do we use completely neutral, or linked neutral SNPs for our non-causal distributions? by default, uses strict neutral (CMSgw)')
 		composite_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
-		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0", help='specify bounds to include/exclude in calculations, along with MAF filter')
+		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0\t1", help='specify bounds to include/exclude in calculations, along with MAF filter and likes decomposition')
 		composite_parser.add_argument('--includeline', type=str, default="0\t0\t0\t0\t0\t0", help='specify (0:yes; 1:no) which scores to include: iHS,  ... ') #JV complete
 
 	for cms_parser in [composite_sims_parser, composite_emp_parser, normsims_parser, normemp_parser]:
-		cms_parser.add_argument('writedir', type=str, default="", help="specify relative path") #ENFORCE CONSISTENCY - assumes e.g. model with sim scores live in this folder
+		cms_parser.add_argument('--writedir', type=str, default="", help="specify relative path") #ENFORCE CONSISTENCY - assumes e.g. model with sim scores live in this folder
 		cms_parser.add_argument('--runSuffix', type=str, default=None, help='add a suffix to .cms file (corresponds to runparamfile)')
 
+	for common_parser in [composite_sims_parser, composite_emp_parser, normsims_parser]:
+		common_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+
+	for emp_parser in [composite_emp_parser, normemp_parser]:
+		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")	
+
+	for common_parser in [normemp_parser, normsims_parser, composite_sims_parser, composite_emp_parser]:
+		common_parser.add_argument('--model', type=str, action="store", default="nulldefault")
+		common_parser.add_argument('--checkOverwrite', action="store_true", default=False)
+
 	#for commonparser in [composite_sims_parser, normsims_parser, composite_emp_parser, normemp_parser]:		=
-	#	commonparser.add_argument('--checkOverwrite', action="store_true", default=False)
-	#	commonparser.add_argument('--suffix', type= str, action='store', default='')
+	##	commonparser.add_argument('--suffix', type= str, action='store', default='')
 	#	commonparser.add_argument('--simpop', action='store', help='simulated population', default=1)
 	#	commonparser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 	#	commonparser.add_argument('--model', type=str, default="nulldefault")
@@ -181,10 +195,10 @@ def execute_composite_sims(args):
 	########################################################
 	writedir = args.writedir
 	cutoffline = args.cutoffline
-	includeline = args.includeline
+	includeline = args.includeline 
 	paramfilename = writedir + "run_params.txt"
 	if args.runSuffix is not None:
-		paramfilename += "_" + args.runSuffix
+		paramfilename += args.runSuffix
 		suffix = args.runSuffix
 	else:
 		suffix = ""
@@ -202,8 +216,8 @@ def execute_composite_sims(args):
 	for sel_freq_bin in sel_freq_bins:
 		this_bindir = scoremodeldir + "sel_" + str(sel_freq_bin) + "/"
 		#check_create_dir(this_bindir)
-		compositedir = scoremodeldir + "composite/" 
-		pairdir = scoremodeldir + "pairs/"
+		compositedir = this_bindir + "composite/" 
+		pairdir = this_bindir + "pairs/"
 		check_create_dir(compositedir)
 		check_create_dir(pairdir)
 		for irep in range(1, numPerBin_sel +1):
@@ -235,7 +249,7 @@ def execute_composite_sims(args):
 	##################################
 	scoremodeldir = writedir + model + "/neut/"
 	compositedir = scoremodeldir + "composite/" 
-	pairdir = scoremodeldir + "pairs/"
+	pairdir = this_bindir + "pairs/"
 	check_create_dir(compositedir)
 	check_create_dir(pairdir)
 	for irep in range(1, numPerBin_neut +1):	
@@ -262,27 +276,31 @@ def execute_composite_sims(args):
 				print(fullcmd)
 				execute(fullcmd)
 
-	print('calculated CMS scores for ' + str(nrep_neut) + ' neutral replicates and ' + str(nrep_sel) + " selection replicates per bin.")
+	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
 	return
 def execute_composite_emp(args):
 	''' given component scores from empirical data (e.g. from scans.py) together with likelihood tables, generate CMS scores '''
-	chroms = range(1,23)
-	model_popsdict = {1:["YRI", "AFR" "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
-						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS"],
+	model_popsdict = {1:["YRI", "AFR", "LWK", "GWD", "MSL", "ESN", "ASW", "ACB"],
+						2:["CEU", "EUR", "TSI", "FIN", "GBR", "IBS", "IRN"],
 						3:["CHB", "EAS", "JPT", "CHS", "CDX", "KHV"],
 						4:["BEB", "SAS", "GIH", "PJL", "STU", "ITU"],
-						0:["MXL", "PUR", "CLM", "PEL"]} #American populations excluded from model
+						0:["MXL", "AMR", "PUR", "CLM", "PEL"]} #American populations excluded from model
 
 	if args.cmsdir is not None: 	#will be able to nix this construction 
 		cmd = args.cmsdir 			#once conda packaging is complete
 	else:							#but for now, keep things smooth.
 		cmd = ""
-	cmd += "combine/combine_scores"
+
+	if args.regional_cms_chrom is None:
+		cmd += "combine/combine_scores" #genome-wide
+		chroms = range(1,23)
+	else:
+		cmd += "combine/combine_scores_local" #within-region
+		chroms = [args.regional_cms_chrom]
 
 	model = args.model
 	modelPop = args.simpop
-	numPerBin_sel = args.nrep_sel
-	numPerBin_neut = args.nrep_neut
+	score_basedir = args.score_basedir
 
 	########################################
 	## SPECIFY INPUT LIKELIHOOD FUNCTIONS ##
@@ -291,17 +309,24 @@ def execute_composite_emp(args):
 	likes_nonSel = args.likes_nonSel				
 	likes_freqSuffix = args.likes_freqSuffix
 	ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master = get_master_likefiles(likes_masterDir, model, modelPop, likes_nonSel, likes_freqSuffix)
+	#build in a check here to enforce correct likes for within-region vs. genomew-wide?
 
 	#########################
 	## DESIGNATE OUTGROUPS ##
 	#########################
-	selPop = args.emppop
-	for pop in [1, 2, 3, 4, 0]:
-		if selPop in model_popsdict[pop]:
-			model_selpop = pop
-	if pop == 0: #what do we want to do with American populations? treat them as 4 (admixture)? for now implement this.
+	emp_selpop = args.emppop
+	model_selpop = 0
+	for modelpop in [1, 2, 3, 4, 0]:
+		if emp_selpop in model_popsdict[modelpop]:
+			model_selpop = modelpop
+	if model_selpop == 0: 
 		model_selpop = 4
-	altpops = pops.remove(model_selpop)
+
+	altmodelpops = [1, 2, 3, 4]
+	altmodelpops.remove(model_selpop)
+	altpops = []
+	for altpop in altmodelpops:
+		altpops.append(model_popsdict[altpop][0])
 
 	########################################################
 	## RECORD INPUT PARAMETERS (scores, MAF filter, etc.) ##
@@ -311,15 +336,13 @@ def execute_composite_emp(args):
 	includeline = args.includeline
 	paramfilename = writedir + "run_params.txt"
 	if args.runSuffix is not None:
-		paramfilename += "_" + args.runSuffix
+		paramfilename += args.runSuffix
 		suffix = args.runSuffix
 	else:
 		suffix = ""
+	paramfilename += "_" + str(model_selpop)
 	paramfilename = write_run_paramfile(paramfilename, ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master, cutoffline, includeline)
 	print("wrote CMS run parameters to: " + paramfilename)
-	altpops = [1, 2, 3, 4]
-	selpop = int(selpop)
-	altpops.remove(selpop)
 
 	#############################################
 	## CALCULATE CMS: ITERATE OVER CHROMOSOMES ##
@@ -327,13 +350,16 @@ def execute_composite_emp(args):
 	for chrom in chroms:
 		altpairs = []
 		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(model, irep, selpop, altpop, filebase = writedir + "scores/", normed = True)
-			pairfilename = scoremodeldir + "pairs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(chrom, emp_selpop, altpop=altpop, basedir = score_basedir) 
+			pairfilename = score_basedir + "pairs/chr" + str(chrom) + "_" + str(emp_selpop) + "_" + str(altpop) + ".pair" 
 			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 				altpairs.append(pairfilename)
 		if len(altpairs) !=0:
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+			outfile = score_basedir + "composite/"
+			if args.regional_cms_chrom is not None:
+				outfile += "regional/"
+			outfile += "chr" + str(chrom) + "_" + str(emp_selpop) + ".cms.out" + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -347,10 +373,10 @@ def execute_composite_emp(args):
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				execute(fullcmd)	
-
 	print('calculated CMS scores for ' + str(len(chroms)) + ' chromosomes.')
+
 	return
-def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that flexible, yah?
+def execute_normsims(args):
 	""" given output from composite_sims, normalize all replicates to neutral parameters """ 
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
@@ -364,7 +390,7 @@ def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that
 	##############################
 	## LOAD STATS FROM NEUT SIMS #
 	##############################
-	for irep in range(1, numPerNeutBin +1):	
+	for irep in range(1, numPerBin_neut +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
 			openfile = open(outfile, 'r')
@@ -400,10 +426,11 @@ def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that
 	############################
 	## NORMALIZE NEUTRAL SIMS ##
 	############################
-	for irep in range(1, numPerNeutBin +1):	
+	
+	for irep in range(1, numPerBin_neut +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
-			normedfile = outfile + ".norm"
+			normedfile = outfile + "_z.norm"
 			if True:
 			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
 				openfile = open(outfile, 'r')
@@ -422,10 +449,11 @@ def execute_normsims(args): ###WAIT SO, by default this does X-mu/Sig. Make that
 	## NORMALIZE SEL SIMS ##
 	########################
 	for sel_freq_bin in sel_freq_bins:
-		for irep in range(1, numPerSelBin +1):
+		for irep in range(1, numPerBin_sel +1):
 			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
+			#print(rawfile)
 			if os.path.isfile(rawfile):
-				normedfile = rawfile + ".norm"
+				normedfile = rawfile + "_z.norm"
 				if True:
 				#if not os.path.isfile(normedfile):
 					openfile = open(rawfile, 'r')
@@ -444,10 +472,16 @@ def execute_normemp(args):
 	""" given output from composite_emp, normalize CMS scores genome-wide """  #could also introduce a feature to normalize to explicitly neutral regions. 
 	selpop = args.emppop
 	model = args.model
-	suffix = args.suffix
-	basedir = args.writedir
+	#suffix = args.suffix
+	#basedir = args.writedir
+	score_basedir = args.score_basedir
 
-	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix, basedir=basedir) #HANDLE THIS MORE EXPLICITLY
+	if args.runSuffix is not None:
+		suffix = args.runSuffix
+	else:
+		suffix = ""
+
+	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix, basedir=score_basedir) #HANDLE THIS MORE EXPLICITLY
 	scores = [np.log(item) for item in scores2]
 
 	#check for nans
@@ -472,10 +506,10 @@ def execute_normemp(args):
 
 	##############
 	## NORMALIZE #
-	##############
+	############## 
 	chroms = range(1,23)
-	for chrom in chroms:
-		unnormedfile = get_emp_cms_file(selpop, model, chrom, normed=False, suffix=suffix, basedir = basedir)
+	for thischrom in chroms:
+		unnormedfile = get_emp_cms_file(selpop, thischrom, normed=False, basedir=score_basedir, suffix=suffix,) #model #selpop, chrom, normed=False, suffix=suffix, basedir = score_basedir)
 		assert os.path.isfile(unnormedfile)
 		normedfile = unnormedfile + ".norm"
 

@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.07.2017	vitti@broadinstitute.org
+##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -39,14 +39,25 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 ##################
 ## LOCATE FILES ##
 ##################
-def get_emp_component_score_files(filebase = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = "clear-synth-"):
-	''' ? version control issue? ''' #NO I just need to patch this in; I swapped to dispatch_1kg_composite.py on RC; being lazy with dispatch_cms_local.py for now but come back to this
-	in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + ".ihs.out"
-	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
-	in_xp_file = basedir + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-	in_fst_deldaf_file = basedir + "fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
-	return
+def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_clear-synth-20161227"):
+	''' points to normalized input files for component scores for empirical data '''
+	if pop not in ['IRN']: #1kg pops
+		in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".ihs.out.100bins.norm"
+		in_delihh_file =  basedir + "delihh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".delihh.out.100bins.norm"
+		in_nsl_file =  basedir + "nsl/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".nsl.out.100bins.norm"
+		in_xp_file = basedir + "xpehh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
+		in_fst_deldaf_file = basedir + "fst_deldaf/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + str(altpop)
+	else: #these are rsync'd to RC from local desktop from old calcs
+		basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/IRN/resync/"
+		in_ihs_file = basedir + "IRN_ihs_nsl/IRN_ihs_gw.txt.100bins.norm.chr" + str(chrom) + ".txt" #IRN_dryrun_060716_chr" + str(chrom) +".ihs.out" #NORM!!!
+		in_delihh_file =  basedir + "IRN_ihs_nsl/IRN_delihh_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
+		in_nsl_file = basedir + "IRN_ihs_nsl/IRN_nsl_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
+		in_xp_file = basedir + "xp_IRN/xp_IRN_" + altpop + "_gw.txt.norm.chr" + str(chrom) + ".txt" #xp_IRN_" + altpop + "_chr" + str(chrom) + ".xpehh.out" #NORM!!!
+		in_fst_deldaf_file = basedir + "freqscores_IRN/freqs_IRN_" + altpop + ".chr" + str(chrom) + ".txt"
+	for filename in [in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file]:
+		if not os.path.isfile(filename):
+			print("MISSING: " + filename)
+	return in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file
 def get_sim_component_score_files(model, irep, pop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
 	""" locates component score files for simulated data """
 	if selbin == 'neut':
@@ -101,20 +112,24 @@ def get_likesfiles(model, selpop, likesdir, allfreqs = True, likessuffix= "neut"
 		likesfile = likesdir + model + "/master/likes_" + str(selpop) + "_allfreq_vs_" + likessuffix + ".txt_2"
 		return likesfile
 	return
-def get_pr_filesnames(key, basedir):
+def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 	""" locates files with true/false positive rate data for CMS 2.0 """
-	regionlen, percentage, cutoff, model, pop = key
-	fprfile = basedir + "/fpr/" + model + "/sel" + str(pop) + "/fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
-	tprfile = basedir + "/tpr/" + model + "/sel" + str(pop) + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	regionlen, percentage, cutoff, pop, selFreq = key
+	fprfile = modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
 			print("missing: " + filename)
 		else:
 			pass
 	return fprfile, tprfile 
-def get_emp_cms_file(selpop, model, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite/", suffix = ""):
+def get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a"): #CONNECT "MODEL" TO "RUNSUFFIX"
 	""" locates CMS files for empirical data """
-	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
+	#filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
+	if selpop not in ['IRN']:
+		filename = basedir + "composite/chr" + str(chrom) + "_" + str(selpop) + ".cms.out" + suffix
+	else:
+		filename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/composite/IRN_composite_041817/chr" + str(chrom) + "_IRN.cms.out" + suffix
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
@@ -211,6 +226,42 @@ def load_regions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
+def load_power_dict(modeldir, likes_dir_suffix = "", zscore = False):
+	""" top-level function called by ROC, find_opt """
+	regionlens = [25000, 50000, 75000, 100000] #should soft-code
+	thressholds = [25, 30, 35, 40, 45, 50]	
+	if zscore:
+		cutoffs = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+	else:
+		cutoffs = [10, 15, 20, 25, 30, 35, 40]
+	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
+	freq_classes = ['hi', 'highest', 'mid', 'lo']
+
+	allfpr = {}
+	alltpr = {}
+	for regionlen in regionlens:
+		for percentage in thressholds:
+			for cutoff in cutoffs:
+				allpops_fpr, allpops_tpr = [], []
+				for pop in pops:
+					for freq_class in freq_classes:
+						this_key = (regionlen, percentage, cutoff, pop, freq_class)
+						fprfile, tprfile = get_pr_filesnames(this_key, modeldir, likes_dir_suffix = likes_dir_suffix)
+						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
+							fpr = read_pr(fprfile)
+							tpr = read_pr(tprfile)
+							allfpr[this_key] = fpr
+							alltpr[this_key] = tpr
+							allpops_fpr.append(fpr)
+							allpops_tpr.append(tpr)
+						else:
+							print("missing " + tprfile + "\t" + fprfile)				
+					ave_fpr = np.average(allpops_fpr)
+					ave_tpr = np.average(allpops_tpr)
+					popave_key = (regionlen, percentage, cutoff, "ave")
+					allfpr[popave_key] = ave_fpr
+					alltpr[popave_key] = ave_tpr	
+	return allfpr, alltpr
 
 #################
 ## BOOKKEEPING ##

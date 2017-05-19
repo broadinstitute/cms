@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 03.04.2017 	vitti@broadinstitute.org
+// last updated: 04.14.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -298,10 +298,10 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 			else if (itoken == 4) {
 				data->ihh1[isnp] = atof(token);
 			}
-			else if (itoken == 5) {
+			else if (itoken == 5){//9) {
 				data->ihs_unnormed[isnp] = atof(token);
 			}			
-			else if (itoken == 6) {
+			else if (itoken == 6){//10) { //some confusion: https://github.com/szpiech/selscan
 				data->ihs_normed[isnp] = atof(token);
 			}
 			//else if (itoken == 7) {
@@ -587,7 +587,7 @@ float getMinBf(likes_data_multiple* data, int likesIndex){
 	for (ibin = 0; ibin < data->nbins; ibin++){
 		if(data->hit_probs[likesIndex][ibin] > 1e-10 && data->miss_probs[ibin] > 1e-10){
 			thisBf = data->hit_probs[likesIndex][ibin] / data->miss_probs[ibin];
-			if (thisBf < minBf){minBf = thisBf;}
+			if (thisBf < minBf && thisBf != 0){minBf = thisBf;}
 		}
 	}//end ibin
 	//fprintf(stderr, "found min bf: %f\n", minBf);	
@@ -1239,7 +1239,7 @@ float comparedelDaf_outgroup_ave(popComp_data_multiple* data, int isnp){//daf_th
 	int iComp, theseComp=0;
 	double 	thiscomp_deldaf, thiscomp_daf_sel, thiscomp_daf_altpop; //for each comp, retrieve altpop daf from datastructure
 	double ave_daf, alt_daf;
-	fprintf(stderr, "\n%d\n", data->physpos[0][isnp]);
+	//fprintf(stderr, "\n%d\n", data->physpos[0][isnp]);
 	alt_daf = 0;
 	for (iComp = 0; iComp < data->ncomp; iComp++){
 		if (data->delDAF[iComp][isnp] !=0){

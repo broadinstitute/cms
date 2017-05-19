@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 04.09.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 04.13.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from power.power_func import merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
 						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, normalize_local
 from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
-						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions
+						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions, load_power_dict
 from tempfile import TemporaryFile
 from xlwt import Workbook, easyxf #add to cms-venv (?)
 from pybedtools import BedTool 
@@ -42,14 +42,12 @@ def full_parser_power():
 		fpr_parser = subparsers.add_parser('fpr', help='calculate false positive rate for CMS_gw based on neutral simulations')
 		tpr_parser = subparsers.add_parser('tpr', help='calculate false positive rate for CMS_gw based on simulations with selection')
 		roc_parser = subparsers.add_parser('roc', help="calculate receiving operator characteristic curve given false and true positive rates")
-		roc_parser.add_argument('--plot_curve', action="store_true", default=False)
-		roc_parser.add_argument('--find_opt', action="store_true", default=False) #nix?
-		roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
+		#roc_parser.add_argument('--maxFPR', type=float, action="store", default=.001)
 		cdf_parser.add_argument('--selPos', type=int, action='store', default=750000, help="position of the causal allele in simulates")
 		find_cutoff_parser = subparsers.add_parser('find_cutoff', help="get best TPR for a given FPR and return threshhold cutoffs for region detection")
 		find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
-		find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
-		find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
+		#find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
+		#find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
 
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
@@ -61,9 +59,10 @@ def full_parser_power():
 		regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
 		regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
 		manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
-		manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
-		manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
-		manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
+		#manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
+		#manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
+		#manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
+		#	#manhattan_parser.add_argument('--runSuffix', help="string included to locate specific .cms files")
 		extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
 		extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
 		extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
@@ -74,25 +73,35 @@ def full_parser_power():
 	##################
 	## SHARED ARGS ###
 	##################
-	for write_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
+	for write_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser, find_cutoff_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
-		write_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+
+	for simpop_parser in [fpr_parser, tpr_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
+		simpop_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser]:
 		regions_parser.add_argument('regionlen', type = int, action='store', help='length of region to query', default="100000")
 		regions_parser.add_argument('thresshold', type = float, action='store', help='percentage of region to exceed cutoff', default="30")
 		regions_parser.add_argument('cutoff', type = float, action='store', help='minimum significant value for region definition', default="3.0")
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
+
 	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
-	for suffixed_parser in [fpr_parser, tpr_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
-		suffixed_parser.add_argument('--suffix', type= str, action='store', default='')
-	for plot_parser in [regionviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser]:
-		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="/web/personal/vitti/test.png")
+
+	for suffixed_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, find_cutoff_parser]:
+		suffixed_parser.add_argument('--suffix', type= str, action='store', default='', help='point to files saved with suffix to index a particular run (if included)')
+
+	for plot_parser in [regionviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser, roc_parser]:
+		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="test.png")
+
 	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
-		commonparser.add_argument('--model', type=str, default="nulldefault")
 		commonparser.add_argument('--nrep', type=int, default=1000)
+
+	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, roc_parser, find_cutoff_parser]:
+		commonparser.add_argument('--model', type=str, default="nulldefault")
+
 
 	return parser
 
@@ -164,12 +173,12 @@ def execute_distviz(args):
 
 	plot_dist(allvals, savefilename)
 	return
-def execute_manhattan(args):
+'''def execute_manhattan(args):
 	""" remove this? """
 	selpop = args.emppop
 	model = args.model
 	savename = args.savefilename
-	suffix = args.suffix
+	#suffix = args.runSuffix
 	basedir = args.writedir
 	#nRep = args.nrep
 	###############################
@@ -197,7 +206,9 @@ def execute_manhattan(args):
 	nSnps = 0
 	for chrom in range(1,23):
 		thesepos, thesescores = [], []
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
+
+		#get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a")
+		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, basedir=basedir, suffix=runSuffix)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -219,6 +230,7 @@ def execute_manhattan(args):
 	plt.savefig(savename)
 	print('saved to: ' + savename)
 	return
+'''
 def execute_extended_manhattan(args):
 	""" generate a genome-wide plot of CMS scores with option to hilight outlier regions """
 	plotscore = args.plotscore
@@ -232,7 +244,7 @@ def execute_extended_manhattan(args):
 	titlestring = args.titlestring
 
 	modelpops = {'YRI':1, 'GWD':1, 'LWK':1, 'MSL':1, 'ESN':1, 
-				'CEU':2, 'FIN':2, 'IBS':2, 'TSI':2, 'GBR':2,
+				'CEU':2, 'FIN':2, 'IBS':2, 'TSI':2, 'GBR':2, 'IRN':2,
 				'CHB':3, 'JPT':3, 'KHV':3, 'CDX':3, 'CHS':3, 
 				'BEB':4, 'STU':4, 'ITU':4, 'PJL':4, 'GIH':4}
 	pop = modelpops[selpop]
@@ -248,7 +260,7 @@ def execute_extended_manhattan(args):
 
 	all_emp_pos, all_emp_scores = [], []
 	for chrom in range(1,numChr +1):
-		emp_cms_filename = get_emp_cms_file(selpop, model, chrom, normed=True, suffix=suffix, basedir=basedir)
+		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, suffix=suffix, basedir=basedir)
 		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
 		if not os.path.isfile(emp_cms_filename):
 			print("missing: " + emp_cms_filename)
@@ -318,7 +330,7 @@ def execute_cdf(args):
 	reps = args.nrep
 	savefilename = args.savefilename
 	writedir = args.writedir
-	scenars = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	scenars = ['0.70', '0.80', '0.90']#'0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
 	causalPos = args.selPos
 	suffix = args.suffix
@@ -339,8 +351,8 @@ def execute_cdf(args):
 						#causal_ranks.append(causal_rank)
 						this_array = eval('causal_ranks_' + str(pop))
 						this_array.append(causal_rank)
-				#else:
-				#	print("missing; " + cmsfilename)
+				else:
+					print("missing; " + cmsfilename)
 	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")
 	print("for pop 2, loaded " + str(len(causal_ranks_2)) + " replicates.")
 	print("for pop 3, loaded " + str(len(causal_ranks_3)) + " replicates.")
@@ -470,137 +482,86 @@ def execute_tpr(args):
 			print('wrote to :  ' + str(writefilename))
 	return	
 def execute_roc(args):
-	''' from quick_roc.py '''
-	plot_roc = args.plot_curve
-	find_opt = args.find_opt
-	maxFPR = args.maxFPR
-	writedir = args.writedir
-
-	regionlens = [10000, 25000, 50000, 100000]
-	thressholds = [25, 30, 35, 40, 45, 50]
-	cutoffs = [2, 2.5, 3, 3.5, 4, 4.5, 5]
-	models = ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']#
-	pops = [1, 2, 3, 4]
-
-	###############
-	## LOAD DATA ##
-	###############
-	allfpr = {}
-	alltpr = {}
-	for regionlen in regionlens:
-		for percentage in thressholds:
-			for cutoff in cutoffs:
-				for model in models:
-					allpops_fpr, allpops_tpr = [], []
-					for pop in pops:
-						this_key = (regionlen, percentage, cutoff, model, pop)
-						fprfile, tprfile = get_pr_filesnames(this_key, writedir)
-						if os.path.isfile(fprfile) and os.path.isfile(tprfile) and os.path.getsize(fprfile) > 0 and os.path.getsize(tprfile) > 0:
-							fpr = read_pr(fprfile)
-							tpr = read_pr(tprfile)
-							allfpr[this_key] = fpr
-							alltpr[this_key] = tpr
-							allpops_fpr.append(fpr)
-							allpops_tpr.append(tpr)
-						else:
-							print("missing " + tprfile + "\t" + fprfile)
-					#assert len(allpops_fpr) == 4
-					ave_fpr = np.average(allpops_fpr)
-					#assert len(allpops_tpr) == 4
-					ave_tpr = np.average(allpops_tpr)
-
-					popave_key = (regionlen, percentage, cutoff, model, "ave")
-					allfpr[popave_key] = ave_fpr
-					alltpr[popave_key] = ave_tpr
+	''' plot receiver operating characteristic curve -- false positive rate vs. true positive rate '''
+	writedir = args.writedir 
+	likes_dir_suffix = args.suffix #e.g. _maf20
+	model = args.model 	
+	modeldir = writedir + model + "/"
+	#make selFreq toggleable? pass to get_pr_filenames
+	savefilename = args.savefilename
+	if "_z" in likes_dir_suffix:
+		zscore = True
+	else:
+		zscore = False
+	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix, zscore = zscore)
+	fpr_keys = allfpr.keys()
+	tpr_keys = alltpr.keys()
+	
+	regionlens = list(set([item[0] for item in fpr_keys]))
+	thressholds =list(set([item[1] for item in fpr_keys]))
+	cutoffs = list(set([item[2] for item in fpr_keys]))
+	freq_class = "hi"
 
 	###############
 	## PLOT DATA ##
 	###############
-	if plot_roc:
-		fig, ax = plt.subplots(1)
-		for model in models:
-			#need to plotfpr from dict
-			plotfpr, plottpr = [], []
-			for regionlen in regionlens:
-				for percentage in thressholds:
-					for cutoff in cutoffs:
-						this_key = (regionlen, percentage, cutoff, model, "ave")
+	fig, ax = plt.subplots(1)
+	colorDict = {'ave':'black', 1:'goldenrod', 2:'blue', 3:'green', 4:'purple'}
+	for plot_set in [1, 2, 3, 4, 'ave']:
+		plotfpr, plottpr = [], []
+		for regionlen in regionlens:
+			for percentage in thressholds:
+				for cutoff in cutoffs:
+					this_key = (regionlen, percentage, cutoff, plot_set, freq_class) #make this toggleable - might want to print per-pop #(regionlen, percentage, cutoff, pop, freq_class)
+					if this_key in fpr_keys and this_key in tpr_keys:
 						plotfpr.append(allfpr[this_key])
 						plottpr.append(alltpr[this_key])
+					else:
+						#print(this_key) #missing datapoint
+						pass
 
-			if (len(allfpr)) > 0:
-				#ax.scatter(plotfpr, plottpr, label=model)
-				plotfpr, plottpr = zip(*sorted(zip(plotfpr, plottpr)))
-				ax.plot(plotfpr, plottpr, label=model)
-
-		ax.set_xlabel('FPR')
-		ax.set_ylabel('TPR')
-		ax.set_xlim([0,.1])
-		ax.set_ylim([0,1])
-		savefilename = "/web/personal/vitti/roc/" +"compare_maf.png"#+ model + ".png"
-		plt.legend()
-		plt.savefig(savefilename)
-		print("plotted to " + savefilename)
-		plt.close()
+		if (len(plotfpr)) > 0:
+			plotfpr, plottpr = zip(*sorted(zip(plotfpr, plottpr)))
+			ax.scatter(plotfpr, plottpr, label=str(plot_set), color=colorDict[plot_set], s=.5)
 			
-	#####################
-	## COMPARE CUTOFFS ##
-	#####################
-	if find_opt: #nix this?
-		for model in models:
-			print(model)
-			for regionlen in regionlens:
-				for percentage in thressholds:
-					for cutoff in cutoffs:
-						avekey = (regionlen, percentage, cutoff, model, "ave")
-						#FPR passes thresshold. What's the best TPR we can get?
-						if allfpr[avekey] <= maxFPR:
-							print(avekey)
-							print(str(alltpr[avekey]))
-
-	
-
+	plt.suptitle('ROC for ' + model + " " + likes_dir_suffix)
+	ax.set_xlabel('FPR')
+	ax.set_ylabel('TPR')
+	ax.set_xlim([-.1,1])
+	ax.set_ylim([0,1])
+	plt.legend()
+	plt.savefig(savefilename)
+	plt.close()
+	print("plotted to " + savefilename)
 	return
-def execute_find_cutoff(args):
-	''' a little cleaner and simpler '''
-	minRegionLen = 10000 #
-
+def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
+	''' given FPR and TPR calculations, select an optimal significance cutoff subject to a specified criterion '''
+	writedir = args.writedir 
+	likes_dir_suffix = args.suffix #e.g. _maf20
+	model = args.model 	
+	modeldir = writedir + model + "/"
 	maxFPR = args.maxFPR
-	fpr_loc = args.fprloc
-	tpr_loc = args.tprloc 
-	################################
-	## LOAD WHATEVER DATA WE HAVE ##
-	################################
-	all_fpr, all_tpr = {}, {}
-	freq_classes = ['lo', 'mid', 'hi', 'highest']
-	fpr_files = os.listdir(fpr_loc)
-	tpr_files = os.listdir(tpr_loc)
-	for fprfile in fpr_files:
-		if "alt" not in fprfile:
-			fpr = read_pr(fpr_loc + fprfile)
-			entries = fprfile.split("_")
-			regionlen, thresshold, cutoff = int(entries[1]), int(entries[2]), int(entries[3])
-			fprkey = (regionlen, thresshold, cutoff)
-			all_fpr[fprkey] = fpr
-			if regionlen > minRegionLen:
-				for freq_class in freq_classes:
-					tprfile = tpr_loc + "tpr_" + str(regionlen) + "_" + str(thresshold) + "_" + str(cutoff) + "_" + str(freq_class)
-					if os.path.isfile(tprfile):			
-						tpr = read_pr(tprfile)
-						tprkey = (regionlen, thresshold, cutoff, freq_class)
-						all_tpr[tprkey] = tpr
+	if "_z" in likes_dir_suffix:
+		zscore = True
+	else:
+		zscore = False
+
 	#############################
 	## CHOOSE OPT MEETING CRIT ##
 	#############################
-	best_tpr, best_fpr = 0, 0
-	best_cutoff = 0
-	fpr_keys = all_fpr.keys()
-	tpr_keys = all_tpr.keys()
-	for freq_class in freq_classes:
-		print("Now finding optimal thresshold for " + freq_class + " with a maximum FPR of " + str(maxFPR))
-		for key in fpr_keys:
+	all_fpr, all_tpr = load_power_dict(modeldir,likes_dir_suffix, zscore = zscore)
+	for pop in [1, 2, 3, 4, "ave"]:
+		best_tpr, best_fpr = 0, 0
+		best_cutoff = 0
+		print("Now finding optimal with a maximum FPR of " + str(maxFPR) + " for pop " + str(pop) + " using demographic model: " + model)
+		fpr_keys = all_fpr.keys()
+		tpr_keys = all_tpr.keys()
+		thesekeys_fpr = [key for key in fpr_keys if pop in key]
+		thesekeys_tpr = [key for key in tpr_keys if pop in key]
+		for key in thesekeys_fpr:
 			if all_fpr[key] <= maxFPR:
-				tprkey = (key[0], key[1], key[2], freq_class)
+				#tprkey = (key[0], key[1], key[2], freq_class)
+				tprkey = key
 				if tprkey in tpr_keys:
 					tpr = all_tpr[tprkey]
 					if tpr > best_tpr:
@@ -609,7 +570,7 @@ def execute_find_cutoff(args):
 						best_fpr = all_fpr[key]
 		print(best_cutoff)
 		print("FPR: " + str(best_fpr))
-		print("TPR: " + str(best_tpr))
+		print("TPR: " + str(best_tpr) + "\n")
 	return
 
 ########	Apply significance cutoffs
@@ -632,7 +593,8 @@ def execute_gw_regions(args):
 	####################
 	for chrom in chroms:
 		chrom_signif = []
-		normedempfilename = get_emp_cms_file(pop, model, chrom, normed=True, suffix = suffix, basedir=basedir)
+		normedempfilename = get_emp_cms_file(pop, chrom, normed=True, suffix = suffix, basedir=basedir)
+
 		if not os.path.isfile(normedempfilename):
 			print("missing: " + normedempfilename)
 		else:
@@ -680,14 +642,17 @@ def execute_gw_regions(args):
 	return
 def execute_regionlog(args):
 	''' writes an excel file ''' #maybe, instead, pass an arbitrary number of regionfiles? and takepops?
-	stringency = args.stringency
-	model = args.model	
+	#stringency = args.stringency
+	#model = args.model	
 	regionfiles = []
 	pops = ['YRI', 'GWD', 'LWK', 'MSL', 'ESN', 'CEU', 'FIN', 'IBS', 'TSI', 'GBR', 'CHB', 'JPT', 'KHV', 'CDX', 'CHS', 'BEB', 'STU', 'ITU', 'PJL', 'GIH']
+	#pops = ['IRN']
 	takepops = []
 	for pop in pops: #too tired to soft-code rn
-		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
-		print(regionfilename)
+		#regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
+		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/regions_reeval/regions_042317/regions_042317_" + pop + ".txt_15_b"
+		#regionfilename = "/n/home08/jvitti/test_IRN_regions.txt"
+		#print(regionfilename)
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
 			takepops.append(pop)

@@ -197,7 +197,7 @@ def get_sim_compscore_files(pop, repNum, basedir):
 		check_files.extend([xpehh_normedfile, fstdeldaf_outfilename])
 	return check_files
 def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel_bin_index, startbound, endbound, foldDists = False):
-	''' '''
+	''' given a set of simulated score files, pulls the relevant scores for all SNPs '''
 	neut_files1 = [all_completed_neut[0][irep][scoreindex] for irep in range(len(all_completed_neut[0]))]
 	neut_files2 = [all_completed_neut[1][irep][scoreindex] for irep in range(len(all_completed_neut[1]))]
 	neut_files3 = [all_completed_neut[2][irep][scoreindex] for irep in range(len(all_completed_neut[2]))]

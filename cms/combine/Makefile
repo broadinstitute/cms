@@ -1,5 +1,5 @@
 ## leaf Makefile for cms2.0/combine
-## last updated 03.05.17 	vitti@broadinstitute.org
+## last updated 04.14.17 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
@@ -13,19 +13,13 @@ CCFLAG = -O0 -ggdb3 -lm -Wall
 ## DEFINE RULES ##
 ##################
 
-all : combine_scores combine_scores_outlikes write_xpehh_from_ihh combine_scores_local combine_scores_local_outlikes #install
+all : combine_scores write_xpehh_from_ihh combine_scores_local combine_scores_local_outlikes #install
 
 combine_scores.o : combine_scores.c
 	$(CC) -c combine_scores.c
 
 combine_scores : combine_scores.o cms_data.c cms_data.h
 	$(CC) $(CCFLAG) -o combine_scores combine_scores.o cms_data.c
-
-combine_scores_outlikes.o : combine_scores_outlikes.c
-	$(CC) -c combine_scores_outlikes.c
-
-combine_scores_outlikes : combine_scores_outlikes.o cms_data.c cms_data.h
-	$(CC) $(CCFLAG) -o combine_scores_outlikes combine_scores_outlikes.o cms_data.c
 
 combine_scores_local.o : combine_scores_local.c
 	$(CC) -c combine_scores_local.c
@@ -48,7 +42,7 @@ write_xpehh_from_ihh : write_xpehh_from_ihh.o cms_data.c pop_ihh_data.h  pop_ihh
 
 
 clean :
-	rm *.o && rm combine_scores && rm write_xpehh_from_ihh && rm combine_scores_outlikes && rm combine_scores_local && rm combine_scores_local_outlikes && rm -R *.dSYM/
+	rm *.o && rm combine_scores && rm write_xpehh_from_ihh && rm combine_scores_local && rm combine_scores_local_outlikes && rm -R *.dSYM/
 #install:
 #	cp combine_scores /usr/local/ && cp write_xpehh_from_ihh /usr/local
 
