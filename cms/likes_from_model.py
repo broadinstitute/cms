@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 04.25.2017 	vitti@broadinstitute.org
+## last updated: 06.06.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -143,7 +143,7 @@ def execute_run_neut_sim(args):
 	paramfilename = args.inputParamFile
 	dropSing = args.dropSings
 	cmd = cosibuild
-	argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons " + str(dropsSing) + " --tped " + outbase + " --output-gen-map"
+	argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons " + str(dropSing) + " --tped " + outbase + " --output-gen-map"
 	#print(cmd + " " + argstring)	
 	cosicreatefilename = outbase + "_0_1.tped"
 	cosi_movedfilename = outbase + "_1.tped"	
@@ -170,7 +170,7 @@ def execute_run_sel_sim(args):
 	paramfilename = args.inputParamFile
 	dropSing = args.dropSings	
 	cmd = "env COSI_NEWSIM=1 env COSI_LOAD_TRAJ=" + trajectory + " " + cosibuild 
-	argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons " + str(dropsSing) + " --tped " + outbase + " --output-gen-map"
+	argstring = "-p " + paramfilename + " --genmapRandomRegions --drop-singletons " + str(dropSing) + " --tped " + outbase + " --output-gen-map"
 	#print(cmd + " " + argstring)
 	cosicreatefilename = outbase + "_0_1.tped"
 	cosi_movedfilename = outbase + "_1.tped"

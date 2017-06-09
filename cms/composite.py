@@ -2,6 +2,9 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
 ## last updated: 04.25.2017 	vitti@broadinstitute.org #update docstrings
 
+#CHANGE TO _AMEND
+
+
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -295,7 +298,7 @@ def execute_composite_emp(args):
 		cmd += "combine/combine_scores" #genome-wide
 		chroms = range(1,23)
 	else:
-		cmd += "combine/combine_scores_local" #within-region
+		cmd += "combine/combine_scores_local_amend" #within-region
 		chroms = [args.regional_cms_chrom]
 
 	model = args.model
