@@ -33,11 +33,6 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 	return normalizedvalue
 '''
 def normalize_local(values, physpos): #called by regionviz - replace?
-	#mean = np.mean(values)
-	#var = np.var(values)
-	#stddev = var**.5
-	#normalized = [(item-mean)/stddev for item in values]
-	#print(values)
 
 	clean_vals, clean_phys = [], []
 	for i in range(len(values)):
@@ -47,13 +42,31 @@ def normalize_local(values, physpos): #called by regionviz - replace?
 			clean_vals.append(item)
 			clean_phys.append(phys)
 
+
+	####
+	#### NORMALIZE AS Z SCORE
+	####
+	#mean = np.mean(clean_vals)
+	#var = np.var(clean_vals)
+	#stddev = var**.5
+	#normalized = [(item-mean)/stddev for item in clean_vals]
+	#print(values[-1])
+	#print(normalized[-1])
+
+
+	print('this should be replaced by other normalize function.')
+	print('currently testing - 5.4.17')
+
+	####
+	#### NORMALIZE BY SCALING TO [0, 1]
+	####
 	maxVal, minVal = max(clean_vals), min(clean_vals)
 	normalized = [(unnormed - minVal)/maxVal for unnormed in clean_vals]
-	#print(normalized)
+	
 	#if len(normalized) !=len(clean_phys):
-	#print(str(len(normalized)))
-	#print(str(len(clean_phys)))
-	assert len(normalized) == len(clean_phys)
+	#	print(str(len(normalized)))
+	#	print(str(len(clean_phys)))
+	#assert len(normalized) == len(clean_phys)
 	return normalized, clean_phys
 ###############
 ## REGION ID ##
