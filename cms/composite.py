@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 04.25.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 06.12.2017 	vitti@broadinstitute.org #update docstrings
 
 #CHANGE TO _AMEND
-
 
 import matplotlib
 matplotlib.use('agg')
@@ -57,6 +56,7 @@ def full_parser_composite():
 	## CALCULATING COMPOSITE STATISTICS ##
 	######################################
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
+	composite_sims_parser.add_argument('--regional_cms', action="store_true", default=False, help="calculate within-region CMS rather than genome-wide CMS")
 	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
 	composite_emp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
 	composite_emp_parser.add_argument('--regional_cms_chrom', type=int, action="store", help="if included, calculate within-region CMS (rather than CMS_gw) for specified bounds at this chromosome")
@@ -106,6 +106,7 @@ def full_parser_composite():
 		composite_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
 		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0\t1", help='specify bounds to include/exclude in calculations, along with MAF filter and likes decomposition')
 		composite_parser.add_argument('--includeline', type=str, default="0\t0\t0\t0\t0\t0", help='specify (0:yes; 1:no) which scores to include: iHS,  ... ') #JV complete
+
 
 	for cms_parser in [composite_sims_parser, composite_emp_parser, normsims_parser, normemp_parser]:
 		cms_parser.add_argument('--writedir', type=str, default="", help="specify relative path") #ENFORCE CONSISTENCY - assumes e.g. model with sim scores live in this folder
@@ -178,7 +179,13 @@ def execute_composite_sims(args):
 		cmd = args.cmsdir 			#once conda packaging is complete
 	else:							#but for now, keep things smooth.
 		cmd = ""
-	cmd += "combine/combine_scores"
+
+	if args.regional_cms:
+		cmd += "combine/combine_scores_gw" #genome-wide
+	else:
+		cmd += "combine/combine_scores_local_amend" #within-region
+		chroms = [args.regional_cms_chrom]
+
 
 	model = args.model
 	selpop = args.simpop
@@ -295,7 +302,7 @@ def execute_composite_emp(args):
 		cmd = ""
 
 	if args.regional_cms_chrom is None:
-		cmd += "combine/combine_scores" #genome-wide
+		cmd += "combine/combine_scores_gw" #genome-wide
 		chroms = range(1,23)
 	else:
 		cmd += "combine/combine_scores_local_amend" #within-region

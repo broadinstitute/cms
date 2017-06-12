@@ -1,6 +1,7 @@
-// last updated 04.25.17: perform within-region CMS calculations as in CMS 1.0 		vitti@broadinstitute.org
-// CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss;  //NB! Miss = LINKED!!!
-// optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
+// 	last updated 06.12.2017: furnishes a composite scores as a summary statistic (product) of estimated posterior probability: p_hat(sel | score) as in CMS 1.0
+//	vitti@broadinstitute.org
+// 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss;  //NB! Miss = LINKED!!!
+// 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh //minPos maxPos essential for determining nSNP -> prior.
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -174,11 +175,14 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
+	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLike_CMS");
 	if (writeLikes == 0){
 		strcpy(outfilename_likes, argv[1]);
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
+		fprintf2(outf, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLike_CMS");
+
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
