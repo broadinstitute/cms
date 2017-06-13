@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 03.04.17 	vitti@broadinstitute.org
+// last updated: 06.12.2017 	vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -98,6 +98,7 @@ float getMinProb(likes_data_multiple* data,  int likesIndex, double prior);
 /***TWO-POP COMPARISON***/
 /*************************/
 int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
+int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 typedef struct popComp_data{
     int nsnps;
     char **locus_id;
@@ -112,6 +113,7 @@ typedef struct popComp_data{
     double *nsl_normed;
 } popComp_data;
 void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
+void get_all_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 void free_popComp_data(popComp_data* data);
 void get_popComp_data_region(popComp_data* data, char infilename[], int startBp, int endBp);
 
@@ -133,8 +135,9 @@ typedef struct popComp_data_multiple{
     double **nsl_normed;
 } popComp_data_multiple;
 void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
-void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
-void free_popComp_data_multiple(popComp_data_multiple* data);
+void get_popComp_data_multiple_only_indClean(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
+//void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
+//void free_popComp_data_multiple(popComp_data_multiple* data);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);

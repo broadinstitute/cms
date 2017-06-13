@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 06.12.2017 	vitti@broadinstitute.org
+## last updated: 06.13.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -508,7 +508,7 @@ def execute_likes_from_scores(args):
 			##########
 			## PLOT ##
 			##########
-			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score, args.foldDist)
 			plot_title = "PDF for " + score + ", sel_" + str(chunkstring)
 			output_dir = ""
 			if args.save_dir is not None:
@@ -574,7 +574,7 @@ def execute_likes_from_scores(args):
 			##########
 			## PLOT ##
 			##########
-			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score)
+			minVal, maxVal, nProbBins, annotate = get_plot_pdf_params(score, args.foldDist)
 			output_dir = ""
 			if args.save_dir is not None:
 				output_dir = args.save_dir + model + "_"
@@ -656,24 +656,22 @@ def execute_write_master_likes(args):
 	###############################
 	## CMS_GW : FOLDED, VS. NEUT ##
 	################## #############
+	"""
 	neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename = get_likes_filenames(basedir, model, score, pop, like_savestring = score_gw_like_savestring)
 	likesFreqs_master_writefilename_global = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_likesFreqs.master.txt"
 	allFreqs_master_writefilename_global = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsNeut_allFreqs.master.txt"
 	write_master_likesfile(likesFreqs_master_writefilename_global, neut_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
 	write_master_likesfile(allFreqs_master_writefilename_global, neut_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
-
+	"""
+	print('skipping gw for now')
 	######################################
 	## CMS_LOCAL : UNFOLDED, VS. LINKED ##
 	######################################
-	'''
-	score_local_like_savestring = like_savestring
 	neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename = get_likes_filenames(basedir, model, score, pop, like_savestring = score_local_like_savestring)
 	likesFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_likesFreqs.master.txt"
 	allFreqs_master_writefilename_local = writeloc + model + "_" + score + "_sel" + str(pop) + "_vsLinked_allFreqs.master.txt"
 	write_master_likesfile(likesFreqs_master_writefilename_local, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename)
 	write_master_likesfile(allFreqs_master_writefilename_local, linked_filename, hit_allfreqs_filename, hit_allfreqs_filename, hit_allfreqs_filename)
-	'''
-	print('skipping local likes for now')
 	return 
 
 ##########

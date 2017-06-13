@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	//char takeScoreString[6];
 
 	if (argc <= 3) {
-		fprintf(stderr, "Usage: ./combine_scores <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
+		fprintf(stderr, "Usage: ./combine_scores_gw <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
 		exit(0);
 	}
 	nComparisons = argc - 3;
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
-		fprintf2(outf, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS");	
+		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS");	
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////

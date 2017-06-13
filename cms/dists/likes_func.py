@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 06.12.2017 vitti@broadinstitute.org
+## last updated: 06.13.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -9,10 +9,13 @@ import os
 ######################################
 ## GENERATE LIKELIHOODS FROM SCORES ##
 ######################################
-def get_plot_pdf_params(score):
+def get_plot_pdf_params(score, foldDist = False):
 	''' defines likelihood score ranges etc. '''
 	if score == "ihs":
-		scorerange = [0,5.] #folding for region-detection: the ancestral allele at this SNP may tag a nearby causal derived variant, so polarity isn't useful to us #[-6., 6.]
+		if foldDist:
+			scorerange = [0,5.] #folding for region-detection: the ancestral allele at this SNP may tag a nearby causal derived variant, so polarity isn't useful to us 
+		else:
+			scorerange = [-6., 6.]
 	elif score == "delihh":
 		scorerange = [-3., 5.]
 	elif score == "fst":
@@ -22,7 +25,10 @@ def get_plot_pdf_params(score):
 	elif score == "xp" or score =="xpehh":
 		scorerange = [-3., 6.]
 	elif score=="nsl":
-		scorerange = [0,3.]#[-5., 5.]
+		if foldDist:
+			scorerange = [0,3.]
+		else:
+			scorerange = [-4., 4.]
 	minVal, maxVal = scorerange
 	nProbBins = 60 
 	annotate = False
@@ -263,27 +269,27 @@ def get_likes_savestrings(score, basedir):
 	#hiCausalScores = ['xpehh', 'nsl']
 	if score == 'ihs':
 		score_gw_like_savestring = "pride_folded_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride"
 
 	elif score == "xpehh":
 		score_gw_like_savestring = "pride_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride_full"
 
 	elif score == "delihh":
 		score_gw_like_savestring = "pride_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride_full"
 
 	elif score == "deldaf":
 		print('FIX DELDAF FOLD')
 		score_gw_like_savestring = "pride_folded_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride_folded_full"
 
 	elif score == "fst":
 		score_gw_like_savestring = "pride_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride_full"
 
 	elif score == "nsl":
 		score_gw_like_savestring = "pride_folded_full"
-		score_local_like_savestring = ""
+		score_local_like_savestring = "pride"
 
 	return score_gw_like_savestring, score_local_like_savestring

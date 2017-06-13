@@ -2,8 +2,6 @@
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
 ## last updated: 06.12.2017 	vitti@broadinstitute.org #update docstrings
 
-#CHANGE TO _AMEND
-
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -106,7 +104,7 @@ def full_parser_composite():
 		composite_parser.add_argument('--likes_freqSuffix', type=str, default="allFreqs", help='for causal SNPs, include suffix to specify which selbins to include')
 		composite_parser.add_argument('--cutoffline', type=str, default="250000\t1250000\t0\t1", help='specify bounds to include/exclude in calculations, along with MAF filter and likes decomposition')
 		composite_parser.add_argument('--includeline', type=str, default="0\t0\t0\t0\t0\t0", help='specify (0:yes; 1:no) which scores to include: iHS,  ... ') #JV complete
-
+		composite_parser.add_argument('--amend', action="store_true", default=False, help='if included, use S.Gosai correction to S.Grossman calculation to estimate posterior probability of selection given component scores') #JV complete
 
 	for cms_parser in [composite_sims_parser, composite_emp_parser, normsims_parser, normemp_parser]:
 		cms_parser.add_argument('--writedir', type=str, default="", help="specify relative path") #ENFORCE CONSISTENCY - assumes e.g. model with sim scores live in this folder
@@ -182,10 +180,13 @@ def execute_composite_sims(args):
 
 	if args.regional_cms:
 		cmd += "combine/combine_scores_gw" #genome-wide
-	else:
+		file_ending = ".cms.gw.out"
+	elif args.amend:
 		cmd += "combine/combine_scores_local_amend" #within-region
-		chroms = [args.regional_cms_chrom]
-
+		file_ending = ".cms.local_amend.out" #MAKE THIS TOGGLE?
+	else:
+		cmd += "combine/combine_scores_local" #within-region
+		file_ending = ".cms.local.out" #MAKE THIS TOGGLE?
 
 	model = args.model
 	selpop = args.simpop
@@ -239,7 +240,7 @@ def execute_composite_sims(args):
 					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 					altpairs.append(pairfilename)
 			if len(altpairs) !=0:
-				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
 				alreadyExists = False
 				if args.checkOverwrite:
 					if not os.path.isfile(outfile): #check for overwrite
@@ -271,7 +272,7 @@ def execute_composite_sims(args):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 				altpairs.append(pairfilename)
 		if len(altpairs) !=0:
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + ".cms.out" + suffix
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite
@@ -304,9 +305,15 @@ def execute_composite_emp(args):
 	if args.regional_cms_chrom is None:
 		cmd += "combine/combine_scores_gw" #genome-wide
 		chroms = range(1,23)
-	else:
+		file_ending = ".cms.gw.out"
+	elif args.amend == True:
 		cmd += "combine/combine_scores_local_amend" #within-region
 		chroms = [args.regional_cms_chrom]
+		file_ending = ".cms.local_amend.out"
+	else:
+		cmd += "combine/combine_scores_local" #within-region
+		chroms = [args.regional_cms_chrom]
+		file_ending = ".cms.local.out"
 
 	model = args.model
 	modelPop = args.simpop
@@ -369,7 +376,7 @@ def execute_composite_emp(args):
 			outfile = score_basedir + "composite/"
 			if args.regional_cms_chrom is not None:
 				outfile += "regional/"
-			outfile += "chr" + str(chrom) + "_" + str(emp_selpop) + ".cms.out" + suffix
+			outfile += "chr" + str(chrom) + "_" + str(emp_selpop) + file_ending + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
 				if not os.path.isfile(outfile): #check for overwrite

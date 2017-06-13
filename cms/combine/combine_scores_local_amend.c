@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	//fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
+	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -127,6 +127,9 @@ int main(int argc, char **argv) {
 			if (thisPos <= minPos){istart=isnp;}
 			if (thisPos >= maxPos){iend=isnp; break;}
 		}
+		fprintf(stderr, "not enforcing gendist");
+
+		/*
 		gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
 		fprintf(stderr,"starting gendist: %f\n", gendist);
 		while(gendist < minGenLen){
@@ -134,12 +137,14 @@ int main(int argc, char **argv) {
 			iend+=1;
 			gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
 		}	
+		*/
 		minPos = score_data.physpos[0][istart];
 		maxPos = score_data.physpos[0][iend];
 		fprintf(stderr," %d\t%d\n", minPos, maxPos);
-		fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
+		//fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	nsnps_regional = 0;
+	fprintf(stderr, "beginning snp train...")
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -173,7 +178,7 @@ int main(int argc, char **argv) {
 	// ITERATE OVER SNPS ///
 	////////////////////////
 	strcpy(outfilename, argv[1]);
-	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
+	fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLike_CMS");

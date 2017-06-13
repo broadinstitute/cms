@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
-		fprintf2(outf, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLike_CMS");
+		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLike_CMS");
 
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
