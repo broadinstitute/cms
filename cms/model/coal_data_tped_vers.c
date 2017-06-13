@@ -1,4 +1,4 @@
-// last updated 1.25.17	vitti@broadinstitute.org 
+// last updated 06.13.17	vitti@broadinstitute.org 
 
 #include <stdio.h>
 #include <string.h>
@@ -121,7 +121,6 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	data->genloc = NULL;
 
 	//fprintf(stderr, "Getting information from file: %s\n", tpedfilename);
-
 	//handle zipped?
 
 	// Count number of SNPs in tped
@@ -141,8 +140,8 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	}
 	data->nsample = ik-3;
 	fclose(inf);
-	fprintf(stderr, "nSNP: %d\n", data->nsnp);
-	fprintf(stderr, "nSample: %d\n", data->nsample);
+	//fprintf(stderr, "nSNP: %d\n", data->nsnp);
+	//fprintf(stderr, "nSample: %d\n", data->nsample);
 		
 	// Count number of lines in recombination file
 	inf = fopen(recomfilename, "r"); assert(inf != NULL);
@@ -225,10 +224,10 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	iRecom = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, "\t")) != NULL; itoken++) {
-			if (itoken == 1) {
+			if (itoken == 0) {
 				data->physPos[iRecom] = atoi(token);
 			}
-			else if (itoken == 2) {
+			else if (itoken == 1) {
 					genrate = atof(token);
 				data->genPos[iRecom] = (genrate / 1000000.); //per Mb rate
 				iRecom++;
@@ -240,6 +239,7 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	free(newLine);
 } // end function
 
+/*
 void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recomfilename[]) {
 	const int line_size = 999999999; // upper limit
 	const int numRecomLines = 500000;
@@ -250,10 +250,10 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	//FILE *inf=NULL;
 	gzFile *inf=NULL;
 
-	/**************************
-	INITIALIZATION, ALLOCATION,
-	COUNTING nsample nsnp nrecom
-	**************************/	
+	//
+	//INITIALIZATION, ALLOCATION,
+	//COUNTING nsample nsnp nrecom
+	//	
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
 	data->nsample = 0;
@@ -328,9 +328,9 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	data->genPos = malloc(numRecomLines * sizeof(double)); assert(data->genPos !=NULL);
 	data->physPos = malloc(numRecomLines * sizeof(int)); assert(data->physPos != NULL);
 
-	/*******************
-	GET DATA FROM TPED
-	*******************/
+	///
+	//GET DATA FROM TPED
+	///
 	//handle zipped
 	inf = gzopen(tpedfilename, "rb");
 	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
@@ -362,9 +362,9 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	} //END while(fgets(newLine))
 	gzclose(inf);
 
-	/**************************
-	GET DATA FROM RECOMB FILE
-	**************************/
+	///
+	///GET DATA FROM RECOMB FILE
+	////
 	inf = fopen(recomfilename, "r");
 	if (inf == NULL) {fprintf(stderr, "Missing recombination file: %s\n", recomfilename);}
 	assert(inf != NULL);
@@ -386,7 +386,7 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	fclose(inf);
 	free(newLine);
 } // end function
-
+*/
 void free_coal_data(coal_data* data) {
 	int isamp, isnp;
 	if (data == NULL) {return;}
