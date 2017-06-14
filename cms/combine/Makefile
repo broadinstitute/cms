@@ -1,5 +1,5 @@
 ## leaf Makefile for cms2.0/combine
-## last updated 06.12.17 	vitti@broadinstitute.org
+## last updated 06.14.17 	vitti@broadinstitute.org
 
 ######################
 ## DEFINE VARIABLES ##
@@ -40,7 +40,7 @@ write_xpehh_from_ihh : write_xpehh_from_ihh.o cms_data.c pop_ihh_data.h  pop_ihh
 
 
 clean :
-	rm *.o && rm combine_scores_local && rm combine_scores_local_amend && rm combine_scores_gw && rm write_xpehh_from_ihh && rm -R *.dSYM/
+	rm *.o && rm combine_scores_local && rm combine_scores_local_amend && rm combine_scores_gw && rm write_xpehh_from_ihh #&& rm -R *.dSYM/
 #install:
 #	cp combine_scores /usr/local/ && cp write_xpehh_from_ihh /usr/local
 

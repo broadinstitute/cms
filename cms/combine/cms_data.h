@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 06.12.2017 	vitti@broadinstitute.org
+// last updated: 06.14.2017 	vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -58,14 +58,15 @@ typedef struct nsl_data {
 void get_nsl_data(nsl_data* data, char filename[]);
 void free_nsl_data(nsl_data* data);
 
-typedef struct fst_deldaf_data {
+typedef struct freqs_data {
     int nsnps;
     int *pos; 
     double *fst;
     double *deldaf;
-} fst_deldaf_data;
-void get_fst_deldaf_data(fst_deldaf_data* data, char filename[]);
-void free_fst_deldaf_data(fst_deldaf_data* data);
+    double *genpos;
+} freqs_data;
+void get_freqs_data(freqs_data* data, char filename[]);
+void free_freqs_data(freqs_data* data);
 
 /*************************/
 /***SCORE LIKELIHOODS***/
@@ -99,7 +100,7 @@ float getMinProb(likes_data_multiple* data,  int likesIndex, double prior);
 /*************************/
 int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
 int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
-typedef struct popComp_data{
+typedef struct popPair_data{
     int nsnps;
     char **locus_id;
     int *physpos;
@@ -111,11 +112,11 @@ typedef struct popComp_data{
     double *ihs_normed;
     double *delihh_normed;
     double *nsl_normed;
-} popComp_data;
-void get_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
-void get_all_popComp_data(popComp_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
-void free_popComp_data(popComp_data* data);
-void get_popComp_data_region(popComp_data* data, char infilename[], int startBp, int endBp);
+} popPair_data;
+void get_popPair_completeData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
+void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]); 
+void free_popPair_data(popPair_data* data);
+void get_popPair_data_region(popPair_data* data, char infilename[], int startBp, int endBp);
 
 /**************************/
 /***MULTIPOP COMPARISON****/
@@ -134,14 +135,11 @@ typedef struct popComp_data_multiple{
     double **delihh_normed;
     double **nsl_normed;
 } popComp_data_multiple;
-void get_popComp_data_multiple(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
-void get_popComp_data_multiple_only_indClean(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
-//void get_popComp_data_multiple_region(popComp_data_multiple* data, int argc, char *argv[]);
-//void free_popComp_data_multiple(popComp_data_multiple* data);
+void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
+void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);
-
 float compareFst_PBS(popComp_data_multiple* data, int isnp);
 float comparedelDaf_outgroup_ave(popComp_data_multiple* data, int isnp);
 float get_T(double fst);

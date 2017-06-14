@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 
+##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 	06.13: update to freqs from fst_deldaf
 
 import matplotlib as mp 
 mp.use('agg')
@@ -68,7 +68,7 @@ def get_sim_component_score_files(model, irep, pop, altpop, selbin = "neut", fil
 	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
 	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
 	in_xp_file = basedir + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-	in_fst_deldaf_file = basedir + "fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+	in_fst_deldaf_file = basedir + "freqs/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
 	if normed:
 		in_ihs_file += ".norm" 
 		in_nsl_file += ".norm"

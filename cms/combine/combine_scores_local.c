@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
 	//////////////////
 	// LOAD SCORES ///
 	//////////////////
-	fprintf(stderr, "Preparing to load component scores...\n");
-	get_popComp_data_multiple(&score_data, nComparisons, argc, argv); 
+	fprintf(stderr, "\nPreparing to load component scores...\n");
+	get_popComp_anyData(&score_data, nComparisons, argc, argv); 
 	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 	//for (isnp = 0; isnp < score_data.nsnps; isnp++ ){fprintf(stderr, "%f\t", score_data.ihs_normed[1][isnp]);} // DEBUG
 
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 	// LOAD SCORE LIKELIHOODS (DEM MODEL) //
 	// AND OTHER RUN PARAMETERS ////////////
 	////////////////////////////////////////
-	fprintf(stderr, "Preparing to load score likelihoods...\n");
+	fprintf(stderr, "Preparing to load score likelihoods and composite parameters...\n");
 	sprintf(cms_param_filename, "%s", argv[2]);
 	inf = fopen(cms_param_filename, "r"); 
 	fgets(ihs_master_likesfilename, line_size, inf);
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	//fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
+	fprintf(stderr, "\tloaded parameters: minPos %d maxPos %d minDaf %f minGenLen %f\n", minPos, maxPos, minDaf, minGenLen);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -125,18 +125,18 @@ int main(int argc, char **argv) {
 			thisPos = score_data.physpos[0][isnp];
 			if (thisPos <= minPos){istart=isnp;}
 			if (thisPos >= maxPos){iend=isnp; break;}
-		}
+		} // end isnp loop
 		gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
-		fprintf(stderr,"starting gendist: %f\n", gendist);
+		fprintf(stderr,"Defined region with starting gendist: %f\n", gendist);
 		while(gendist < minGenLen){
 			istart-=1;  //move out one SNP on each end
 			iend+=1;
 			gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
-		}	
+		}	// end while gendist
 		minPos = score_data.physpos[0][istart];
 		maxPos = score_data.physpos[0][iend];
-		fprintf(stderr," %d\t%d\n", minPos, maxPos);
-		fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
+		//fprintf(stderr," %d\t%d\n", minPos, maxPos);
+		fprintf(stderr, "\tadjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	nsnps_regional = 0;
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);
-	fprintf(stderr, "Wrote to %s\n", outfilename);
+	fprintf(stderr, "\nWrote to %s\n", outfilename);
 	free_popComp_data_multiple(&score_data);
 	free_likes_data_multiple(&ihs_likes_data);
 	free_likes_data_multiple(&nsl_likes_data);

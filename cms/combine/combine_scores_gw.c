@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
 	//////////////////
 	// LOAD SCORES ///
 	//////////////////
-	fprintf(stderr, "Preparing to load component scores...\n");
-	get_popComp_data_multiple(&score_data, nComparisons, argc, argv); 
+	fprintf(stderr, "\nPreparing to load component scores...\n");
+	get_popComp_completeData(&score_data, nComparisons, argc, argv); 
 	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 	//for (isnp = 0; isnp < score_data.nsnps; isnp++ ){fprintf(stderr, "%f\t", score_data.ihs_normed[1][isnp]);} // DEBUG
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 	// LOAD SCORE LIKELIHOODS (DEM MODEL) //
 	// AND OTHER RUN PARAMETERS ////////////
 	////////////////////////////////////////
-	fprintf(stderr, "Preparing to load score likelihoods...\n");
+	fprintf(stderr, "Preparing to load score likelihoods and composite parameters...\n");
 	sprintf(cms_param_filename, "%s", argv[2]);
 	inf = fopen(cms_param_filename, "r"); 
 	fgets(ihs_master_likesfilename, line_size, inf);
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f\n", minPos, maxPos, minDaf);		
+	fprintf(stderr, "\tloaded parameters: minPos %d maxPos %d minDaf %f\n", minPos, maxPos, minDaf);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);
-	fprintf(stderr, "Wrote CMS scores to %s\n", outfilename);
+	fprintf(stderr, "\nWrote CMS scores to %s\n", outfilename);
 	if (writeLikes == 0){fprintf(stderr, "Wrote score decomposition to %s\n", outfilename_likes);}
 	free_popComp_data_multiple(&score_data);
 	free_likes_data_multiple(&ihs_likes_data);
