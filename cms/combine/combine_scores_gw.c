@@ -1,6 +1,7 @@
-// last updated 4.14.2017: new top-level program for compositing 		vitti@broadinstitute.org
-// CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
-// optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
+// 	last updated 06.12.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
+//	vitti@broadinstitute.org
+// 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
+// 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -35,14 +36,12 @@ int main(int argc, char **argv) {
 	double thisihs, thisihh, thisnsl; // per-pop
 	double thisfst, thisxpehh, thisdelDaf, thisdaf;
 	double compLikeRatio, minDaf;
-	//int ibin;  //for debug
 	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
-	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
-	int writeLikes;
-	//char takeScoreString[6];
-
+	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf, writeLikes; //Bools as above
+	//int ibin;  //for debug
+	
 	if (argc <= 3) {
-		fprintf(stderr, "Usage: ./combine_scores <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
+		fprintf(stderr, "Usage: ./combine_scores_gw <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
 		exit(0);
 	}
 	nComparisons = argc - 3;
@@ -50,8 +49,8 @@ int main(int argc, char **argv) {
 	//////////////////
 	// LOAD SCORES ///
 	//////////////////
-	fprintf(stderr, "Preparing to load component scores...\n");
-	get_popComp_data_multiple(&score_data, nComparisons, argc, argv); 
+	fprintf(stderr, "\nPreparing to load component scores...\n");
+	get_popComp_completeData(&score_data, nComparisons, argc, argv); 
 	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 	//for (isnp = 0; isnp < score_data.nsnps; isnp++ ){fprintf(stderr, "%f\t", score_data.ihs_normed[1][isnp]);} // DEBUG
 
@@ -59,7 +58,7 @@ int main(int argc, char **argv) {
 	// LOAD SCORE LIKELIHOODS (DEM MODEL) //
 	// AND OTHER RUN PARAMETERS ////////////
 	////////////////////////////////////////
-	fprintf(stderr, "Preparing to load score likelihoods...\n");
+	fprintf(stderr, "Preparing to load score likelihoods and composite parameters...\n");
 	sprintf(cms_param_filename, "%s", argv[2]);
 	inf = fopen(cms_param_filename, "r"); 
 	fgets(ihs_master_likesfilename, line_size, inf);
@@ -99,7 +98,7 @@ int main(int argc, char **argv) {
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
-	fprintf(stderr, "loaded parameters: minPos %d maxPos %d minDaf %f\n", minPos, maxPos, minDaf);		
+	fprintf(stderr, "\tloaded parameters: minPos %d maxPos %d minDaf %f\n", minPos, maxPos, minDaf);		
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
@@ -115,11 +114,14 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
+	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLikeRatio_CMS\n");
+
 	if (writeLikes == 0){
 		strcpy(outfilename_likes, argv[1]);
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
+		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS\n");	
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
@@ -137,7 +139,7 @@ int main(int argc, char **argv) {
 		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);
 		if (thisihs < 0){thisihs*=-1.;}				//ABS VAL
 		if (thisnsl < 0){thisnsl*=-1.;} 			//ABS VAL				
-		if (thisdelDaf < 0){thisdelDaf*=-1.;} 		//ABS VAL -- FOLDED LIKELIHOOD DIST FOR CMS_GW
+		//if (thisdelDaf < 0){thisdelDaf*=-1.;fprintf(stderr,"\n\n ABS VAL DEL DAF FOR GW. are you sure about this??\n\n")} 		//ABS VAL -- FOLDED LIKELIHOOD DIST FOR CMS_GW
 		
 		proceed = 0;
 		//check position
@@ -187,36 +189,34 @@ int main(int argc, char **argv) {
 			xpehh_maxbf = getMaxBf(&xpehh_likes_data, likesFreqIndex);			
 			
 			///////////////////////////////////////////////////////
-			//catch pseudocounts per SG/IS CMS 1.0 implementation// make this toggleable as well?
+			//catch pseudocounts per SG/IS CMS 1.0 implementation// 
 			///////////////////////////////////////////////////////
-			delihh_bf = 0;
+			delihh_bf = 1;
 			if (delihh_missprob > 2e-10 && delihh_hitprob > 2e-10){delihh_bf = delihh_hitprob / delihh_missprob;}
 			if (delihh_missprob < 2e-10 && delihh_hitprob > 2e-10){delihh_bf = delihh_maxbf;}
 			if (delihh_hitprob < 2e-10 && delihh_missprob > 2e-10){delihh_bf = delihh_minbf;}
-			if (delihh_hitprob < 2e-10 && delihh_missprob < 2e-10){delihh_bf = 1;} // no data
-			//HMM, SHOULD THIS EVEN HAPPEN THOUGH?? IT SHOULD GET BINNED...
 
-			nsl_bf = 0;
+			nsl_bf = 1;
 			if (nsl_missprob > 2e-10 && nsl_hitprob > 2e-10){nsl_bf = nsl_hitprob / nsl_missprob;}
 			if (nsl_missprob < 2e-10 && nsl_hitprob > 2e-10){nsl_bf = nsl_maxbf;}
 			if (nsl_hitprob < 2e-10 && nsl_missprob > 2e-10){nsl_bf = nsl_minbf;}
 
-			ihs_bf = 0;
+			ihs_bf = 1;
 			if (ihs_missprob > 2e-10 && ihs_hitprob > 2e-10){ihs_bf = ihs_hitprob / ihs_missprob;}
 			if (ihs_missprob < 2e-10 && ihs_hitprob > 2e-10){ihs_bf = ihs_maxbf;}
 			if (ihs_hitprob < 2e-10 && ihs_missprob > 2e-10){ihs_bf = ihs_minbf;}
 
-			fst_bf = 0;
+			fst_bf = 1;
 			if (fst_missprob > 2e-10 && fst_hitprob > 2e-10){fst_bf = fst_hitprob / fst_missprob;}
 			if (fst_missprob < 2e-10 && fst_hitprob > 2e-10){fst_bf = fst_maxbf;}
 			if (fst_hitprob < 2e-10 && fst_missprob > 2e-10){fst_bf = fst_minbf;}
 
-			deldaf_bf = 0;
+			deldaf_bf = 1;
 			if (deldaf_missprob > 2e-10 && deldaf_hitprob > 2e-10){deldaf_bf = deldaf_hitprob / deldaf_missprob;}
 			if (deldaf_missprob < 2e-10 && deldaf_hitprob > 2e-10){deldaf_bf = deldaf_maxbf;}
 			if (deldaf_hitprob < 2e-10 && deldaf_missprob > 2e-10){deldaf_bf = deldaf_minbf;}
 			
-			xpehh_bf = 0;
+			xpehh_bf = 1;
 			if (xpehh_missprob > 2e-10 && xpehh_hitprob > 2e-10){xpehh_bf = xpehh_hitprob / xpehh_missprob;}			
 			if (xpehh_missprob < 2e-10 && xpehh_hitprob > 2e-10){xpehh_bf = xpehh_maxbf;}
 			if (xpehh_hitprob < 2e-10 && xpehh_missprob > 2e-10){xpehh_bf = xpehh_minbf;}
@@ -235,8 +235,8 @@ int main(int argc, char **argv) {
 			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
 			if (writeLikes == 0){fprintf(outf2, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, ihs_bf, delihh_bf, nsl_bf, xpehh_bf, fst_bf, deldaf_bf, compLikeRatio);} //end if write likes
 		
-			/*
 			//DEBUG 
+			/*
 			fprintf(stderr, "ihs %f\t hit %e\tmiss %e\tbf %e\n", thisihs, ihs_hitprob, ihs_missprob, ihs_bf); //debug
 			fprintf(stderr, "delihh %f\t hit %e\tmiss %e\tbf %e\n", thisihh, delihh_hitprob, delihh_missprob, delihh_bf); //debug
 			fprintf(stderr, "fst %f\t hit %e\tmiss %e\tbf %e\n", thisfst, fst_hitprob, fst_missprob, fst_bf); //debug
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);
-	fprintf(stderr, "Wrote CMS scores to %s\n", outfilename);
+	fprintf(stderr, "\nWrote CMS scores to %s\n", outfilename);
 	if (writeLikes == 0){fprintf(stderr, "Wrote score decomposition to %s\n", outfilename_likes);}
 	free_popComp_data_multiple(&score_data);
 	free_likes_data_multiple(&ihs_likes_data);
