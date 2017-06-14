@@ -116,14 +116,14 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
-	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLikeRatio_CMS");
+	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLikeRatio_CMS\n");
 
 	if (writeLikes == 0){
 		strcpy(outfilename_likes, argv[1]);
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
-		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS");	
+		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_deliHH\tlike_nsl\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS\n");	
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////

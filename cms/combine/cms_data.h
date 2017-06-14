@@ -61,6 +61,7 @@ void free_nsl_data(nsl_data* data);
 typedef struct freqs_data {
     int nsnps;
     int *pos; 
+    double *popdaf;
     double *fst;
     double *deldaf;
     double *genpos;
