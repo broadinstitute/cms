@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 06.13.2017 vitti@broadinstitute.org
+## last updated: 06.14.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -280,9 +280,8 @@ def get_likes_savestrings(score, basedir):
 		score_local_like_savestring = "pride_full"
 
 	elif score == "deldaf":
-		print('FIX DELDAF FOLD')
-		score_gw_like_savestring = "pride_folded_full"
-		score_local_like_savestring = "pride_folded_full"
+		score_gw_like_savestring = "pride_full"
+		score_local_like_savestring = "pride_full"
 
 	elif score == "fst":
 		score_gw_like_savestring = "pride_full"

@@ -1,4 +1,4 @@
-// 	last updated 06.12.2017: implementing change to within-region CMS 1.0 calculations per S. Gosai suggestion
+// 	last updated 06.14.2017: implementing change to within-region CMS 1.0 calculations per S. Gosai suggestion
 //	vitti@broadinstitute.org
 // 		gcc -O0 -ggdb3 -lm -Wall -o combine_scores_local_amend combine_scores_local_amend.c cms_data.c
 
@@ -25,27 +25,21 @@ int main(int argc, char **argv) {
 	char cms_param_filename[528], paramline[528], outfilename[256], outfilename_likes[256];
 	char ihs_master_likesfilename[256], nsl_master_likesfilename[256], delihh_master_likesfilename[256];
     char xpehh_master_likesfilename[256], fst_master_likesfilename[256], deldaf_master_likesfilename[256];
-	float delihh_hitprob, delihh_missprob;//, delihh_prob, delihh_minprob, delihh_maxprob; 
-	float nsl_hitprob, nsl_missprob;//, nsl_prob, nsl_minprob, nsl_maxprob; //bayes factor
-	float ihs_hitprob, ihs_missprob;//, ihs_prob, ihs_minprob, ihs_maxprob;
-	float xpehh_hitprob, xpehh_missprob;//, xpehh_prob, xpehh_minprob, xpehh_maxprob;
-	float fst_hitprob, fst_missprob;//, fst_prob, fst_minprob, fst_maxprob;
-	float deldaf_hitprob, deldaf_missprob;//, deldaf_prob, deldaf_minprob, deldaf_maxprob;
-	int isnp, iComp, itoken, thisPos, likesFreqIndex, nComparisons, maxPos, minPos;
+	float delihh_hitprob, delihh_missprob, nsl_hitprob, nsl_missprob, ihs_hitprob, ihs_missprob;
+	float xpehh_hitprob, xpehh_missprob, fst_hitprob, fst_missprob, deldaf_hitprob, deldaf_missprob;
 	double thisihs, thisihh, thisnsl; // per-pop
 	double thisfst, thisxpehh, thisdelDaf, thisdaf;
 	double compLike, minDaf, minGenLen;
-	//int ibin;  //for debug
-	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
-	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
-	//int writeLikes;
-	//char takeScoreString[6];
-	double prior; // = 1/nSNP for region
-	int nsnps_regional;
-	int istart, iend;
+	double prior; // = 1/nSNP for region for now
 	double gendist;
 	double joint_score_prob_sel, joint_score_prob_neut; //useful for re-arranging CMS calculation to use prior correctly
 	double cms_numerator, cms_denominator;
+	int isnp, iComp, itoken, thisPos, likesFreqIndex, nComparisons, maxPos, minPos;
+	int nsnps_regional;
+	int istart, iend;
+	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
+	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
+	//int ibin;  //for debug
 
 	if (argc <= 3) {
 		fprintf(stderr, "Usage: ./combine_scores_local_amend <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
@@ -127,24 +121,21 @@ int main(int argc, char **argv) {
 			if (thisPos <= minPos){istart=isnp;}
 			if (thisPos >= maxPos){iend=isnp; break;}
 		}
-		fprintf(stderr, "not enforcing gendist");
 
-		/*
 		gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
-		fprintf(stderr,"starting gendist: %f\n", gendist);
+		//fprintf(stderr,"starting gendist: %f\n", gendist);
 		while(gendist < minGenLen){
 			istart-=1;  //move out one SNP on each end
 			iend+=1;
 			gendist = score_data.genpos[0][iend] - score_data.genpos[0][istart];
 		}	
-		*/
+		
 		minPos = score_data.physpos[0][istart];
 		maxPos = score_data.physpos[0][iend];
 		fprintf(stderr," %d\t%d\n", minPos, maxPos);
 		//fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	nsnps_regional = 0;
-	fprintf(stderr, "beginning snp train...");
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -212,7 +203,7 @@ int main(int argc, char **argv) {
 			//LIKESFREQS (current default)
 			//thisdaf -- > determines which index we use for likes_data_multiple
 			if (thisdaf <= .35){likesFreqIndex = 0;}
-			else if(thisdaf > .35 && thisdaf <= .65){likesFreqIndex =1;}	///REVISIT THIS!
+			else if(thisdaf > .35 && thisdaf <= .65){likesFreqIndex =1;}	
 			else{likesFreqIndex = 2;}
 
 			delihh_hitprob = getHitProb(&delihh_likes_data, likesFreqIndex, thisihh); //build in a check for pseudocounts here?
@@ -235,31 +226,31 @@ int main(int argc, char **argv) {
 			joint_score_prob_sel = 1;
 			joint_score_prob_neut = 1;
 
-			if(takeIhs == 0){	joint_score_prob_sel *= ihs_hitprob; 
+			if(takeIhs == 0 && isnan(thisihs) == 0){	joint_score_prob_sel *= ihs_hitprob; 
 								joint_score_prob_neut *= ihs_missprob;	}	
 												//fprintf(stderr, "ihs\t");}
-			if(takeDelihh == 0){	joint_score_prob_sel *= delihh_hitprob; 
+			if(takeDelihh == 0 && isnan(thisihh) == 0){	joint_score_prob_sel *= delihh_hitprob; 
 								joint_score_prob_neut *= delihh_missprob;	}
 												//fprintf(stderr, "delihh\t");}
-			if(takeNsl == 0){	joint_score_prob_sel *= nsl_hitprob; 
+			if(takeNsl == 0 && isnan(thisnsl) == 0){	joint_score_prob_sel *= nsl_hitprob; 
 								joint_score_prob_neut *= nsl_missprob;	}	
 												//;fprintf(stderr, "nsl\t");}
-			if(takeFst == 0){	joint_score_prob_sel *= fst_hitprob; 
+			if(takeFst == 0 && isnan(thisfst) == 0){	joint_score_prob_sel *= fst_hitprob; 
 								joint_score_prob_neut *= fst_missprob;	}	
 												//;fprintf(stderr, "fst\t");}
-			if(takeDeldaf == 0){	joint_score_prob_sel *= deldaf_hitprob; 
+			if(takeDeldaf == 0 && isnan(thisdelDaf) == 0){	joint_score_prob_sel *= deldaf_hitprob; 
 								joint_score_prob_neut *= deldaf_missprob;	}	
 										//;fprintf(stderr, "deldaf\t");}
-			if(takeXpehh == 0){	joint_score_prob_sel *= xpehh_hitprob; 
-								joint_score_prob_neut *= xpehh_missprob;	}				//;fprintf(stderr, "xp\n");}
-
+			if(takeXpehh == 0 && isnan(thisxpehh) == 0){	joint_score_prob_sel *= xpehh_hitprob; 
+								joint_score_prob_neut *= xpehh_missprob;	}				
+								//;fprintf(stderr, "xp\n");}
 			cms_numerator = prior * joint_score_prob_sel;
 			cms_denominator = cms_numerator + (1. - prior) * joint_score_prob_neut;
-			compLike = cms_numerator / cms_denominator;
+			compLike = cms_numerator / cms_denominator;			
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLike);
 
-			fprintf(stderr, "%d\t%d\n", cms_numerator, cms_denominator);
-				
-					//DEBUG 
+			//DEBUG 
+			/*fprintf(stderr, "%d\t%d\n", cms_numerator, cms_denominator);
 			fprintf(stderr, "ihs %f\t hit %e\tmiss %e\n", thisihs, ihs_hitprob, ihs_missprob); 
 			fprintf(stderr, "delihh %f\t hit %e\tmiss %e\n", thisihh, delihh_hitprob, delihh_missprob);
 			fprintf(stderr, "fst %f\t hit %e\tmiss %e\n", thisfst, fst_hitprob, fst_missprob); 
@@ -267,8 +258,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "xp %f\t hit %e\tmiss %e\n", thisxpehh, xpehh_hitprob, xpehh_missprob); 
 			fprintf(stderr, "cl: %e\n", compLike);
 			fprintf(stderr, "%d\t%f\t%f\t%f\t%f\t%f\t%f\n", score_data.physpos[iComp][isnp], thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf);
-			
-			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLike);
+			*/
 		}//end if-a-go
 	} // end isnp
 	fclose(outf);

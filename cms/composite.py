@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 06.12.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 06.14.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
@@ -179,14 +179,14 @@ def execute_composite_sims(args):
 		cmd = ""
 
 	if args.regional_cms:
-		cmd += "combine/combine_scores_gw" #genome-wide
-		file_ending = ".cms.gw.out"
+		cmd += "combine/combine_scores_local" 
+		file_ending = ".cms.local.out"
 	elif args.amend:
-		cmd += "combine/combine_scores_local_amend" #within-region
-		file_ending = ".cms.local_amend.out" #MAKE THIS TOGGLE?
+		cmd += "combine/combine_scores_local_amend" 
+		file_ending = ".cms.local_amend.out"
 	else:
-		cmd += "combine/combine_scores_local" #within-region
-		file_ending = ".cms.local.out" #MAKE THIS TOGGLE?
+		cmd += "combine/combine_scores_gw" #
+		file_ending = ".cms.gw.out" 
 
 	model = args.model
 	selpop = args.simpop

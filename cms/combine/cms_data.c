@@ -1345,8 +1345,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	//fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
 } //end method
 void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]){
-	/*
-	06.12.17: 	this function loads in all SNPs, even those for which there is incomplete data.
+	/*This function loads in all SNPs, even those for which there is incomplete data.
 	argv is all files for pop-pairs (each of which points to further component score files)
 	*/
 	const int line_size = 15000000; 

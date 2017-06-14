@@ -36,7 +36,7 @@ void free_delihh_data(delihh_data* data);
 typedef struct ihs_data {
     int nsnps;
     int *pos; 
-    int *lastcol; //not sure what information this field contains, selscan documentation is sparse. 0/1
+    int *lastcol; 
     double *freq1;
     double *ihh0;
     double *ihh1;
