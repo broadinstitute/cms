@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 		
 		minPos = score_data.physpos[0][istart];
 		maxPos = score_data.physpos[0][iend];
-		fprintf(stderr," %d\t%d\n", minPos, maxPos);
+		//fprintf(stderr," %d\t%d\n", minPos, maxPos);
 		//fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	nsnps_regional = 0;
@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < score_data.ncomp; iComp++){
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
+		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
 		thisihs = score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];
@@ -181,6 +182,7 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < score_data.ncomp; iComp++){
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
+		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
 		thisihs = score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];

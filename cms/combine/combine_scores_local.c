@@ -136,14 +136,33 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "\tadjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	nsnps_regional = 0;
+
+
+
+
+
+
+	//fprintf(stderr, "ncomp: %d \t nsnp: %d\n", score_data.ncomp, score_data.nsnps);
+
+
+	//for (isnp = 0; isnp < score_data.nsnps; isnp++){
+	//		fprintf(stderr, "%d\t%d\t%d\n", score_data.physpos[0][isnp], score_data.physpos[1][isnp], score_data.physpos[2][isnp]);
+	//}
+
+
+
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
 		//////////////////////////////////
 		iComp = 0; 
+
 		for (iComp = 0; iComp < score_data.ncomp; iComp++){
+			//fprintf(stderr, "%d\t%d\n", score_data.physpos[iComp][isnp], iComp);
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
+		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
+
 		thisihs = score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];
@@ -189,6 +208,7 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < score_data.ncomp; iComp++){
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
+		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
 		thisihs = score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];
@@ -210,15 +230,24 @@ int main(int argc, char **argv) {
 			/////////////////////////////////////
 			//LIKESFREQS (current default)
 			//thisdaf -- > determines which index we use for likes_data_multiple
+			likesFreqIndex = 0;
 			if (thisdaf <= .35){likesFreqIndex = 0;}
 			else if(thisdaf > .35 && thisdaf <= .65){likesFreqIndex =1;}
 			else{likesFreqIndex = 2;}
 
+			//fprintf(stderr, "\tPOS %d\n", score_data.physpos[0][isnp]);
+			//fprintf(stderr, "\t %f\t%f\t%f\t%f\t%f\t%f\t", thisihs, thisihh, thisnsl, thisfst, thisdelDaf, thisxpehh);
+			//fprintf(stderr, "thisihh: %f\n", thisihh);			
 			delihh_hitprob = getHitProb(&delihh_likes_data, likesFreqIndex, thisihh);
+			//fprintf(stderr, "thisnsl: %f\n", thisnsl);
 			nsl_hitprob = getHitProb(&nsl_likes_data, likesFreqIndex, thisnsl);			
+			//fprintf(stderr, "thisihs: %f\n", thisihs);
 			ihs_hitprob = getHitProb(&ihs_likes_data, likesFreqIndex, thisihs);
+			//fprintf(stderr, "thisfst: %f\n", thisfst);
 			fst_hitprob = getHitProb(&fst_likes_data, likesFreqIndex, thisfst);
+			//fprintf(stderr, "thisdeldaf: %f\n", thisdelDaf);
 			deldaf_hitprob = getHitProb(&deldaf_likes_data, likesFreqIndex, thisdelDaf);
+			//fprintf(stderr, "thisxp: %f\n", thisxpehh);
 			xpehh_hitprob = getHitProb(&xpehh_likes_data, likesFreqIndex, thisxpehh);
 		
 			delihh_missprob = getMissProb(&delihh_likes_data, thisihh);

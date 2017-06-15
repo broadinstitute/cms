@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 	06.13: update to freqs from fst_deldaf
+##	last updated 06.15.2017	vitti@broadinstitute.org 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -145,6 +145,7 @@ def read_cms_repfile(infilename):
 	if not os.path.isfile(infilename):
 		return physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
 	openfile = open(infilename, 'r')
+	headerline = openfile.readline()
 	for line in openfile:
 		entries = line.split()
 		physpos.append(int(entries[0]))
