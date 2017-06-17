@@ -339,7 +339,7 @@ def execute_cdf(args):
 	for pop in [1, 2, 3, 4]:
 		for scenar in scenars:
 			for irep in range(1, reps+1):
-				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, basedir=writedir, suffix=suffix)
+				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed = False, basedir=writedir, suffix=suffix)
 			
 				if os.path.isfile(cmsfilename):
 					physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
@@ -347,10 +347,12 @@ def execute_cdf(args):
 						causal_index = physpos.index(causalPos)
 						causal_unnormed = cms_unnormed[causal_index]
 						causal_rank = get_causal_rank(cms_unnormed, causal_unnormed)
+						#print(cmsfilename)
 						#print('causal rank: ' + str(causal_rank)) 
 						#causal_ranks.append(causal_rank)
 						this_array = eval('causal_ranks_' + str(pop))
-						this_array.append(causal_rank)
+						if not np.isnan(causal_rank):
+							this_array.append(causal_rank)
 				else:
 					print("missing; " + cmsfilename)
 	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")

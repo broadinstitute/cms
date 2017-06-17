@@ -89,7 +89,7 @@ def check_file_len(filename):
 	else:
 		return 0
 def execute(commandstring):
-	subprocess.check_output(commandstring.split())
+	subprocess.call(commandstring.split())#check_output(commandstring.split())
 	return
 def get_info_from_tped_name(filename):
 	assert(".tped" in filename)

@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 06.15.2017	vitti@broadinstitute.org 
+##	last updated 06.16.2017	vitti@broadinstitute.org 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -91,13 +91,17 @@ def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scra
 	return concatfilename, binfilename
 def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", suffix = ""):
 	""" locates neutral simulated composite score file """
-	repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms" 
+	if suffix is not None:
+		repfilename += suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
 def get_sel_repfile_name(model, irep, pop, freqbin, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix =""):
 	""" locate simulated composite score file in scenario with selection """
-	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/composite/rep" + str(irep) + "_" + str(pop) + ".cms" 
+	if suffix is not None:
+		repfilename += suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename

@@ -56,6 +56,7 @@ def normalize_local(values, physpos): #called by regionviz - replace?
 
 	print('this should be replaced by other normalize function.')
 	print('currently testing - 5.4.17')
+	print("for amended CMS, this should be gratuitous. The values already make sense (qua probabilities), so there's no need to scale the y-axis.")
 
 	####
 	#### NORMALIZE BY SCALING TO [0, 1]
@@ -147,7 +148,15 @@ def calc_pr(all_percentages, threshhold):
 		print('ERROR; empty set')
 	return pr
 def get_causal_rank(values, causal_val):
+	if np.isnan(causal_val):
+		return(float('nan'))
 	assert(causal_val in values)
+	cleanvals = []
+	for item in values:
+		if not np.isnan(item) and not np.isinf(item):
+			cleanvals.append(item)
+	values = cleanvals
+
 	values.sort()
 	values.reverse()
 	causal_rank = values.index(causal_val)

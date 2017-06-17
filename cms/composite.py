@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 06.14.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 06.15.2017 	vitti@broadinstitute.org #update docstrings
 
 import matplotlib
 matplotlib.use('agg')
@@ -219,6 +219,38 @@ def execute_composite_sims(args):
 	selpop = int(selpop)
 	altpops.remove(selpop)
 
+	##################################
+	## CALCULATE CMS: ALL NEUT SIMS ##
+	##################################
+	scoremodeldir = writedir + model + "/neut/"
+	compositedir = scoremodeldir + "composite/" 
+	pairdir = scoremodeldir + "pairs/"
+	check_create_dir(compositedir)
+	check_create_dir(pairdir)
+	for irep in range(1, numPerBin_neut +1):	
+		altpairs = []
+		for altpop in altpops:
+			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir, normed = True)
+			pairfilename = pairdir + "rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
+			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
+				altpairs.append(pairfilename)
+		if len(altpairs) !=0:
+			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
+			alreadyExists = False
+			if args.checkOverwrite:
+				if not os.path.isfile(outfile): #check for overwrite
+					alreadyExists = False
+				else:
+					alreadyExists = True				
+			if alreadyExists == False:
+				argstring = outfile + " " + paramfilename + " "
+				for pairfile in altpairs:
+					argstring += pairfile + " "
+				fullcmd = cmd + " " + argstring
+				print(fullcmd)
+				execute(fullcmd)
+	
 	#################################
 	## CALCULATE CMS: ALL SEL SIMS ##
 	#################################
@@ -254,39 +286,6 @@ def execute_composite_sims(args):
 					fullcmd = cmd + " " + argstring
 					print(fullcmd)
 					execute(fullcmd)
-
-	##################################
-	## CALCULATE CMS: ALL NEUT SIMS ##
-	##################################
-	scoremodeldir = writedir + model + "/neut/"
-	compositedir = scoremodeldir + "composite/" 
-	pairdir = this_bindir + "pairs/"
-	check_create_dir(compositedir)
-	check_create_dir(pairdir)
-	for irep in range(1, numPerBin_neut +1):	
-		altpairs = []
-		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = "neut", filebase = writedir, normed = True)
-			pairfilename = pairdir + "rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
-				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
-				altpairs.append(pairfilename)
-		if len(altpairs) !=0:
-			outfile = compositedir  + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
-			alreadyExists = False
-			if args.checkOverwrite:
-				if not os.path.isfile(outfile): #check for overwrite
-					alreadyExists = False
-				else:
-					alreadyExists = True				
-			if alreadyExists == False:
-				argstring = outfile + " " + paramfilename + " "
-				for pairfile in altpairs:
-					argstring += pairfile + " "
-				fullcmd = cmd + " " + argstring
-				print(fullcmd)
-				execute(fullcmd)
-
 	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
 	return
 def execute_composite_emp(args):
@@ -393,7 +392,7 @@ def execute_composite_emp(args):
 	print('calculated CMS scores for ' + str(len(chroms)) + ' chromosomes.')
 
 	return
-def execute_normsims(args):
+def execute_normsims(args): #i.e. GW norm
 	""" given output from composite_sims, normalize all replicates to neutral parameters """ 
 	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 	model = args.model
@@ -411,6 +410,7 @@ def execute_normsims(args):
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
 			openfile = open(outfile, 'r')
+			header = openfile.readline() 
 			for line in openfile:
 				entries = line.split()
 				rawscore = np.log(float(entries[-1]))
@@ -447,11 +447,13 @@ def execute_normsims(args):
 	for irep in range(1, numPerBin_neut +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
-			normedfile = outfile + "_z.norm"
+			normedfile = outfile + ".norm"
 			if True:
 			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
 				openfile = open(outfile, 'r')
 				writefile = open(normedfile, 'w')
+				header = openfile.readline()
+				writefile.write(header)
 				for line in openfile:
 					entries = line.split()
 					rawscore = np.log(float(entries[-1]))
@@ -470,11 +472,13 @@ def execute_normsims(args):
 			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
 			#print(rawfile)
 			if os.path.isfile(rawfile):
-				normedfile = rawfile + "_z.norm"
+				normedfile = rawfile + ".norm"
 				if True:
 				#if not os.path.isfile(normedfile):
 					openfile = open(rawfile, 'r')
 					writefile = open(normedfile, 'w')
+					header = openfile.readline()
+					writefile.write(header)
 					for line in openfile:
 						entries = line.split()
 						rawscore = np.log(float(entries[-1]))
