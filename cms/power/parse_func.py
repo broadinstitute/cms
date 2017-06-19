@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 04.13.2017	vitti@broadinstitute.org 	4.17: IRN 	06.13: update to freqs from fst_deldaf
+##	last updated 06.17.2017	vitti@broadinstitute.org 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -91,13 +91,17 @@ def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scra
 	return concatfilename, binfilename
 def get_neut_repfile_name(model, irep, pop, normed = False, basedir = "/idi/sabeti-scratch/jvitti/clean/scores/", suffix = ""):
 	""" locates neutral simulated composite score file """
-	repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir + model + "/neut/composite/rep" + str(irep) + "_" + str(pop) + ".cms" 
+	if suffix is not None:
+		repfilename += suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
 def get_sel_repfile_name(model, irep, pop, freqbin, normed = False, basedir = "/idi/sabeti-scratch/jvitti/scores/", suffix =""):
 	""" locate simulated composite score file in scenario with selection """
-	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/composite/rep" + str(irep) + "_" + str(pop) + ".cms.out" + suffix
+	repfilename = basedir + model + "/sel" + str(pop) + "/sel_" + str(freqbin) + "/composite/rep" + str(irep) + "_" + str(pop) + ".cms" 
+	if suffix is not None:
+		repfilename += suffix
 	if normed:
 		repfilename += ".norm"
 	return repfilename
@@ -114,9 +118,22 @@ def get_likesfiles(model, selpop, likesdir, allfreqs = True, likessuffix= "neut"
 	return
 def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 	""" locates files with true/false positive rate data for CMS 2.0 """
+	if modeldir[-1] != "/":
+		modeldir += "/"
+
+	suffix = ""
+	if "daf20" in likes_dir_suffix and "likesfreqs" in likes_dir_suffix:
+		suffix = "_likesfreqs_daf20"
+	elif "daf20" in likes_dir_suffix:
+		suffix = "_daf20"
+	elif "likesfreqs" in likes_dir_suffix:
+		suffix = "_likesfreqs"
+
 	regionlen, percentage, cutoff, pop, selFreq = key
-	fprfile = modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
-	tprfile = modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
+	fprfile = modeldir + "fpr/sel" + str(pop) + "_fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix
+	#modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = modeldir + "tpr/sel" + str(pop) + "_tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix + "_" + str(selFreq)
+	#modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
 			print("missing: " + filename)
@@ -145,6 +162,7 @@ def read_cms_repfile(infilename):
 	if not os.path.isfile(infilename):
 		return physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed
 	openfile = open(infilename, 'r')
+	headerline = openfile.readline()
 	for line in openfile:
 		entries = line.split()
 		physpos.append(int(entries[0]))
@@ -226,14 +244,12 @@ def load_regions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
-def load_power_dict(modeldir, likes_dir_suffix = "", zscore = False):
+def load_power_dict(modeldir, likes_dir_suffix = ""):
 	""" top-level function called by ROC, find_opt """
 	regionlens = [25000, 50000, 75000, 100000] #should soft-code
 	thressholds = [25, 30, 35, 40, 45, 50]	
-	if zscore:
-		cutoffs = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
-	else:
-		cutoffs = [10, 15, 20, 25, 30, 35, 40]
+
+	cutoffs = [10, 15, 20, 25, 30, 35, 40]
 	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
 	freq_classes = ['hi', 'highest', 'mid', 'lo']
 

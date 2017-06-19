@@ -1,11 +1,11 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 04.13.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 06.19.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
 from power.power_func import merge_windows, get_window, check_outliers, check_rep_windows, calc_pr, get_pval, plotManhattan, \
-						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist, normalize_local
+						plotManhattan_extended, quick_plot, get_causal_rank, get_cdf_from_causal_ranks, plot_dist
 from power.parse_func import get_neut_repfile_name, get_sel_repfile_name, get_emp_cms_file, read_cms_repfile, \
 						read_pr, read_vals_lastcol, get_pr_filesnames, load_regions, load_power_dict
 from tempfile import TemporaryFile
@@ -58,11 +58,6 @@ def full_parser_power():
 		regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
 		regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
 		regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
-		manhattan_parser = subparsers.add_parser('manhattan', help='generate manhattan plot of p-values of empirical results.')	
-		#manhattan_parser.add_argument('--zscores', action = 'store_true', help="plot -log10(p-values) estimated from neutral simulation") #nix
-		#manhattan_parser.add_argument('--maxSkipVal', help="expedite plotting by ignoring anything obviously insignificant", default=-10e10)
-		#manhattan_parser.add_argument('--poolModels', help="experimental - combine neut distributions from multiple demographic models")
-		#	#manhattan_parser.add_argument('--runSuffix', help="string included to locate specific .cms files")
 		extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
 		extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
 		extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
@@ -121,17 +116,14 @@ def execute_regionviz(args):
 		if args.hilitePos is not None:
 			if args.hilitePos in physpos:
 				causal_index = physpos.index(args.hilitePos)
-		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, sharex = True)
+		f, (ax1, ax2, ax3, ax4, ax5, ax6, ax7) = plt.subplots(7, sharex = True)
 		quick_plot(ax1, physpos, ihs_normed, "ihs_normed", causal_index)
 		quick_plot(ax2, physpos, delihh_normed, "delihh_normed", causal_index)
 		quick_plot(ax3, physpos, nsl_normed, "nsl_normed", causal_index)
 		quick_plot(ax4, physpos, xpehh_normed, "xpehh_normed", causal_index)
 		quick_plot(ax5, physpos, fst, "fst", causal_index)
 		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
-		log_unnormed = [np.log(item) for item in cms_unnormed]
-		quick_plot(ax7, physpos, cms_unnormed, "ln(rawcms)", causal_index)
-		cms_normed, physpos_normed = normalize_local(cms_unnormed, physpos)
-		quick_plot(ax8, physpos_normed, cms_normed, "cms_normed", causal_index)				
+		quick_plot(ax7, physpos, cms_unnormed, "cms", causal_index)
 		plt.savefig(savefilename)
 		print("plotted to " + savefilename)
 		plt.close()
@@ -173,64 +165,6 @@ def execute_distviz(args):
 
 	plot_dist(allvals, savefilename)
 	return
-'''def execute_manhattan(args):
-	""" remove this? """
-	selpop = args.emppop
-	model = args.model
-	savename = args.savefilename
-	#suffix = args.runSuffix
-	basedir = args.writedir
-	#nRep = args.nrep
-	###############################
-	### LOAD NEUTRAL SIM VALUES ###
-	###############################
-	modelpops = {'YRI':1, 'CEU':2, 'CHB':3, 'BEB':4}
-	pop = modelpops[selpop]
-	#EXPERIMENTAL
-	#This is not how Shari actually normalized for figure 1 2013.
-	#if args.poolModels:
-	#	all_neut_rep_scores = []
-	#	for model in ['default_112115_825am', 'nulldefault', 'nulldefault_constantsize', 'gradient_101915_treebase_6_best', 'default_default_101715_12pm']:
-	#		neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#		all_neut_rep_scores.extend(neut_rep_scores)
-	#	neut_rep_scores = all_neut_rep_scores
-	#else:
-	#	neut_rep_scores = load_normed_simscores(model, pop, vsNeut=vsNeut, numRep=nRep)
-	#print('loaded ' + str(len(neut_rep_scores)) + ' neut simscores...') 
-	neut_rep_scores = []
-
-	#############################
-	### LOAD EMPIRICAL VALUES ###
-	#############################
-	all_emp_pos, all_emp_scores = [], []
-	nSnps = 0
-	for chrom in range(1,23):
-		thesepos, thesescores = [], []
-
-		#get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a")
-		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, basedir=basedir, suffix=runSuffix)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
-		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
-			break
-		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
-		#physpos, genpos, ihs_normed, delihh_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
-		all_emp_pos.append(physpos)
-		all_emp_scores.append(cms_normed)
-
-	###########################
-	### DRAW MANHATTAN PLOT ###
-	###########################
-	f, ax = plt.subplots(1)
-	if args.zscores:
-		calc_zscores = True
-	else:
-		calc_zscores = False
-	plotManhattan(ax, neut_rep_scores, all_emp_scores, all_emp_pos, nSnps, zscores=calc_zscores, maxSkipVal = args.maxSkipVal)
-	plt.savefig(savename)
-	print('saved to: ' + savename)
-	return
-'''
 def execute_extended_manhattan(args):
 	""" generate a genome-wide plot of CMS scores with option to hilight outlier regions """
 	plotscore = args.plotscore
@@ -339,7 +273,7 @@ def execute_cdf(args):
 	for pop in [1, 2, 3, 4]:
 		for scenar in scenars:
 			for irep in range(1, reps+1):
-				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed =True, basedir=writedir, suffix=suffix)
+				cmsfilename = get_sel_repfile_name(model, irep, pop, scenar, normed = False, basedir=writedir, suffix=suffix)
 			
 				if os.path.isfile(cmsfilename):
 					physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename)
@@ -347,10 +281,12 @@ def execute_cdf(args):
 						causal_index = physpos.index(causalPos)
 						causal_unnormed = cms_unnormed[causal_index]
 						causal_rank = get_causal_rank(cms_unnormed, causal_unnormed)
+						#print(cmsfilename)
 						#print('causal rank: ' + str(causal_rank)) 
 						#causal_ranks.append(causal_rank)
 						this_array = eval('causal_ranks_' + str(pop))
-						this_array.append(causal_rank)
+						if not np.isnan(causal_rank):
+							this_array.append(causal_rank)
 				else:
 					print("missing; " + cmsfilename)
 	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")
@@ -489,11 +425,8 @@ def execute_roc(args):
 	modeldir = writedir + model + "/"
 	#make selFreq toggleable? pass to get_pr_filenames
 	savefilename = args.savefilename
-	if "_z" in likes_dir_suffix:
-		zscore = True
-	else:
-		zscore = False
-	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix, zscore = zscore)
+
+	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix)
 	fpr_keys = allfpr.keys()
 	tpr_keys = alltpr.keys()
 	
@@ -541,15 +474,11 @@ def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 	model = args.model 	
 	modeldir = writedir + model + "/"
 	maxFPR = args.maxFPR
-	if "_z" in likes_dir_suffix:
-		zscore = True
-	else:
-		zscore = False
 
 	#############################
 	## CHOOSE OPT MEETING CRIT ##
 	#############################
-	all_fpr, all_tpr = load_power_dict(modeldir,likes_dir_suffix, zscore = zscore)
+	all_fpr, all_tpr = load_power_dict(modeldir,likes_dir_suffix)
 	for pop in [1, 2, 3, 4, "ave"]:
 		best_tpr, best_fpr = 0, 0
 		best_cutoff = 0

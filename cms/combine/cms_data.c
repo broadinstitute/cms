@@ -442,9 +442,9 @@ void get_likes_data(likes_data* data, char filename[]){
 	}
 	data->nbins++; //one extra because 50 bins can be represented with 49 bounds
 
-	data->start_bin = malloc(data->nbins * sizeof(double));
-	data->end_bin = malloc(data->nbins * sizeof(double));
-	data->probs = malloc(data->nbins * sizeof(double));
+	data->start_bin = calloc(data->nbins, sizeof(double));
+	data->end_bin = calloc(data->nbins, sizeof(double));
+	data->probs = calloc(data->nbins, sizeof(double));
 	fclose(inf);
 
 	inf = fopen(filename, "r");
@@ -504,15 +504,15 @@ void get_likes_data_multiple(likes_data_multiple* data, char filename[]){
 	strtok(miss_probs_filename, "\n");
 	get_likes_data(&onedist_data, miss_probs_filename);
 	data->nbins = onedist_data.nbins;
-	data->start_bin = malloc(data->nbins * sizeof(double));
-	data->end_bin = malloc(data->nbins * sizeof(double));
-	data->miss_probs = malloc(data->nbins * sizeof(double));
+	data->start_bin = calloc(data->nbins, sizeof(double));
+	data->end_bin = calloc(data->nbins, sizeof(double));
+	data->miss_probs = calloc(data->nbins, sizeof(double));
 	//data->hit_probs_hi = malloc(data->nbins * sizeof(double));	
 	//data->hit_probs_mid = malloc(data->nbins * sizeof(double));	
 	//data->hit_probs_low = malloc(data->nbins * sizeof(double));
-	data->hit_probs[0] = malloc(data->nbins * sizeof(double));
-	data->hit_probs[1] = malloc(data->nbins * sizeof(double));
-	data->hit_probs[2] = malloc(data->nbins * sizeof(double));
+	data->hit_probs[0] = calloc(data->nbins, sizeof(double));
+	data->hit_probs[1] = calloc(data->nbins, sizeof(double));
+	data->hit_probs[2] = calloc(data->nbins, sizeof(double));
 				
 	for (ibin = 0; ibin < data->nbins; ibin++){
 		data->start_bin[ibin] = onedist_data.start_bin[ibin];
@@ -566,21 +566,26 @@ void free_likes_data_multiple(likes_data_multiple* data){
 } // end function
 float getHitProb(likes_data_multiple* data, int likesIndex, double value){
 	int ibin;
+	float hitProb = NAN;
+	//fprintf(stderr, "gethitprob: %f\n", value);
 	for (ibin = 0; ibin < data->nbins; ibin++){
+		//fprintf(stderr, "ibin %d \t", ibin);
 		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->hit_probs[likesIndex][ibin];}
 	}
 	if (value < data->start_bin[0]){return data->hit_probs[likesIndex][0];}
 	if (value > data->end_bin[data->nbins - 1]){return data->hit_probs[likesIndex][data->nbins - 1];}
-	return 0;
+	return hitProb;
 } //end function
 float getMissProb(likes_data_multiple* data, double value){
 	int ibin;
+	float missProb = NAN;
+	//fprintf(stderr, "getmissprob: %f\n", value);
 	for (ibin = 0; ibin < data->nbins; ibin++){
 		if (value >= data->start_bin[ibin] && value <= data->end_bin[ibin]){return data->miss_probs[ibin];}
 	}
 	if (value < data->start_bin[0]){return data->miss_probs[0];}
 	if (value > data->end_bin[data->nbins - 1]){return data->miss_probs[data->nbins - 1];}
-	return 0;
+	return missProb;
 } //end function
 float getMaxBf(likes_data_multiple* data, int likesIndex){
 	int ibin;
@@ -769,6 +774,8 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
+	free(allSnps);
+	free(allUniqueSnps);
 	return nunique;
 } // end function
 void get_popPair_completeData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
@@ -1106,6 +1113,7 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
 	free(locus);
+	free(allSnps);
 } //end method
 void free_popPair_data(popPair_data* data){
 	int isnp;
@@ -1346,8 +1354,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 } //end method
 void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]){
 	/*This function loads in all SNPs, even those for which there is incomplete data.
-	argv is all files for pop-pairs (each of which points to further component score files)
-	*/
+	argv is all files for pop-pairs (each of which points to further component score files)*/
 	const int line_size = 15000000; 
 	popPair_data data_sing;
 	FILE *inf=NULL;

@@ -1,5 +1,5 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 04.13.2017		vitti@broadinstitute.org
+##	last updated 06.19.2017		vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
@@ -26,48 +26,7 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 	writefile.close()
 	print("wrote to: " + writefilename)
 	return
-'''def normalize_global(rawscore, mean, sd):
-	#cms_gw 
-	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
-	normalizedvalue = (rawscore - mean) #/ sd
-	return normalizedvalue
-'''
-def normalize_local(values, physpos): #called by regionviz - replace?
 
-	clean_vals, clean_phys = [], []
-	for i in range(len(values)):
-		item = values[i]
-		phys = physpos[i]
-		if not np.isnan(item) and not np.isinf(item):
-			clean_vals.append(item)
-			clean_phys.append(phys)
-
-
-	####
-	#### NORMALIZE AS Z SCORE
-	####
-	#mean = np.mean(clean_vals)
-	#var = np.var(clean_vals)
-	#stddev = var**.5
-	#normalized = [(item-mean)/stddev for item in clean_vals]
-	#print(values[-1])
-	#print(normalized[-1])
-
-
-	print('this should be replaced by other normalize function.')
-	print('currently testing - 5.4.17')
-
-	####
-	#### NORMALIZE BY SCALING TO [0, 1]
-	####
-	maxVal, minVal = max(clean_vals), min(clean_vals)
-	normalized = [(unnormed - minVal)/maxVal for unnormed in clean_vals]
-	
-	#if len(normalized) !=len(clean_phys):
-	#	print(str(len(normalized)))
-	#	print(str(len(clean_phys)))
-	#assert len(normalized) == len(clean_phys)
-	return normalized, clean_phys
 ###############
 ## REGION ID ##
 ###############
@@ -147,7 +106,15 @@ def calc_pr(all_percentages, threshhold):
 		print('ERROR; empty set')
 	return pr
 def get_causal_rank(values, causal_val):
+	if np.isnan(causal_val):
+		return(float('nan'))
 	assert(causal_val in values)
+	cleanvals = []
+	for item in values:
+		if not np.isnan(item) and not np.isinf(item):
+			cleanvals.append(item)
+	values = cleanvals
+
 	values.sort()
 	values.reverse()
 	causal_rank = values.index(causal_val)

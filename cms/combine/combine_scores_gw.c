@@ -1,4 +1,4 @@
-// 	last updated 06.12.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
+// 	last updated 06.15.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
 //	vitti@broadinstitute.org
 // 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
 // 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
@@ -131,6 +131,8 @@ int main(int argc, char **argv) {
 		for (iComp = 0; iComp < score_data.ncomp; iComp++){
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
+		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
+
 		thisihs = score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
 		thisnsl = score_data.nsl_normed[iComp][isnp];
