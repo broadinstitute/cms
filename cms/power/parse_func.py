@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 06.16.2017	vitti@broadinstitute.org 
+##	last updated 06.17.2017	vitti@broadinstitute.org 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -118,9 +118,22 @@ def get_likesfiles(model, selpop, likesdir, allfreqs = True, likessuffix= "neut"
 	return
 def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 	""" locates files with true/false positive rate data for CMS 2.0 """
+	if modeldir[-1] != "/":
+		modeldir += "/"
+
+	suffix = ""
+	if "daf20" in likes_dir_suffix and "likesfreqs" in likes_dir_suffix:
+		suffix = "_likesfreqs_daf20"
+	elif "daf20" in likes_dir_suffix:
+		suffix = "_daf20"
+	elif "likesfreqs" in likes_dir_suffix:
+		suffix = "_likesfreqs"
+
 	regionlen, percentage, cutoff, pop, selFreq = key
-	fprfile = modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
-	tprfile = modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
+	fprfile = modeldir + "fpr/sel" + str(pop) + "_fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix
+	#modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
+	tprfile = modeldir + "tpr/sel" + str(pop) + "_tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix + "_" + str(selFreq)
+	#modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
 			print("missing: " + filename)
@@ -231,14 +244,12 @@ def load_regions(regionfile):
 			allends.append(endpos)
 	openfile.close()
 	return allchroms, allstarts, allends
-def load_power_dict(modeldir, likes_dir_suffix = "", zscore = False):
+def load_power_dict(modeldir, likes_dir_suffix = ""):
 	""" top-level function called by ROC, find_opt """
 	regionlens = [25000, 50000, 75000, 100000] #should soft-code
 	thressholds = [25, 30, 35, 40, 45, 50]	
-	if zscore:
-		cutoffs = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
-	else:
-		cutoffs = [10, 15, 20, 25, 30, 35, 40]
+
+	cutoffs = [10, 15, 20, 25, 30, 35, 40]
 	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
 	freq_classes = ['hi', 'highest', 'mid', 'lo']
 
