@@ -1,5 +1,5 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 04.09.2017 vitti@broadinstitute.org 
+## last updated: 06.20.2017 vitti@broadinstitute.org 
 
 from math import fabs, sqrt
 from random import randint
@@ -50,7 +50,7 @@ def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
 	''' wrapper function calls calc_fst_deldaf ''' 
 	if modelpath[-1] != "/":
 		modelpath += "/"
-	commandstring = modelpath + "calc_fst_deldaf"
+	commandstring = modelpath + "freqs_scores"
 	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
 	fullcommand = commandstring + " " + argstring
 	print(fullcommand)

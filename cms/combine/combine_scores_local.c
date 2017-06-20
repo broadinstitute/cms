@@ -1,4 +1,4 @@
-// 	
+// 	calculate within-region Composite of Multiple Signals (CMS) statistic 
 //	last updated 06.18.2017 	vitti@broadinstitute.org
 
 
@@ -230,22 +230,16 @@ int main(int argc, char **argv) {
 
 			if(takeIhs == 0 && isnan(thisihs) == 0){	joint_score_prob_sel *= ihs_hitprob; 
 								joint_score_prob_neut *= ihs_missprob;	}	
-												//fprintf(stderr, "ihs\t");}
 			if(takeDelihh == 0 && isnan(thisihh) == 0){	joint_score_prob_sel *= delihh_hitprob; 
 								joint_score_prob_neut *= delihh_missprob;	}
-												//fprintf(stderr, "delihh\t");}
 			if(takeNsl == 0 && isnan(thisnsl) == 0){	joint_score_prob_sel *= nsl_hitprob; 
 								joint_score_prob_neut *= nsl_missprob;	}	
-												//;fprintf(stderr, "nsl\t");}
 			if(takeFst == 0 && isnan(thisfst) == 0){	joint_score_prob_sel *= fst_hitprob; 
 								joint_score_prob_neut *= fst_missprob;	}	
-												//;fprintf(stderr, "fst\t");}
 			if(takeDeldaf == 0 && isnan(thisdelDaf) == 0){	joint_score_prob_sel *= deldaf_hitprob; 
 								joint_score_prob_neut *= deldaf_missprob;	}	
-										//;fprintf(stderr, "deldaf\t");}
 			if(takeXpehh == 0 && isnan(thisxpehh) == 0){	joint_score_prob_sel *= xpehh_hitprob; 
 								joint_score_prob_neut *= xpehh_missprob;	}				
-								//;fprintf(stderr, "xp\n");}
 			cms_numerator = prior * joint_score_prob_sel;
 			cms_denominator = cms_numerator + (1. - prior) * joint_score_prob_neut;
 			compLike = cms_numerator / cms_denominator;			

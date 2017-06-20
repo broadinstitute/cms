@@ -6,7 +6,9 @@
 ######################
 
 CC = gcc
-CCFLAG = -O0 -ggdb3 -lm -Wall 
+CCFLAG = -O0 -ggdb3 -lm -lz -Wall  
+
+#-lz for gzlib, some issues here?
 
 ##################
 ## DEFINE RULES ##

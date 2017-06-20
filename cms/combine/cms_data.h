@@ -1,5 +1,5 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 06.14.2017 	vitti@broadinstitute.org
+// last updated: 06.19.2017 	vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
 
@@ -138,6 +138,7 @@ typedef struct popComp_data_multiple{
 } popComp_data_multiple;
 void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
 void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]);
+void free_popComp_data_multiple(popComp_data_multiple* data);
 float compareXp(popComp_data_multiple* data, int isnp);
 float compareFst(popComp_data_multiple* data, int isnp);
 float comparedelDaf(popComp_data_multiple* data, int isnp);

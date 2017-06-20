@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <zlib.h>
 #include "coal_data_tped_vers.h"
 
 int main(int argc, char **argv) {
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
 	////////////////////////////
 	// COUNT ALLELES FOR pop0 //
 	////////////////////////////
-	get_coal_data_tped_vers(&data, inTped1, inRecomfile);   
+	get_coal_data_tped_vers_gz(&data, inTped1, inRecomfile);   
 	nall0[0] = calloc(data.nsnp, sizeof(int));
 	nall1[0] = calloc(data.nsnp, sizeof(int));
 	for (isnp = 0; isnp < data.nsnp; isnp++) {
@@ -54,7 +55,7 @@ int main(int argc, char **argv) {
 	////////////////////////////
 	// COUNT ALLELES FOR pop1 //
 	////////////////////////////
-	get_coal_data_tped_vers(&data, inTped2, inRecomfile);
+	get_coal_data_tped_vers_gz(&data, inTped2, inRecomfile);
 	nall0[1] = calloc(data.nsnp, sizeof(int));
 	nall1[1] = calloc(data.nsnp, sizeof(int));
 	for (isnp = 0; isnp < data.nsnp; isnp++) {
