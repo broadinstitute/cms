@@ -290,12 +290,13 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	// https://github.com/szpiech/selscan
 	unnormed_index = 0; //5 9
 	normed_index = 0; //6 10
+	int dummy_var = 0;
+	for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++)
+		{dummy_var ++;}
 
-	while (fgets(newLine, line_size, inf) != NULL) {
-		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++)
-	}
-	if (itoken <= 7){unnormed_index = 5; normed_index = 6;}
+	if (itoken <= 8){unnormed_index = 5; normed_index = 6;}
 	else {unnormed_index = 9; normed_index = 10;}
+
 
 	// Allocate memory; initialize
 	data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
