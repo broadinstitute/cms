@@ -50,7 +50,7 @@ def calc_fst_deldaf(inputTped, inputTped2, recomFile, outputFile, modelpath):
 	''' wrapper function calls calc_fst_deldaf ''' 
 	if modelpath[-1] != "/":
 		modelpath += "/"
-	commandstring = modelpath + "freqs_scores"
+	commandstring = modelpath + "freqs_stats"
 	argstring = inputTped + " " + inputTped2 + " " + recomFile + " " + outputFile
 	fullcommand = commandstring + " " + argstring
 	print(fullcommand)

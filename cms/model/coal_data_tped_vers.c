@@ -244,7 +244,7 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	const int line_size = 999999999; // upper limit
 	const int numRecomLines = 500000;
 	//char cmd[600];
-	char *newLine, *token, *running;
+	char *newLine, *token, *running, *firstLine;
 	int isamp, isnp, itoken, iRecom;
 	double genrate;
 	FILE *inf=NULL;
@@ -255,6 +255,8 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	//COUNTING nsample nsnp nrecom
 	//	
 	newLine = malloc((line_size+1) * sizeof(char));
+	firstLine = malloc((line_size+1) * sizeof(char));
+	
 	assert(newLine != NULL); 
 	data->nsample = 0;
 	data->nsnp = 0;
@@ -278,10 +280,13 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 	while (gzgets(zinf, newLine, line_size) != NULL) { 
 		assert(strlen(newLine) < line_size);
 		data->nsnp++;
+		if (data->nsnp == 1){strcpy(firstLine, newLine);
+
+		}
 	}
-	//get number of samples from last line
+	//get number of samples from first line
 	int ik = 0;
-	char *pch=strchr(newLine,' ');
+	char *pch=strchr(firstLine,' ');
 	while (pch!=NULL) {
 		ik++;
 		pch=strchr(pch+1,' ');

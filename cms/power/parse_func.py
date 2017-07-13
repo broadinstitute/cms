@@ -1,5 +1,5 @@
 ##	functions for manipulating empirical/simulated CMS output
-##	last updated 06.17.2017	vitti@broadinstitute.org 
+##	last updated 07.13.2017	vitti@broadinstitute.org 
 
 import matplotlib as mp 
 mp.use('agg')
@@ -41,19 +41,12 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 ##################
 def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_clear-synth-20161227"):
 	''' points to normalized input files for component scores for empirical data '''
-	if pop not in ['IRN']: #1kg pops
+	if True: #former toggle for non-1KG pop (IRN)
 		in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".ihs.out.100bins.norm"
 		in_delihh_file =  basedir + "delihh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".delihh.out.100bins.norm"
 		in_nsl_file =  basedir + "nsl/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".nsl.out.100bins.norm"
 		in_xp_file = basedir + "xpehh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
-		in_fst_deldaf_file = basedir + "fst_deldaf/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + str(altpop)
-	else: #these are rsync'd to RC from local desktop from old calcs
-		basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/IRN/resync/"
-		in_ihs_file = basedir + "IRN_ihs_nsl/IRN_ihs_gw.txt.100bins.norm.chr" + str(chrom) + ".txt" #IRN_dryrun_060716_chr" + str(chrom) +".ihs.out" #NORM!!!
-		in_delihh_file =  basedir + "IRN_ihs_nsl/IRN_delihh_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
-		in_nsl_file = basedir + "IRN_ihs_nsl/IRN_nsl_gw.txt.100bins.norm.chr" + str(chrom) + ".txt"
-		in_xp_file = basedir + "xp_IRN/xp_IRN_" + altpop + "_gw.txt.norm.chr" + str(chrom) + ".txt" #xp_IRN_" + altpop + "_chr" + str(chrom) + ".xpehh.out" #NORM!!!
-		in_fst_deldaf_file = basedir + "freqscores_IRN/freqs_IRN_" + altpop + ".chr" + str(chrom) + ".txt"
+		in_fst_deldaf_file = basedir + "freqs/chr" + str(chrom) + "_strictMask_" + str(pop) + "_" + str(altpop)
 	for filename in [in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(filename):
 			print("MISSING: " + filename)
@@ -140,13 +133,9 @@ def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 		else:
 			pass
 	return fprfile, tprfile 
-def get_emp_cms_file(selpop, chrom, normed = False, basedir = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/", suffix = ".model_a"): #CONNECT "MODEL" TO "RUNSUFFIX"
+def get_emp_cms_file(selpop, chrom, normed = False, basedir = "", suffix = ""): 
 	""" locates CMS files for empirical data """
-	#filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + "_strictMask_" + model + ".cms" + suffix
-	if selpop not in ['IRN']:
-		filename = basedir + "composite/chr" + str(chrom) + "_" + str(selpop) + ".cms.out" + suffix
-	else:
-		filename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/composite/IRN_composite_041817/chr" + str(chrom) + "_IRN.cms.out" + suffix
+	filename = basedir + "chr" + str(chrom) + "_" + str(selpop) + ".cms.gw.out" + suffix
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
@@ -206,6 +195,7 @@ def load_simscores(model, pop, numRep = 500, normed = False, takeIndex = -1):
 		if os.path.isfile(neutfilename):
 			#print(neutfilename)
 			openfile = open(neutfilename, 'r')
+			openfile.readline() #header
 			for line in openfile:
 				entries = line.split()
 				val = float(entries[takeIndex])
@@ -217,15 +207,16 @@ def load_simscores(model, pop, numRep = 500, normed = False, takeIndex = -1):
 	infostring += " scores."
 	print(infostring)
 	return all_simscores
-def load_empscores(model, selpop, normed = False, suffix = '', takeIndex = -1):
+def load_empscores(selpop, normed = False, basedir =  "", suffix = '', takeIndex = -1):
 	""" for genome-wide empirical CMS data, loads a value according to takeIndex """	
 	chroms = range(1,23)
 	scores = []
 	for chrom in chroms:
-		scorefile = get_emp_cms_file(selpop, model, chrom, normed=normed, suffix=suffix)
+		scorefile = get_emp_cms_file(selpop, chrom, normed=normed, basedir=basedir, suffix=suffix)
 		print('loading from ' + scorefile)
 		assert os.path.isfile(scorefile)
 		openfile = open(scorefile, 'r')
+		openfile.readline() #header
 		for line in openfile:
 			entries=line.split()
 			scores.append(float(entries[takeIndex]))

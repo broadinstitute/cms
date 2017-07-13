@@ -1,5 +1,5 @@
 // for a given pop pair, parse genome-wide iHH to calculate and record XP-EHH files.
-// last updated: 12.28.16 	vitti@broadinstitute.org
+// last updated: 06.12.17 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -25,9 +25,6 @@ int main(int argc, char **argv) {
 		exit(0);
 	}
 
-	//fprintf(stderr, "found sign error in calculation on 12.28.16, creating potential issues with previous calcs. if using this program, slow down and verify\n");
-//	exit(0);
-
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
 	strcpy(infilename1,argv[1]);
@@ -51,7 +48,6 @@ int main(int argc, char **argv) {
 
 	inf1_snp = data1.nsnps;
 	inf2_snp = data2.nsnps;
-    fprintf(stderr, "%d\t%d\n", inf1_snp, inf2_snp);
 	index_1 = 0;
 	index_2 = 0;
 
@@ -73,9 +69,7 @@ int main(int argc, char **argv) {
 		if (pos1 == pos2){				
 			if (ihh1 == 0){ihh1 = 1e-08;}
 			if (ihh2 == 0){ihh2 = 1e-08;}
-			xpehh = log(ihh1/ihh2); // times neg 1?
-			//fprintf(outf, chromstr);
-			//fprintf(outf, "_");
+			xpehh = log(ihh1/ihh2); 
 			fprintf(outf, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, ihh1, p1, ihh2, p2, xpehh);
 		     index_1++;
              index_2++;

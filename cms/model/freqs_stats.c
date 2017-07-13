@@ -1,5 +1,5 @@
 //  alternate/replacement to calc_fst_deldaf; pass information along in a way that anticipate the needs of cms_data structures
-//  06.13.2017  	vitti@broadinstitute.org   //for now, preserve both.
+//  06.20.2017  	vitti@broadinstitute.org   //for now, preserve both.
 
 #include <stdio.h>
 #include <string.h>
@@ -131,5 +131,6 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "fst_sum: %f\n", fst_sum);
 	//fprintf(stderr, "nfst: %d\n", nfst);
 	//fprintf(stderr, "chrom ave Fst: %.8f\n", (fst_sum/nfst));
+	fprintf(stderr, "wrote to %s\n", filename);
 	return 0;
 } //end main
