@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 06.14.2017 	vitti@broadinstitute.org
+// last updated: 07.13.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -263,6 +263,7 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
+	int unnormed_index, normed_index; // selscan output may or may not include ihh decomposition; account for both
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -274,7 +275,7 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	data->ihh1 = NULL;
 	data->ihs_unnormed = NULL;
 	data->ihs_normed = NULL;
-	data->lastcol = NULL; //not sure what information this field contains, selscan documentation is sparse. 0/1
+	data->lastcol = NULL; 
 
 	inf = fopen(filename, "r");
 	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
@@ -284,6 +285,18 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 			data->nsnps++;
 		}
 	fclose(inf);
+
+	// determine formatting based on line (selscan output may or may not include ihh decomposition)
+	// https://github.com/szpiech/selscan
+	unnormed_index = 0; //5 9
+	normed_index = 0; //6 10
+	int dummy_var = 0;
+	for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++)
+		{dummy_var ++;}
+
+	if (itoken <= 8){unnormed_index = 5; normed_index = 6;}
+	else {unnormed_index = 9; normed_index = 10;}
+
 
 	// Allocate memory; initialize
 	data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
@@ -313,13 +326,13 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 			else if (itoken == 4) {
 				data->ihh1[isnp] = atof(token);
 			}
-			else if (itoken == 9){//5) {
+			else if (itoken == unnormed_index){
 				data->ihs_unnormed[isnp] = atof(token);
 			}			
-			else if (itoken == 10){//6) { //some confusion: https://github.com/szpiech/selscan
+			else if (itoken == normed_index){
 				data->ihs_normed[isnp] = atof(token);
 			}
-			//else if (itoken == 7) {
+			//else if (itoken == normed_index + 1) {
 			//	data->lastcol[isnp] = atoi(token);
 			//}
 		} // END for running=newLine
@@ -1604,7 +1617,6 @@ float comparedelDaf(popComp_data_multiple* data, int isnp){//currently: takes av
 		deldaf += data->delDAF[iComp][isnp];
 		theseComp++;}
 		//if (data->delDAF[iComp][isnp] > deldaf){deldaf = data->delDAF[iComp][isnp];}
-
 	}
 	ave = deldaf / (double)theseComp;
 	return ave;

@@ -1,11 +1,12 @@
 //  alternate/replacement to calc_fst_deldaf; pass information along in a way that anticipate the needs of cms_data structures
-//  06.13.2017  	vitti@broadinstitute.org   //for now, preserve both.
+//  06.20.2017  	vitti@broadinstitute.org   //for now, preserve both.
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <zlib.h>
 #include "coal_data_tped_vers.h"
 
 int main(int argc, char **argv) {
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
 	////////////////////////////
 	// COUNT ALLELES FOR pop0 //
 	////////////////////////////
-	get_coal_data_tped_vers(&data, inTped1, inRecomfile);   
+	get_coal_data_tped_vers_gz(&data, inTped1, inRecomfile);   
 	nall0[0] = calloc(data.nsnp, sizeof(int));
 	nall1[0] = calloc(data.nsnp, sizeof(int));
 	for (isnp = 0; isnp < data.nsnp; isnp++) {
@@ -54,7 +55,7 @@ int main(int argc, char **argv) {
 	////////////////////////////
 	// COUNT ALLELES FOR pop1 //
 	////////////////////////////
-	get_coal_data_tped_vers(&data, inTped2, inRecomfile);
+	get_coal_data_tped_vers_gz(&data, inTped2, inRecomfile);
 	nall0[1] = calloc(data.nsnp, sizeof(int));
 	nall1[1] = calloc(data.nsnp, sizeof(int));
 	for (isnp = 0; isnp < data.nsnp; isnp++) {
@@ -130,5 +131,6 @@ int main(int argc, char **argv) {
 	//fprintf(stderr, "fst_sum: %f\n", fst_sum);
 	//fprintf(stderr, "nfst: %d\n", nfst);
 	//fprintf(stderr, "chrom ave Fst: %.8f\n", (fst_sum/nfst));
+	fprintf(stderr, "wrote to %s\n", filename);
 	return 0;
 } //end main

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for generating probability distributions for component scores as part of CMS 2.0. 
-## last updated: 06.14.2017 	vitti@broadinstitute.org
+## last updated: 06.24.2017 	vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -198,12 +198,10 @@ def execute_run_repscores(args):
 	cmsdir = args.cmsdir 
 	tped = args.inputTpedFile
 	repNum, pop, tpeddir = get_info_from_tped_name(tped)
-	checkOverwrite = args.checkOverwrite #nix/fix
+	checkOverwrite = args.checkOverwrite 
 	simRecomFile = args.simRecomFile
 	assert os.path.isfile(tped)
-	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'fst_deldaf']:
-		#dircmd = "mkdir -p " + basedir + scorefiledir + "/"
-		#subprocess.check_output( dircmd.split() )
+	for scorefiledir in ['ihs', 'delihh', 'nsl', 'xpehh', 'freqs']:
 		check_create_dir(basedir + scorefiledir)
 
 	####### Calculate per-population
@@ -214,7 +212,7 @@ def execute_run_repscores(args):
 	ihs_argstring = tped + " " + ihs_outfileprefix + " --threads 7 "
 	ihs_fullcmd = ihs_commandstring + " " + ihs_argstring
 	ihs_normedfile = ihs_unnormedfile + ".norm"
-	proceed = check_create_file(ihs_normedfile, args.checkOverwrite)
+	proceed = check_create_file(ihs_unnormedfile, args.checkOverwrite)
 	if proceed:
 		print(ihs_fullcmd)
 		execute(ihs_fullcmd)
@@ -223,7 +221,7 @@ def execute_run_repscores(args):
 	delihh_argstring = ihs_unnormedfile + " "+ delihh_unnormedfile
 	delihh_fullcmd = delihh_commandstring + " " + delihh_argstring 
 	delihh_normedfile = delihh_unnormedfile + ".norm"
-	proceed = check_create_file(delihh_normedfile, args.checkOverwrite)
+	proceed = check_create_file(delihh_unnormedfile, args.checkOverwrite)
 	if proceed:
 		print(delihh_fullcmd)
 		execute(delihh_fullcmd)		
@@ -255,7 +253,7 @@ def execute_run_repscores(args):
 			execute(xpehh_fullcmd)
 
 		fstdeldaf_commandstring = "python " + cmsdir + "composite.py freqscores"
-		fstdeldaf_outfilename = basedir + "fst_deldaf/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
+		fstdeldaf_outfilename = basedir + "freqs/rep" + str(repNum) + "_" + str(pop) + "_" + str(altpop)
 		fstdeldaf_argumentstring = tped + " " + tped2 + " " + simRecomFile + " " + fstdeldaf_outfilename 
 		fstdeldaf_fullcmd = fstdeldaf_commandstring + " " + fstdeldaf_argumentstring 
 		proceed = check_create_file(fstdeldaf_outfilename, args.checkOverwrite)
@@ -305,7 +303,7 @@ def execute_get_neut_norm_params(args):
 					unnormedfile = basedir + "neut/xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
 					physpos_ind = 1
 				elif score == "fst":
-					unnormedfile = basedir + "neut/fst_deldaf/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+					unnormedfile = basedir + "neut/freqs/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
 					physpos_ind = 0
 				if os.path.isfile(unnormedfile):
 					repfiles.append(unnormedfile)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 06.19.2017 	vitti@broadinstitute.org #update docstrings
+## last updated: 07.13.2017 	vitti@broadinstitute.org #update docstrings, clean up common args
 
 import matplotlib
 matplotlib.use('agg')
@@ -115,7 +115,7 @@ def full_parser_composite():
 	for emp_parser in [composite_emp_parser, normemp_genomewide_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")	
 
-	for common_parser in [normemp_genomewide_parser, normsims_genomewide_parser, composite_sims_parser, composite_emp_parser]:
+	for common_parser in [normsims_genomewide_parser, composite_sims_parser, composite_emp_parser]:
 		common_parser.add_argument('--model', type=str, action="store", default="nulldefault")
 		common_parser.add_argument('--checkOverwrite', action="store_true", default=False)
 
@@ -359,6 +359,9 @@ def execute_composite_emp(args):
 		altpairs = []
 		for altpop in altpops:
 			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(chrom, emp_selpop, altpop=altpop, basedir = score_basedir) 
+			pairdir = score_basedir + "pairs/"
+			mkdir_pairdir_cmd = "mkdir -p " + pairdir
+			subprocess.check_output( mkdir_pairdir_cmd.split() )
 			pairfilename = score_basedir + "pairs/chr" + str(chrom) + "_" + str(emp_selpop) + "_" + str(altpop) + ".pair" 
 			if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
@@ -484,9 +487,6 @@ def execute_normsims_genomewide(args):
 def execute_normemp_genomewide(args):
 	""" given output from composite_emp, normalize CMS scores genome-wide """  #could also introduce a feature to normalize to explicitly neutral regions. 
 	selpop = args.emppop
-	model = args.model
-	#suffix = args.suffix
-	#basedir = args.writedir
 	score_basedir = args.score_basedir
 
 	if args.runSuffix is not None:
@@ -494,9 +494,9 @@ def execute_normemp_genomewide(args):
 	else:
 		suffix = ""
 
-	print('must check correct load_emp function')
-	scores2 = load_empscores(model, selpop, normed=False, suffix=suffix, basedir=score_basedir) #HANDLE THIS MORE EXPLICITLY
-	scores = [np.log(item) for item in scores2]
+	clr_scores = load_empscores(selpop, normed=False, suffix=suffix, basedir=score_basedir) 
+	logscores = [np.log(item) for item in clr_scores]
+	scores = logscores 
 
 	#check for nans
 	scores = np.array(scores)
@@ -529,6 +529,7 @@ def execute_normemp_genomewide(args):
 
 		readfile = open(unnormedfile, 'r')
 		writefile = open(normedfile, 'w')
+		readfile.readline() #header
 		for line in readfile:
 			line = line.strip('\n')
 			entries=line.split()

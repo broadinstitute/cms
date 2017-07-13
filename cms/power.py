@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 06.19.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 07.08.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -82,19 +82,19 @@ def full_parser_power():
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
 
-	for emp_parser in [manhattan_parser, extended_manhattan_parser, gw_regions_parser]:
+	for emp_parser in [extended_manhattan_parser, gw_regions_parser]:
 		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 
-	for suffixed_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, manhattan_parser, extended_manhattan_parser, gw_regions_parser, find_cutoff_parser]:
+	for suffixed_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, extended_manhattan_parser, gw_regions_parser, find_cutoff_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='', help='point to files saved with suffix to index a particular run (if included)')
 
-	for plot_parser in [regionviz_parser, distviz_parser, manhattan_parser, extended_manhattan_parser, cdf_parser, roc_parser]:
+	for plot_parser in [regionviz_parser, distviz_parser, extended_manhattan_parser, cdf_parser, roc_parser]:
 		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="test.png")
 
-	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
+	for commonparser in [fpr_parser, gw_regions_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
 		commonparser.add_argument('--nrep', type=int, default=1000)
 
-	for commonparser in [fpr_parser, gw_regions_parser, manhattan_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, roc_parser, find_cutoff_parser]:
+	for commonparser in [fpr_parser, gw_regions_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, roc_parser, find_cutoff_parser]:
 		commonparser.add_argument('--model', type=str, default="nulldefault")
 
 
