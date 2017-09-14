@@ -45,7 +45,8 @@ def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_c
 		in_ihs_file = basedir + "ihs/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".ihs.out.100bins.norm"
 		in_delihh_file =  basedir + "delihh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".delihh.out.100bins.norm"
 		in_nsl_file =  basedir + "nsl/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + ".nsl.out.100bins.norm"
-		in_xp_file = basedir + "xpehh/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
+		in_xp_file = basedir + "xpehh_recombine/chr" + str(chrom) +"_" + str(pop) + "_" + str(altpop) + ".norm"
+		#/chr" + str(chrom) + "_strictMask_" + str(pop) + suffix + "_vs_" + altpop + ".xpehh.out.norm"
 		in_fst_deldaf_file = basedir + "freqs/chr" + str(chrom) + "_strictMask_" + str(pop) + "_" + str(altpop)
 	for filename in [in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(filename):
@@ -123,9 +124,10 @@ def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 		suffix = "_likesfreqs"
 
 	regionlen, percentage, cutoff, pop, selFreq = key
-	fprfile = modeldir + "fpr/sel" + str(pop) + "_fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix
+	#TEMP HARD CODE
+	fprfile = modeldir + "fpr_081817/sel" + str(pop) + "_fpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix
 	#modeldir + "fpr" + likes_dir_suffix + "/fpr_pop" + str(pop) + "_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff)
-	tprfile = modeldir + "tpr/sel" + str(pop) + "_tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix + "_" + str(selFreq)
+	tprfile = modeldir + "tpr_081817/sel" + str(pop) + "_tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + suffix + "_" + str(selFreq)
 	#modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
@@ -228,7 +230,8 @@ def load_regions(regionfile):
 	allchroms, allstarts, allends = [], [], []
 	for line in openfile:
 		entries = line.split()
-		if len(entries) == 3:
+		if True:
+		#if len(entries) == 3:
 			chrom, startpos, endpos = entries[0], int(entries[1]), int(entries[2])
 			allchroms.append(chrom)
 			allstarts.append(startpos)
@@ -237,10 +240,10 @@ def load_regions(regionfile):
 	return allchroms, allstarts, allends
 def load_power_dict(modeldir, likes_dir_suffix = ""):
 	""" top-level function called by ROC, find_opt """
-	regionlens = [25000, 50000, 75000, 100000] #should soft-code
-	thressholds = [25, 30, 35, 40, 45, 50]	
+	regionlens = [50000]#, 25000, 75000, 100000] #should soft-code
+	thressholds = [10, 15, 20, 25, 30, 35, 40, 45, 50]	
 
-	cutoffs = [10, 15, 20, 25, 30, 35, 40]
+	cutoffs = [5, 10, 15, 20, 25, 30, 35, 40]
 	pops = [1, 2, 3, 4] #maybe include toggle option: take ave vs. keep separate populations?
 	freq_classes = ['hi', 'highest', 'mid', 'lo']
 

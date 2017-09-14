@@ -33,7 +33,7 @@ def calc_delihh(readfilename, writefilename):
 					#ancestral - derived
 		else:
 			locus, phys, freq_1, ihh_1, ihh_0, ihs_unnormed, ihs_normed, lastcol = entries
-		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0)) #WAIT WHY FABS?????????
+		unstand_delIHH = fabs(float(ihh_1) - float(ihh_0)) 
 		writeline = locus + "\t" + phys + "\t" + freq_1 + "\t" + str(ihs_unnormed) + "\t" + str(unstand_delIHH) +"\t" + str(unstand_delIHH) +  "\n" #6 columns for selscan norm
 		writefile.write(writeline)
 	writefile.close()

@@ -1,7 +1,6 @@
 // 	calculate within-region Composite of Multiple Signals (CMS) statistic 
 //	last updated 06.18.2017 	vitti@broadinstitute.org
 
-
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>

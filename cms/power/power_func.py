@@ -1,11 +1,12 @@
 ##	functions for analyzing empirical/simulated CMS output
-##	last updated 06.19.2017		vitti@broadinstitute.org
+##	last updated 09.14.2017		vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from scipy.stats import percentileofscore
 
 ###################
 ## DEFINE SCORES ##
@@ -71,21 +72,38 @@ def check_rep_windows(physpos, scores, windowlen = 100000, cutoff = 3, totalchrl
 		rep_percentages.append(percentage)
 	return rep_percentages
 def merge_windows(chrom_signif, windowlen, maxGap = 100000):
+	print('should implement this using bedtools')
 	starts, ends = [], []
 	contig = False
-	for i_start in range(len(chrom_signif) - 1):
-		if not contig:
-			starts.append(chrom_signif[i_start])
-		if ((chrom_signif[i_start] + windowlen) > chrom_signif[i_start + 1]): #contiguous
-			contig = True
-		#or, could also be contiguous in the situation where the next snp is not within this window because there doesn't exist such a snp
-		elif chrom_signif[i_start +1] >=(chrom_signif[i_start] + windowlen)  and chrom_signif[i_start +1] < (chrom_signif[i_start] + maxGap):
-			contig = True
+	this_windowlen = 0
+	starting_pos = 0
+	if len(chrom_signif) > 0:
+		for i_start in range(len(chrom_signif) - 1):
+			if not contig:
+				starts.append(chrom_signif[i_start])
+				this_windowlen = windowlen #unmerged, default
+				starting_pos = chrom_signif[i_start]
+
+			if ((chrom_signif[i_start] + this_windowlen) > chrom_signif[i_start + 1]): #contiguous
+				contig = True
+				this_windowlen = chrom_signif[i_start +1] + windowlen - starting_pos 
+			#or, could also be contiguous in the situation where the next snp is not within this window because there doesn't exist such a snp
+			elif chrom_signif[i_start +1] >=(chrom_signif[i_start] + this_windowlen)  and chrom_signif[i_start +1] < (chrom_signif[i_start] + maxGap):
+				contig = True
+				this_windowlen = chrom_signif[i_start +1] + windowlen - starting_pos
+			else:
+				contig = False
+
+			if not contig:
+				windowend = chrom_signif[i_start] + windowlen
+				ends.append(windowend)
+		if contig: #last region is overlapped by its predecssor
+			ends.append(chrom_signif[-1] + windowlen)
 		else:
-			contig = False
-		if not contig:
-			windowend = chrom_signif[i_start] + windowlen
-			ends.append(windowend)
+			starts.append(chrom_signif[-1])
+			ends.append(chrom_signif[-1] + windowlen)
+	
+	assert len(starts) == len(ends)
 	return starts, ends
 
 ##########################
@@ -163,6 +181,8 @@ def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=100
 	allvals = allvals[~np.isinf(allvals)]
 	#allvals = list(allvals)
 	#print(allvals)
+	print("percentile for score = 10: " + str(percentileofscore(allvals, 10)))
+	print("percentile for score = 15: " + str(percentileofscore(allvals, 15)))
 	if len(allvals) > 0:
 		f, ax = plt.subplots(1)
 		ax.hist(allvals, bins=numBins)

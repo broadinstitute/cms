@@ -64,13 +64,12 @@ int main(int argc, char **argv) {
         p2 = data2.freq[index_2];
         gdpos1 = data1.genpos[index_1];
         gdpos2 = data1.genpos[index_2];
-		//fprintf(stderr, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, ihh1, p1, ihh2, p2, xpehh);
-		//calculate xpehh and write to file
+ 		//calculate xpehh and write to file
 		if (pos1 == pos2){				
 			if (ihh1 == 0){ihh1 = 1e-08;}
 			if (ihh2 == 0){ihh2 = 1e-08;}
 			xpehh = log(ihh1/ihh2); 
-			fprintf(outf, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, ihh1, p1, ihh2, p2, xpehh);
+			fprintf(outf, "%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", pos1, pos1, gdpos1, p1, ihh1, p2, ihh2, xpehh);
 		     index_1++;
              index_2++;
         }
