@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for combining scores into composite statistics as part of CMS 2.0.
-## last updated: 07.13.2017 	vitti@broadinstitute.org #update docstrings, clean up common args
+## last updated: 07.24.2017 	vitti@broadinstitute.org #update docstrings, clean up common args
 
 import matplotlib
 matplotlib.use('agg')
@@ -17,6 +17,14 @@ import argparse
 import gzip
 import sys
 import os
+
+def check_zip(infilename):
+	if not os.path.isfile(infilename):
+		zipfilename = infilename + ".gz"
+		if os.path.isfile(zipfilename):
+			unzip_cmd = "gunzip " + zipfilename
+			subprocess.check_output(unzip_cmd.split())
+	return
 
 #############################
 ## DEFINE ARGUMENT PARSER ###
@@ -58,7 +66,9 @@ def full_parser_composite():
 	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
 	composite_emp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
 	composite_emp_parser.add_argument('--regional_cms_chrom', type=int, action="store", help="if included, calculate within-region CMS (rather than CMS_gw) for specified bounds at this chromosome")
-	
+	composite_emp_parser.add_argument('--composite_writedir', type=str, action="store", help="write output to", default="")
+
+
 	normsims_genomewide_parser = subparsers.add_parser('normsims_genomewide', help="normalize simulated composite scores to neutral")
 	normemp_genomewide_parser = subparsers.add_parser('normemp_genomewide', help="normalize CMS scores to genome-wide") #norm emp REGIONS?
 	normemp_genomewide_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
@@ -195,7 +205,7 @@ def execute_composite_sims(args):
 	likes_masterDir = args.likes_masterDir
 	likes_nonSel = args.likes_nonSel				
 	likes_freqSuffix = args.likes_freqSuffix
-	ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master = get_master_likefiles(likes_masterDir, model, selpop, likes_nonSel, likes_freqSuffix)
+	ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master = get_master_likefiles(likes_masterDir, "gradient_101915_treebase_6_best", selpop, likes_nonSel, likes_freqSuffix)
 
 	########################################################
 	## RECORD INPUT PARAMETERS (scores, MAF filter, etc.) ##
@@ -264,7 +274,7 @@ def execute_composite_sims(args):
 			for altpop in altpops:
 				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir, normed = True)
 				pairfilename = pairdir + "rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
-				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file):
+				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file) and os.path.getsize(in_ihs_file) > 0:
 					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 					altpairs.append(pairfilename)
 			if len(altpairs) !=0:
@@ -309,6 +319,7 @@ def execute_composite_emp(args):
 	model = args.model
 	modelPop = args.simpop
 	score_basedir = args.score_basedir
+	composite_writedir = args.composite_writedir
 
 	########################################
 	## SPECIFY INPUT LIKELIHOOD FUNCTIONS ##
@@ -359,6 +370,10 @@ def execute_composite_emp(args):
 		altpairs = []
 		for altpop in altpops:
 			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(chrom, emp_selpop, altpop=altpop, basedir = score_basedir) 
+			
+			for inputfile in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
+				check_zip(inputfile)
+
 			pairdir = score_basedir + "pairs/"
 			mkdir_pairdir_cmd = "mkdir -p " + pairdir
 			subprocess.check_output( mkdir_pairdir_cmd.split() )
@@ -367,9 +382,13 @@ def execute_composite_emp(args):
 				write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 				altpairs.append(pairfilename)
 		if len(altpairs) !=0:
-			outfile = score_basedir + "composite/"
+			outfile = composite_writedir
+			if outfile[-1] != "/":
+				outfile += "/"
 			if args.regional_cms_chrom is not None:
 				outfile += "regional/"
+			else:
+				outfile += "gw/"
 			outfile += "chr" + str(chrom) + "_" + str(emp_selpop) + file_ending + suffix
 			alreadyExists = False
 			if args.checkOverwrite:
@@ -442,7 +461,7 @@ def execute_normsims_genomewide(args):
 	for irep in range(1, numPerBin_neut +1):	
 		outfile  = get_neut_repfile_name(model, irep, selpop, suffix = suffix, normed=False, basedir=writedir)
 		if os.path.isfile(outfile):
-			normedfile = outfile + ".norm"
+			normedfile = outfile + ".norm"#.z"
 			if True:
 			#if not os.path.isfile(normedfile): #CHANGE FOR --checkOverwrite
 				openfile = open(outfile, 'r')
@@ -467,7 +486,7 @@ def execute_normsims_genomewide(args):
 			rawfile = get_sel_repfile_name(model, irep, selpop, sel_freq_bin, suffix=suffix, normed = False, basedir=writedir)
 			#print(rawfile)
 			if os.path.isfile(rawfile):
-				normedfile = rawfile + ".norm"
+				normedfile = rawfile + ".norm"#.z"
 				if True:
 				#if not os.path.isfile(normedfile):
 					openfile = open(rawfile, 'r')
@@ -587,6 +606,13 @@ def execute_hapviz(args):
 				ax.plot(foundindex, ylim, "v", color="black", markersize=1)
 				ax.plot(foundindex, -5, "^", color="black", markersize=1)
 				ax.text(foundindex, -35, str(snppos) +"\n" + annotation, fontsize=2, horizontalalignment='center')
+			else: #find nearest and draw a line
+				dif = [item - int(snppos) for item in physpositions]
+				minDif = min(dif)
+				minDifIndex = dif.index(minDif)
+				print(str(minDifIndex))
+				ax.axvline(minDifIndex, color="orange")
+				print('found nearest proxy variant based on physical distance ' + str(physpositions[minDifIndex]))
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
 	plt.tight_layout()

@@ -1,5 +1,5 @@
 ## helper functions for generating visualizing component score likelihoods
-## last updated: 06.14.2017 vitti@broadinstitute.org
+## last updated: 08.18.2017 vitti@broadinstitute.org
 
 from scipy.stats.kde import gaussian_kde
 from random import choice
@@ -223,13 +223,21 @@ def get_likes_filenames(baseloc, model, score, pop, like_savestring = "test"):
 	#THIS FUNCTION NEEDS TO KNOW: folded or unfolded? use just hifreq? (depends on SCORE, depends on  intent...)
 	#OR MAYBE THIS GETS SUSSED OUT BEFORE THIS FUNCTION IS CALLED, and like_savestring gets chosen.
 
-	shared_prefix = baseloc + model + "_" + score + "_sel" + str(pop)
-	neut_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_neut.txt" #should these be broken out by DAF? or did I have a reason not to for neut
-	linked_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_linked.txt"
-	hit_hi_filename = shared_prefix + "_hi_" + like_savestring + "_likes_causal.txt"
-	hit_mid_filename = shared_prefix + "_mid_" + like_savestring + "_likes_causal.txt"
-	hit_low_filename = shared_prefix + "_low_" + like_savestring + "_likes_causal.txt"	
-	hit_allfreqs_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_causal.txt"
+	#PROBABLY GOING TO OVERHAUL THIS ALTOGETHER. experimental for now...
+	neut_filename = "/idi/sabeti-scratch/jvitti/likes_revamp/pdfs/neut_" + score + "_" + str(pop) + ".likes"
+	linked_filename = "/idi/sabeti-scratch/jvitti/likes_revamp/pdfs/sel_" + score + "_" + str(pop) + ".likes"
+	hit_hi_filename = linked_filename
+	hit_mid_filename = linked_filename
+	hit_low_filename = linked_filename 
+	hit_allfreqs_filename = linked_filename
+	
+	#shared_prefix = baseloc + model + "_" + score + "_sel" + str(pop)
+	#neut_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_neut.txt" #should these be broken out by DAF? or did I have a reason not to for neut
+	#linked_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_linked.txt"
+	#hit_hi_filename = shared_prefix + "_hi_" + like_savestring + "_likes_causal.txt"
+	#hit_mid_filename = shared_prefix + "_mid_" + like_savestring + "_likes_causal.txt"
+	#hit_low_filename = shared_prefix + "_low_" + like_savestring + "_likes_causal.txt"	
+	#hit_allfreqs_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_causal.txt"
 	for likes_filename in [neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename]:
 		if not os.path.isfile(likes_filename):
 			print("missing: " + likes_filename)

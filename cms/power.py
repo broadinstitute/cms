@@ -1,5 +1,5 @@
 ##	top-level script to manipulate and analyze empirical/simulated CMS output
-##	last updated 07.08.2017	vitti@broadinstitute.org #should handle basedir vs writedir
+##	last updated 09.07.2017	vitti@broadinstitute.org #should handle basedir vs writedir
 
 import matplotlib as mp 
 mp.use('agg')
@@ -48,7 +48,9 @@ def full_parser_power():
 		find_cutoff_parser.add_argument('--maxFPR', type=float, action="store", default=".05")
 		#find_cutoff_parser.add_argument('fprloc', type=str, action="store", help="specific to model/pop")
 		#find_cutoff_parser.add_argument('tprloc', type=str, action="store", help="specific to model/pop")
-
+	fpr_parser.add_argument('--score', type=str, default="cms_normed", action="store", help="use this score to call regions")	
+	tpr_parser.add_argument('--score', type=str, default="cms_normed", action="store", help="use this score to call regions")	
+	
 	#############################
 	## EMPIRICAL SIGNIFICANCE ###
 	#############################
@@ -56,8 +58,9 @@ def full_parser_power():
 		gw_regions_parser = subparsers.add_parser('gw_regions', help="pull designated significant regions from genome-wide normalized results")
 		gw_regions_parser.add_argument('--geneFile', help="input file containing bounds ")
 		regionlog_parser = subparsers.add_parser('regionlog', help='write regions to excel sheet with gene overlap')
-		regionlog_parser.add_argument('--gene_bedfile', help="name of file", type = str, action='store', default = "/n/home08/jvitti/knownGenes_110116.txt")
-		regionlog_parser.add_argument('--stringency', help="points to region files based on cutoffs", type = str, action='store', default = "conservative")
+		regionlog_parser.add_argument('input_filelist', help="list with paths for all (per-pop) region files to be logged", type = str, action='store')
+		regionlog_parser.add_argument('gene_bedfile', help="name of file with information on boundaries of known genes", type = str, action='store')
+		regionlog_parser.add_argument('--save_filename', help="filename of region log to write (.xls or .txt)", type=str, action='store', default='test.xls')
 		extended_manhattan_parser = subparsers.add_parser('extended_manhattan', help = "generate per-chrom plots as one fig")
 		extended_manhattan_parser.add_argument('--plotscore', help="string label for score to plot: {seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed}", type=str, default="cms_normed")
 		extended_manhattan_parser.add_argument('--regionsfile', help="optional; input file of regions designated as above threshhold")
@@ -71,33 +74,22 @@ def full_parser_power():
 	for write_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser, find_cutoff_parser]:
 		write_parser.add_argument('--writedir', type =str, help='where to write output', default = "/idi/sabeti-scratch/jvitti/")
 		write_parser.add_argument('--checkOverwrite', action="store_true", default=False)
-
-	for simpop_parser in [fpr_parser, tpr_parser, cdf_parser, gw_regions_parser, extended_manhattan_parser]:
-		simpop_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
-
+	for model_parser in [fpr_parser, cdf_parser, tpr_parser, roc_parser, find_cutoff_parser]:
+		model_parser.add_argument('--model', type=str, default="nulldefault")
+	for sim_parser in [fpr_parser, tpr_parser, cdf_parser]:
+		sim_parser.add_argument('--simpop', action='store', help='simulated population', default=1)
+		sim_parser.add_argument('--nrep', type=int, default=1000)
+	for emp_parser in [extended_manhattan_parser, gw_regions_parser]:
+		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
 	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser]:
 		regions_parser.add_argument('regionlen', type = int, action='store', help='length of region to query', default="100000")
 		regions_parser.add_argument('thresshold', type = float, action='store', help='percentage of region to exceed cutoff', default="30")
 		regions_parser.add_argument('cutoff', type = float, action='store', help='minimum significant value for region definition', default="3.0")
-	for regions_parser in [fpr_parser, gw_regions_parser, tpr_parser, regionlog_parser]:	
 		regions_parser.add_argument('--saveLog', type =str, help="save results as text file", )
-
-	for emp_parser in [extended_manhattan_parser, gw_regions_parser]:
-		emp_parser.add_argument('--emppop', action='store', help='empirical population', default="YRI")
-
 	for suffixed_parser in [fpr_parser, tpr_parser, roc_parser, cdf_parser, extended_manhattan_parser, gw_regions_parser, find_cutoff_parser]:
 		suffixed_parser.add_argument('--suffix', type= str, action='store', default='', help='point to files saved with suffix to index a particular run (if included)')
-
 	for plot_parser in [regionviz_parser, distviz_parser, extended_manhattan_parser, cdf_parser, roc_parser]:
-		plot_parser.add_argument('--savefilename', action='store', help='path of file to save', default="test.png")
-
-	for commonparser in [fpr_parser, gw_regions_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser]:
-		commonparser.add_argument('--nrep', type=int, default=1000)
-
-	for commonparser in [fpr_parser, gw_regions_parser, regionlog_parser, cdf_parser, tpr_parser, extended_manhattan_parser, roc_parser, find_cutoff_parser]:
-		commonparser.add_argument('--model', type=str, default="nulldefault")
-
-
+		plot_parser.add_argument('--savefilename', action='store', help='path of image file to save', default="test.png")
 	return parser
 
 #################################
@@ -154,11 +146,12 @@ def execute_distviz(args):
 	allvals = []
 	for infilename in allfiles:
 		infile = open(infilename, 'r')
+		infile.readline() #strip
 		for line in infile:
 			entries = line.split()
 			if len(entries) > takeIndex:
 				if not np.isnan(float(entries[takeIndex])):
-					allvals.append(np.log(float(entries[takeIndex])))
+					allvals.append(float(entries[takeIndex])) #SOME EQUIVOCATION HERE #np.log(float(entries[takeIndex])))
 			else:
 				print('check input datafile and argument takeIndex')
 		infile.close()
@@ -169,7 +162,6 @@ def execute_extended_manhattan(args):
 	""" generate a genome-wide plot of CMS scores with option to hilight outlier regions """
 	plotscore = args.plotscore
 	selpop = args.emppop
-	model = args.model
 	basedir = args.writedir
 	suffix = args.suffix
 	savename = args.savefilename
@@ -325,6 +317,7 @@ def execute_fpr(args):
 	pop = args.simpop
 	suffix = args.suffix
 	writedir = args.writedir
+	takeScore = args.score
 
 	all_scores = []
 	all_percentages = []
@@ -336,9 +329,10 @@ def execute_fpr(args):
 				print(repfilename)
 			physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
 			#physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
-			if len(cms_normed) > 0:
-				all_scores.append(cms_normed)
-				rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
+			these_scores = eval(takeScore)
+			if len(these_scores) > 0:
+				all_scores.append(these_scores)
+				rep_percentages = check_rep_windows(physpos, these_scores, regionlen, cutoff = cutoff)
 				all_percentages.append(rep_percentages)		
 				#FOR DEBUG
 				#print(str(rep_percentages) + "\t" + repfilename)
@@ -369,6 +363,7 @@ def execute_tpr(args):
 	pop = args.simpop
 	suffix = args.suffix
 	writedir = args.writedir
+	takeScore = args.score
 
 	all_scores = []
 	all_percentages = []
@@ -382,7 +377,7 @@ def execute_tpr(args):
 	#per seldaf
 	dafbins = [['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90'], ['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90'], ['0.90']]
 	daflabels = ['all', 'lo', 'mid', 'hi','highest']
-	for ibin in [1, 2, 3, 4]:#range(1):
+	for ibin in [2, 3]:#[1, 2, 3, 4]:#range(1):
 		thesebins, thislabel = dafbins[ibin], daflabels[ibin]
 		allrepfilenames = []
 		for selbin in thesebins:
@@ -399,9 +394,10 @@ def execute_tpr(args):
 		for repfilename in chosen:
 			physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
 			#physpos, genpos, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(repfilename)
-			if len(cms_normed) > 0:
-				all_scores.append(cms_normed)
-				rep_percentages = check_rep_windows(physpos, cms_normed, regionlen, cutoff = cutoff)
+			these_scores = eval(takeScore)
+			if len(these_scores) > 0:
+				all_scores.append(these_scores)
+				rep_percentages = check_rep_windows(physpos, these_scores, regionlen, cutoff = cutoff)
 				all_percentages.append(rep_percentages)		
 
 		print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
@@ -506,12 +502,10 @@ def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 ########	to empirical results.
 def execute_gw_regions(args):
 	''' apply significance cutoff to genome-wide data to identify regions '''
-	model = args.model
-	regionlen = args.regionlen
-	thresshold = args.thresshold
-	cutoff = args.cutoff
 	basedir = args.writedir
 	pop = args.emppop
+	thresshold = args.thresshold
+	cutoff = args.cutoff
 	windowlen = args.regionlen
 	suffix = args.suffix
 
@@ -522,8 +516,7 @@ def execute_gw_regions(args):
 	####################
 	for chrom in chroms:
 		chrom_signif = []
-		normedempfilename = get_emp_cms_file(pop, chrom, normed=True, suffix = suffix, basedir=basedir)
-
+		normedempfilename = get_emp_cms_file(pop, chrom, normed=True, suffix=suffix, basedir=basedir)
 		if not os.path.isfile(normedempfilename):
 			print("missing: " + normedempfilename)
 		else:
@@ -548,8 +541,6 @@ def execute_gw_regions(args):
 		starts, ends =  merge_windows(chrom_signif, windowlen)
 		final_starts.append(starts)
 		final_ends.append(ends)
-	#print(final_starts)
-	#print(final_ends)
 
 	###################
 	## WRITE TO FILE ##
@@ -559,10 +550,8 @@ def execute_gw_regions(args):
 		writefile = open(writefilename, 'w')
 		for ichrom in range(len(final_starts)):
 			chromnum = ichrom + 1
-
 			starts = final_starts[ichrom]
 			ends = final_ends[ichrom]
-
 			for iregion in range(len(starts)-1):
 				writeline = "chr" + str(chromnum) + "\t" + str(starts[iregion]) + "\t" + str(ends[iregion]) + '\n'
 				writefile.write(writeline)
@@ -570,46 +559,66 @@ def execute_gw_regions(args):
 		print('wrote to ' + writefilename)	
 	return
 def execute_regionlog(args):
-	''' writes an excel file ''' #maybe, instead, pass an arbitrary number of regionfiles? and takepops?
-	#stringency = args.stringency
-	#model = args.model	
+	input_filelist = args.input_filelist
+	genefilename = args.gene_bedfile
+	savefilename = args.save_filename
+	if ".xls" in savefilename:
+		writeExcel = True
+	else:
+		writeExcel = False
+
+	##################
+	## LOAD REGIONS ##
+	##################
 	regionfiles = []
-	pops = ['YRI', 'GWD', 'LWK', 'MSL', 'ESN', 'CEU', 'FIN', 'IBS', 'TSI', 'GBR', 'CHB', 'JPT', 'KHV', 'CDX', 'CHS', 'BEB', 'STU', 'ITU', 'PJL', 'GIH']
-	#pops = ['IRN']
 	takepops = []
-	for pop in pops: #too tired to soft-code rn
-		#regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_composite_022717/regions/" + model + "/" + stringency + "_" + pop + ".txt"
-		regionfilename = "/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/regions_reeval/regions_042317/regions_042317_" + pop + ".txt_15_b"
-		#regionfilename = "/n/home08/jvitti/test_IRN_regions.txt"
-		#print(regionfilename)
+	infile = open(input_filelist, 'r')
+	for line in infile:
+		regionfilename = line.strip('\n')
+		filename = line.split('/')[-1]
+		this_pop = filename.split('_')[0]
 		if os.path.isfile(regionfilename):
 			regionfiles.append(regionfilename)
-			takepops.append(pop)
+			takepops.append(this_pop)
 	if len(regionfiles) == 0:
 		print("found no regions")
 		return
 	else:
-	
 		totalselregions = 0
 		print('loaded regions from ' + str(len(regionfiles)) + " files...")
-		boldstyle = easyxf('font: bold 1;')
-		wrapstyle = easyxf('alignment: wrap on, vert center, horiz center')
-		book = Workbook()
-		sheet1 = book.add_sheet('gw significant regions')
-		header = ['chrom', 'start', 'end', 'len (kb)', 'genes', 'pop']
-		for icol in range(len(header)):
-			sheet1.write(0, icol, header[icol], boldstyle)
 
-		#get inclusive overlap
-		irow = 0
+		header = ['chrom', 'start', 'end', 'len (kb)', 'pop', 'genes',]
+		####################
+		## PREPARE OUTPUT ##
+		####################
+		if writeExcel:
+			boldstyle = easyxf('font: bold 1;')
+			wrapstyle = easyxf('alignment: wrap on, vert center, horiz center')
+			book = Workbook()
+			sheet1 = book.add_sheet('gw significant regions')
+			colWidths = [10, 15, 15, 10, 25, 10]
+			for icol in range(len(colWidths)):
+				sheet1.col(icol).width = colWidths[icol] * 256 #~x char wide	
+			for icol in range(len(header)):
+				sheet1.write(0, icol, header[icol], boldstyle)
+		else:
+			writefile = open(savefilename, 'w')
+			writestring = ""
+			for icol in range(len(header)):
+				writestring += header[icol] + "\t"
+			writestring = writestring.strip('\t')
+			writefile.write(writestring + "\n")
+
+		####################################
+		## CHECK REGIONS FOR GENE OVERLAP ##
+		###################################
+		irow = -1 #0
 		for iregionfilename in range(len(regionfiles)):
 			regionfilename = regionfiles[iregionfilename]
 			pop = takepops[iregionfilename]
-			#for regionfilename in regionfiles:
-			genes = BedTool(args.gene_bedfile) 
+			genes = BedTool(genefilename) 
 			regions = BedTool(regionfilename)
 			intersect = regions.intersect(genes,  wa = True, wb = True)
-
 			#narrow down
 			geneDict = {}
 			for item in intersect:
@@ -621,12 +630,9 @@ def execute_regionlog(args):
 					geneDict[key] = [generegion_id]
 				else:
 					geneDict[key].append(generegion_id)
-
-			#for irow in range(len(regions)):
 			for region in regions:
 				totalselregions +=1
 				irow +=1
-				#region = regions[irow]
 				chrom, start, end = region[0], region[1], region[2]
 				key = (chrom, start, end)
 				regionlen = int(end) - int(start)
@@ -639,26 +645,34 @@ def execute_regionlog(args):
 					for gene in genes:
 						genestring += gene + ", "
 					genestring = genestring[:-2]
-					sheet1.write(irow+1, 0, chrom, wrapstyle)
-					sheet1.write(irow+1, 1, int(start), wrapstyle)
-					sheet1.write(irow+1, 2, int(end), wrapstyle)
-					sheet1.write(irow+1, 3, kb_regionlen, wrapstyle)
-					sheet1.write(irow+1, 4, genestring, wrapstyle)
-					sheet1.write(irow+1, 5, pop, wrapstyle)
+
+					if writeExcel:
+						sheet1.write(irow+1, 0, chrom, wrapstyle)
+						sheet1.write(irow+1, 1, int(start), wrapstyle)
+						sheet1.write(irow+1, 2, int(end), wrapstyle)
+						sheet1.write(irow+1, 3, kb_regionlen, wrapstyle)
+						sheet1.write(irow+1, 4, pop, wrapstyle)
+						sheet1.write(irow+1, 5, genestring, wrapstyle)
+					else:
+						writestring = str(chrom) + "\t" + str(start) + "\t" + str(end) + "\t" + str(kb_regionlen) + "\t"  + pop + "\t" + genestring + "\n"
+						writefile.write(writestring)
 				else:
-					sheet1.write(irow+1, 0, chrom, wrapstyle)
-					sheet1.write(irow+1, 1, int(start), wrapstyle)
-					sheet1.write(irow+1, 2, int(end), wrapstyle)
-					sheet1.write(irow+1, 3, kb_regionlen,wrapstyle)			
-					sheet1.write(irow+1, 5, pop,wrapstyle)
+					if writeExcel:
+						sheet1.write(irow+1, 0, chrom, wrapstyle)
+						sheet1.write(irow+1, 1, int(start), wrapstyle)
+						sheet1.write(irow+1, 2, int(end), wrapstyle)
+						sheet1.write(irow+1, 3, kb_regionlen,wrapstyle)			
+						sheet1.write(irow+1, 4, pop,wrapstyle)
+					else:
+						writestring = str(chrom) + "\t" + str(start) + "\t" + str(end) + "\t" + str(kb_regionlen) + "\t" + pop + "\t" +  "-" + "\n"
+						writefile.write(writestring)
 
-	colWidths = [10, 15, 15, 10, 25, 10]
-	for icol in range(len(colWidths)):
-		sheet1.col(icol).width = colWidths[icol] * 256 #~x char wide	
-
-	book.save(args.saveLog)
-	book.save(TemporaryFile())
-	print('wrote ' + str(totalselregions) + ' significant regions to: ' + args.saveLog)
+	if writeExcel:
+		book.save(savefilename)
+		book.save(TemporaryFile())
+	else:
+		writefile.close()
+	print('wrote ' + str(totalselregions) + ' significant regions to: ' + savefilename)
 	return
 
 ##########

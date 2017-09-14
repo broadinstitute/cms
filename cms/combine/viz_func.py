@@ -1,8 +1,9 @@
 ## functions for viewing haplotypes original Shervin Tabrizi update Joe Vitti
-## last updated 10.15.16 	vitti@broadinstitute.org
+## last updated 07.27.17 	vitti@broadinstitute.org
 
 import matplotlib
 import numpy as np
+import sys
 import os
 
 def load_from_hap(inputfilename, filter_maf=None, corePos = None):
@@ -57,7 +58,7 @@ def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transp
 	coreindex = -1
 	varids, genpositions, physpositions, all_genotypes = [], [], [], []
 	if ".gz" in inputfilename:
-		print("unzip!")
+		print("unzip!") #should implement gzip
 		sys.exit(0)
 		#infile = gzip.open(inputfilename, 'rb')
 	infile = open(inputfilename, 'r')

@@ -1,4 +1,4 @@
-// 	last updated 06.15.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
+// 	last updated 08.10.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
 //	vitti@broadinstitute.org
 // 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
 // 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
