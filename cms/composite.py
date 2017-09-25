@@ -180,7 +180,7 @@ def execute_xp_from_ihh(args):
 ### in user-defined CMS statistic
 def execute_composite_sims(args):
 	''' given simulated data and component scores (e.g. from likes_from_model.py) together with likelihood tables, generate CMS scores '''
-	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	sel_freq_bins = []#['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 
 	if args.cmsdir is not None: 	#will be able to nix this construction 
 		cmd = args.cmsdir 			#once conda packaging is complete
@@ -198,6 +198,7 @@ def execute_composite_sims(args):
 	selpop = args.simpop
 	numPerBin_sel = args.nrep_sel
 	numPerBin_neut = args.nrep_neut
+
 
 	########################################
 	## SPECIFY INPUT LIKELIHOOD FUNCTIONS ##
@@ -217,6 +218,9 @@ def execute_composite_sims(args):
 	if args.runSuffix is not None:
 		paramfilename += args.runSuffix
 		suffix = args.runSuffix
+
+		if "reversedpolarity" in args.runSuffix:
+			cmd += "_reversedpolarity"	
 	else:
 		suffix = ""
 	paramfilename = write_run_paramfile(paramfilename, ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master, cutoffline, includeline)
@@ -228,7 +232,7 @@ def execute_composite_sims(args):
 	##################################
 	## CALCULATE CMS: ALL NEUT SIMS ##
 	##################################
-	scoremodeldir = writedir + model + "/neut/"
+	scoremodeldir = writedir + "/"#+ model #+ "/neut/"
 	compositedir = scoremodeldir + "composite/" 
 	pairdir = scoremodeldir + "pairs/"
 	check_create_dir(compositedir)
@@ -255,11 +259,12 @@ def execute_composite_sims(args):
 					argstring += pairfile + " "
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
-				execute(fullcmd)
+				#execute(fullcmd)
 	
 	#################################
 	## CALCULATE CMS: ALL SEL SIMS ##
 	#################################
+	"""
 	scoremodeldir = writedir + model + "/sel" + str(selpop) + "/"
 	#check_create_dir(scoremodeldir)
 	for sel_freq_bin in sel_freq_bins:
@@ -292,6 +297,7 @@ def execute_composite_sims(args):
 					fullcmd = cmd + " " + argstring
 					print(fullcmd)
 					execute(fullcmd)
+	"""
 	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
 	return
 def execute_composite_emp(args):
@@ -369,7 +375,7 @@ def execute_composite_emp(args):
 	for chrom in chroms:
 		altpairs = []
 		for altpop in altpops:
-			in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(chrom, emp_selpop, altpop=altpop, basedir = score_basedir) 
+			in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file = get_emp_component_score_files(chrom, emp_selpop, altpop=altpop, basedir = score_basedir) 
 			
 			for inputfile in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
 				check_zip(inputfile)

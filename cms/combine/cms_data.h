@@ -1,7 +1,8 @@
 // datastructures and function declarations for handling cms component(+composite) score datastructures
-// last updated: 06.19.2017 	vitti@broadinstitute.org
+// last updated: 09.17.2017 	vitti@broadinstitute.org
 
 int intcmp(const void *v1, const void *v2);
+int count_unique(int arr[], int len);
 
 /**********************/
 /***COMPONENT SCORES***/

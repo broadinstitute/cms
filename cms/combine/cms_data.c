@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 07.13.2017 	vitti@broadinstitute.org
+// last updated: 09.19.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +9,47 @@
 #include "cms_data.h"
 
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
+
+/*
+int count_unique(int arr[], int len){
+	//https://stackoverflow.com/questions/28556641/a-program-that-counts-unique-elements-in-an-un-ordered-array
+	int unique = 1;
+	int outer, inner;
+	if (len <= 0){return 0;}
+	for (outer = 1; outer < len; outer++){
+		int isUnique = 1; //Boolean
+		for (inner = 0; inner < outer; inner++){
+			if (arr[inner] == arr[outer]) {isUnique = 0;}
+		}
+		if (isUnique == 1){unique++;}
+	}
+	return unique;
+}*/
+
+
+int count_unique(int arr[], int len) {
+
+    int counted[len], j, n, count, flag;
+
+    counted[0] = arr[0]; 
+
+    count = 1;/*one element is counted*/
+
+        for(j=0; j <= len-1; ++j) {
+        flag = 1;;
+        /*the counted array will always have 'count' elements*/
+        for(n=0; n < count; ++n) {
+            if(arr[j] == counted[n]) {
+                flag = 0;
+            }
+        }
+        if(flag == 1) {
+            ++count;
+            counted[count-1] = arr[j];
+        }
+    }
+    return count;
+}
 
 /**********************/
 /***COMPONENT SCORES***/
@@ -719,7 +760,7 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	xpehh_data xp;
 	freqs_data freqs;
 	int nunique;
-	int totNsnp, isnp, jsnp;
+	int totNsnp, isnp;//, jsnp;
 	int *allSnps, *allUniqueSnps;
 
 	//////////////////////
@@ -731,7 +772,8 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	get_xpehh_data(&xp, xpehh_filename);
 	get_freqs_data(&freqs, freqs_filename);
 
-	/*fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
+	/*
+	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
 	fprintf(stderr, "\tloading component score data from: %s\n", delihh_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  delihh1.nsnps);
@@ -740,8 +782,8 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	fprintf(stderr, "\tloading component score data from: %s\n", xpehh_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  xp.nsnps);
 	fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
-	fprintf(stderr, "\t\t found values for %d SNPs\n",  freqs.nsnps);*/
-
+	fprintf(stderr, "\t\t found values for %d SNPs\n",  freqs.nsnps);
+	*/
 	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps;
 	allSnps = malloc(totNsnp * sizeof(int));
 
@@ -766,6 +808,9 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 		allSnps[isnp] = freqs.pos[isnp-(ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps)];
 	}	//end freq isnp
 
+	//fprintf(stderr, "get_num_anyData returns totnsnp: %d\n", totNsnp);
+
+	/*
 	qsort(allSnps, totNsnp, sizeof(int), intcmp);
 	nunique = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
@@ -773,14 +818,19 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 		else{nunique++;}
 	} // end for isnp
 	if (allSnps[totNsnp-1] != allSnps[totNsnp-2]){nunique++;} //edge case
+	*/
+	nunique = count_unique(allSnps, totNsnp);
 
-	allUniqueSnps= malloc(nunique * sizeof(int));
+	allUniqueSnps= malloc(nunique * sizeof(int)); //is this step necessary?
+	/*
 	jsnp = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
 		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
 		else{allUniqueSnps[jsnp] = allSnps[isnp]; jsnp++;}
 	} // end for isnp
 	if (allSnps[totNsnp-1] != allSnps[totNsnp-2]){allUniqueSnps[jsnp] = allSnps[totNsnp-1];} //edge case
+	//BUT IF THIS IS NOT THE CASE WHAT HAPPENS TO LAST SNP
+	*/
 
 	free_ihs_data(&ihs1);
 	free_nsl_data(&nsl1);
@@ -972,8 +1022,9 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	nsl_data nsl1;
 	xpehh_data xp;
 	freqs_data freqs;
-	char *locus;
+	//char *locus;
 	int isnp, jsnp;
+	int ksnp, lsnp, msnp, osnp;
 	int totNsnp; //ie, redundant
 	int *allSnps;
 
@@ -992,18 +1043,18 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
 
-	locus = malloc(256 * sizeof(char));
+	//locus = malloc(256 * sizeof(char));
 
 	/////////////////////
 	// RESERVE MEMORY ///
 	/////////////////////
-	data->nsnps = get_num_anyData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+	data->nsnps = get_num_anyData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); //fprintf(stderr, "loaded %d snps for pop-pair_any\n", data->nsnps);
 	data->locus_id = malloc(data->nsnps * sizeof(char*));
 	for (isnp = 0; isnp < data->nsnps; isnp++){
 		data->locus_id[isnp] = malloc(256*sizeof(char));
 		assert(data->locus_id[isnp] != NULL);
 	}
-	data->physpos = calloc(data->nsnps, sizeof(int));
+	data->physpos = calloc(data->nsnps, sizeof(int)); //******** issue of matching zeros when this gets handled by ->multiple object...
 	data->genpos = calloc(data->nsnps, sizeof(double)); //call ? quick fix
 	data->daf_selpop = calloc(data->nsnps, sizeof(double));
 	data->delDAF = calloc(data->nsnps, sizeof(double));
@@ -1011,7 +1062,7 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	data->xp_normed = calloc(data->nsnps, sizeof(double));
 	data->ihs_normed = calloc(data->nsnps, sizeof(double));
 	data->delihh_normed = calloc(data->nsnps, sizeof(double));
-	data->nsl_normed = calloc(data->nsnps, sizeof(double));
+	data->nsl_normed = calloc(data->nsnps, sizeof(double)); //********
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
 	assert(data->daf_selpop != NULL);
@@ -1061,6 +1112,7 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	} // end freqs isnp
 	qsort(allSnps, totNsnp, sizeof(int), intcmp);
 
+	//fprintf(stderr,"\nsorted\n");
 	//////////////////////////////
 	/// load all redundant snps //
 	//////////////////////////////
@@ -1071,62 +1123,61 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	} // end isnp
 	data->physpos[data->nsnps-1]  = allSnps[totNsnp-1]; // edge snp
 	
-	jsnp = 0;
-	for (isnp = 0; isnp <= data->nsnps; isnp++){
-		//fprintf(stderr, "isnp: %d\tjsnp: %d\t%d\t%d\n", isnp, jsnp,data->physpos[isnp], ihs1.pos[jsnp]); //DEBUG
-		//if this database_snp is the one I'm looking at, record it.
+	//fprintf(stderr, "loaded unique positions: %d\t%d\t%d\t%d\n", data->physpos[0], data->physpos[1], data->physpos[data->nsnps-2], data->physpos[data->nsnps-1]);
+	//fprintf(stderr, "loaded unique scores: %f\t%f\t%f\t%f\t%f\t%f\n", ihs1.ihs_normed[0], delihh1.delihh_normed[0], nsl1.nsl_normed[0], xp.xpehh_normed[0], freqs.fst[0], freqs.deldaf[0]);
 
-		if(data->physpos[isnp] == ihs1.pos[jsnp]){
-			data->ihs_normed[isnp] = ihs1.ihs_normed[jsnp];
-			} //fprintf(stderr, "isnp: %d\tjsnp: %d\t%d\t%d\t%f\n", isnp, jsnp,data->physpos[isnp], ihs1.pos[jsnp] ,ihs1.ihs_normed[jsnp]);}
-		//if this database_snp < the snp I'm looking at, then record null.
-		if(data->physpos[isnp] < ihs1.pos[jsnp]){data->ihs_normed[isnp] = 0.0 / 0.0;} //NaN
-		//if this database_snp > the snp I'm looking at (?) advance.
-		if(data->physpos[isnp] > ihs1.pos[jsnp]){jsnp ++; isnp--;}
-		if(jsnp == ihs1.nsnps){break;}
-		//allsnps[isnp] = ihs1.pos[isnp];
-	}
-
-	//could enfold this with above using multiple indices, but I think it should be fast nonetheless.
-	jsnp = 0;	//delihh
-	for (isnp = 0; isnp <= data->nsnps; isnp++){
-		//fprintf(stderr, "isnp: %d\tjsnp: %d\t%d\t%d\n", isnp, jsnp,data->physpos[isnp], delihh1.pos[jsnp]); //DEBUG
-		if(data->physpos[isnp] == delihh1.pos[jsnp]){data->delihh_normed[isnp] = delihh1.delihh_normed[jsnp];}
-		if(data->physpos[isnp] < delihh1.pos[jsnp]){data->delihh_normed[isnp] = 0.0 / 0.0;} //NaN
-		if(data->physpos[isnp] > delihh1.pos[jsnp]){jsnp++; isnp--;}
-		if(jsnp == delihh1.nsnps){break;}
-	}	//end isnp -- delihh
-	jsnp = 0;	//nsl
-	for (isnp = 0; isnp <= data->nsnps; isnp++){
-		if(data->physpos[isnp] == nsl1.pos[jsnp]){data->nsl_normed[isnp] = nsl1.nsl_normed[jsnp];}
-		if(data->physpos[isnp] < nsl1.pos[jsnp]){data->nsl_normed[isnp] = 0.0 / 0.0;} //NaN
-		if(data->physpos[isnp] > nsl1.pos[jsnp]){jsnp++; isnp--;}
-		if(jsnp == nsl1.nsnps){break;}
-	} 	//end isnp -- nsl
-	jsnp = 0;	//xpehh
-	for (isnp = 0; isnp <= data->nsnps; isnp++){
-		if(data->physpos[isnp] == xp.pos[jsnp]){data->xp_normed[isnp] = xp.xpehh_normed[jsnp];}
-		if(data->physpos[isnp] < xp.pos[jsnp]){data->xp_normed[isnp] = 0.0 / 0.0;} //NaN
-		if(data->physpos[isnp] > xp.pos[jsnp]){jsnp++; isnp--;}
-		if(jsnp == xp.nsnps){break;}
-	} //end isnp -- xpehh
-
-	jsnp = 0;	//freqs
+	jsnp = 0;	//ihs
+	ksnp = 0;	//delihh
+	lsnp = 0;	//nsl
+	msnp = 0;	//xpehh	
+	osnp = 0;	//freqs	
 	for (isnp = 0; isnp < data->nsnps; isnp++){
-		//fprintf(stderr, "isnp: %d\tjsnp: %d\t%d\t%d\n", isnp, jsnp, data->physpos[isnp], freqs.pos[jsnp]); //DEBUG
-		if(data->physpos[isnp] == freqs.pos[jsnp]){data->fst[isnp] = freqs.fst[jsnp]; data->delDAF[isnp] = freqs.deldaf[jsnp]; data->genpos[isnp] = freqs.genpos[jsnp]; data->daf_selpop[isnp] = freqs.popdaf[jsnp];}
-		if(data->physpos[isnp] < freqs.pos[jsnp]){data->fst[isnp] = 0.0 / 0.0; data->delDAF[isnp] = 0.0 / 0.0; } //NaN
-		if(data->physpos[isnp] > freqs.pos[jsnp]){jsnp++; isnp--;}
-		if(jsnp == freqs.nsnps){break;}
-	} //end isnp - freqs
+
+		//ihs (jsnp)
+		//if this database_snp is the one I'm looking at, record it and advance pointer
+		if(data->physpos[isnp] == ihs1.pos[jsnp]){data->ihs_normed[isnp] = ihs1.ihs_normed[jsnp]; if(jsnp < ihs1.nsnps - 1){jsnp++;}} 
+		//if this database_snp < the snp I'm looking at, then record null.
+		//if(data->physpos[isnp] < ihs1.pos[jsnp])
+		else{data->ihs_normed[isnp] = 0.0 / 0.0;} //NaN
+
+		//delihh (ksnp)
+		if(data->physpos[isnp] == delihh1.pos[ksnp]){data->delihh_normed[isnp] = delihh1.delihh_normed[ksnp]; if(ksnp < delihh1.nsnps - 1){ksnp++;}}
+		//if(data->physpos[isnp] < delihh1.pos[ksnp])
+		else{data->delihh_normed[isnp] = 0.0 / 0.0;} //NaN
+	
+		//nsl (lsnp)
+		if(data->physpos[isnp] == nsl1.pos[lsnp]){data->nsl_normed[isnp] = nsl1.nsl_normed[lsnp];if(lsnp < nsl1.nsnps -1){lsnp++;}}
+		//if(data->physpos[isnp] < nsl1.pos[lsnp])
+		else{data->nsl_normed[isnp] = 0.0 / 0.0;} //NaN
+
+		//xp-ehh (msl)
+		if(data->physpos[isnp] == xp.pos[msnp]){data->xp_normed[isnp] = xp.xpehh_normed[msnp];if(msnp < xp.nsnps - 1){msnp++;}}
+		//if(data->physpos[isnp] < xp.pos[msnp])
+		else{data->xp_normed[isnp] = 0.0 / 0.0;} //NaN
+
+		//freqs (osnp)
+		if(data->physpos[isnp] == freqs.pos[osnp]){data->fst[isnp] = freqs.fst[osnp]; data->delDAF[isnp] = freqs.deldaf[osnp]; data->genpos[isnp] = freqs.genpos[osnp]; data->daf_selpop[isnp] = freqs.popdaf[osnp]; if(osnp < freqs.nsnps - 1){osnp++;}}
+		//if(data->physpos[isnp] < freqs.pos[osnp])
+		else{data->fst[isnp] = 0.0 / 0.0; data->delDAF[isnp] = 0.0 / 0.0; } //NaN
+		
+		//fprintf(stderr, "isnp: %d\tjsnp: %d\tksnp: %d\tlsnp: %d\tmsnp:%d\tosnp:%d\n", isnp, jsnp, ksnp, lsnp, msnp, osnp); //DEBUG
+	} // end isnp
+	
+	//DEBUG
+	/*for (isnp = 0; isnp < data->nsnps; isnp++){
+		fprintf(stderr, "%d\t%f\n", data->physpos[isnp], data->ihs_normed[isnp]);
+	}*/
 
 	free_ihs_data(&ihs1);
 	free_nsl_data(&nsl1);
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
-	free(locus);
+	//free(locus);
 	free(allSnps);
+
+	
+
 } //end method
 void free_popPair_data(popPair_data* data){
 	int isnp;
@@ -1221,7 +1272,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		fgets(ihs_filename, line_size, inf);
 		strtok(ihs_filename, "\n");
 		fgets(delihh_filename, line_size, inf);
-		strtok(delihh_filename, "\n");
+		strtok(delihh_filename, "\n");		
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
 		fgets(xpehh_filename, line_size, inf);
@@ -1331,7 +1382,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		fgets(delihh_filename, line_size, inf);
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
-		strtok(nsl_filename, "\n");
+		strtok(nsl_filename, "\n");		
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
@@ -1415,6 +1466,7 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		fclose(inf);
 		totNsnp += get_num_anyData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
 	} // end iComp
+	//fprintf(stderr, "totNsnp: %d\n", totNsnp);
 
 	//then get array for all of them
 	allSnps = malloc(totNsnp * sizeof(int));
@@ -1434,6 +1486,10 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		strtok(freqs_filename, "\n");
 		fclose(inf);
 		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); 
+		//fprintf(stderr, "checkpoint: completed get_popPair_anyData\n");
+		//fprintf(stderr, "%d\t%d\t%d\t%d\n", data_sing.physpos[0], data_sing.physpos[1], data_sing.physpos[data_sing.nsnps-2],data_sing.physpos[data_sing.nsnps-1]);
+
+
 		for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
 			allSnps[isnp] = data_sing.physpos[jsnp];
 			isnp +=1;
@@ -1442,15 +1498,18 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	}//end icomp
 
 	//////////////////////////
-	/// COLLATE LOCI: SORT ///
+	/// COLLATE LOCI: SORT ///	Problem here?
 	/////////////////////////
 	qsort(allSnps, totNsnp, sizeof(int), intcmp);
-	nunique = 0;
-	for (isnp = 0; isnp <= totNsnp-2; isnp++){
+
+	nunique = count_unique(allSnps, totNsnp);
+	//nunique = 0;
+	//for (isnp = 0; isnp <= totNsnp-2; isnp++){
 		//fprintf(stderr, "%d\t", allSnps[isnp]);
-		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
-		else{nunique++;}
-	} // end for isnp
+	//	if (allSnps[isnp] == allSnps[isnp+1]){continue;}
+	//	else{nunique++;}
+	//} //right?// end for isnp
+
 
 	allUniqueSnps	= malloc(nunique * sizeof(int));
 	jsnp = 0;
@@ -1458,6 +1517,7 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
 		else{allUniqueSnps[jsnp] = allSnps[isnp]; jsnp++;}
 	} // end for isnp
+	allUniqueSnps[totNsnp-1] = allSnps[totNsnp-1]; 
 
 	///////////////////////
 	/// ALLOCATE MEMORY ///
@@ -1486,7 +1546,7 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		data->physpos[iComp] = calloc(nunique, sizeof(int));
-		data->genpos[iComp] = calloc(nunique, sizeof(double));
+		data->genpos[iComp] = calloc(nunique, sizeof(double)); // problem
 		data->daf_selpop[iComp] = calloc(nunique, sizeof(double));
 		data->delDAF[iComp] = calloc(nunique, sizeof(double));
 		data->fst[iComp] = calloc(nunique, sizeof(double));
@@ -1510,7 +1570,7 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	// LOAD ALL COMPARISONS TO ONE DATA OBJECT //
 	/////////////////////////////////////////////
 
-	//fprintf(stderr, "Loading all component scores...\n");
+	fprintf(stderr, "Loading all component scores to one data-object...\n");
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
 
@@ -1528,6 +1588,10 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		fclose(inf);
 
 		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+		fprintf(stderr, "loaded pop-pair object with %d snps\n", data_sing.nsnps);
+
+		fprintf(stderr, "DEBUG: %d\n ", data_sing.physpos[data_sing.nsnps-1]);
+
 		jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
 		for (isnp = 0; isnp < nunique; isnp++){
 			//fprintf(stderr, "%d\t%d\t%d\t%d\n", isnp, jsnp, allUniqueSnps[isnp], data_sing.physpos[jsnp]);
@@ -1542,14 +1606,30 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];	
 				data->nsl_normed[iComp][isnp] = data_sing.nsl_normed[jsnp];		 
 				jsnp++; //assert(jsnp<=data_sing.nsnps);
-				if (jsnp >= data_sing.nsnps){break;}
+				if (jsnp > data_sing.nsnps){break;}
 			}
-			else if (allUniqueSnps[isnp] > data_sing.physpos[jsnp]){jsnp++; if (jsnp >= data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
+			else if (allUniqueSnps[isnp] == data_sing.physpos[jsnp]){jsnp++; if (jsnp > data_sing.nsnps){break;}}//assert(jsnp<=data_sing.nsnps);}
 			//else if (allUniqueSnps[isnp] < data_sing.physpos[jsnp]){pass;}
 		}// end for isnp loop
+
+		//last 
+		data->physpos[iComp][nunique-1] = data_sing.physpos[data_sing.nsnps-1];
+		data->genpos[iComp][nunique-1] = data_sing.genpos[data_sing.nsnps-1];
+		data->daf_selpop[iComp][nunique-1] = data_sing.daf_selpop[data_sing.nsnps-1];
+		data->delDAF[iComp][nunique-1] = data_sing.delDAF[data_sing.nsnps-1];
+	
+		data->fst[iComp][nunique-1] = data_sing.fst[data_sing.nsnps-1];
+		data->xp_normed[iComp][nunique-1] = data_sing.xp_normed[data_sing.nsnps-1];
+		data->ihs_normed[iComp][nunique-1] = data_sing.ihs_normed[data_sing.nsnps-1];
+		data->nsl_normed[iComp][nunique-1] = data_sing.nsl_normed[data_sing.nsnps-1];
+		data->delihh_normed[iComp][nunique-1] = data_sing.delihh_normed[data_sing.nsnps-1];
+
+
+
+
 		free_popPair_data(&data_sing); 
 	} // end for icomp
-	free(allUniqueSnps);
+	free(allUniqueSnps); 	//problem??
 	free(allSnps);
 	free(newLine);
 	//fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");

@@ -1,4 +1,4 @@
-// 	last updated 08.10.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
+// 	last updated 09.15.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
 //	vitti@broadinstitute.org
 // 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
 // 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 6x for ihs ihh nsl fst deldaf xpehh
@@ -139,8 +139,8 @@ int main(int argc, char **argv) {
 		thisxpehh = compareXp(&score_data, isnp);
 		thisfst = compareFst_PBS(&score_data, isnp);
 		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);
-		if (thisihs < 0){thisihs*=-1.;}				//ABS VAL
-		if (thisnsl < 0){thisnsl*=-1.;} 			//ABS VAL				
+		//if (thisihs < 0){thisihs*=-1.;}				//ABS VAL
+		//if (thisnsl < 0){thisnsl*=-1.;} 			//ABS VAL				
 		//if (thisdelDaf < 0){thisdelDaf*=-1.;fprintf(stderr,"\n\n ABS VAL DEL DAF FOR GW. are you sure about this??\n\n")} 		//ABS VAL -- FOLDED LIKELIHOOD DIST FOR CMS_GW
 		
 		proceed = 0;
