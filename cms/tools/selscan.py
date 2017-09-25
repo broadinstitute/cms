@@ -170,7 +170,7 @@ class SelscanFormatter(object):
                             genotypesCount            = len(previouslyCodedGenotypes)
                             countSpecificTpedName     = outTpedFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
                             countSpecificMetafileName = outTpedMetaFile.replace(outfile_prefix, outfile_prefix + "_" + str(genotypesCount))
-                            with util.file.open_or_gzopen(countSpecificTpedName, 'a') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'a') as of2l:
+                            with util.file.open_or_gzopen(countSpecificTpedName, 'at') as of1l, util.file.open_or_gzopen(countSpecificMetafileName, 'at') as of2l:
                                 of1l.write(lineToWrite1)
                                 of2l.write(lineToWrite2)
 
