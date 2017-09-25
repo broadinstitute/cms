@@ -1,5 +1,8 @@
-// 	calculate within-region Composite of Multiple Signals (CMS) statistic 
-//	last updated 09.18.2017 	vitti@broadinstitute.org
+// 	calculate within-region Composite of Multiple Signals (CMS) statistic - used alternate encoding (0der)
+//	last updated 09.19.2017 	vitti@broadinstitute.org
+
+//(cms-env3) [jvitti@holy2a18308 combine]$ gcc -c combine_scores_local_reversedpolarity.c
+//(cms-env3) [jvitti@holy2a18308 combine]$ gcc -O0 -ggdb3 -lm -Wall -o combine_scores_local_reversedpolarity combine_scores_local_reversedpolarity.o cms_data.c
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -147,12 +150,12 @@ int main(int argc, char **argv) {
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
 		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
-		thisihs = score_data.ihs_normed[iComp][isnp];
+		thisihs = -1 * score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
-		thisnsl = score_data.nsl_normed[iComp][isnp];
+		thisnsl = -1 * score_data.nsl_normed[iComp][isnp];
 		thisxpehh = compareXp(&score_data, isnp); //determine others by comparison. XP: take maximum.
 		thisfst = compareFst_PBS(&score_data, isnp);
-		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);	 
+		thisdelDaf = -1 * comparedelDaf_outgroup_ave(&score_data, isnp);	 
 		
 		proceed = 0;
 		//check position
@@ -160,7 +163,7 @@ int main(int argc, char **argv) {
 		if (thisPos < minPos){proceed=1;}
 		if (thisPos > maxPos){proceed=1;}
 		//check daf
-		thisdaf = score_data.daf_selpop[iComp][isnp];
+		thisdaf = 1 - score_data.daf_selpop[iComp][isnp];
 		if (thisdaf < minDaf){proceed=1;} 
 		//if still a go...
 		if(proceed == 0){nsnps_regional++;
@@ -173,6 +176,7 @@ int main(int argc, char **argv) {
 	////////////////////////
 	strcpy(outfilename, argv[1]);
 	fprintf(stderr, "Preparing to write to: %s\n", outfilename);
+	fprintf(stderr, "debug: score_data.nsnps = %d\n", score_data.nsnps);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
 	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLike_CMS\n");
@@ -185,12 +189,12 @@ int main(int argc, char **argv) {
 			if (score_data.physpos[iComp][isnp] != 0){break;}
 		} //advance to the first comparison for which we have any data
 		if (iComp >= score_data.ncomp){iComp = 0;} //catch SNPs at position 0
-		thisihs = score_data.ihs_normed[iComp][isnp];
+		thisihs = -1 * score_data.ihs_normed[iComp][isnp];
 		thisihh = score_data.delihh_normed[iComp][isnp];
-		thisnsl = score_data.nsl_normed[iComp][isnp];
+		thisnsl = -1 * score_data.nsl_normed[iComp][isnp];
 		thisxpehh = compareXp(&score_data, isnp);
 		thisfst = compareFst_PBS(&score_data, isnp);	
-		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);	
+		thisdelDaf = -1 * comparedelDaf_outgroup_ave(&score_data, isnp);	
 		
 		proceed = 0;
 		//check position
@@ -198,7 +202,7 @@ int main(int argc, char **argv) {
 		if (thisPos < minPos){proceed=1;}
 		if (thisPos > maxPos){proceed=1;}
 		//check daf
-		thisdaf = score_data.daf_selpop[iComp][isnp];
+		thisdaf = 1 - score_data.daf_selpop[iComp][isnp];
 		if (thisdaf < minDaf){proceed=1;} 
 		//if still a go...
 		if(proceed == 0){
