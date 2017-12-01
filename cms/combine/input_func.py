@@ -5,15 +5,20 @@ import sys
 import os
 import math
 import numpy as np
+import gzip
 
 ####################
 ## PREPARE INPUT ###
 ####################
 def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
+
 	outfile = open(outfilename, 'w')
 
 	#### First iteration - ensure proper handling of file.
-	infile = open(infilename, 'r')
+	if ".gz" in infilename:
+		infile = gzip.open(infilename, 'rt')
+	else:
+		infile = open(infilename, 'r')
 	infile.readline() #header
 	for line in infile:
 		entries = line.split()
@@ -36,8 +41,10 @@ def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
 				print('check indices ' + infilename)
 			break
 	infile.close()
-
-	infile = open(infilename, 'r')
+	if ".gz" in infilename:
+		infile = gzip.open(infilename, 'rt')
+	else:
+		infile = open(infilename, 'r')
 	infile.readline() #header
 	for line in infile:
 		entries = line.split()
@@ -87,5 +94,5 @@ def write_run_paramfile(writefilename, ihs_master_likesfile, nsl_master_likesfil
 	return writefilename
 def normalize(rawscore, mean, sd):
 	rawscore, mean, sd = float(rawscore), float(mean), float(sd)
-	normalizedvalue = (rawscore - mean) #/ sd
+	normalizedvalue = (rawscore - mean) / sd
 	return normalizedvalue

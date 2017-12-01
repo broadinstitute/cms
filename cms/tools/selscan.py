@@ -184,7 +184,7 @@ class SelscanFormatter(object):
                 # if the variant is a SNP
                 # OLD style looking at INFO VT value: 
                 # processor.variant_is_type(record.info, "SNP"):
-                VALID_BASES = ["A","C","G","T","N","a","c","g","t","n"]
+                VALID_BASES = ["A","C","G","T","a","c","g","t"] #"N","n"
                 if (len(record.ref) == 1 and len(record.alt) == 1) or ( all(variant in VALID_BASES for variant in record.ref.split(",")) and 
                      all(variant in VALID_BASES for variant in record.alt.split(",")) ):
 
@@ -202,8 +202,15 @@ class SelscanFormatter(object):
                     chromStr = "chr{}".format(record.contig)
 
                     # if the AA is populated, and the call meets the specified criteria
-                    if (ancestral_allele in ['A','T','C','G']) or (include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g']):
+                    if (ancestral_allele in ['A','T','C','G']) or include_variants_with_low_qual_ancestral:#(include_variants_with_low_qual_ancestral and ancestral_allele in ['a','t','c','g',]): 
                         
+                        if include_variants_with_low_qual_ancestral:
+                            if ancestral_allele in ['a','t','c','g',]:
+                                ancestral_allele = ancestral_allele.upper()
+                            else: #if no info, encode ref as ancestral
+                                ancestral_allele = record.ref
+
+
                         if previousAncestral != ancestral_allele:
                             previousAncestral = ancestral_allele
                             ancestralDiffersFromPrevious = True
@@ -305,6 +312,7 @@ class SelscanFormatter(object):
                                     print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
                                     print("Estimated time of completion: {}".format(human_time_remaining))
                                     #log.info("Genotype counts found: %s", str(list(recordLengths)))
+
 
             if positionHasBeenSeenBefore and not consider_multi_allelic:
                 lineToWrite1 = None

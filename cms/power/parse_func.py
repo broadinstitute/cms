@@ -52,17 +52,17 @@ def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_c
 		if not os.path.isfile(filename):
 			print("MISSING: " + filename)
 	return in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file
-def get_sim_component_score_files(model, irep, pop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
+def get_sim_component_score_files(model, irep, selpop, scenariopop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
 	""" locates component score files for simulated data """
 	if selbin == 'neut':
 		basedir =  filebase + model + "/neut/"
 	else:
-		basedir = filebase + model + "/sel" + str(pop) + "/sel_" + str(selbin) + "/"
-	in_ihs_file = basedir + "ihs/rep" + str(irep) + "_" + str(pop) + ".ihs.out"
-	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(pop) + ".txt"
-	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(pop) + ".nsl.out"
-	in_xp_file = basedir + "xpehh/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop) + ".xpehh.out"
-	in_fst_deldaf_file = basedir + "freqs/rep" + str(irep) + "_" + str(pop) + "_" + str(altpop)
+		basedir = filebase + model + "/sel" + str(scenariopop) + "/sel_" + str(selbin) + "/"
+	in_ihs_file = basedir + "ihs/rep" + str(irep) + "_" + str(selpop) + ".ihs.out"
+	in_delihh_file =  basedir + "delihh/rep" + str(irep) + "_" + str(selpop) + ".txt"
+	in_nsl_file = basedir + "nsl/rep" + str(irep) + "_" + str(selpop) + ".nsl.out"
+	in_xp_file = basedir + "xpehh/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".xpehh.out"
+	in_fst_deldaf_file = basedir + "freqs/rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop)
 	if normed:
 		in_ihs_file += ".norm" 
 		in_nsl_file += ".norm"

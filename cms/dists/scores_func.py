@@ -1,8 +1,9 @@
 ## helper functions for generating probability distributions for component scores as part of CMS 2.0.
-## last updated: 06.20.2017 vitti@broadinstitute.org 
+## last updated: 07.15.2017 vitti@broadinstitute.org 
 
 from math import fabs, sqrt
 from random import randint
+import gzip
 import numpy as np
 import subprocess
 import sys
@@ -19,7 +20,10 @@ def calc_ihs(inputTped, outputFile, runProgram = "scans.py", numThreads = 7):
 	return
 def calc_delihh(readfilename, writefilename):
 	"""given a selscan iHS file, parses it and writes delihh file"""
-	readfile = open(readfilename, 'r')
+	if ".gz" in readfilename:
+		readfile = gzip.open(readfilename, 'rt')
+	else:
+		readfile = open(readfilename, 'r')
 	writefile = open(writefilename, 'w')
 	for line in readfile:
 		entries = line.split()

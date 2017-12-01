@@ -75,15 +75,20 @@ def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transp
 			genpositions.append(float(genpos))
 			physpositions.append(physpos)
 			all_genotypes.append(genotypes)
+			i+=1
 		elif physpos > endpos:
 			break
-		i+=1
+		
 	infile.close()
 
 	if maf is not None:
 		filtered_haps = []
+		filtered_pos = []
 		filter_maf = float(maf)
-		for genotypelist in all_genotypes:
+		for ilist in range(len(all_genotypes)):
+			genotypelist = all_genotypes[ilist]
+			thisPhys = physpositions[ilist]
+		#for genotypelist in all_genotypes:
 			genotypes = [int(x) for x in genotypelist]
 			n_a0 = float(genotypes.count(0))
 			n_a1 = float(genotypes.count(1))
@@ -95,7 +100,11 @@ def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transp
 				pass
 			else:
 				filtered_haps.append(genotypelist)
+				filtered_pos.append(thisPhys)
+		if corePos is not None:
+			coreindex = filtered_pos.index(corePos)
 		all_genotypes = filtered_haps
+
 
 	haplotypes = []
 	for genotypelist in all_genotypes: 

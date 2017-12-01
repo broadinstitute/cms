@@ -1,5 +1,5 @@
 // 	calculate within-region Composite of Multiple Signals (CMS) statistic 
-//	last updated 09.18.2017 	vitti@broadinstitute.org
+//	last updated 11.10.2017 	vitti@broadinstitute.org
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -19,15 +19,20 @@ int main(int argc, char **argv) {
 	popComp_data_multiple score_data;
 	likes_data_multiple ihs_likes_data, nsl_likes_data, delihh_likes_data;
 	likes_data_multiple xpehh_likes_data, fst_likes_data, deldaf_likes_data;	
+	likes_data_multiple H12_likes_data, iSAFE_likes_data;	
 	FILE *inf=NULL, *outf=NULL, *outf2=NULL;
 	char *token, *running;
 	char cms_param_filename[528], paramline[528], outfilename[256], outfilename_likes[256];
 	char ihs_master_likesfilename[256], nsl_master_likesfilename[256], delihh_master_likesfilename[256];
     char xpehh_master_likesfilename[256], fst_master_likesfilename[256], deldaf_master_likesfilename[256];
+	char H12_master_likesfilename[256], iSAFE_master_likesfilename[256];
 	float delihh_hitprob, delihh_missprob, nsl_hitprob, nsl_missprob, ihs_hitprob, ihs_missprob;
 	float xpehh_hitprob, xpehh_missprob, fst_hitprob, fst_missprob, deldaf_hitprob, deldaf_missprob;
+	float H12_hitprob, H12_missprob;
+	float iSAFE_hitprob, iSAFE_missprob;
 	double thisihs, thisihh, thisnsl; // per-pop
 	double thisfst, thisxpehh, thisdelDaf, thisdaf;
+	double thisH12, thisH2H1, thisiSAFE;
 	double compLike, minDaf, minGenLen;
 	double prior; // = 1/nSNP for region for now
 	double gendist;
@@ -38,6 +43,7 @@ int main(int argc, char **argv) {
 	int istart, iend;
 	int proceed; //Boolean used to log whether each SNP passes filter 0T 1F
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf; //Bools as above
+	int takeiSAFE, takeH12;
 	//int ibin;  //for debug
 
 	if (argc <= 3) {
@@ -46,15 +52,6 @@ int main(int argc, char **argv) {
 	}
 	nComparisons = argc - 3;
 	
-	//////////////////
-	// LOAD SCORES ///
-	//////////////////
-	fprintf(stderr, "\nPreparing to load component scores...\n");
-	get_popComp_anyData(&score_data, nComparisons, argc, argv); 
-	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
-	
-	//for (isnp = 0; isnp < 5; isnp++ ){fprintf(stderr, "%d\t%f\t%f\n", score_data.physpos[1][isnp], score_data.ihs_normed[1][isnp], score_data.nsl_normed[1][isnp]);} // DEBUG
-
 	////////////////////////////////////////
 	// LOAD SCORE LIKELIHOODS (DEM MODEL) //
 	// AND OTHER RUN PARAMETERS ////////////
@@ -68,6 +65,10 @@ int main(int argc, char **argv) {
 	strtok(nsl_master_likesfilename, "\n");
 	fgets(delihh_master_likesfilename, line_size, inf);
 	strtok(delihh_master_likesfilename, "\n");
+	fgets(H12_master_likesfilename, line_size, inf);
+	strtok(H12_master_likesfilename, "\n");
+	fgets(iSAFE_master_likesfilename, line_size, inf);
+	strtok(iSAFE_master_likesfilename, "\n");
 	fgets(xpehh_master_likesfilename, line_size, inf);
 	strtok(xpehh_master_likesfilename, "\n");
 	fgets(fst_master_likesfilename, line_size, inf);
@@ -80,6 +81,7 @@ int main(int argc, char **argv) {
 	minDaf = 0;
 	minGenLen = .5; //take no regions < .5 cM
 	takeIhs = takeDelihh = takeNsl = takeXpehh = takeFst = takeDeldaf = 0; //all T by default
+	takeH12 = takeiSAFE = 0;
 	//if additional lines is included, parse 
 	if (fgets(paramline, line_size, inf) != NULL){
 		for (running = paramline, itoken=0; (token = strsep(&running, " \t")) != NULL; itoken++){
@@ -92,11 +94,14 @@ int main(int argc, char **argv) {
 	if (fgets(paramline, line_size, inf) != NULL){
 		for (running = paramline, itoken=0; (token = strsep(&running, " \t")) != NULL; itoken++){
 			if (itoken == 0) {takeIhs = atoi(token);}
-			else if (itoken == 1){takeDelihh = atoi(token);}
-			else if (itoken == 2){takeNsl = atoi(token);}			
-			else if (itoken == 3){takeFst = atoi(token);}
-			else if (itoken == 4){takeDeldaf = atoi(token);}			
-			else if (itoken == 5){takeXpehh = atoi(token);}		
+			else if (itoken == 1){takeNsl = atoi(token);}
+			else if (itoken == 2){takeDelihh = atoi(token);}			
+			else if (itoken == 3){takeH12 = atoi(token);}
+			else if (itoken == 4){takeiSAFE = atoi(token);}			
+			else if (itoken == 5){takeXpehh = atoi(token);}	
+			else if (itoken == 6){takeFst = atoi(token);}			
+			else if (itoken == 7){takeDeldaf = atoi(token);}	
+	
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
@@ -104,10 +109,13 @@ int main(int argc, char **argv) {
 	get_likes_data_multiple(&ihs_likes_data, ihs_master_likesfilename); 
 	get_likes_data_multiple(&nsl_likes_data, nsl_master_likesfilename); 
 	get_likes_data_multiple(&delihh_likes_data, delihh_master_likesfilename); 
+	get_likes_data_multiple(&H12_likes_data, H12_master_likesfilename); 
+	get_likes_data_multiple(&iSAFE_likes_data, iSAFE_master_likesfilename); 
 	get_likes_data_multiple(&xpehh_likes_data, xpehh_master_likesfilename); 
 	get_likes_data_multiple(&fst_likes_data, fst_master_likesfilename); 
-	get_likes_data_multiple(&deldaf_likes_data, deldaf_master_likesfilename); 
+	get_likes_data_multiple(&deldaf_likes_data, deldaf_master_likesfilename);  
 	//for (ibin = 0; ibin < ihs_likes_data.nbins; ibin++){fprintf(stderr, "%f\t%f\t%f\t%f\t%f\t%f\n", ihs_likes_data.start_bin[ibin], ihs_likes_data.end_bin[ibin], ihs_likes_data.miss_probs[ibin], ihs_likes_data.hit_probs_hi[ibin], ihs_likes_data.hit_probs_mid[ibin], ihs_likes_data.hit_probs_low[ibin]);} // DEBUG
+
 
 	/////////////////////
 	/// DEFINE REGION /// 
@@ -137,6 +145,16 @@ int main(int argc, char **argv) {
 		//fprintf(stderr, "adjusted region bounds to enforce minimum genetic length: %f\n", minGenLen);
 	} // end adjust region bounds
 	*/
+
+
+	/////////////////////////////
+	// LOAD SCORES FOR REGION ///
+	/////////////////////////////
+	fprintf(stderr, "\nPreparing to load component scores...\n");
+	get_popComp_anyData(minPos, maxPos, &score_data, nComparisons, argc, argv); 
+	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
+	
+	//for (isnp = 0; isnp < 5; isnp++ ){fprintf(stderr, "%d\t%f\t%f\n", score_data.physpos[1][isnp], score_data.ihs_normed[1][isnp], score_data.nsl_normed[1][isnp]);} // DEBUG
 	nsnps_regional = 0;
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
@@ -153,7 +171,10 @@ int main(int argc, char **argv) {
 		thisxpehh = compareXp(&score_data, isnp); //determine others by comparison. XP: take maximum.
 		thisfst = compareFst_PBS(&score_data, isnp);
 		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);	 
-		
+		thisH12 = score_data.H12[iComp][isnp];
+		thisH2H1 = score_data.H2H1[iComp][isnp];
+		thisiSAFE = score_data.iSAFE[iComp][isnp];
+
 		proceed = 0;
 		//check position
 		thisPos = score_data.physpos[iComp][isnp];
@@ -175,7 +196,7 @@ int main(int argc, char **argv) {
 	fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
-	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_deliHH\tnormed_nsl\tnormed_xp-ehh\tfst\tdelDAF\tcompLike_CMS\n");
+	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_nsl\tnormed_delihh\tH12\tiSAFE\tnormed_xp-ehh\tfst\tdelDAF\tcompLike_CMS\n");
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
 		//HANDLE POPULATION COMPARISONS //
@@ -191,7 +212,10 @@ int main(int argc, char **argv) {
 		thisxpehh = compareXp(&score_data, isnp);
 		thisfst = compareFst_PBS(&score_data, isnp);	
 		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);	
-		
+		thisiSAFE = score_data.iSAFE[iComp][isnp];
+		thisH12 = score_data.H12[iComp][isnp];
+
+
 		proceed = 0;
 		//check position
 		thisPos = score_data.physpos[iComp][isnp];
@@ -216,13 +240,18 @@ int main(int argc, char **argv) {
 			fst_hitprob = getHitProb(&fst_likes_data, likesFreqIndex, thisfst);
 			deldaf_hitprob = getHitProb(&deldaf_likes_data, likesFreqIndex, thisdelDaf);
 			xpehh_hitprob = getHitProb(&xpehh_likes_data, likesFreqIndex, thisxpehh);
-		
+			H12_hitprob = getHitProb(&H12_likes_data, likesFreqIndex, thisH12);
+			iSAFE_hitprob = getHitProb(&iSAFE_likes_data, likesFreqIndex, thisiSAFE);
+
+
 			delihh_missprob = getMissProb(&delihh_likes_data, thisihh);
 			nsl_missprob = getMissProb(&nsl_likes_data, thisnsl);			
 			ihs_missprob = getMissProb(&ihs_likes_data, thisihs);
 			fst_missprob = getMissProb(&fst_likes_data, thisfst);
 			deldaf_missprob = getMissProb(&deldaf_likes_data, thisdelDaf);
 			xpehh_missprob = getMissProb(&xpehh_likes_data, thisxpehh);
+			H12_missprob = getMissProb(&H12_likes_data, thisH12);
+			iSAFE_missprob = getMissProb(&iSAFE_likes_data, thisiSAFE);
 
 			///////////////////////////
 			/// GET LOCAL CMS SCORE ///
@@ -242,10 +271,18 @@ int main(int argc, char **argv) {
 								joint_score_prob_neut *= deldaf_missprob;	}	
 			if(takeXpehh == 0 && isnan(thisxpehh) == 0){	joint_score_prob_sel *= xpehh_hitprob; 
 								joint_score_prob_neut *= xpehh_missprob;	}				
+			if(takeH12 == 0 && isnan(thisH12) == 0){	joint_score_prob_sel *= H12_hitprob; 
+								joint_score_prob_neut *= H12_missprob;	}	
+			if(takeFst == 0 && isnan(thisfst) == 0){	joint_score_prob_sel *= fst_hitprob; 
+								joint_score_prob_neut *= fst_missprob;	}	
+			
+
 			cms_numerator = prior * joint_score_prob_sel;
 			cms_denominator = cms_numerator + (1. - prior) * joint_score_prob_neut;
 			compLike = cms_numerator / cms_denominator;			
-			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLike);
+			
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisnsl,  thisihh, thisH12, thisiSAFE, thisxpehh, thisfst, thisdelDaf, compLike);
+			//fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisihh, thisnsl, thisxpehh, thisfst, thisdelDaf, compLike);
 
 			//DEBUG 
 			/*fprintf(stderr, "%d\t%d\n", cms_numerator, cms_denominator);

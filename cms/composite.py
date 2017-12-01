@@ -63,6 +63,8 @@ def full_parser_composite():
 	######################################
 	composite_sims_parser = subparsers.add_parser('composite_sims', help='calculate composite scores for simulations')
 	composite_sims_parser.add_argument('--regional_cms', action="store_true", default=False, help="calculate within-region CMS rather than genome-wide CMS")
+	composite_sims_parser.add_argument('--scenariopop', action="store", help="sel directory")
+
 	composite_emp_parser = subparsers.add_parser('composite_emp', help="calculate composite scores for empirical data")	
 	composite_emp_parser.add_argument('--score_basedir', default="/n/regal/sabeti_lab/jvitti/clear-synth/1kg_scores/")
 	composite_emp_parser.add_argument('--regional_cms_chrom', type=int, action="store", help="if included, calculate within-region CMS (rather than CMS_gw) for specified bounds at this chromosome")
@@ -180,7 +182,7 @@ def execute_xp_from_ihh(args):
 ### in user-defined CMS statistic
 def execute_composite_sims(args):
 	''' given simulated data and component scores (e.g. from likes_from_model.py) together with likelihood tables, generate CMS scores '''
-	sel_freq_bins = []#['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
+	sel_freq_bins = ['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90']
 
 	if args.cmsdir is not None: 	#will be able to nix this construction 
 		cmd = args.cmsdir 			#once conda packaging is complete
@@ -228,6 +230,7 @@ def execute_composite_sims(args):
 	altpops = [1, 2, 3, 4]
 	selpop = int(selpop)
 	altpops.remove(selpop)
+	scenariopop = args.scenariopop
 
 	##################################
 	## CALCULATE CMS: ALL NEUT SIMS ##
@@ -237,6 +240,7 @@ def execute_composite_sims(args):
 	pairdir = scoremodeldir + "pairs/"
 	check_create_dir(compositedir)
 	check_create_dir(pairdir)
+
 	for irep in range(1, numPerBin_neut +1):	
 		altpairs = []
 		for altpop in altpops:
@@ -260,12 +264,12 @@ def execute_composite_sims(args):
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				#execute(fullcmd)
-	
+
+
 	#################################
 	## CALCULATE CMS: ALL SEL SIMS ##
 	#################################
-	"""
-	scoremodeldir = writedir + model + "/sel" + str(selpop) + "/"
+	scoremodeldir = writedir + model + "/sel" + str(scenariopop) + "/"
 	#check_create_dir(scoremodeldir)
 	for sel_freq_bin in sel_freq_bins:
 		this_bindir = scoremodeldir + "sel_" + str(sel_freq_bin) + "/"
@@ -277,11 +281,14 @@ def execute_composite_sims(args):
 		for irep in range(1, numPerBin_sel +1):
 			altpairs = []
 			for altpop in altpops:
-				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, altpop, selbin = sel_freq_bin, filebase = writedir, normed = True)
+				in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file = get_sim_component_score_files(model, irep, selpop, scenariopop, altpop, selbin = sel_freq_bin, filebase = writedir, normed = True)
 				pairfilename = pairdir + "rep" + str(irep) + "_" + str(selpop) + "_" + str(altpop) + ".pair" 
 				if os.path.isfile(in_ihs_file) and os.path.isfile(in_nsl_file) and os.path.isfile(in_delihh_file) and os.path.isfile(in_xp_file) and os.path.isfile(in_fst_deldaf_file) and os.path.getsize(in_ihs_file) > 0:
 					write_pair_sourcefile(pairfilename, in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file)
 					altpairs.append(pairfilename)
+				else:
+					print('missing')
+					print(in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file)
 			if len(altpairs) !=0:
 				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
 				alreadyExists = False
@@ -297,7 +304,11 @@ def execute_composite_sims(args):
 					fullcmd = cmd + " " + argstring
 					print(fullcmd)
 					execute(fullcmd)
-	"""
+				else:
+					print(outfile + " already exists") 
+			else:
+				print("no altpairs")
+	
 	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
 	return
 def execute_composite_emp(args):
@@ -550,7 +561,7 @@ def execute_normemp_genomewide(args):
 	for thischrom in chroms:
 		unnormedfile = get_emp_cms_file(selpop, thischrom, normed=False, basedir=score_basedir, suffix=suffix,) #model #selpop, chrom, normed=False, suffix=suffix, basedir = score_basedir)
 		assert os.path.isfile(unnormedfile)
-		normedfile = unnormedfile + ".norm"
+		normedfile = unnormedfile + ".norm.z"
 
 		readfile = open(unnormedfile, 'r')
 		writefile = open(normedfile, 'w')

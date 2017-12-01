@@ -33,6 +33,7 @@ def full_parser_power():
 	distviz_parser.add_argument('--takeIndex', action='store', type=int, help="zero-based index of datacolumn to aggregate", default=-1)
 	distviz_parser.add_argument('--infile_singular', action='store', type=str, help="visualize distribution from this singular .cms file")
 	distviz_parser.add_argument('--infile_list', action='store', type=str, help="pass a file with a list of input files to view distributions pooled across multiples chromosomes, multiple replicates, etc.")
+	distviz_parser.add_argument('--takeLog', action='store_true',)
 
 	#####################
 	## QUANTIFY POWER ###
@@ -155,6 +156,8 @@ def execute_distviz(args):
 			else:
 				print('check input datafile and argument takeIndex')
 		infile.close()
+	if args.takeLog:
+		allvals = [np.log(item) for item in allvals]
 
 	plot_dist(allvals, savefilename)
 	return
@@ -377,7 +380,7 @@ def execute_tpr(args):
 	#per seldaf
 	dafbins = [['0.10', '0.20', '0.30', '0.40', '0.50', '0.60', '0.70', '0.80', '0.90'], ['0.10', '0.20', '0.30'], ['0.40', '0.50', '0.60'], ['0.70', '0.80', '0.90'], ['0.90']]
 	daflabels = ['all', 'lo', 'mid', 'hi','highest']
-	for ibin in [2, 3]:#[1, 2, 3, 4]:#range(1):
+	for ibin in [3]:#[1, 2, 3, 4]:#range(1):
 		thesebins, thislabel = dafbins[ibin], daflabels[ibin]
 		allrepfilenames = []
 		for selbin in thesebins:
