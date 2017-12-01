@@ -1,5 +1,5 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 09.19.2017 	vitti@broadinstitute.org
+// last updated: 10.19.2017 	vitti@broadinstitute.org
 
 #include <stdio.h>
 #include <string.h>
@@ -8,33 +8,14 @@
 #include <math.h>
 #include "cms_data.h"
 
+/*********************/
+/***HELPER METHODS****/ 
+/*********************/
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
-
-/*
-int count_unique(int arr[], int len){
-	//https://stackoverflow.com/questions/28556641/a-program-that-counts-unique-elements-in-an-un-ordered-array
-	int unique = 1;
-	int outer, inner;
-	if (len <= 0){return 0;}
-	for (outer = 1; outer < len; outer++){
-		int isUnique = 1; //Boolean
-		for (inner = 0; inner < outer; inner++){
-			if (arr[inner] == arr[outer]) {isUnique = 0;}
-		}
-		if (isUnique == 1){unique++;}
-	}
-	return unique;
-}*/
-
-
 int count_unique(int arr[], int len) {
-
     int counted[len], j, n, count, flag;
-
     counted[0] = arr[0]; 
-
     count = 1;/*one element is counted*/
-
         for(j=0; j <= len-1; ++j) {
         flag = 1;;
         /*the counted array will always have 'count' elements*/
@@ -49,7 +30,7 @@ int count_unique(int arr[], int len) {
         }
     }
     return count;
-}
+} //end method
 
 /**********************/
 /***COMPONENT SCORES***/
@@ -470,6 +451,117 @@ void free_nsl_data(nsl_data* data) {
 	free(data->nsl_normed);
 	data->nsnps = 0;
 } //end method
+void get_H12_data(H12_data* data, char filename[]) {
+	const int line_size = 15000000; 
+	FILE *inf=NULL;
+	char *newLine, *token, *running;
+	int isnp, itoken;
+
+	newLine = malloc((line_size+1) * sizeof(char));
+	assert(newLine != NULL); 
+
+	data->nsnps = 0;
+	data->pos = NULL; 
+	data->H12_value = NULL;
+	data->H2H1_value = NULL;
+	inf = fopen(filename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
+	assert(inf != NULL);
+	while (fgets(newLine, line_size, inf) != NULL) {
+			assert(strlen(newLine) < line_size);
+			data->nsnps++;
+		}
+	fclose(inf);
+
+	// Allocate memory; initialize
+	data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
+	data->H12_value = malloc(data->nsnps * sizeof(double*)); assert(data->H12_value != NULL);
+	data->H2H1_value = malloc(data->nsnps * sizeof(double*)); assert(data->H2H1_value != NULL);
+
+	/*******************
+	GET DATA FROM FILE
+	*******************/
+	inf = fopen(filename, "r");
+	isnp = 0;
+	while (fgets(newLine, line_size, inf) != NULL) {
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 0) {
+				data->pos[isnp] = atoi(token);
+			}	
+			else if (itoken == 8) {
+				data->H12_value[isnp] = atof(token);
+			}
+			else if (itoken == 9) {
+				data->H2H1_value[isnp] = atof(token);
+			}			
+		} // END for running=newLine
+		isnp++;
+	} //END while(fgets(newLine))
+	
+	fclose(inf);
+	free(newLine);
+} //end method
+void free_H12_data(H12_data* data) {
+	if (data == NULL) {return;}
+	free(data->pos);
+	free(data->H12_value);
+	free(data->H2H1_value);
+	data->nsnps = 0;
+} //end method
+void get_iSAFE_data(iSAFE_data* data, char filename[]) {
+	const int line_size = 15000000; 
+	FILE *inf=NULL;
+	char *newLine, *token, *running;
+	int isnp, itoken;
+
+	newLine = malloc((line_size+1) * sizeof(char));
+	assert(newLine != NULL); 
+
+	data->nsnps = 0;
+	data->pos = NULL; 
+	data->iSAFE_value = NULL;
+
+	inf = fopen(filename, "r");
+	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
+	assert(inf != NULL);
+	fgets(newLine, line_size, inf); //strip header
+	while (fgets(newLine, line_size, inf) != NULL) {
+			assert(strlen(newLine) < line_size);
+			data->nsnps++;
+		}
+	fclose(inf);
+
+	// Allocate memory; initialize
+	data->pos = malloc(data->nsnps * sizeof(int*)); assert(data->pos != NULL);
+	data->iSAFE_value = malloc(data->nsnps * sizeof(double*)); assert(data->iSAFE_value != NULL);
+
+	/*******************
+	GET DATA FROM FILE
+	*******************/
+	inf = fopen(filename, "r");
+	fgets(newLine, line_size, inf); //strip header
+	isnp = 0;
+	while (fgets(newLine, line_size, inf) != NULL) {
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 0) {
+				data->pos[isnp] = atoi(token);
+			}	
+			else if (itoken == 1) {
+				data->iSAFE_value[isnp] = atof(token);
+			}
+		} // END for running=newLine
+		isnp++;
+	} //END while(fgets(newLine))
+	
+	fclose(inf);
+	free(newLine);
+} //end method
+void free_iSAFE_data(iSAFE_data* data) {
+	if (data == NULL) {return;}
+	free(data->pos);
+	free(data->iSAFE_value);
+	data->nsnps = 0;
+} //end method
 
 /************************/
 /***SCORE LIKELIHOODS***/
@@ -695,39 +787,47 @@ float getMinProb(likes_data_multiple* data, int likesIndex, double prior){
 }//end function
 
 /****************/
-/***POP PAIR****/
+/***POP PAIR****/ //ADD ISAFE HERE
 /***************/
-int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
+int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
 	/* 	counts the number of (unique) SNPs that have ALL component scores present */
 	ihs_data ihs1;
 	delihh_data delihh1;
 	nsl_data nsl1;
 	xpehh_data xp;
 	freqs_data freqs;
+	H12_data H12;
+	iSAFE_data iSAFE;
 	int nsnps;
-	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index;
-	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, minimum;
+	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index, H12_index, iSAFE_index;
+	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, h12pos, isafepos, minimum;
 
 	get_ihs_data(&ihs1, ihs_filename);
 	get_delihh_data(&delihh1, delihh_filename);
 	get_nsl_data(&nsl1, nsl_filename);
 	get_xpehh_data(&xp, xpehh_filename);
 	get_freqs_data(&freqs, freqs_filename);
+	get_H12_data(&H12, H12_filename);
+	get_iSAFE_data(&iSAFE, iSAFE_filename);
 
 	ihs1_index=0;
 	nsl1_index=0;
 	delihh1_index=0;
 	xp_index=0;
 	freqs_index=0;
+	H12_index=0;
+	iSAFE_index=0;
 	nsnps = 0;
-	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps)
+	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps && H12_index < H12.nsnps && iSAFE_index < iSAFE.nsnps)
 	{
 		ihs1pos = ihs1.pos[ihs1_index];
 		nsl1pos = nsl1.pos[nsl1_index];
+		h12pos = H12.pos[H12_index];
+		isafepos = iSAFE.pos[iSAFE_index];
 		delihh1pos = delihh1.pos[delihh1_index];
 		xppos = xp.pos[xp_index];
 		freqspos = freqs.pos[freqs_index];
-		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos){
+		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos && h12pos == freqspos && isafepos == h12pos){
 			nsnps++;
 		}
 		//If not at the same point, find out which position is lowest and advance its pointer.
@@ -737,12 +837,16 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 		if (delihh1pos < minimum){minimum = delihh1pos;}
 		if (xppos < minimum){minimum = xppos;}		
 		if (freqspos < minimum){minimum = freqspos;}
+		if (h12pos < minimum){minimum = h12pos;}
+		if (isafepos < minimum){minimum = isafepos;}
 
 		if (ihs1pos == minimum){ihs1_index++;}
 		if (nsl1pos == minimum){nsl1_index++;}
 		if (delihh1pos == minimum){delihh1_index++;}
 		if (xppos == minimum){xp_index++;}		
 		if (freqspos == minimum){freqs_index++;}
+		if (h12pos == minimum){H12_index++;}	
+		if (isafepos == minimum){iSAFE_index++;}
 	} // end while loop
 	//fprintf(stderr, "\tfound complete data for %d SNPs\n", data->nsnps);
 	free_ihs_data(&ihs1);
@@ -750,18 +854,23 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
+	free_H12_data(&H12);
+	free_iSAFE_data(&iSAFE);
 	return nsnps;
 } // end function
-int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
+int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
 	/* counts the number of unique SNPs that have a score value for at least one component score */
 	ihs_data ihs1;
 	delihh_data delihh1;
 	nsl_data nsl1;
 	xpehh_data xp;
 	freqs_data freqs;
+	H12_data H12;
+	iSAFE_data iSAFE;
 	int nunique;
 	int totNsnp, isnp;//, jsnp;
 	int *allSnps, *allUniqueSnps;
+	int cumulativeSNPCount = 0;
 
 	//////////////////////
 	// LOAD IN ALL DATA //
@@ -771,7 +880,8 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	get_nsl_data(&nsl1, nsl_filename);
 	get_xpehh_data(&xp, xpehh_filename);
 	get_freqs_data(&freqs, freqs_filename);
-
+	get_H12_data(&H12, H12_filename);
+	get_iSAFE_data(&iSAFE, iSAFE_filename);
 	/*
 	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
@@ -784,29 +894,41 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  freqs.nsnps);
 	*/
-	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps;
+	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps + H12.nsnps + iSAFE.nsnps;
 	allSnps = malloc(totNsnp * sizeof(int));
 
 	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
 		//fprintf(stderr, "isnp: %d\n", isnp);
 		allSnps[isnp] = ihs1.pos[isnp];
 	}	// end ihs isnp
-	for (isnp = ihs1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps; isnp++){
+	cumulativeSNPCount += ihs1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+delihh1.nsnps; isnp++){
 		//fprintf(stderr, "\tisnp: %d\n", isnp);
-		allSnps[isnp] = delihh1.pos[isnp-ihs1.nsnps];
+		allSnps[isnp] = delihh1.pos[isnp-cumulativeSNPCount];
 	}	//end delihh isno
-	for (isnp = ihs1.nsnps+delihh1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps+nsl1.nsnps; isnp++){
+	cumulativeSNPCount += delihh1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+nsl1.nsnps; isnp++){
 		//fprintf(stderr, "isnp: %d\n", isnp);
-		allSnps[isnp] = nsl1.pos[isnp-(ihs1.nsnps+delihh1.nsnps)];
+		allSnps[isnp] = nsl1.pos[isnp-cumulativeSNPCount];
 	}	//end nsl isnp
-	for (isnp = ihs1.nsnps+delihh1.nsnps+nsl1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps; isnp++){
+	cumulativeSNPCount += nsl1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+xp.nsnps; isnp++){
 		//fprintf(stderr, "\tisnp: %d\n", isnp);
-		allSnps[isnp] = xp.pos[isnp-(ihs1.nsnps+delihh1.nsnps+nsl1.nsnps)];
+		allSnps[isnp] = xp.pos[isnp-cumulativeSNPCount];
 	}	//end xp isnp
-	for (isnp = ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps; isnp < totNsnp; isnp++){
+	cumulativeSNPCount += xp.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+freqs.nsnps; isnp++){
 		//fprintf(stderr, "isnp: %d\n", isnp);
-		allSnps[isnp] = freqs.pos[isnp-(ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps)];
+		allSnps[isnp] = freqs.pos[isnp-cumulativeSNPCount];
 	}	//end freq isnp
+	cumulativeSNPCount += freqs.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount + H12.nsnps; isnp++){
+		allSnps[isnp] = H12.pos[isnp-cumulativeSNPCount];
+	} // end H12 isnp
+	cumulativeSNPCount += H12.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < totNsnp; isnp++){
+		allSnps[isnp] = H12.pos[isnp-cumulativeSNPCount];
+	} // end H12 isnp
 
 	//fprintf(stderr, "get_num_anyData returns totnsnp: %d\n", totNsnp);
 
@@ -820,7 +942,6 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	if (allSnps[totNsnp-1] != allSnps[totNsnp-2]){nunique++;} //edge case
 	*/
 	nunique = count_unique(allSnps, totNsnp);
-
 	allUniqueSnps= malloc(nunique * sizeof(int)); //is this step necessary?
 	/*
 	jsnp = 0;
@@ -831,27 +952,31 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	if (allSnps[totNsnp-1] != allSnps[totNsnp-2]){allUniqueSnps[jsnp] = allSnps[totNsnp-1];} //edge case
 	//BUT IF THIS IS NOT THE CASE WHAT HAPPENS TO LAST SNP
 	*/
-
 	free_ihs_data(&ihs1);
 	free_nsl_data(&nsl1);
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
+	free_H12_data(&H12);
+	free_iSAFE_data(&iSAFE);
 	free(allSnps);
 	free(allUniqueSnps);
 	return nunique;
 } // end function
-void get_popPair_completeData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
+void get_popPair_completeData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
 	/* loads in COMPLETE data for a population pair */
 	ihs_data ihs1;
 	delihh_data delihh1;
 	nsl_data nsl1;
 	xpehh_data xp;
 	freqs_data freqs;
+	H12_data H12;
+	iSAFE_data iSAFE;
+
 	char *locus;
 	int isnp;
-	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index;
-	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, minimum;
+	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index, H12_index, iSAFE_index;
+	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, h12pos, isafepos, minimum;
 	double thisDeldaf, thisXp;
 
 	/////////////////
@@ -868,7 +993,12 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
+	data->H12 = NULL;
+	data->H2H1 = NULL;
+	data->iSAFE = NULL;
+
 	locus = malloc(256 * sizeof(char));
+
 
 	////////////////////////////////
 	// LOAD EACH COMPONENT SCORE ///
@@ -878,6 +1008,8 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	get_nsl_data(&nsl1, nsl_filename);
 	get_xpehh_data(&xp, xpehh_filename);
 	get_freqs_data(&freqs, freqs_filename);
+	get_H12_data(&H12, H12_filename);
+	get_iSAFE_data(&iSAFE, iSAFE_filename);
 
 	/*
 	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
@@ -900,15 +1032,19 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	delihh1_index=0;
 	xp_index=0;
 	freqs_index=0;
+	H12_index=0;	
+	iSAFE_index=0;
 
-	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps)
+	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps && H12_index < freqs.nsnps && iSAFE_index < iSAFE.nsnps)
 	{
 		ihs1pos = ihs1.pos[ihs1_index];
 		nsl1pos = nsl1.pos[nsl1_index];
 		delihh1pos = delihh1.pos[delihh1_index];
 		xppos = xp.pos[xp_index];
 		freqspos = freqs.pos[freqs_index];
-		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos){
+		h12pos = H12.pos[H12_index];
+		isafepos = iSAFE.pos[iSAFE_index];
+		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos && freqspos == h12pos && h12pos == isafepos){
 			data->nsnps++;
 		}
 		//If not at the same point, find out which position is lowest and advance its pointer.
@@ -918,12 +1054,16 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 		if (delihh1pos < minimum){minimum = delihh1pos;}
 		if (xppos < minimum){minimum = xppos;}		
 		if (freqspos < minimum){minimum = freqspos;}
+		if (h12pos < minimum){minimum = h12pos;}
+		if (isafepos < minimum){minimum = isafepos;}
 
 		if (ihs1pos == minimum){ihs1_index++;}
 		if (nsl1pos == minimum){nsl1_index++;}
 		if (delihh1pos == minimum){delihh1_index++;}
 		if (xppos == minimum){xp_index++;}		
 		if (freqspos == minimum){freqs_index++;}
+		if (h12pos == minimum){H12_index++;}
+		if (isafepos == minimum){iSAFE_index++;}		
 	} // end while loop
 	//fprintf(stderr, "\tfound complete data for %d SNPs\n", data->nsnps);
 
@@ -944,6 +1084,10 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	data->ihs_normed = malloc(data->nsnps * sizeof(double));
 	data->delihh_normed = malloc(data->nsnps * sizeof(double));
 	data->nsl_normed = malloc(data->nsnps * sizeof(double));
+	data->H12 = malloc(data->nsnps * sizeof(double));
+	data->H2H1 = malloc(data->nsnps * sizeof(double));
+	data->iSAFE = malloc(data->nsnps * sizeof(double));
+	
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
 	assert(data->daf_selpop != NULL);
@@ -953,6 +1097,9 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
 	assert(data->nsl_normed != NULL);
+	assert(data->H12 != NULL);
+	assert(data->H2H1 != NULL);
+	assert(data->iSAFE != NULL);
 	//fprintf(stderr, "reserved\n"); //debug
 
 	/////////////////////////
@@ -963,17 +1110,21 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	delihh1_index=0;
 	xp_index=0;
 	freqs_index=0;
+	H12_index=0;
+	iSAFE_index=0;
 
 	isnp = -1;
-	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps)
+	while (ihs1_index < ihs1.nsnps && delihh1_index < delihh1.nsnps && xp_index < xp.nsnps && freqs_index < freqs.nsnps && H12_index < H12.nsnps && iSAFE_index < iSAFE.nsnps)
 	{
 		ihs1pos = ihs1.pos[ihs1_index];
 		nsl1pos = nsl1.pos[nsl1_index];
 		delihh1pos = delihh1.pos[delihh1_index];
 		xppos = xp.pos[xp_index];
 		freqspos = freqs.pos[freqs_index];
+		h12pos = H12.pos[H12_index];
+		isafepos = iSAFE.pos[iSAFE_index];
 
-		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos){
+		if (ihs1pos == delihh1pos && delihh1pos == xppos && xppos == freqspos && nsl1pos == freqspos && freqspos == h12pos && h12pos == isafepos){
 			thisXp=xp.xpehh_normed[xp_index];
 			thisDeldaf=freqs.deldaf[freqs_index];
 			//fprintf(stderr, "found match\n"); //debug
@@ -990,6 +1141,10 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 			data->ihs_normed[isnp] = ihs1.ihs_normed[ihs1_index];
 			data->nsl_normed[isnp] = nsl1.nsl_normed[nsl1_index];
 			data->delihh_normed[isnp] = delihh1.delihh_normed[delihh1_index];
+			data->H12[isnp] = H12.H12_value[H12_index];
+			data->H2H1[isnp] = H12.H2H1_value[H12_index];
+			data->iSAFE[isnp] = iSAFE.iSAFE_value[iSAFE_index];
+			
 			//fprintf(stderr, "finished data entry\n");
 		}
 		//If not at the same point, find out which position is lowest and advance its pointer.
@@ -999,34 +1154,44 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 		if (delihh1pos < minimum){minimum = delihh1pos;}
 		if (xppos < minimum){minimum = xppos;}		
 		if (freqspos < minimum){minimum = freqspos;}
+		if (h12pos < minimum){minimum = h12pos;}
+		if (isafepos < minimum){minimum = isafepos;}
+
 		//fprintf(stderr, "advancing\n"); //debug
 		if (ihs1pos == minimum){ihs1_index++;}
 		if (nsl1pos == minimum){nsl1_index++;}
 		if (delihh1pos == minimum){delihh1_index++;}
 		if (xppos == minimum){xp_index++;}		
 		if (freqspos == minimum){freqs_index++;}
-			
+		if (h12pos == minimum){H12_index++;}	
+		if (isafepos == minimum){iSAFE_index++;}	
+
 	} //end while
 	free_ihs_data(&ihs1);
 	free_nsl_data(&nsl1);
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
+	free_H12_data(&H12);
+	free_iSAFE_data(&iSAFE);
 	free(locus);
 	//fprintf(stderr, "loaded all data to object\n");
 } //end method
-void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char xpehh_filename[], char freqs_filename[]){
+void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
 	/*	loads in ANY data for a population pair */
 	ihs_data ihs1;
 	delihh_data delihh1;
 	nsl_data nsl1;
 	xpehh_data xp;
 	freqs_data freqs;
+	H12_data H12;
+	iSAFE_data iSAFE;
 	//char *locus;
 	int isnp, jsnp;
-	int ksnp, lsnp, msnp, osnp;
+	int ksnp, lsnp, msnp, osnp, psnp, qsnp;
 	int totNsnp; //ie, redundant
 	int *allSnps;
+	int cumulativeSNPCount = 0;
 
 	/////////////////
 	// INITIALIZE ///
@@ -1042,13 +1207,16 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
+	data->H12 = NULL;
+	data->H2H1 = NULL;
+	data->iSAFE = NULL;
 
 	//locus = malloc(256 * sizeof(char));
 
 	/////////////////////
 	// RESERVE MEMORY ///
 	/////////////////////
-	data->nsnps = get_num_anyData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); //fprintf(stderr, "loaded %d snps for pop-pair_any\n", data->nsnps);
+	data->nsnps = get_num_anyData(ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename); //fprintf(stderr, "loaded %d snps for pop-pair_any\n", data->nsnps);
 	data->locus_id = malloc(data->nsnps * sizeof(char*));
 	for (isnp = 0; isnp < data->nsnps; isnp++){
 		data->locus_id[isnp] = malloc(256*sizeof(char));
@@ -1062,7 +1230,11 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	data->xp_normed = calloc(data->nsnps, sizeof(double));
 	data->ihs_normed = calloc(data->nsnps, sizeof(double));
 	data->delihh_normed = calloc(data->nsnps, sizeof(double));
-	data->nsl_normed = calloc(data->nsnps, sizeof(double)); //********
+	data->nsl_normed = calloc(data->nsnps, sizeof(double)); 
+	data->H12 = calloc(data->nsnps, sizeof(double));
+	data->H2H1 = calloc(data->nsnps, sizeof(double));
+	data->iSAFE = calloc(data->nsnps, sizeof(double)); 
+	
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
 	assert(data->daf_selpop != NULL);
@@ -1072,6 +1244,9 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
 	assert(data->nsl_normed != NULL);
+	assert(data->H12 != NULL);
+	assert(data->H2H1 != NULL);	
+	assert(data->iSAFE != NULL);
 
 	////////////////////////////////////////
 	// LOAD COMPONENT SCORES BY POSITION ///
@@ -1081,7 +1256,8 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	get_nsl_data(&nsl1, nsl_filename);
 	get_xpehh_data(&xp, xpehh_filename);
 	get_freqs_data(&freqs, freqs_filename);
-
+	get_H12_data(&H12, H12_filename);
+	get_iSAFE_data(&iSAFE, iSAFE_filename);
 	/*fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
 	fprintf(stderr, "\tloading component score data from: %s\n", delihh_filename);
@@ -1093,26 +1269,45 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  freqs.nsnps);*/
 
-	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps;
+	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps + H12.nsnps + iSAFE.nsnps;
 	allSnps = malloc(totNsnp * sizeof(int));
 	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
+		//fprintf(stderr, "isnp: %d\n", isnp);
 		allSnps[isnp] = ihs1.pos[isnp];
 	}	// end ihs isnp
-	for (isnp = ihs1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps; isnp++){
-		allSnps[isnp] = delihh1.pos[isnp-ihs1.nsnps];
-	}	// end delihh isnp
-	for (isnp = ihs1.nsnps+delihh1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps+nsl1.nsnps; isnp++){
-		allSnps[isnp] = nsl1.pos[isnp-(ihs1.nsnps+delihh1.nsnps)];
-	}	// end nsl isnp
-	for (isnp = ihs1.nsnps+delihh1.nsnps+nsl1.nsnps; isnp < ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps; isnp++){
-		allSnps[isnp] = xp.pos[isnp-(ihs1.nsnps+delihh1.nsnps+nsl1.nsnps)];
-	} // end xp isnp
-	for (isnp = ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps; isnp < totNsnp; isnp++){
-		allSnps[isnp] = freqs.pos[isnp-(ihs1.nsnps+delihh1.nsnps+nsl1.nsnps+xp.nsnps)];
-	} // end freqs isnp
-	qsort(allSnps, totNsnp, sizeof(int), intcmp);
+	cumulativeSNPCount += ihs1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+delihh1.nsnps; isnp++){
+		//fprintf(stderr, "\tisnp: %d\n", isnp);
+		allSnps[isnp] = delihh1.pos[isnp-cumulativeSNPCount];
+	}	//end delihh isno
+	cumulativeSNPCount += delihh1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+nsl1.nsnps; isnp++){
+		//fprintf(stderr, "isnp: %d\n", isnp);
+		allSnps[isnp] = nsl1.pos[isnp-cumulativeSNPCount];
+	}	//end nsl isnp
+	cumulativeSNPCount += nsl1.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+xp.nsnps; isnp++){
+		//fprintf(stderr, "\tisnp: %d\n", isnp);
+		allSnps[isnp] = xp.pos[isnp-cumulativeSNPCount];
+	}	//end xp isnp
+	cumulativeSNPCount += xp.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount+freqs.nsnps; isnp++){
+		//fprintf(stderr, "isnp: %d\n", isnp);
+		allSnps[isnp] = freqs.pos[isnp-cumulativeSNPCount];
+	}	//end freq isnp
+	cumulativeSNPCount += freqs.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < cumulativeSNPCount + H12.nsnps; isnp++){
+		allSnps[isnp] = H12.pos[isnp-cumulativeSNPCount];
+	} // end H12 isnp
+	cumulativeSNPCount += H12.nsnps;
+	for (isnp = cumulativeSNPCount; isnp < totNsnp; isnp++){
+		allSnps[isnp] = H12.pos[isnp-cumulativeSNPCount];
+	} // end H12 isnp
 
+
+	qsort(allSnps, totNsnp, sizeof(int), intcmp);
 	//fprintf(stderr,"\nsorted\n");
+
 	//////////////////////////////
 	/// load all redundant snps //
 	//////////////////////////////
@@ -1131,6 +1326,8 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	lsnp = 0;	//nsl
 	msnp = 0;	//xpehh	
 	osnp = 0;	//freqs	
+	psnp = 0; //H12
+	qsnp = 0;	//iSAFE
 	for (isnp = 0; isnp < data->nsnps; isnp++){
 
 		//ihs (jsnp)
@@ -1159,7 +1356,17 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 		if(data->physpos[isnp] == freqs.pos[osnp]){data->fst[isnp] = freqs.fst[osnp]; data->delDAF[isnp] = freqs.deldaf[osnp]; data->genpos[isnp] = freqs.genpos[osnp]; data->daf_selpop[isnp] = freqs.popdaf[osnp]; if(osnp < freqs.nsnps - 1){osnp++;}}
 		//if(data->physpos[isnp] < freqs.pos[osnp])
 		else{data->fst[isnp] = 0.0 / 0.0; data->delDAF[isnp] = 0.0 / 0.0; } //NaN
-		
+
+		//h12 (psnp)
+		if(data->physpos[isnp] == H12.pos[psnp]){data->H12[isnp] = H12.H12_value[psnp]; data->H2H1[isnp] = H12.H2H1_value[psnp]; if(psnp < H12.nsnps - 1){psnp++;}}
+		//if(data->physpos[isnp] < freqs.pos[osnp])
+		else{data->H12[isnp] = 0.0 / 0.0; data->H2H1[isnp] = 0.0 / 0.0;} //NaN
+
+		//iSAFE (qsnp)
+		if(data->physpos[isnp] == iSAFE.pos[qsnp]){data->iSAFE[isnp] = iSAFE.iSAFE_value[qsnp]; if(qsnp < iSAFE.nsnps - 1){qsnp++;}}
+		//if(data->physpos[isnp] < freqs.pos[osnp])
+		else{data->iSAFE[isnp] = 0.0 / 0.0;} //NaN
+
 		//fprintf(stderr, "isnp: %d\tjsnp: %d\tksnp: %d\tlsnp: %d\tmsnp:%d\tosnp:%d\n", isnp, jsnp, ksnp, lsnp, msnp, osnp); //DEBUG
 	} // end isnp
 	
@@ -1173,9 +1380,10 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	free_delihh_data(&delihh1);
 	free_xpehh_data(&xp);
 	free_freqs_data(&freqs);
+	free_H12_data(&H12);
+	free_iSAFE_data(&iSAFE);
 	//free(locus);
 	free(allSnps);
-
 	
 
 } //end method
@@ -1195,6 +1403,9 @@ void free_popPair_data(popPair_data* data){
 	free(data->ihs_normed);
 	free(data->delihh_normed);
 	free(data->nsl_normed);
+	free(data->H12);
+	free(data->H2H1);
+	free(data->iSAFE);
 	data->nsnps = 0;
 } //end method
 
@@ -1215,6 +1426,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	int	isnp, jsnp, iComp, totNsnp, nunique; //thisPhysPos, itoken
 	int *allSnps, *allUniqueSnps;
 	char ihs_filename[528], delihh_filename[528], nsl_filename[528], xpehh_filename[528], freqs_filename[528];
+	char H12_filename[528], iSAFE_filename[528]; 
 	int numExtraArgs;
 
 	//////////////////
@@ -1232,6 +1444,9 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
+	data->H12 = NULL;
+	data->H2H1 = NULL;
+	data->iSAFE = NULL;
 
 	////////////////////
 	/// COLLATE LOCI ///
@@ -1250,12 +1465,16 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
+		fgets(H12_filename, line_size, inf);
+		strtok(H12_filename, "\n");
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		totNsnp += get_num_completeData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+		totNsnp += get_num_completeData(ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
 	} // end iComp
 	fprintf(stderr, "found a total of %d complete-info snps present in any of %d comparisons.\n", totNsnp,  nComparisons);
 
@@ -1275,12 +1494,16 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		strtok(delihh_filename, "\n");		
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
+		fgets(H12_filename, line_size, inf);
+		strtok(H12_filename, "\n");
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		get_popPair_completeData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); 
+		get_popPair_completeData(&data_sing, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename); 
 			
 		for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
 			allSnps[isnp] = data_sing.physpos[jsnp];
@@ -1331,6 +1554,10 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	data->ihs_normed = malloc(nComparisons * sizeof(double*));
 	data->delihh_normed = malloc(nComparisons * sizeof(double*));
 	data->nsl_normed = malloc(nComparisons * sizeof(double*));
+	data->H12 = malloc(nComparisons * sizeof(double*));
+	data->H2H1 = malloc(nComparisons * sizeof(double*));
+	data->iSAFE = malloc(nComparisons * sizeof(double*));
+
 
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
@@ -1341,6 +1568,9 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
 	assert(data->nsl_normed != NULL);
+	assert(data->H12 != NULL);
+	assert(data->H2H1 != NULL);	
+	assert(data->iSAFE != NULL);
 
 
 	for (iComp = 0; iComp < nComparisons; iComp++){
@@ -1353,6 +1583,9 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		data->ihs_normed[iComp] = calloc(nunique, sizeof(double));
 		data->delihh_normed[iComp] = calloc(nunique, sizeof(double));	
 		data->nsl_normed[iComp] = calloc(nunique, sizeof(double));	
+		data->H12[iComp] = calloc(nunique, sizeof(double));	
+		data->H2H1[iComp] = calloc(nunique, sizeof(double));			
+		data->iSAFE[iComp] = calloc(nunique, sizeof(double));	
 			
 		assert(data->physpos[iComp] != NULL);
 		assert(data->genpos[iComp] != NULL);
@@ -1363,6 +1596,9 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		assert(data->ihs_normed[iComp] != NULL);
 		assert(data->delihh_normed[iComp] != NULL);
 		assert(data->nsl_normed[iComp] != NULL);		
+		assert(data->H12[iComp] != NULL);		
+		assert(data->H2H1[iComp] != NULL);					
+		assert(data->iSAFE[iComp] != NULL);			
 	} // end for icomp
 
 	/////////////////////////////////////////////
@@ -1383,13 +1619,17 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");		
+		fgets(H12_filename, line_size, inf);
+		strtok(H12_filename, "\n");		
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");		
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
 
-		get_popPair_completeData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+		get_popPair_completeData(&data_sing, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
 		jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
 		for (isnp = 0; isnp < nunique; isnp++){
 			//fprintf(stderr, "%d\t%d\t%d\t%d\n", isnp, jsnp, allUniqueSnps[isnp], data_sing.physpos[jsnp]);
@@ -1403,6 +1643,10 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 				data->ihs_normed[iComp][isnp] = data_sing.ihs_normed[jsnp];	 
 				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];	
 				data->nsl_normed[iComp][isnp] = data_sing.nsl_normed[jsnp];		 
+				data->H12[iComp][isnp] = data_sing.H12[jsnp];		 
+				data->H2H1[iComp][isnp] = data_sing.H2H1[jsnp];		 
+				data->iSAFE[iComp][isnp] = data_sing.iSAFE[jsnp];		 
+
 				jsnp++; //assert(jsnp<=data_sing.nsnps);
 				if (jsnp >= data_sing.nsnps){break;}
 			}
@@ -1427,6 +1671,7 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	int	isnp, jsnp, iComp, totNsnp, nunique; //thisPhysPos, itoken
 	int *allSnps, *allUniqueSnps;
 	char ihs_filename[528], delihh_filename[528], nsl_filename[528], xpehh_filename[528], freqs_filename[528];
+	char h12_filename[528], iSAFE_filename[528];
 	int numExtraArgs;
 
 	//////////////////
@@ -1444,6 +1689,9 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	data->ihs_normed = NULL;
 	data->delihh_normed = NULL;
 	data->nsl_normed = NULL;
+	data->H12 = NULL;
+	data->H2H1 = NULL;	
+	data->iSAFE = NULL;
 
 	////////////////////
 	/// COLLATE LOCI ///
@@ -1459,12 +1707,16 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
+		fgets(h12_filename, line_size, inf);
+		strtok(h12_filename, "\n");		
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");		
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		totNsnp += get_num_anyData(ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+		totNsnp += get_num_anyData(ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
 	} // end iComp
 	//fprintf(stderr, "totNsnp: %d\n", totNsnp);
 
@@ -1480,12 +1732,16 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
+		fgets(h12_filename, line_size, inf);
+		strtok(h12_filename, "\n");
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename); 
+		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename); 
 		//fprintf(stderr, "checkpoint: completed get_popPair_anyData\n");
 		//fprintf(stderr, "%d\t%d\t%d\t%d\n", data_sing.physpos[0], data_sing.physpos[1], data_sing.physpos[data_sing.nsnps-2],data_sing.physpos[data_sing.nsnps-1]);
 
@@ -1533,6 +1789,9 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	data->ihs_normed = malloc(nComparisons * sizeof(double*));
 	data->delihh_normed = malloc(nComparisons * sizeof(double*));
 	data->nsl_normed = malloc(nComparisons * sizeof(double*));
+	data->H12 = malloc(nComparisons * sizeof(double*));
+	data->H2H1 = malloc(nComparisons * sizeof(double*));	
+	data->iSAFE = malloc(nComparisons * sizeof(double*));
 
 	assert(data->physpos != NULL);
 	assert(data->genpos != NULL);
@@ -1543,6 +1802,9 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	assert(data->ihs_normed != NULL);
 	assert(data->delihh_normed != NULL);
 	assert(data->nsl_normed != NULL);
+	assert(data->H12 != NULL);
+	assert(data->H2H1 != NULL);	
+	assert(data->iSAFE != NULL);
 
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		data->physpos[iComp] = calloc(nunique, sizeof(int));
@@ -1554,6 +1816,10 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		data->ihs_normed[iComp] = calloc(nunique, sizeof(double));
 		data->delihh_normed[iComp] = calloc(nunique, sizeof(double));	
 		data->nsl_normed[iComp] = calloc(nunique, sizeof(double));	
+		data->H12[iComp] = calloc(nunique, sizeof(double));		
+		data->H2H1[iComp] = calloc(nunique, sizeof(double));				
+		data->iSAFE[iComp] = calloc(nunique, sizeof(double));		
+			
 			
 		assert(data->physpos[iComp] != NULL);
 		assert(data->genpos[iComp] != NULL);
@@ -1564,6 +1830,9 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		assert(data->ihs_normed[iComp] != NULL);
 		assert(data->delihh_normed[iComp] != NULL);
 		assert(data->nsl_normed[iComp] != NULL);		
+		assert(data->H12[iComp] != NULL);		
+		assert(data->H2H1[iComp] != NULL);				
+		assert(data->iSAFE[iComp] != NULL);		
 	} // end for icomp
 
 	/////////////////////////////////////////////
@@ -1581,16 +1850,19 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		strtok(delihh_filename, "\n");
 		fgets(nsl_filename, line_size, inf);
 		strtok(nsl_filename, "\n");
+		fgets(h12_filename, line_size, inf);
+		strtok(h12_filename, "\n");
+		fgets(iSAFE_filename, line_size, inf);
+		strtok(iSAFE_filename, "\n");		
 		fgets(xpehh_filename, line_size, inf);
 		strtok(xpehh_filename, "\n");
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
 
-		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, xpehh_filename, freqs_filename);
+		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
 		fprintf(stderr, "loaded pop-pair object with %d snps\n", data_sing.nsnps);
-
-		fprintf(stderr, "DEBUG: %d\n ", data_sing.physpos[data_sing.nsnps-1]);
+		//fprintf(stderr, "DEBUG: %d\n ", data_sing.physpos[data_sing.nsnps-1]);
 
 		jsnp = 0; //isnp iterates (0, nunique) over allUnique Snps; // jsnp runs (0, data_sing.nsnp) over data_sing.physpos, smaller range.
 		for (isnp = 0; isnp < nunique; isnp++){
@@ -1605,6 +1877,10 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 				data->ihs_normed[iComp][isnp] = data_sing.ihs_normed[jsnp];	 
 				data->delihh_normed[iComp][isnp] = data_sing.delihh_normed[jsnp];	
 				data->nsl_normed[iComp][isnp] = data_sing.nsl_normed[jsnp];		 
+				data->H12[iComp][isnp] = data_sing.H12[jsnp];		
+				data->H2H1[iComp][isnp] = data_sing.H2H1[jsnp];						 
+				data->iSAFE[iComp][isnp] = data_sing.iSAFE[jsnp];		 
+
 				jsnp++; //assert(jsnp<=data_sing.nsnps);
 				if (jsnp > data_sing.nsnps){break;}
 			}
@@ -1617,15 +1893,14 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		data->genpos[iComp][nunique-1] = data_sing.genpos[data_sing.nsnps-1];
 		data->daf_selpop[iComp][nunique-1] = data_sing.daf_selpop[data_sing.nsnps-1];
 		data->delDAF[iComp][nunique-1] = data_sing.delDAF[data_sing.nsnps-1];
-	
 		data->fst[iComp][nunique-1] = data_sing.fst[data_sing.nsnps-1];
 		data->xp_normed[iComp][nunique-1] = data_sing.xp_normed[data_sing.nsnps-1];
 		data->ihs_normed[iComp][nunique-1] = data_sing.ihs_normed[data_sing.nsnps-1];
 		data->nsl_normed[iComp][nunique-1] = data_sing.nsl_normed[data_sing.nsnps-1];
 		data->delihh_normed[iComp][nunique-1] = data_sing.delihh_normed[data_sing.nsnps-1];
-
-
-
+		data->H12[iComp][nunique-1] = data_sing.H12[data_sing.nsnps-1];
+		data->H2H1[iComp][nunique-1] = data_sing.H2H1[data_sing.nsnps-1];		
+		data->iSAFE[iComp][nunique-1] = data_sing.iSAFE[data_sing.nsnps-1];
 
 		free_popPair_data(&data_sing); 
 	} // end for icomp
@@ -1647,6 +1922,9 @@ void free_popComp_data_multiple(popComp_data_multiple* data){
 		free(data->ihs_normed[iComp]);
 		free(data->delihh_normed[iComp]);
 		free(data->nsl_normed[iComp]);	
+		free(data->H12[iComp]);
+		free(data->H2H1[iComp]);	
+		free(data->iSAFE[iComp]);
 	}
 	free(data->physpos);
 	free(data->genpos);
@@ -1656,7 +1934,10 @@ void free_popComp_data_multiple(popComp_data_multiple* data){
 	free(data->xp_normed);
 	free(data->ihs_normed);
 	free(data->delihh_normed);
-	free(data->nsl_normed);	
+	free(data->nsl_normed);
+	free(data->H12);
+	free(data->H2H1);		
+	free(data->iSAFE);		
 	data->nsnps = 0;
 	data->ncomp = 0;
 } //end method

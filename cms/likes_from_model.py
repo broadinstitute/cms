@@ -45,6 +45,7 @@ def full_parser_likes_from_model():
 	get_neut_norm_params_parser = subparsers.add_parser('get_neut_norm_params', help="jointly normalize scores from neutral replicates to get parameters with which to normalize all replicates")	
 	norm_from_neut_params_parser = subparsers.add_parser('norm_from_neut_params', help="normalize component scores according to neutral distribution")
 	norm_from_neut_params_parser.add_argument('--selbin', action='store', help="e.g. 0.10 -- if excluded, normalize neutral simulates")
+	norm_from_neut_params_parser.add_argument('--scenario_dir', action='store', help="neut/selsim dir", default="neut")
 
 	##################################################
 	## GATHER SCORES AND CALCULATE LIKELIHOOD TABLE ##
@@ -366,10 +367,11 @@ def execute_norm_from_neut_params(args):
 	cmsdir = args.cmsdir
 	score = args.score
 	altpop = args.altpop
-	if args.selbin is None:
-		scenario_dir = "neut/"
-	else:
-		scenario_dir = "sel" + str(pop) + "/sel_" + str(args.selbin) + "/"
+	scenario_dir = args.scenario_dir
+	#if args.selbin is None:
+	#	scenario_dir = "neut/"
+	#else:
+	#	scenario_dir = "sel" + str(pop) + "/sel_" + str(args.selbin) + "/"
 	concatfilename, binfilename = get_concat_files(pop, score, altpop, basedir=basedir) #I NEED TO MAKE THIS HANDLE SEL SITUATION
 	print('loading normalization parameters from ' + binfilename + "...")
 	###############
