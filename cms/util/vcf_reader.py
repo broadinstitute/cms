@@ -80,7 +80,7 @@ class VCFReader(object):
         try:
             for line in headerIter:
                 line = str(line.decode("utf-8"))
-                if line.find("CHROM", 1) > 0:
+                if line.find("#CHROM", 1) > 0:
                     break
         except StopIteration:
             raise ValueError("Header not found in VCF file: {}".format(self.vcf_file_path))
