@@ -1,11 +1,4 @@
-// 	last updated 10.26.2017: furnishes a composite scores as a summary statistic of Bayes factors: P( score | sel v unsel)	
-//	vitti@broadinstitute.org
-// 		CMS_RUN_PARAMFILE: first six lines are six master_likesfiles that each have four lines: hit_hi, hit_mid, hit_lo, miss; 
-// 		optional next line: (minPos, maxPos, minDaf, writeLikes); optional next line 0T 1F 8x for ihs nsl delihh H12 iSAFE fst deldaf xpehh
-
-//perhaps: 
 // a new gw program that collates all (incl gaps) by default, and can output a BF score and/or a posterior_given_prior score.
-// print all comparisons, dont just take one?
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -22,6 +15,7 @@
 
 int main(int argc, char **argv) {
 	const int line_size = 15000000; 
+	const float prior = .1; // this is an arbitrary value (test)
 	popComp_data_multiple score_data;
 	likes_data_multiple ihs_likes_data, nsl_likes_data, delihh_likes_data;
 	likes_data_multiple xpehh_likes_data, fst_likes_data, deldaf_likes_data;	
@@ -49,9 +43,12 @@ int main(int argc, char **argv) {
 	int takeIhs, takeDelihh, takeNsl, takeXpehh, takeFst, takeDeldaf, writeLikes; //Bools as above
 	int takeH12, takeiSAFE;
 	//int ibin;  //for debug
+	double joint_score_prob_sel, joint_score_prob_neut; //useful for re-arranging CMS calculation to use prior correctly
+	double cms_numerator, cms_denominator;
+	double compLike;	
 	
 	if (argc <= 3) {
-		fprintf(stderr, "Usage: ./combine_scores_gw <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
+		fprintf(stderr, "Usage: ./combine_gw_extended <savefilename> <cms_run_paramfile> <input_pair_file1> ...\n");
 		exit(0);
 	}
 	nComparisons = argc - 3;
@@ -59,8 +56,10 @@ int main(int argc, char **argv) {
 	//////////////////
 	// LOAD SCORES ///
 	//////////////////
+	minPos = -1;		
+	maxPos = 2147483647;
 	fprintf(stderr, "\nPreparing to load component scores...\n");
-	get_popComp_completeData(&score_data, nComparisons, argc, argv); 
+	get_popComp_anyData(minPos, maxPos, &score_data, nComparisons, argc, argv); 
 	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 	//for (isnp = 0; isnp < score_data.nsnps; isnp++ ){fprintf(stderr, "%f\t", score_data.ihs_normed[1][isnp]);} // DEBUG
 
@@ -88,12 +87,7 @@ int main(int argc, char **argv) {
 	fgets(deldaf_master_likesfilename, line_size, inf);
 	strtok(deldaf_master_likesfilename, "\n");
 
-	//STANDARDIZE ORDERING
-	//LOSE LIKESFREQS
-
 	//set defaults
-	minPos = -1;		
-	maxPos = 2147483647;
 	minDaf = 0;
 	takeIhs = takeDelihh = takeNsl = takeXpehh = takeFst = takeDeldaf = 0; //all T by default
 	takeH12 = takeiSAFE = 0;
@@ -116,8 +110,6 @@ int main(int argc, char **argv) {
 			else if (itoken == 5){takeXpehh = atoi(token);}	
 			else if (itoken == 6){takeFst = atoi(token);}			
 			else if (itoken == 7){takeDeldaf = atoi(token);}	
-
-
 		} // end for running
 	}  //end if fgets paramline
 	fclose(inf);
@@ -130,24 +122,21 @@ int main(int argc, char **argv) {
 	get_likes_data_multiple(&xpehh_likes_data, xpehh_master_likesfilename); 
 	get_likes_data_multiple(&fst_likes_data, fst_master_likesfilename); 
 	get_likes_data_multiple(&deldaf_likes_data, deldaf_master_likesfilename); 
-	
-	//for (ibin = 0; ibin < ihs_likes_data.nbins; ibin++){fprintf(stderr, "%f\t%f\t%f\t%f\t%f\t%f\n", ihs_likes_data.start_bin[ibin], ihs_likes_data.end_bin[ibin], ihs_likes_data.miss_probs[ibin], ihs_likes_data.hit_probs_hi[ibin], ihs_likes_data.hit_probs_mid[ibin], ihs_likes_data.hit_probs_low[ibin]);} // DEBUG
 
 	////////////////////////
 	// ITERATE OVER SNPS ///
 	////////////////////////
 	strcpy(outfilename, argv[1]);
-	//fprintf(stderr, "Preparing to write to: %s\n", outfilename);
+	fprintf(stderr, "Preparing to write to: %s\n", outfilename);
 	outf = fopen(outfilename, "w");
 	assert(outf != NULL);
-	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_nsl\tnormed_delihh\tH12\tiSAFE\tnormed_xp-ehh\tfst\tdelDAF\tcompLikeRatio_CMS\n");
-
+	fprintf(outf, "physPos\tgenPos\tpopDAF\tnormed_iHS\tnormed_nsl\tnormed_delihh\tH12\tiSAFE\tnormed_xp-ehh\tfst\tdelDAF\tcompLikeRatio_CMS\tcompLike_prior.1\n");
 	if (writeLikes == 0){
 		strcpy(outfilename_likes, argv[1]);
 		strcat(outfilename_likes, ".likes");
 		outf2 = fopen(outfilename_likes, "w");
 		assert(outf2 != NULL);
-		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_nsl\tlike_deliHH\tlike_H12\tlike_iSAFE\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS\n");	
+		fprintf(outf2, "physPos\tgenPos\tpopDAF\tlike_iHS\tlike_nsl\tlike_deliHH\tlike_H12\tlike_iSAFE\tlike_xp-ehh\tlikefst\tlikedelDAF\tcompLikeRatio_CMS\tcompLike_prior.1\n");	
 	} //end if write likes
 	for (isnp = 0; isnp < score_data.nsnps; isnp++){
 		//////////////////////////////////
@@ -165,6 +154,8 @@ int main(int argc, char **argv) {
 		thisH12 = score_data.H12[iComp][isnp];
 		thisH2H1 = score_data.H2H1[iComp][isnp];
 		thisiSAFE = score_data.iSAFE[iComp][isnp];
+		//fprintf(stderr)
+		//PRINT ALL COMPARISON VALUES 
 		thisxpehh = compareXp(&score_data, isnp);
 		thisfst = compareFst_PBS(&score_data, isnp);
 		thisdelDaf = comparedelDaf_outgroup_ave(&score_data, isnp);
@@ -269,7 +260,7 @@ int main(int argc, char **argv) {
 
 
 			/////////////////////
-			/// GET CMS SCORE ///
+			/// GET CMS SCORE ///	-- as Bayes Factor
 			/////////////////////		
 			if(takeIhs == 0){compLikeRatio *= ihs_bf;}			//;fprintf(stderr, "ihs\t");}
 			if(takeDelihh == 0){compLikeRatio *= delihh_bf;}	//;fprintf(stderr, "delihh\t");}
@@ -280,9 +271,37 @@ int main(int argc, char **argv) {
 			if(takeH12 == 0){compLikeRatio *= H12_bf;}			
 			if(takeiSAFE == 0){compLikeRatio *= iSAFE_bf;}		
 
+			/////////////////////
+			/// GET CMS SCORE ///	-- as posterior estimate
+			/////////////////////		
+			joint_score_prob_sel = 1;
+			joint_score_prob_neut = 1;
 
-			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisnsl,  thisihh, thisH12, thisiSAFE, thisxpehh, thisfst, thisdelDaf, compLikeRatio);
-			if (writeLikes == 0){fprintf(outf2, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, ihs_bf, nsl_bf, delihh_bf, H12_bf, iSAFE_bf, xpehh_bf, fst_bf, deldaf_bf, compLikeRatio);} //end if write likes
+			if(takeIhs == 0 && isnan(thisihs) == 0){	joint_score_prob_sel *= ihs_hitprob; 
+								joint_score_prob_neut *= ihs_missprob;	}	
+			if(takeDelihh == 0 && isnan(thisihh) == 0){	joint_score_prob_sel *= delihh_hitprob; 
+								joint_score_prob_neut *= delihh_missprob;	}
+			if(takeNsl == 0 && isnan(thisnsl) == 0){	joint_score_prob_sel *= nsl_hitprob; 
+								joint_score_prob_neut *= nsl_missprob;	}	
+			if(takeiSAFE == 0 && isnan(thisiSAFE) == 0){	joint_score_prob_sel *= iSAFE_hitprob; 
+								joint_score_prob_neut *= iSAFE_missprob;	}	
+			if(takeH12 == 0 && isnan(thisH12) == 0){	joint_score_prob_sel *= H12_hitprob; 
+								joint_score_prob_neut *= H12_missprob;	}	
+			if(takeFst == 0 && isnan(thisfst) == 0){	joint_score_prob_sel *= fst_hitprob; 
+								joint_score_prob_neut *= fst_missprob;	}	
+			if(takeDeldaf == 0 && isnan(thisdelDaf) == 0){	joint_score_prob_sel *= deldaf_hitprob; 
+								joint_score_prob_neut *= deldaf_missprob;	}	
+			if(takeXpehh == 0 && isnan(thisxpehh) == 0){	joint_score_prob_sel *= xpehh_hitprob; 
+								joint_score_prob_neut *= xpehh_missprob;	}		
+
+			cms_numerator = prior * joint_score_prob_sel;
+			cms_denominator = cms_numerator + (1. - prior) * joint_score_prob_neut;
+
+			compLike = cms_numerator / cms_denominator;			
+
+
+			fprintf(outf, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\t%f\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, thisihs, thisnsl,  thisihh, thisH12, thisiSAFE, thisxpehh, thisfst, thisdelDaf, compLikeRatio, compLike);
+			if (writeLikes == 0){fprintf(outf2, "%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%e\t%f\n", score_data.physpos[iComp][isnp], score_data.genpos[iComp][isnp], thisdaf, ihs_bf, nsl_bf, delihh_bf, H12_bf, iSAFE_bf, xpehh_bf, fst_bf, deldaf_bf, compLikeRatio, compLike);} //end if write likes
 		
 			//DEBUG 
 			/*

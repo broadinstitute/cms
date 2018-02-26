@@ -4,21 +4,21 @@
 ## See http://broad-cms.readthedocs.io/en/latest/workflow.html 		last updated: 07.05.16		vitti@broadinstitute.org
 
 #generated for dataset using cms_modeller.py, e.g.
-bootstrap_targetval_filename = "/Users/vitti/n2stats.txt"
+bootstrap_targetval_filename = "/idi/sabeti-scratch/jvitti/targetstats_120317_quick_TEST.txt"#"/idi/sabeti-scratch/jvitti/test.txt"
+#"/Users/vitti/n2stats.txt"
 #"results_inclusive_targetstats_thinned_bootstrap_bysnp_2reps_120915_3pm_chr21-22.txt"
 
 
+##########################
+## DEFINE TARGET VALUES ##
+##########################
 
 def read_lines(openfile, numlines):
 	for i in range(numlines):
 		line = openfile.readline()
 	return line
-
-##########################
-## DEFINE TARGET VALUES ##
-##########################
 def get_target_values():
-	popDict = {'1': 1, '2': 2, '3': 3, '4':4, 'ESN':5}
+	popDict = {'YRI': 1, 'CEU': 2, 'CHB': 3, 'BEB':4}
 	#popDict = {'LWK': 1, 'GWD': 2, 'MSL': 3, 'YRI':4, 'ESN':5}
 	stats = {}
 	openfile = open(bootstrap_targetval_filename, 'r')
@@ -83,7 +83,6 @@ def get_target_values():
 		stats[("fst_var", popPair)] =[fst_se ** 2]
 	
 	return stats
-
 ##########################
 ## DEFINE TREE TOPOLOGY ##
 ##########################

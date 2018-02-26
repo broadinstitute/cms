@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 10.08.16 vitti@broadinstitute.org
+## last updated: 02.26.18 vitti@broadinstitute.org
 
 import matplotlib as mp 
 mp.use('agg') 
@@ -39,8 +39,14 @@ def full_parser_cms_modeller():
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
+	bootstrap_parser.add_argument('--nFreqHistBins', action='store',type=int, default=6, help="number of bins for site frequency spectrum and p(der|freq)")
 	bootstrap_parser.add_argument('--in_ld', action='store', help='comma-delimited list of infiles with per-site-pair calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
+	bootstrap_parser.add_argument('--mafcutoffdprime', action='store', type=float, default=.2, help="for D' calculations, only use sites with MAF > mafcutoffdprime") 	
+	bootstrap_parser.add_argument('--nphysdisthist', action='store', type=int, default=14, help="nbins for r2 LD calculations") 	
+
+
 	bootstrap_parser.add_argument('--in_fst', action='store', help='comma-delimited list of infiles with per-site calculations for population pair. One file per population-pair -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 	
+	bootstrap_parser.add_argument('--ngendisthist', action='store', type=int, default=17, help="nbins for D' LD calculations") 	
 	bootstrap_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	##########################
@@ -137,6 +143,7 @@ def execute_bootstrap(args):
 	### FREQ STATS ##
 	#################
 	if args.in_freqs is not None: 
+		nhist = args.nFreqHistBins
 		inputestimatefilenames = ''.join(args.in_freqs)
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
@@ -156,7 +163,7 @@ def execute_bootstrap(args):
 				totallen += sum(seqlens)
 				for i in range(len(allpi)):
 					nsnps += len(allpi[i])
-			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
+			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".")
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -215,20 +222,31 @@ def execute_bootstrap(args):
 	### LD ##
 	#########
 	if args.in_ld is not None:
+		nphysdisthist = args.nphysdisthist
+		ngendisthist = args.ngendisthist
 		inputestimatefilenames = ''.join(args.in_ld)
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
+		#print('npops ' + str(npops)) #debug
 		for ipop in range(npops):
-			inputfilename = inputfilenames[i]
+			inputfilename = inputfilenames[ipop]
 			print("reading linkage disequilibrium statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
-			alldists, allr2, allgendists, alldprime, nr2regions, ndprimeregions = readLDFile(ldfilename, dprimecutoff = mafcutoffdprime)
-			print("TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n")
+			N_r2regs, N_dprimeregs = 0, 0
+			N_r2snps, N_dprimesnps = 0, 0
+			allRegionDists, allRegionr2, allRegionGendists, allRegionDprime, nr2regions, ndprimeregions = readLDFile(inputfilename, dprimecutoff = args.mafcutoffdprime)
+			N_r2regs += nr2regions
+			N_r2snps += sum([len(x) for x in allRegionr2])
+			N_dprimeregs += ndprimeregions
+			N_dprimesnps += sum([len(x) for x in allRegionDprime])
+			print("\tlogged r2 values for " + str(N_r2snps) + " SNP pairs across " + str(N_r2regs) + " regions.")
+			print("\tlogged D' values for " + str(N_dprimesnps) + " SNP pairs across " + str(N_dprimeregs) + " regions.")
+
 
 			###################################
 			### r2: MEAN ACROSS ALL REGIONS ###
 			###################################
-			r2sums, physDistHist = estimater2decay(allRegionr2, allRegionDists)
+			r2sums, physDistHist = estimater2decay(allRegionr2, allRegionDists, nphysdisthist)
 			r2dist = [r2sums[u]/physDistHist[u] for u in range(len(r2sums))]
 			writefile.write(str(r2dist) + "\n")
 
@@ -247,7 +265,7 @@ def execute_bootstrap(args):
 					rep_all_physdist.append(flatregions[index_r2])
 
 				#add pseudocount for empty bins
-				repr2sum, repphysdisthist = estimater2decay(rep_all_r2, rep_all_physdist)
+				repr2sum, repphysdisthist = estimater2decay(rep_all_r2, rep_all_physdist, nphysdisthist)
 				for ibin in range(len(repphysdisthist)):
 					if repphysdisthist[ibin] == 0:
 						repphysdisthist[ibin] = 1
@@ -261,7 +279,7 @@ def execute_bootstrap(args):
 			####################################
 			### D': MEAN ACROSS ALL REGIONS ###
 			####################################
-			compLDhist, genDistHist = estimatedprimedecay(allRegionDprime, allRegionGendists)
+			compLDhist, genDistHist = estimatedprimedecay(allRegionDprime, allRegionGendists, ngendisthist)
 			#add pseudocounts
 			for ibin in range(len(genDistHist)):
 				if genDistHist[ibin] == 0:
@@ -285,7 +303,7 @@ def execute_bootstrap(args):
 					rep_all_dprime.append(flatdprime[index_dprime])
 					rep_all_gendist.append(flatgendist[index_dprime])
 
-				repcompLDhist, repgenDistHist = estimatedprimedecay(rep_all_dprime, rep_all_gendist)
+				repcompLDhist, repgenDistHist = estimatedprimedecay(rep_all_dprime, rep_all_gendist, ngendisthist)
 				for ibin in range(len(repgenDistHist)):
 					if repgenDistHist[ibin] == 0:
 						repgenDistHist[ibin] = 1
@@ -302,11 +320,13 @@ def execute_bootstrap(args):
 		inputestimatefilenames = ''.join(args.in_fst)
 		inputfilenames = inputestimatefilenames.split(',')
 		npopcomp = len(inputfilenames)
-		for icomp in range(len(npopcomp)):
+		for icomp in range(npopcomp):
 			fstfilename	= inputfilenames[icomp]
 			print("reading Fst values from: " + fstfilename)
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
+			else:
+				print('missing ' + fstfilename)
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allfst, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)

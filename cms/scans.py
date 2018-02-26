@@ -233,7 +233,7 @@ def main_selscan_ehh(args):
     locusMetadata["ehh_log"] = args.outFile + ".ehh." + args.locusID + ".log"
 
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, locusMetadata, key_to_act_on="ehh", append=True)
+    #util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, locusMetadata, key_to_act_on="ehh", append=True)
 
     return 0
 __commands__.append(('selscan_ehh', parser_selscan_ehh))

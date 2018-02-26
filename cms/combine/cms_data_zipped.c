@@ -14,23 +14,19 @@
 /*********************/
 int intcmp(const void *v1, const void *v2) {return (*(int *)v1 - *(int *)v2);}
 int count_unique(int arr[], int len) {
+	/*
     int counted[len], j, n, count, flag;
     counted[0] = arr[0]; 
-    count = 1;/*one element is counted*/
+    count = 1;//one element is counted
     
     //initialize the rest of 'counted'
     for(j=0; j<len; j++){
     	counted[j] = 0;
     }
-    //for(j=0; j<len; j++){
-    //	fprintf(stderr, "%d\t", arr[j]);
-    //}
-
-
 
     for(j=0; j <= len-1; ++j) {
         flag = 1;;
-        /*the counted array will always have 'count' elements*/
+        //the counted array will always have 'count' elements
         for(n=0; n < count; ++n) {
             if(arr[j] == counted[n]) {
                 flag = 0;
@@ -41,6 +37,19 @@ int count_unique(int arr[], int len) {
             counted[count-1] = arr[j];
         }
     }
+    */
+    //assumes sorted - count number of transitions
+    int count;
+    int j;
+    int lastPos;
+    lastPos = -1;
+    count = 0;
+    for (j = 0; j < len; j++){
+    	if (arr[j] != lastPos){count +=1;}
+    	lastPos = arr[j];
+    }
+    count++;
+
     return count;
 } //end method
 
@@ -781,6 +790,8 @@ int get_num_anyData(int minPos, int maxPos, char ihs_filename[], char delihh_fil
 	}	// end isafe isnp
 
 	//fprintf(stderr, "%d\t%d\n", jsnp, totNsnp);
+	qsort(allSnps, totNsnp, sizeof(int), intcmp);
+
 	nunique = count_unique(allSnps, totNsnp);
 	//fprintf(stderr,"nunique = %d\n", nunique);
 	//fprintf(stderr, "\t\t>>>>DEBUG: end call to get_num_anyData...\n");
@@ -1176,19 +1187,19 @@ void get_popPair_anyData(int minPos, int maxPos, popPair_data* data, char ihs_fi
 	assert(data->iSAFE != NULL);
 
 	//////////////////////////////////////////////////
-	//filter non-redundant positions to data object //
+	//filter non-redundant positions to data object // <<<---- FIX THIS
 	//////////////////////////////////////////////////	
 	data->physpos[0] = allSnps[0];
 	checked = 1;
 	for (isnp = 0; isnp <= totNsnp; ++isnp){
 		flag = 1;
 		for (n=0; n<checked; n++){
-			if(data->physpos[n] == allSnps[isnp]){flag = 0;}
+			if(data->physpos[n] == allSnps[isnp]){flag = 0;} //1163 read // 1106
 		}
 
 		if (flag == 1){
 			checked++;
-			data->physpos[checked-1] = allSnps[isnp]; 
+			data->physpos[checked-1] = allSnps[isnp];  // 1163 write // 1106
 		}
 	}
 	//fprintf(stderr, "checked: %d\n", checked);
@@ -1569,7 +1580,7 @@ void get_popComp_anyData(int minPos, int maxPos, popComp_data_multiple* data, in
 	char H12_filename[528], iSAFE_filename[528];
 	int numExtraArgs;
 	int checked, flag, n;
-
+	freqs_data freqs;
 	//////////////////
 	/// INITIALIZE ///
 	//////////////////
@@ -1589,6 +1600,7 @@ void get_popComp_anyData(int minPos, int maxPos, popComp_data_multiple* data, in
 	data->H2H1 = NULL;	
 	data->iSAFE = NULL;
 
+
 	////////////////////
 	/// COLLATE LOCI ///
 	////////////////////
@@ -1600,26 +1612,32 @@ void get_popComp_anyData(int minPos, int maxPos, popComp_data_multiple* data, in
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
 		zinf = gzopen(infilename, "rb");
 		gzgets(zinf, ihs_filename, line_size); 
-		strtok(ihs_filename, "\n");
+		//strtok(ihs_filename, "\n");
 		gzgets(zinf, delihh_filename, line_size); 
-		strtok(delihh_filename, "\n");
+		//strtok(delihh_filename, "\n");
 		gzgets(zinf, nsl_filename, line_size); 
-		strtok(nsl_filename, "\n");
+		//strtok(nsl_filename, "\n");
 		gzgets(zinf, H12_filename, line_size); 
-		strtok(H12_filename, "\n");
+		//strtok(H12_filename, "\n");
 		gzgets(zinf, iSAFE_filename, line_size); 
-		strtok(iSAFE_filename, "\n");
+		//strtok(iSAFE_filename, "\n");
 		gzgets(zinf, xpehh_filename, line_size); 
-		strtok(xpehh_filename, "\n");
+		//strtok(xpehh_filename, "\n");
 		gzgets(zinf, freqs_filename, line_size); 
 		strtok(freqs_filename, "\n");
 		gzclose(zinf);
-		thisCompSnpCount = get_num_anyData(minPos, maxPos, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
+		get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+		thisCompSnpCount = freqs.nsnps;
+		fprintf(stderr, freqs_filename);
+		fprintf(stderr, "\n%d\t%d\n", minPos, maxPos);
+		//get_num_anyData(minPos, maxPos, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
 		compCountSnps[iComp] = thisCompSnpCount;
 		totNsnp += thisCompSnpCount;
+		fprintf(stderr, "totNsnp: %d\n", totNsnp);		
+		free_freqs_data(&freqs);
 	} // end iComp
-	//fprintf(stderr, "totNsnp: %d\n", totNsnp);
-	//fprintf(stderr, ">>>>DEBUG: loading loci across pop-comps...\n");
+	fprintf(stderr, "totNsnp: %d\n", totNsnp);
+	fprintf(stderr, ">>>>DEBUG: loading loci across pop-comps...\n");
 
 	//then get array for all of them (all comps, within region.)
 	allSnps = malloc(totNsnp * sizeof(int));
@@ -1628,42 +1646,45 @@ void get_popComp_anyData(int minPos, int maxPos, popComp_data_multiple* data, in
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
 		zinf = gzopen(infilename, "rb");
 		gzgets(zinf, ihs_filename, line_size); 
-		strtok(ihs_filename, "\n");
+		//strtok(ihs_filename, "\n");
 		gzgets(zinf, delihh_filename, line_size); 
-		strtok(delihh_filename, "\n");
+		//strtok(delihh_filename, "\n");
 		gzgets(zinf, nsl_filename, line_size); 
-		strtok(nsl_filename, "\n");
+		//strtok(nsl_filename, "\n");
 		gzgets(zinf, H12_filename, line_size); 
-		strtok(H12_filename, "\n");
+		//strtok(H12_filename, "\n");
 		gzgets(zinf, iSAFE_filename, line_size); 
-		strtok(iSAFE_filename, "\n");
+		//strtok(iSAFE_filename, "\n");
 		gzgets(zinf, xpehh_filename, line_size); 
-		strtok(xpehh_filename, "\n");
+		//strtok(xpehh_filename, "\n");
 		gzgets(zinf, freqs_filename, line_size); 
 		strtok(freqs_filename, "\n");
 		gzclose(zinf);
 		thisCompSnpCount = compCountSnps[iComp];
-		get_popPair_anyData(minPos, maxPos, &data_sing, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename, thisCompSnpCount);  //PASS NUMBERS HERE
+		get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+
+		//get_popPair_anyData(minPos, maxPos, &data_sing, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename, thisCompSnpCount);  //PASS NUMBERS HERE
 		//fprintf(stderr, "checkpoint: completed get_popPair_anyData\n");
 		//fprintf(stderr, "%d\t%d\t%d\t%d\n", data_sing.physpos[0], data_sing.physpos[1], data_sing.physpos[data_sing.nsnps-2],data_sing.physpos[data_sing.nsnps-1]);
 
-		for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
-			allSnps[isnp] = data_sing.physpos[jsnp];
+		for (jsnp = 0; jsnp < freqs.nsnps; jsnp++){
+			allSnps[isnp] = freqs.pos[jsnp];
 			isnp +=1;
 		}
-		free_popPair_data(&data_sing); 
+		free_freqs_data(&freqs); 
 	}//end icomp
-	//fprintf(stderr, ">>>>DEBUG: loaded per-comp positions for all pop-comps...\n");
+	fprintf(stderr, ">>>>DEBUG: loaded per-comp positions for all pop-comps...\n");
 
 	//////////////////////////
 	/// COLLATE LOCI: SORT ///	Problem here?
 	/////////////////////////
-	//qsort(allSnps, totNsnp, sizeof(int), intcmp);
+	qsort(allSnps, totNsnp, sizeof(int), intcmp);
+	fprintf(stderr, ">>>>DEBUG: sorted...\n");
 
 	nunique = count_unique(allSnps, totNsnp);
-	//fprintf(stderr, ">>>>DEBUG: counted unique loci...\n");
+	fprintf(stderr, ">>>>DEBUG: counted unique loci...\n");
 
-	allUniqueSnps	= malloc(nunique * sizeof(int));
+	allUniqueSnps = calloc(nunique, sizeof(int));
 
 	//filter non-redundant positions to ... data object ?
 	allUniqueSnps[0] = allSnps[0];
