@@ -1,5 +1,5 @@
 ## this file contains functions called by execute_bootstrap in cms_modeller.py
-## last updated: 07.04.16 	vitti@broadinstitute.org
+## last updated: 02.26.18 	vitti@broadinstitute.org
 
 import numpy as np
 import random
@@ -203,8 +203,7 @@ def estimatePi(allpivals, seqlens):
 		for j in range(len(allpivals[i])):
 			pi_sum += allpivals[i][j]
 	return (pi_sum/length_sum)
-def estimater2decay(allr2, allphysdist):
-	nDistHist = 14
+def estimater2decay(allr2, allphysdist, nDistHist = 14):
 	starts = [x * 5000 for x in range(nDistHist)] #0, 5000...65000
 	ends = [x*5000 for x in range(1,nDistHist+1)] #5000...70000
 	r2sums = [0 for x in range(nDistHist)]
@@ -219,9 +218,8 @@ def estimater2decay(allr2, allphysdist):
 				r2sums[ibin] += allr2[i]
 				physDistHist[ibin] += 1
 	return r2sums, physDistHist
-def estimatedprimedecay(alldprime, allgendists):
+def estimatedprimedecay(alldprime, allgendists, nGenDistHist = 17):
 	assert len(alldprime) == len(allgendists)
-	nGenDistHist = 17
 	starts = [x * .001 for x in range(nGenDistHist)]
 	ends = [x * .001 for x in range(1, nGenDistHist+1)]
 	compLDhist = [0 for x in range(nGenDistHist)]
@@ -231,7 +229,7 @@ def estimatedprimedecay(alldprime, allgendists):
 	for i in range(len(alldprime)):
 		gendist = allgendists[i]
 		dprime = alldprime[i]
-		#print "DEBUG: gendist: " + str(gendist) + " dprime: " + str(dprime)
+		#print("DEBUG: gendist: " + str(gendist) + " dprime: " + str(dprime))
 		for ibin in range(0, nGenDistHist):
 			if gendist >= starts[ibin] and gendist < ends[ibin]:
 				genDistHist[ibin] += 1

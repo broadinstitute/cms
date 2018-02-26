@@ -1,5 +1,6 @@
 // functions for handling cms component(+composite) score datastructures
-// last updated: 10.19.2017 	vitti@broadinstitute.org
+// last updated: 10.19.2017 	vitti@broadinstitute.org 	#will need to update methods to match cms_data_zipped.c  
+// 12.19
 
 #include <stdio.h>
 #include <string.h>
@@ -16,7 +17,13 @@ int count_unique(int arr[], int len) {
     int counted[len], j, n, count, flag;
     counted[0] = arr[0]; 
     count = 1;/*one element is counted*/
-        for(j=0; j <= len-1; ++j) {
+    
+    //initialize the rest of 'counted'
+    for(j=0; j<len+1; j++){
+    	counted[j] = 0;
+    }
+
+    for(j=0; j <= len-1; ++j) {
         flag = 1;;
         /*the counted array will always have 'count' elements*/
         for(n=0; n < count; ++n) {
@@ -35,12 +42,14 @@ int count_unique(int arr[], int len) {
 /**********************/
 /***COMPONENT SCORES***/
 /**********************/
-void get_freqs_data(freqs_data* data, char filename[]) {
+void get_freqs_data(freqs_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
-		
+	int thisPos;
+	float thisGenPos, thisPopDaf, thisDelDaf, thisFst;
+	
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
 
@@ -57,8 +66,13 @@ void get_freqs_data(freqs_data* data, char filename[]) {
 	fgets(newLine, line_size, inf); // strip header
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+			for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+					if (itoken == 0) {thisPos = atoi(token);}	
+					if (itoken == 1) {break;}	
+			} //end for running
+			if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}	
+			if (thisPos > maxPos){break;}	
+	} // end while gets line
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -76,24 +90,21 @@ void get_freqs_data(freqs_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 0) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 1) {
-				data->genpos[isnp] = atof(token);
-			}
-			else if (itoken == 2) {
-				data->popdaf[isnp] = atof(token);
-			}	
-			else if (itoken == 3) {
-				data->deldaf[isnp] = atof(token);
-			}			
-			else if (itoken == 4) {
-				data->fst[isnp] = atof(token);
-			}			
-			
+			if (itoken == 0) {thisPos = atoi(token);}	
+			else if (itoken == 1) {thisGenPos = atof(token);}
+			else if (itoken == 2) {thisPopDaf = atof(token);}	
+			else if (itoken == 3) {thisDelDaf = atof(token);}
+			else if (itoken == 4) {thisFst = atof(token);}			
 		} // END for running=newLine
-		isnp++;
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->genpos[isnp] = thisGenPos;
+			data->popdaf[isnp] = thisPopDaf;		
+			data->deldaf[isnp] = thisDelDaf;
+			data->fst[isnp] = thisFst;
+			isnp++;
+		} // end if-in-region
+		if (thisPos > maxPos){break;}
 	} //END while(fgets(newLine))
 	
 	fclose(inf);
@@ -108,12 +119,14 @@ void free_freqs_data(freqs_data* data) {
 	free(data->popdaf);	
 	data->nsnps = 0;
 } //end method
-void get_delihh_data(delihh_data* data, char filename[]) {
+void get_delihh_data(delihh_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000;	
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
-		
+	int thisPos, thisLastcol;
+	float thisFreq, thisIhs, thisUnnormedDelihh, thisNormedDelihh;	
+
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
 
@@ -129,9 +142,14 @@ void get_delihh_data(delihh_data* data, char filename[]) {
 	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
-			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+		assert(strlen(newLine) < line_size);
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 1) {thisPos = atoi(token);}	
+			if (itoken == 2) {break;}	
+		} //end for running
+		if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}	
+		if (thisPos > maxPos){break;}	
+	} // end while
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -148,28 +166,25 @@ void get_delihh_data(delihh_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 1) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 2) {
-				data->freq1[isnp] = atof(token);
-			}
-			else if (itoken == 3) {
-				data->ihs_unnormed[isnp] = atof(token);
-			}			
-			else if (itoken == 4) {
-				data->delihh_unnormed[isnp] = atof(token);
-			}
+			if (itoken == 1) {thisPos = atoi(token);}
+			else if (itoken == 2) {thisFreq = atof(token);}
+			else if (itoken == 3) {thisIhs = atof(token);}
+			else if (itoken == 4) {thisUnnormedDelihh = atof(token);}
 			//5 is duplicate!!!!
-			else if (itoken == 6) {
-				data->delihh_normed[isnp] = atof(token);
-			}		 
-			else if (itoken == 7) {
-				data->lastcol[isnp] = atoi(token);
-			}						
+			else if (itoken == 6) {thisNormedDelihh = atof(token);}
+			else if (itoken == 7) {thisLastcol = atoi(token);}
 		} // END for running=newLine
-		isnp++;
-	} //END while(fgets(newLine))
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->freq1[isnp] = thisFreq;
+			data->ihs_unnormed[isnp] = thisIhs;
+			data->delihh_unnormed[isnp] = thisUnnormedDelihh;
+			data->delihh_normed[isnp] = thisNormedDelihh;
+			data->lastcol[isnp] = thisLastcol;			
+			isnp++;
+		} // end if in-region
+		if (thisPos > maxPos){break;}
+	} //END while(fgets(newLine))	
 	
 	fclose(inf);
 	free(newLine);
@@ -184,12 +199,14 @@ void free_delihh_data(delihh_data* data) {
 	free(data->lastcol);
 	data->nsnps = 0;
 } //end method
-void get_xpehh_data(xpehh_data* data, char filename[]) {
+void get_xpehh_data(xpehh_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int	isnp, itoken;
-		
+	float thisGenPos, thisFreq1, thisIhh1, thisFreq2, thisIhh2, thisXpUn, thisXpNormed;	
+	int thisPos, thisLastCol;
+
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
 
@@ -210,8 +227,15 @@ void get_xpehh_data(xpehh_data* data, char filename[]) {
 	fgets(newLine, line_size, inf); //strip header
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+			//fprintf(stderr, newLine);
+			for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+					if (itoken == 1) {thisPos = atoi(token);}	
+					if (itoken == 2) {break;}	
+			} //end for running
+			//fprintf(stderr, "%d\n", thisPos);
+			if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}	
+			if (thisPos > maxPos){break;}	
+	}//end while gets
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -233,37 +257,32 @@ void get_xpehh_data(xpehh_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 1) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 2) {
-				data->genpos[isnp] = atof(token);
-			}
-			else if (itoken == 3) {
-				data->freq1[isnp] = atof(token);
-			}		
-			else if (itoken == 4) {
-				data->ihh1[isnp] = atof(token);
-			}
-			else if (itoken == 5) {
-				data->freq2[isnp] = atof(token);
-			}		
-			else if (itoken == 6) {
-				data->ihh2[isnp] = atof(token);
-			}
-			else if (itoken == 7) {
-				data->xpehh_unnormed[isnp] = atof(token);
-			}		
-			else if (itoken == 8) {
-				data->xpehh_normed[isnp] = atof(token);
-			}
-			else if (itoken == 9) {
-				data->lastcol[isnp] = atoi(token);
-			} 
+			if (itoken == 1) {thisPos = atoi(token);}
+			else if (itoken == 2) {thisGenPos = atof(token);}
+			else if (itoken == 3) {thisFreq1 = atof(token);}		
+			else if (itoken == 4) {thisIhh1 = atof(token);}
+			else if (itoken == 5) {thisFreq2 = atof(token);}
+			else if (itoken == 6) {thisIhh2 = atof(token);}
+			else if (itoken == 7) {thisXpUn = atof(token);}
+			else if (itoken == 8) {thisXpNormed =  atof(token);}
+			else if (itoken == 9) {thisLastCol = atoi(token);}
 		} // END for running=newLine
-		isnp++;
-	} //END while(fgets(newLine))
-	
+		//fprintf(stderr, "%d\n", thisPos);
+		if (thisPos >= minPos && thisPos <= maxPos){
+			//fprintf(stderr, "check");
+			data->pos[isnp] = thisPos;
+			data->genpos[isnp] = thisGenPos;
+			data->freq1[isnp] = thisFreq1;
+			data->ihh1[isnp] = thisIhh1;
+			data->freq2[isnp] = thisFreq2;
+			data->ihh2[isnp] = thisIhh2;
+			data->xpehh_unnormed[isnp] = thisXpUn; 
+			data->xpehh_normed[isnp] = thisXpNormed;
+			data->lastcol[isnp] = thisLastCol;
+			isnp++;
+		} // end if-in-region
+		if (thisPos > maxPos){break;}
+	} //END while(fgets(newLine))	
 	fclose(inf);
 	free(newLine);
 } //end method
@@ -280,12 +299,14 @@ void free_xpehh_data(xpehh_data* data) {
 	free(data->lastcol);
 	data->nsnps = 0;
 } //end method
-void get_ihs_data(ihs_data* data, char filename[]) {
+void get_ihs_data(ihs_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
 	int unnormed_index, normed_index; // selscan output may or may not include ihh decomposition; account for both
+	int thisPos; 
+	float thisFreq, thisIhh0, thisIhh1, thisUnnormed, thisNormed;
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -303,9 +324,14 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
-			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+		assert(strlen(newLine) < line_size);
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 1) {thisPos = atoi(token);}	
+			if (itoken == 2) {break;}
+		} // end for running
+		if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}
+		if (thisPos > maxPos){break;}
+	} // end while loop
 	fclose(inf);
 
 	// determine formatting based on line (selscan output may or may not include ihh decomposition)
@@ -336,29 +362,26 @@ void get_ihs_data(ihs_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 1) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 2) {
-				data->freq1[isnp] = atof(token);
-			}
-			else if (itoken == 3) {
-				data->ihh0[isnp] = atof(token);
-			}			
-			else if (itoken == 4) {
-				data->ihh1[isnp] = atof(token);
-			}
-			else if (itoken == unnormed_index){
-				data->ihs_unnormed[isnp] = atof(token);
-			}			
-			else if (itoken == normed_index){
-				data->ihs_normed[isnp] = atof(token);
-			}
+			if (itoken == 1) {thisPos = atoi(token);}	 
+			else if (itoken == 2) {thisFreq = atof(token);}
+			else if (itoken == 3) {thisIhh0= atof(token);}			
+			else if (itoken == 4) {thisIhh1 = atof(token);}
+			else if (itoken == unnormed_index){thisUnnormed = atof(token);}			
+			else if (itoken == normed_index){thisNormed = atof(token);}
 			//else if (itoken == normed_index + 1) {
 			//	data->lastcol[isnp] = atoi(token);
-			//}
 		} // END for running=newLine
-		isnp++;
+
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->freq1[isnp] = thisFreq;
+			data->ihh0[isnp] = thisIhh0;
+			data->ihh1[isnp] = thisIhh1;
+			data->ihs_unnormed[isnp] = thisUnnormed;
+			data->ihs_normed[isnp] = thisNormed;
+			isnp++;
+		}// end if-in-region
+		if (thisPos > maxPos){break;}
 	} //END while(fgets(newLine))
 	
 	fclose(inf);
@@ -375,11 +398,13 @@ void free_ihs_data(ihs_data* data) {
 	free(data->lastcol);	
 	data->nsnps = 0;
 } //end method
-void get_nsl_data(nsl_data* data, char filename[]) {
+void get_nsl_data(nsl_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
+	int thisPos;
+	float thisFreq, thisSl0, thisSl1, thisUnnormed, thisNormed;	
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -395,9 +420,14 @@ void get_nsl_data(nsl_data* data, char filename[]) {
 	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
-			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+		assert(strlen(newLine) < line_size);
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 1) {thisPos = atoi(token);}
+			if (itoken == 2) {break;}
+		} // end for-running	
+		if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}
+		if (thisPos > maxPos){break;}
+	} // end while loop
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -415,27 +445,23 @@ void get_nsl_data(nsl_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 1) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 2) {
-				data->freq1[isnp] = atof(token);
-			}
-			else if (itoken == 3) {
-				data->sl0[isnp] = atof(token);
-			}			
-			else if (itoken == 4) {
-				data->sl1[isnp] = atof(token);
-			}
-			else if (itoken == 5) {
-				data->nsl_unnormed[isnp] = atof(token);
-			}			
-			else if (itoken == 6) {
-				data->nsl_normed[isnp] = atof(token);
-			}
-
+			if (itoken == 1) {thisPos = atoi(token);}	
+			else if (itoken == 2) {thisFreq = atof(token);}
+			else if (itoken == 3) {thisSl0 = atof(token);}			
+			else if (itoken == 4) {thisSl1 = atof(token);}
+			else if (itoken == 5) {thisUnnormed = atof(token);}			
+			else if (itoken == 6) {thisNormed = atof(token);}
 		} // END for running=newLine
-		isnp++;
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->freq1[isnp] = thisFreq;
+			data->sl0[isnp] = thisSl0;
+			data->sl1[isnp] = thisSl1;
+			data->nsl_unnormed[isnp] = thisUnnormed;
+			data->nsl_normed[isnp] = thisNormed;
+			isnp++;
+		} // end if-in-region
+		if (thisPos >= maxPos){break;}
 	} //END while(fgets(newLine))
 	
 	fclose(inf);
@@ -451,11 +477,13 @@ void free_nsl_data(nsl_data* data) {
 	free(data->nsl_normed);
 	data->nsnps = 0;
 } //end method
-void get_H12_data(H12_data* data, char filename[]) {
+void get_H12_data(H12_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
+	float thisH12, thisH2H1;
+	int thisPos;
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -468,9 +496,14 @@ void get_H12_data(H12_data* data, char filename[]) {
 	if (inf == NULL) {fprintf(stderr, "Missing file: %s\n", filename);}
 	assert(inf != NULL);
 	while (fgets(newLine, line_size, inf) != NULL) {
-			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+		assert(strlen(newLine) < line_size);
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 0) {thisPos = atoi(token);}	
+			if (itoken == 1) {break;}
+		}// end for line
+		if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}
+		if (thisPos > maxPos) {break;}
+	} // end while
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -485,18 +518,21 @@ void get_H12_data(H12_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 0) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 8) {
-				data->H12_value[isnp] = atof(token);
-			}
-			else if (itoken == 9) {
-				data->H2H1_value[isnp] = atof(token);
-			}			
+			if (itoken == 0) {thisPos= atoi(token);}	
+			else if (itoken == 8) {thisH12 = atof(token);}
+			else if (itoken == 9) {thisH2H1 = atof(token);}			
 		} // END for running=newLine
-		isnp++;
+
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->H12_value[isnp] = thisH12;
+			data->H2H1_value[isnp] = thisH2H1;
+			isnp++;
+		} // end if-in-region
+		if (thisPos > maxPos){break;}
+
 	} //END while(fgets(newLine))
+	
 	
 	fclose(inf);
 	free(newLine);
@@ -508,11 +544,13 @@ void free_H12_data(H12_data* data) {
 	free(data->H2H1_value);
 	data->nsnps = 0;
 } //end method
-void get_iSAFE_data(iSAFE_data* data, char filename[]) {
+void get_iSAFE_data(iSAFE_data* data, char filename[], int minPos, int maxPos) {
 	const int line_size = 15000000; 
 	FILE *inf=NULL;
 	char *newLine, *token, *running;
 	int isnp, itoken;
+	int thisPos;
+	float thisISAFE;
 
 	newLine = malloc((line_size+1) * sizeof(char));
 	assert(newLine != NULL); 
@@ -527,8 +565,13 @@ void get_iSAFE_data(iSAFE_data* data, char filename[]) {
 	fgets(newLine, line_size, inf); //strip header
 	while (fgets(newLine, line_size, inf) != NULL) {
 			assert(strlen(newLine) < line_size);
-			data->nsnps++;
-		}
+		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
+			if (itoken == 0) {thisPos = atoi(token);}
+			if (itoken == 1) {break;}	
+		} //end for loop
+		 if (thisPos >= minPos && thisPos <= maxPos){data->nsnps++;}
+		 if (thisPos > maxPos) {break;}
+	} // end while loop
 	fclose(inf);
 
 	// Allocate memory; initialize
@@ -543,16 +586,18 @@ void get_iSAFE_data(iSAFE_data* data, char filename[]) {
 	isnp = 0;
 	while (fgets(newLine, line_size, inf) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
-			if (itoken == 0) {
-				data->pos[isnp] = atoi(token);
-			}	
-			else if (itoken == 1) {
-				data->iSAFE_value[isnp] = atof(token);
-			}
+				if (itoken == 0) {thisPos = atoi(token);}	
+			else if (itoken == 1) {thisISAFE = atof(token);}
 		} // END for running=newLine
-		isnp++;
+		
+		if (thisPos >= minPos && thisPos <= maxPos){
+			data->pos[isnp] = thisPos;
+			data->iSAFE_value[isnp] = thisISAFE;
+			isnp++;
+		}
+		if (thisPos > maxPos){break;}
+
 	} //END while(fgets(newLine))
-	
 	fclose(inf);
 	free(newLine);
 } //end method
@@ -802,13 +847,17 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index, H12_index, iSAFE_index;
 	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, h12pos, isafepos, minimum;
 
-	get_ihs_data(&ihs1, ihs_filename);
-	get_delihh_data(&delihh1, delihh_filename);
-	get_nsl_data(&nsl1, nsl_filename);
-	get_xpehh_data(&xp, xpehh_filename);
-	get_freqs_data(&freqs, freqs_filename);
-	get_H12_data(&H12, H12_filename);
-	get_iSAFE_data(&iSAFE, iSAFE_filename);
+	int minPos = 0;
+	int maxPos = 2147483647;
+	//for now, quick hack. May want to make flexible.
+
+	get_ihs_data(&ihs1, ihs_filename, minPos, maxPos);
+	get_delihh_data(&delihh1, delihh_filename, minPos, maxPos);
+	get_nsl_data(&nsl1, nsl_filename, minPos, maxPos);
+	get_xpehh_data(&xp, xpehh_filename, minPos, maxPos);
+	get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+	get_H12_data(&H12, H12_filename, minPos, maxPos);
+	get_iSAFE_data(&iSAFE, iSAFE_filename, minPos, maxPos);
 
 	ihs1_index=0;
 	nsl1_index=0;
@@ -858,7 +907,7 @@ int get_num_completeData(char ihs_filename[], char delihh_filename[], char nsl_f
 	free_iSAFE_data(&iSAFE);
 	return nsnps;
 } // end function
-int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
+int get_num_anyData(int minPos, int maxPos, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
 	/* counts the number of unique SNPs that have a score value for at least one component score */
 	ihs_data ihs1;
 	delihh_data delihh1;
@@ -869,19 +918,19 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	iSAFE_data iSAFE;
 	int nunique;
 	int totNsnp, isnp;//, jsnp;
-	int *allSnps, *allUniqueSnps;
-	int cumulativeSNPCount = 0;
+	int *allSnps;//, *allUniqueSnps;
+	int jsnp; // = 0;
 
 	//////////////////////
 	// LOAD IN ALL DATA //
 	//////////////////////
-	get_ihs_data(&ihs1, ihs_filename);
-	get_delihh_data(&delihh1, delihh_filename);
-	get_nsl_data(&nsl1, nsl_filename);
-	get_xpehh_data(&xp, xpehh_filename);
-	get_freqs_data(&freqs, freqs_filename);
-	get_H12_data(&H12, H12_filename);
-	get_iSAFE_data(&iSAFE, iSAFE_filename);
+	get_ihs_data(&ihs1, ihs_filename, minPos, maxPos);
+	get_delihh_data(&delihh1, delihh_filename, minPos, maxPos);
+	get_nsl_data(&nsl1, nsl_filename, minPos, maxPos);
+	get_xpehh_data(&xp, xpehh_filename, minPos, maxPos);
+	get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+	get_H12_data(&H12, H12_filename, minPos, maxPos);
+	get_iSAFE_data(&iSAFE, iSAFE_filename, minPos, maxPos);
 	/*
 	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
@@ -897,6 +946,39 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps + H12.nsnps + iSAFE.nsnps;
 	allSnps = malloc(totNsnp * sizeof(int));
 
+	//////////////////////////////////////////////
+	// LOAD REDUNDANT POSITIONS FROM ALL SCORES //
+	//////////////////////////////////////////////
+	jsnp = -1;
+	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = ihs1.pos[isnp];
+	}	// end ihs isnp
+	for (isnp = 0; isnp < delihh1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = delihh1.pos[isnp];
+	}	// end delihh isnp
+	for (isnp = 0; isnp < nsl1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = nsl1.pos[isnp];
+	}	// end nsl isnp
+	for (isnp = 0; isnp < xp.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = xp.pos[isnp];
+	}	// end xp isnp
+	for (isnp = 0; isnp < freqs.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = freqs.pos[isnp];
+	}	// end freqs isnp
+	for (isnp = 0; isnp < H12.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = H12.pos[isnp];
+	}	//end h12 isnp
+	for (isnp = 0; isnp < iSAFE.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = iSAFE.pos[isnp];
+	}	// end isafe isnp
+	/*
 	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
 		//fprintf(stderr, "isnp: %d\n", isnp);
 		allSnps[isnp] = ihs1.pos[isnp];
@@ -929,6 +1011,10 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	for (isnp = cumulativeSNPCount; isnp < totNsnp; isnp++){
 		allSnps[isnp] = H12.pos[isnp-cumulativeSNPCount];
 	} // end H12 isnp
+	*/
+
+
+
 
 	//fprintf(stderr, "get_num_anyData returns totnsnp: %d\n", totNsnp);
 
@@ -942,7 +1028,7 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	if (allSnps[totNsnp-1] != allSnps[totNsnp-2]){nunique++;} //edge case
 	*/
 	nunique = count_unique(allSnps, totNsnp);
-	allUniqueSnps= malloc(nunique * sizeof(int)); //is this step necessary?
+	//allUniqueSnps= malloc(nunique * sizeof(int)); //is this step necessary?
 	/*
 	jsnp = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
@@ -960,7 +1046,7 @@ int get_num_anyData(char ihs_filename[], char delihh_filename[], char nsl_filena
 	free_H12_data(&H12);
 	free_iSAFE_data(&iSAFE);
 	free(allSnps);
-	free(allUniqueSnps);
+	//free(allUniqueSnps);
 	return nunique;
 } // end function
 void get_popPair_completeData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
@@ -978,6 +1064,10 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	int ihs1_index, delihh1_index, nsl1_index, xp_index, freqs_index, H12_index, iSAFE_index;
 	int ihs1pos, delihh1pos, nsl1pos, xppos, freqspos, h12pos, isafepos, minimum;
 	double thisDeldaf, thisXp;
+
+	int minPos = 0;
+	int maxPos = 2147483647;
+	//for now, quick hack. May want to make flexible.
 
 	/////////////////
 	// INITIALIZE ///
@@ -999,17 +1089,16 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 
 	locus = malloc(256 * sizeof(char));
 
-
 	////////////////////////////////
 	// LOAD EACH COMPONENT SCORE ///
 	////////////////////////////////
-	get_ihs_data(&ihs1, ihs_filename);
-	get_delihh_data(&delihh1, delihh_filename);
-	get_nsl_data(&nsl1, nsl_filename);
-	get_xpehh_data(&xp, xpehh_filename);
-	get_freqs_data(&freqs, freqs_filename);
-	get_H12_data(&H12, H12_filename);
-	get_iSAFE_data(&iSAFE, iSAFE_filename);
+	get_ihs_data(&ihs1, ihs_filename, minPos, maxPos);
+	get_delihh_data(&delihh1, delihh_filename, minPos, maxPos);
+	get_nsl_data(&nsl1, nsl_filename, minPos, maxPos);
+	get_xpehh_data(&xp, xpehh_filename, minPos, maxPos);
+	get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+	get_H12_data(&H12, H12_filename, minPos, maxPos);
+	get_iSAFE_data(&iSAFE, iSAFE_filename, minPos, maxPos);
 
 	/*
 	fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
@@ -1177,7 +1266,7 @@ void get_popPair_completeData(popPair_data* data, char ihs_filename[], char deli
 	free(locus);
 	//fprintf(stderr, "loaded all data to object\n");
 } //end method
-void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[]){
+void get_popPair_anyData(int minPos, int maxPos, popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[], char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[], int preCountedSNPs){
 	/*	loads in ANY data for a population pair */
 	ihs_data ihs1;
 	delihh_data delihh1;
@@ -1186,13 +1275,15 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	freqs_data freqs;
 	H12_data H12;
 	iSAFE_data iSAFE;
-	//char *locus;
+	int nunique;
 	int isnp, jsnp;
 	int ksnp, lsnp, msnp, osnp, psnp, qsnp;
 	int totNsnp; //ie, redundant
 	int *allSnps;
-	int cumulativeSNPCount = 0;
-
+	int nFiltered_iHS, nFiltered_delihh, nFiltered_nsl;
+	int nFiltered_h12, nFiltered_isafe, nFiltered_freqs;
+	int nFiltered_xp;
+	int checked, flag, n;
 	/////////////////
 	// INITIALIZE ///
 	/////////////////
@@ -1213,51 +1304,17 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 
 	//locus = malloc(256 * sizeof(char));
 
-	/////////////////////
-	// RESERVE MEMORY ///
-	/////////////////////
-	data->nsnps = get_num_anyData(ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename); //fprintf(stderr, "loaded %d snps for pop-pair_any\n", data->nsnps);
-	data->locus_id = malloc(data->nsnps * sizeof(char*));
-	for (isnp = 0; isnp < data->nsnps; isnp++){
-		data->locus_id[isnp] = malloc(256*sizeof(char));
-		assert(data->locus_id[isnp] != NULL);
-	}
-	data->physpos = calloc(data->nsnps, sizeof(int)); //******** issue of matching zeros when this gets handled by ->multiple object...
-	data->genpos = calloc(data->nsnps, sizeof(double)); //call ? quick fix
-	data->daf_selpop = calloc(data->nsnps, sizeof(double));
-	data->delDAF = calloc(data->nsnps, sizeof(double));
-	data->fst = calloc(data->nsnps, sizeof(double));
-	data->xp_normed = calloc(data->nsnps, sizeof(double));
-	data->ihs_normed = calloc(data->nsnps, sizeof(double));
-	data->delihh_normed = calloc(data->nsnps, sizeof(double));
-	data->nsl_normed = calloc(data->nsnps, sizeof(double)); 
-	data->H12 = calloc(data->nsnps, sizeof(double));
-	data->H2H1 = calloc(data->nsnps, sizeof(double));
-	data->iSAFE = calloc(data->nsnps, sizeof(double)); 
-	
-	assert(data->physpos != NULL);
-	assert(data->genpos != NULL);
-	assert(data->daf_selpop != NULL);
-	assert(data->delDAF != NULL);
-	assert(data->fst != NULL);
-	assert(data->xp_normed != NULL);
-	assert(data->ihs_normed != NULL);
-	assert(data->delihh_normed != NULL);
-	assert(data->nsl_normed != NULL);
-	assert(data->H12 != NULL);
-	assert(data->H2H1 != NULL);	
-	assert(data->iSAFE != NULL);
 
 	////////////////////////////////////////
 	// LOAD COMPONENT SCORES BY POSITION ///
 	////////////////////////////////////////
-	get_ihs_data(&ihs1, ihs_filename);
-	get_delihh_data(&delihh1, delihh_filename);
-	get_nsl_data(&nsl1, nsl_filename);
-	get_xpehh_data(&xp, xpehh_filename);
-	get_freqs_data(&freqs, freqs_filename);
-	get_H12_data(&H12, H12_filename);
-	get_iSAFE_data(&iSAFE, iSAFE_filename);
+	get_ihs_data(&ihs1, ihs_filename, minPos, maxPos);
+	get_delihh_data(&delihh1, delihh_filename, minPos, maxPos);
+	get_nsl_data(&nsl1, nsl_filename, minPos, maxPos);
+	get_xpehh_data(&xp, xpehh_filename, minPos, maxPos);
+	get_freqs_data(&freqs, freqs_filename, minPos, maxPos);
+	get_H12_data(&H12, H12_filename, minPos, maxPos);
+	get_iSAFE_data( &iSAFE, iSAFE_filename, minPos, maxPos);
 	/*fprintf(stderr, "\tloading component score data from: %s\n", ihs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n", ihs1.nsnps);
 	fprintf(stderr, "\tloading component score data from: %s\n", delihh_filename);
@@ -1268,9 +1325,9 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  xp.nsnps);
 	fprintf(stderr, "\tloading component score data from: %s\n", freqs_filename);
 	fprintf(stderr, "\t\t found values for %d SNPs\n",  freqs.nsnps);*/
-
+	/*
 	totNsnp = ihs1.nsnps + delihh1.nsnps + nsl1.nsnps + xp.nsnps + freqs.nsnps + H12.nsnps + iSAFE.nsnps;
-	allSnps = malloc(totNsnp * sizeof(int));
+	allSnps = calloc(totNsnp, sizeof(int));
 	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
 		//fprintf(stderr, "isnp: %d\n", isnp);
 		allSnps[isnp] = ihs1.pos[isnp];
@@ -1307,17 +1364,121 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 
 	qsort(allSnps, totNsnp, sizeof(int), intcmp);
 	//fprintf(stderr,"\nsorted\n");
+	if (preCountedSNPs == -1){
+		nunique = count_unique(allSnps, totNsnp);
+	} // end if not precounted
+	else{nunique = preCountedSNPs;}
+	*/
+
+	nFiltered_iHS = ihs1.nsnps;
+	nFiltered_delihh = delihh1.nsnps;
+	nFiltered_nsl = nsl1.nsnps;
+	nFiltered_h12 = H12.nsnps;
+	nFiltered_isafe = iSAFE.nsnps;
+	nFiltered_freqs = freqs.nsnps;
+	nFiltered_xp = xp.nsnps;
+	totNsnp = nFiltered_iHS + nFiltered_delihh + nFiltered_nsl + nFiltered_h12 + nFiltered_isafe + nFiltered_freqs + nFiltered_xp;
+	allSnps = calloc(totNsnp, sizeof(int));
+
+	jsnp = -1;
+	for (isnp = 0; isnp < ihs1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = ihs1.pos[isnp];
+	}	// end ihs isnp
+	for (isnp = 0; isnp < delihh1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = delihh1.pos[isnp];
+	}	// end delihh isnp
+	for (isnp = 0; isnp < nsl1.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = nsl1.pos[isnp];
+	}	// end nsl isnp
+	for (isnp = 0; isnp < xp.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = xp.pos[isnp];
+	}	// end xp isnp
+	for (isnp = 0; isnp < freqs.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = freqs.pos[isnp];
+	}	// end freqs isnp
+	for (isnp = 0; isnp < H12.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = H12.pos[isnp];
+	}	// end delihh isnp
+	for (isnp = 0; isnp < iSAFE.nsnps; isnp++){
+		jsnp++;
+		allSnps[jsnp] = iSAFE.pos[isnp];
+	}	// end isafe isnp
+	//fprintf(stderr, "jsnp: %d\ttotnsnp:%d\n", jsnp, totNsnp);
+
+	if (preCountedSNPs == -1){
+		qsort(allSnps, totNsnp, sizeof(int), intcmp);
+		nunique = count_unique(allSnps, totNsnp);
+	} // end if not precounted
+	else{nunique = preCountedSNPs;}
+
+
+	/////////////////////
+	// RESERVE MEMORY ///
+	/////////////////////
+	data->nsnps = nunique;//get_num_anyData(minPos, maxPos, ihs_filename, delihh_filename, nsl_filename, H12_filename, iSAFE_filename, xpehh_filename, freqs_filename); 
+	//fprintf(stderr, "loaded %d snps for pop-pair_any\n", data->nsnps);
+	data->locus_id = malloc(data->nsnps * sizeof(char*));
+	for (isnp = 0; isnp < data->nsnps; isnp++){
+		data->locus_id[isnp] = malloc(256*sizeof(char));
+		assert(data->locus_id[isnp] != NULL);
+	}
+	data->physpos = calloc(data->nsnps, sizeof(int));
+	data->genpos = calloc(data->nsnps, sizeof(double)); 
+	data->daf_selpop = calloc(data->nsnps, sizeof(double));
+	data->delDAF = calloc(data->nsnps, sizeof(double));
+	data->fst = calloc(data->nsnps, sizeof(double));
+	data->xp_normed = calloc(data->nsnps, sizeof(double));
+	data->ihs_normed = calloc(data->nsnps, sizeof(double));
+	data->delihh_normed = calloc(data->nsnps, sizeof(double));
+	data->nsl_normed = calloc(data->nsnps, sizeof(double)); 
+	data->H12 = calloc(data->nsnps, sizeof(double));
+	data->H2H1 = calloc(data->nsnps, sizeof(double));
+	data->iSAFE = calloc(data->nsnps, sizeof(double)); 
+	
+	assert(data->physpos != NULL);
+	assert(data->genpos != NULL);
+	assert(data->daf_selpop != NULL);
+	assert(data->delDAF != NULL);
+	assert(data->fst != NULL);
+	assert(data->xp_normed != NULL);
+	assert(data->ihs_normed != NULL);
+	assert(data->delihh_normed != NULL);
+	assert(data->nsl_normed != NULL);
+	assert(data->H12 != NULL);
+	assert(data->H2H1 != NULL);	
+	assert(data->iSAFE != NULL);
+
 
 	//////////////////////////////
 	/// load all redundant snps //
 	//////////////////////////////
-	jsnp = 0;
+	/*jsnp = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
 		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
 		else{data->physpos[jsnp] = allSnps[isnp]; jsnp++;}
 	} // end isnp
 	data->physpos[data->nsnps-1]  = allSnps[totNsnp-1]; // edge snp
-	
+	*/
+
+	data->physpos[0] = allSnps[0];
+	checked = 1;
+	for (isnp = 0; isnp <= totNsnp; ++isnp){
+		flag = 1;
+		for (n=0; n<checked; n++){
+			if(data->physpos[n] == allSnps[isnp]){flag = 0;}
+		}
+
+		if (flag == 1){
+			checked++;
+			data->physpos[checked-1] = allSnps[isnp]; 
+		}
+	}
 	//fprintf(stderr, "loaded unique positions: %d\t%d\t%d\t%d\n", data->physpos[0], data->physpos[1], data->physpos[data->nsnps-2], data->physpos[data->nsnps-1]);
 	//fprintf(stderr, "loaded unique scores: %f\t%f\t%f\t%f\t%f\t%f\n", ihs1.ihs_normed[0], delihh1.delihh_normed[0], nsl1.nsl_normed[0], xp.xpehh_normed[0], freqs.fst[0], freqs.deldaf[0]);
 
@@ -1384,9 +1545,8 @@ void get_popPair_anyData(popPair_data* data, char ihs_filename[], char delihh_fi
 	free_iSAFE_data(&iSAFE);
 	//free(locus);
 	free(allSnps);
-	
-
 } //end method
+
 void free_popPair_data(popPair_data* data){
 	int isnp;
 	if (data == NULL) {return;}
@@ -1660,7 +1820,7 @@ void get_popComp_completeData(popComp_data_multiple* data, int nComparisons, int
 	free(newLine);
 	//fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
 } //end method
-void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc, char *argv[]){
+void get_popComp_anyData(int minPos, int maxPos, popComp_data_multiple* data, int nComparisons, int argc, char *argv[]){
 	/*This function loads in all SNPs, even those for which there is incomplete data.
 	argv is all files for pop-pairs (each of which points to further component score files)*/
 	const int line_size = 15000000; 
@@ -1670,10 +1830,16 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	char infilename[512];
 	int	isnp, jsnp, iComp, totNsnp, nunique; //thisPhysPos, itoken
 	int *allSnps, *allUniqueSnps;
+	int *compCountSnps;
+	int thisCompSnpCount;
+	//int preCountedSNPs;
 	char ihs_filename[528], delihh_filename[528], nsl_filename[528], xpehh_filename[528], freqs_filename[528];
 	char h12_filename[528], iSAFE_filename[528];
 	int numExtraArgs;
+	int checked, flag, n;
+	freqs_data freqs;
 
+	
 	//////////////////
 	/// INITIALIZE ///
 	//////////////////
@@ -1693,11 +1859,59 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	data->H2H1 = NULL;	
 	data->iSAFE = NULL;
 
+	//get total num (redundant) snps for all comparisons
+	totNsnp = 0;
+	numExtraArgs = argc - nComparisons;
+	compCountSnps = calloc(nComparisons, sizeof(int));	
+	for (iComp = 0; iComp < nComparisons; iComp++){
+		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
+		inf = fopen(infilename, "r");
+		fgets(ihs_filename, line_size, inf);
+		fgets(delihh_filename, line_size, inf);
+		fgets(nsl_filename, line_size, inf);
+		fgets(h12_filename, line_size, inf);
+		fgets(iSAFE_filename, line_size, inf);
+		fgets(xpehh_filename, line_size, inf);
+		fgets(freqs_filename, line_size, inf);
+		fclose(inf);
+		get_freqs_data(&freqs, freqs_filename, minPos, maxPos) 
+		thisCompSnpCount = freqs.nsnps; // JUST GET IT FROM FREQS FILE
+		//get_num_anyData(minPos, maxPos, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
+		compCountSnps[iComp] = thisCompSnpCount;
+		totNsnp += thisCompSnpCount;
+		free_freqs_data(&freqs)
+	} // end iComp
+	
+	for (iComp = 0; iComp < nComparisons; iComp++){
+		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
+		inf = fopen(infilename, "r");
+		fgets(ihs_filename, line_size, inf);
+		fgets(delihh_filename, line_size, inf);
+		fgets(nsl_filename, line_size, inf);
+		fgets(h12_filename, line_size, inf);
+		fgets(iSAFE_filename, line_size, inf);
+		fgets(xpehh_filename, line_size, inf);
+		fgets(freqs_filename, line_size, inf);
+		get_freqs_data(&freqs, freqs_filename, minPos, maxPos) 
+	
+		fclose(inf);
+		// get data from freqfile (positions)
+		for (jsnp = 0; jsnp < freqs.nsnps; jsnp++){
+			allSnps[isnp] = freqs.physpos[jsnp];
+			isnp +=1;
+		}
+		free_popPair_data(&data_sing); 
+	} // end iComp
+
+
+
+	/*
 	////////////////////
 	/// COLLATE LOCI ///
 	////////////////////
 	totNsnp = 0; //pass over first argument (run params)
 	numExtraArgs = argc - nComparisons;
+	compCountSnps = calloc(nComparisons, sizeof(int));	
 	for (iComp = 0; iComp < nComparisons; iComp++){
 		sprintf(infilename, "%s", argv[iComp + numExtraArgs]);
 		inf = fopen(infilename, "r");
@@ -1716,7 +1930,9 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		totNsnp += get_num_anyData(ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
+		thisCompSnpCount = get_num_anyData(minPos, maxPos, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
+		compCountSnps[iComp] = thisCompSnpCount;
+		totNsnp += thisCompSnpCount;
 	} // end iComp
 	//fprintf(stderr, "totNsnp: %d\n", totNsnp);
 
@@ -1741,11 +1957,11 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename); 
+		thisCompSnpCount = compCountSnps[iComp];		
+		get_popPair_anyData(minPos, maxPos, &data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename, thisCompSnpCount); 
+		//void get_popPair_anyData(int minPos, int maxPos, popPair_data* data, char ihs_filename[], char delihh_filename[], char nsl_filename[],char H12_filename[], char iSAFE_filename[], char xpehh_filename[], char freqs_filename[], int preCountedSNPs); 
 		//fprintf(stderr, "checkpoint: completed get_popPair_anyData\n");
 		//fprintf(stderr, "%d\t%d\t%d\t%d\n", data_sing.physpos[0], data_sing.physpos[1], data_sing.physpos[data_sing.nsnps-2],data_sing.physpos[data_sing.nsnps-1]);
-
-
 		for (jsnp = 0; jsnp < data_sing.nsnps; jsnp++){
 			allSnps[isnp] = data_sing.physpos[jsnp];
 			isnp +=1;
@@ -1753,11 +1969,11 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		free_popPair_data(&data_sing); 
 	}//end icomp
 
+	*/ //GET NUNIQUE
 	//////////////////////////
 	/// COLLATE LOCI: SORT ///	Problem here?
 	/////////////////////////
-	qsort(allSnps, totNsnp, sizeof(int), intcmp);
-
+	//qsort(allSnps, totNsnp, sizeof(int), intcmp);
 	nunique = count_unique(allSnps, totNsnp);
 	//nunique = 0;
 	//for (isnp = 0; isnp <= totNsnp-2; isnp++){
@@ -1766,14 +1982,36 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	//	else{nunique++;}
 	//} //right?// end for isnp
 
+	
 
 	allUniqueSnps	= malloc(nunique * sizeof(int));
-	jsnp = 0;
+
+	/*jsnp = 0;
 	for (isnp = 0; isnp <= totNsnp-2; isnp++){
 		if (allSnps[isnp] == allSnps[isnp+1]){continue;}
 		else{allUniqueSnps[jsnp] = allSnps[isnp]; jsnp++;}
 	} // end for isnp
-	allUniqueSnps[totNsnp-1] = allSnps[totNsnp-1]; 
+	allUniqueSnps[totNsnp-1] = allSnps[totNsnp-1]; */
+	//filter non-redundant positions to ... data object ?
+	allUniqueSnps[0] = allSnps[0];
+	checked = 1;
+	for (isnp = 0; isnp < totNsnp; isnp++){
+		flag = 1;
+		for (n=0; n<checked; n++){
+			if(allUniqueSnps[n] == allSnps[isnp]){
+				flag = 0;
+			}
+		}
+		if (flag == 1){
+			checked++;
+			allUniqueSnps[checked-1] = allSnps[isnp]; 
+		}
+	}
+
+	fprintf(stderr, "\tloaded all unique snps for popComp dataobject. n = %d\n", nunique);
+	//fprintf(stderr, "%d %d ... %d %d\n", allUniqueSnps[0], allUniqueSnps[1], allUniqueSnps[nunique-2], allUniqueSnps[nunique-1]);
+
+
 
 	///////////////////////
 	/// ALLOCATE MEMORY ///
@@ -1859,8 +2097,8 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 		fgets(freqs_filename, line_size, inf);
 		strtok(freqs_filename, "\n");
 		fclose(inf);
-
-		get_popPair_anyData(&data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename);
+		thisCompSnpCount = compCountSnps[iComp];
+		get_popPair_anyData(minPos, maxPos, &data_sing, ihs_filename, delihh_filename, nsl_filename, h12_filename, iSAFE_filename, xpehh_filename, freqs_filename, thisCompSnpCount);
 		fprintf(stderr, "loaded pop-pair object with %d snps\n", data_sing.nsnps);
 		//fprintf(stderr, "DEBUG: %d\n ", data_sing.physpos[data_sing.nsnps-1]);
 
@@ -1907,6 +2145,8 @@ void get_popComp_anyData(popComp_data_multiple* data, int nComparisons, int argc
 	free(allUniqueSnps); 	//problem??
 	free(allSnps);
 	free(newLine);
+	free(compCountSnps);
+
 	//fprintf(stderr, "loaded multiple pop-pair comparisons to data object.\n");
 } //end method
 void free_popComp_data_multiple(popComp_data_multiple* data){

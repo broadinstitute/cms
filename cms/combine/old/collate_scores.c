@@ -39,8 +39,12 @@ int main(int argc, char **argv) {
 	//////////////////
 	// LOAD SCORES ///
 	//////////////////
+	minPos = -1;		
+	maxPos = 2147483647;	
 	fprintf(stderr, "\nPreparing to load component scores...\n");
-	get_popComp_anyData(&score_data, nComparisons, argc, argv);  //BUILD IN H12 SUPPORT 
+	get_popComp_anyData(minPos, maxPos, &score_data, nComparisons, argc, argv); 
+
+	//get_popComp_anyData(&score_data, nComparisons, argc, argv);  //BUILD IN H12 SUPPORT 
 	fprintf(stderr, "\tloaded data object with %d snps and %d population comparisons.\n", score_data.nsnps, score_data.ncomp);
 	
 	////////////////////////

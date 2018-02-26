@@ -150,6 +150,8 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			plt.close()
 
 		elif stat == 'fst':
+			popPairLabels = ['(YRI CEU)', '(YRI CHB)', '(YRI BEB)', '(CEU CHB)', '(CEU BEB)', '(CHB BEB)']
+	
 			target_vals = flattenList(target_vals)
 			model_vals = flattenList(model_vals)
 			target_ses = flattenList(target_ses)
