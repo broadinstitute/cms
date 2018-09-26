@@ -44,7 +44,7 @@ else # if it does not exist, we need to install miniconda
     conda config --add channels bioconda
     conda config --add channels r
     conda config --add channels conda-forge
-    conda install -y -q conda=4.2 # pin to 4.2.* until this is fixed: https://github.com/conda/conda-build/issues/1666
+    conda install -y -q conda #=4.2 # pin to 4.2.* until this is fixed: https://github.com/conda/conda-build/issues/1666
     conda config --set auto_update_conda false
     conda install -y java-jdk==8.0.112
     conda install -y conda-build # needed to build recipe
