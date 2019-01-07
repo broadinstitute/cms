@@ -2,7 +2,7 @@
 
 **Composite of Multiple Signals**: tests for selection in meiotically recombinant populations
 
-[![Build Status](https://travis-ci.org/broadinstitute/cms.svg?branch=master)](https://travis-ci.org/broadinstitute/cms)
+[![Build Status](https://travis-ci.com/broadinstitute/cms.svg?branch=master)](https://travis-ci.com/broadinstitute/cms)
 [![Coverage Status](https://coveralls.io/repos/broadinstitute/cms/badge.svg)](https://coveralls.io/r/broadinstitute/cms)
 [![Code Health](https://landscape.io/github/broadinstitute/cms/master/landscape.svg?style=flat)](https://landscape.io/github/broadinstitute/cms)
 [![Documentation Status](https://readthedocs.org/projects/broad-cms/badge/?version=latest)](http://broad-cms.readthedocs.io/en/latest/)
