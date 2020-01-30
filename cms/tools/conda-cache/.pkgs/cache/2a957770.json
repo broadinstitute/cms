@@ -1,0 +1,93 @@
+{
+  "_mod": "Sat, 28 Jan 2017 11:56:46 GMT",
+  "_url": "https://conda.anaconda.org/bioconda/noarch/",
+  "info": {
+    "arch": null,
+    "default_numpy_version": "1.7",
+    "default_python_version": "2.7",
+    "platform": null,
+    "subdir": "noarch"
+  },
+  "packages": {
+    "easydev-0.9.14-py_0.tar.bz2": {
+      "arch": null,
+      "binstar": {
+        "channel": "main",
+        "owner_id": "55f35cc885a76554d7c66613",
+        "package_id": "56c4fa985b48926d05bf0c6f"
+      },
+      "build": "py_0",
+      "build_number": 0,
+      "depends": [
+        "colorama",
+        "python"
+      ],
+      "license": "GNU Library or Lesser General Public License (LGPL)",
+      "machine": null,
+      "md5": "49488eb0c70eec727ec1110235ec7c77",
+      "name": "easydev",
+      "operatingsystem": null,
+      "platform": null,
+      "requires": [],
+      "size": 122066,
+      "subdir": "noarch",
+      "target-triplet": "None-any-None",
+      "version": "0.9.14"
+    },
+    "retrying-1.3.3-py_1.tar.bz2": {
+      "arch": null,
+      "binstar": {
+        "channel": "main",
+        "owner_id": "55f35cc885a76554d7c66613",
+        "package_id": "5654ebdeea546b68839cbf33"
+      },
+      "build": "py_1",
+      "build_number": 1,
+      "depends": [
+        "python",
+        "six >=1.7.0"
+      ],
+      "license": "Apache Software License",
+      "machine": null,
+      "md5": "016d073b4107bbdde753c8ad09028eb0",
+      "name": "retrying",
+      "operatingsystem": null,
+      "platform": null,
+      "requires": [],
+      "size": 12851,
+      "subdir": "noarch",
+      "target-triplet": "None-any-None",
+      "version": "1.3.3"
+    },
+    "rgi-3.1.0-py_0.tar.bz2": {
+      "arch": null,
+      "binstar": {
+        "channel": "main",
+        "owner_id": "55f35cc885a76554d7c66613",
+        "package_id": "577c6e48270798189b0c5908"
+      },
+      "build": "py_0",
+      "build_number": 0,
+      "depends": [
+        "argparse",
+        "biopython",
+        "blast",
+        "prodigal",
+        "python",
+        "six >=1.7.0",
+        "zlib"
+      ],
+      "license": "Apache Software License",
+      "machine": null,
+      "md5": "0a783992c51d89cf929244086735587a",
+      "name": "rgi",
+      "operatingsystem": null,
+      "platform": null,
+      "requires": [],
+      "size": 4869603,
+      "subdir": "noarch",
+      "target-triplet": "None-any-None",
+      "version": "3.1.0"
+    }
+  }
+}

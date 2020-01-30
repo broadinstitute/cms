@@ -1,0 +1,4 @@
+--model nulldefault --simpop 1 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score delihh
+--model nulldefault --simpop 2 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score delihh
+--model nulldefault --simpop 3 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score delihh
+--model nulldefault --simpop 4 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score delihh

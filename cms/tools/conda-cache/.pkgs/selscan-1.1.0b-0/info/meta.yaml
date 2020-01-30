@@ -1,0 +1,31 @@
+# This file created by conda-build 1.20.3
+# meta.yaml template originally from:
+# /bioconda-recipes/recipes/selscan, last modified Tue Jun 21 12:37:07 2016
+# ------------------------------------------------
+
+package:
+    name: selscan
+    version: 1.1.0b
+source:
+    fn: 1.1.0b.zip
+    md5: 02a39fff61fadcfb5df248d37111141f
+    patches:
+        - Makefile.linux.patch
+    url: https://github.com/szpiech/selscan/archive/1.1.0b.zip
+build:
+    number: '0'
+    skip: 'False'
+requirements:
+    build:
+        - gcc
+        - zlib
+    run:
+        - libgcc
+        - zlib
+test:
+    commands:
+        - selscan 2>&1 | grep 'selscan' &> /dev/null
+about:
+    home: https://github.com/szpiech/selscan
+    license: GPLv3
+    summary: a program to calculate EHH-based scans for positive selection in genomes

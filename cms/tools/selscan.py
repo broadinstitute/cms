@@ -29,8 +29,9 @@ from boltons.timeutils import relative_time
 import numpy as np
 
 TOOL_NAME = 'selscan'
-TOOL_VERSION = '1.1.0b'
-url = 'https://github.com/szpiech/selscan/archive/{ver}.zip'
+TOOL_VERSION = 'v0-alpha'#'1.1.0b'
+url = 'https://github.com/josephvitti/selscan/archive/{ver}.zip'
+#'https://github.com/szpiech/selscan/archive/{ver}.zip'
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ class SelscanFormatter(object):
     @classmethod
     def process_vcf_into_selscan_tped(cls, vcf_file, gen_map_file, outfile_location,
         outfile_prefix, chromosome_num, samples_to_include=None, start_pos_bp=None, end_pos_bp=None, ploidy=2, 
-        consider_multi_allelic=True, rescale_genetic_distance=False, include_variants_with_low_qual_ancestral=False, coding_function=None, 
+        consider_multi_allelic=False, rescale_genetic_distance=False, include_variants_with_low_qual_ancestral=False, coding_function=None, 
         multi_alleli_merge_function="AND"):
         """
             Process a bgzipped-VCF (such as those included in the Phase 3 1000 Genomes release) into a gzip-compressed
@@ -207,7 +208,8 @@ class SelscanFormatter(object):
                         if include_variants_with_low_qual_ancestral:
                             if ancestral_allele in ['a','t','c','g',]:
                                 ancestral_allele = ancestral_allele.upper()
-                            else: #if no info, encode ref as ancestral
+                            #else: #if no info, encode ref as ancestral
+                            if ancestral_allele not in ['A', 'T', 'C', 'G', 'a', 't', 'c', 'g']:
                                 ancestral_allele = record.ref
 
 
@@ -534,7 +536,7 @@ class SelscanTool(SelscanBaseTool):
         log.debug(' '.join(toolCmd))
         subprocess.check_call( toolCmd )
 
-    def execute_xpehh(self, tped_file, tped_ref_file, out_file, threads, maf, gap_scale, trunc_ok=False):
+    def execute_xpehh(self, tped_file, tped_ref_file, out_file, out_file2, threads, maf, gap_scale, trunc_ok=False):
         toolCmd = [self.install_and_get_path()]
         toolCmd.append("--xpehh")
         toolCmd.append("--tped")
@@ -543,6 +545,9 @@ class SelscanTool(SelscanBaseTool):
         toolCmd.append(tped_ref_file)
         toolCmd.append("--out")
         toolCmd.append(out_file)
+        toolCmd.append("--out2")
+        toolCmd.append(out_file2)
+
         if trunc_ok:
             toolCmd.append("--trunc-ok")
         if threads > 0:
@@ -706,6 +711,7 @@ class DownloadAndBuildSelscan(tools.DownloadPackage) :
         # Now we can make:
         os.system('cd "{}" && make -s && mv ./selscan ./norm {}'.format(selscanSrcDir, 
             os.path.join(selscanDir, SelscanTool.get_selscan_binary_path(SelscanTool.get_os_type(), full=False))))
+
 
 
 

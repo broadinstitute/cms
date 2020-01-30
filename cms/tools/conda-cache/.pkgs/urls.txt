@@ -1,0 +1,4 @@
+https://repo.continuum.io/pkgs/free/linux-64/libgcc-5.2.0-0.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/zlib-1.2.8-3.tar.bz2
+https://conda.anaconda.org/bioconda/linux-64/selscan-1.1.0b-0.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/zlib-1.2.11-0.tar.bz2

@@ -109,15 +109,32 @@ def main_selscan_file_conversion(args):
             reference_allele: char, ACGT; the allele that is coded as "0"
             alternate_allele: char, ACGT; the allele 
             """
+           # print(current_value, reference_allele, alternate_allele, ancestral_allele)
+            #################
+            ## PROPER CASE ##
+            #################
+            if ancestral_allele in [reference_allele, alternate_allele]:
+                if ancestral_allele == reference_allele: 
+                    if current_value == "0" or current_value == 0:
+                        return "1"
+                    elif current_value == "1" or current_value == 1:
+                        return "0"
 
-            if ancestral_allele == reference_allele: 
+                elif ancestral_allele == alternate_allele:
+                    if current_value == "0" or current_value == 0:
+                        return "0" 
+                    elif current_value == "1" or current_value == 1:
+                        return "1"
+            
+            else: #some are poorly behaved in vcf! e.g. rs28627866. Treat ref as anc. 
+                #print(ancestral_allele, reference_allele, alternate_allele)
                 if current_value == "0":
                     return "1"
+                if current_value == "1":
+                    return "0"
 
-            if ancestral_allele == alternate_allele:
-                if current_value == value_of_current_allele:
-                    return "1"
-            
+            #if not ((ancestral_allele == reference_allele and current_value == "1") or (ancestral_allele == alternate_allele and current_value == "0") or (current_value == "2")):
+            #    print('how did I end up here?', current_value, reference_allele, alternate_allele, ancestral_allele)
             return "0"
 
     tools.selscan.SelscanFormatter().process_vcf_into_selscan_tped(  vcf_file = args.inputVCF, 
@@ -233,7 +250,7 @@ def main_selscan_ehh(args):
     locusMetadata["ehh_log"] = args.outFile + ".ehh." + args.locusID + ".log"
 
     jsonFilePath = os.path.abspath(args.inputTped).replace(".tped.gz",".metadata.json")
-    util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, locusMetadata, key_to_act_on="ehh", append=True)
+    #util.json_helpers.JSONHelper.annotate_json_file(jsonFilePath, locusMetadata, key_to_act_on="ehh", append=True)
 
     return 0
 __commands__.append(('selscan_ehh', parser_selscan_ehh))
@@ -339,6 +356,7 @@ def parser_selscan_xpehh(parser=argparse.ArgumentParser()):
     parser = parser_selscan_common(parser)
 
     parser.add_argument("inputRefTped", help="Input tped for the reference population to which the first is compared")
+    parser.add_argument("Output2", help="popihh output for second pop")
 
     parser.add_argument('--truncOk', default=False, action='store_true',
         help="""If an EHH decay reaches the end of a sequence before reaching the cutoff,
@@ -359,6 +377,7 @@ def main_selscan_xpehh(args):
         tped_file       = args.inputTped,
         tped_ref_file   = args.inputRefTped,
         out_file        = args.outFile,
+        out_file2       = args.Output2,
         trunc_ok        = args.truncOk,
         threads         = args.threads,
         maf             = args.maf,
@@ -578,4 +597,5 @@ def full_parser():
 
 if __name__ == '__main__':
     util.cmd.main_argparse(__commands__, __doc__)
+
 

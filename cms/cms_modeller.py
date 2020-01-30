@@ -1,20 +1,40 @@
 #!/usr/bin/env python
 ## top-level script for demographic modeling as part of CMS 2.0. 
-## last updated: 10.08.16 vitti@broadinstitute.org
+## last updated: 02.26.18 vitti@broadinstitute.org
+##	10.19.18: fitting ASW with custom tree topology.
+##	12.17.18 fitting PEL
 
 import matplotlib as mp 
 mp.use('agg') 
 from model.bootstrap_func import flattenList, checkFileExists, readFreqsFile, readLDFile, readFstFile, estimateFstByBootstrap, estimateFstByBootstrap_bysnp, estimateFreqSpectrum, estimatePi, estimater2decay, estimatedprimedecay
-from model.params_func import get_ranges, generate_params
+from model.params_func import get_ranges, generate_params, get_dict_from_paramfile, write_paramfile
+#from params_func_ASW import get_ranges, generate_params
 from model.error_func import calc_error, read_error_dimensionsfile
 from model.search_func import read_dimensionsfile, sample_point, get_real_value, get_scaled_value
 from model.plot_func import plot_comparison
+from model.draw_tree import draw_tree
 from scipy import optimize
 import numpy as np
 import subprocess
 import argparse
 import random
 import sys
+from itertools import product
+
+def update_paramdict(paramDict, startPointFileName):
+	#quick hack
+	openfile = open(startPointFileName, 'r')
+	for line in openfile:
+		entries = line.split('\t')
+		if "(" in entries[0]:
+			key = eval(entries[0])
+		else:
+			key = entries[0]
+		index = int(entries[1])
+		value = float(entries[2])
+		paramDict[key][index] = value
+	openfile.close()
+	return paramDict
 
 #############################
 ## DEFINE ARGUMENT PARSER ###
@@ -39,8 +59,14 @@ def full_parser_cms_modeller():
 	bootstrap_parser = subparsers.add_parser('bootstrap', help='Perform bootstrap estimates of population summary statistics from per-site(/per-site-pair) calculations in order to finalize model target values.')
 	bootstrap_parser.add_argument('nBootstrapReps', action='store', type=int, help='number of bootstraps to perform in order to estimate standard error of the dataset (should converge for reasonably small n)')
 	bootstrap_parser.add_argument('--in_freqs', action='store', help='comma-delimited list of infiles with per-site calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
+	bootstrap_parser.add_argument('--nFreqHistBins', action='store',type=int, default=6, help="number of bins for site frequency spectrum and p(der|freq)")
 	bootstrap_parser.add_argument('--in_ld', action='store', help='comma-delimited list of infiles with per-site-pair calculations for population. One file per population -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 
+	bootstrap_parser.add_argument('--mafcutoffdprime', action='store', type=float, default=.2, help="for D' calculations, only use sites with MAF > mafcutoffdprime") 	
+	bootstrap_parser.add_argument('--nphysdisthist', action='store', type=int, default=14, help="nbins for r2 LD calculations") 	
+
+
 	bootstrap_parser.add_argument('--in_fst', action='store', help='comma-delimited list of infiles with per-site calculations for population pair. One file per population-pair -- for bootstrap estimates of genome-wide values, should first concatenate per-chrom files') 	
+	bootstrap_parser.add_argument('--ngendisthist', action='store', type=int, default=17, help="nbins for D' LD calculations") 	
 	bootstrap_parser.add_argument('out', action='store', type=str, help='outfile prefix') 
 	
 	##########################
@@ -50,8 +76,10 @@ def full_parser_cms_modeller():
 	grid_parser = subparsers.add_parser('grid', help='Perform grid search: for specified parameters and intervals, define points in parameter-space to sample and compare.')
 	optimize_parser = subparsers.add_parser('optimize', help='Perform optimization algorithm (scipy.optimize) to fit model parameters robustly.')
 
+	point_parser.add_argument('--inputParamFile', type=str, action='store', help='file with model specifications for input')
+		
 	for cosi_parser in [point_parser, grid_parser, optimize_parser]:
-		cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
+		#cosi_parser.add_argument('inputParamFile', type=str, action='store', help='file with model specifications for input')
 		cosi_parser.add_argument('nCoalescentReps', type=int, help='number of coalescent replicates to run per point in parameter-space')
 		cosi_parser.add_argument('outputDir', type=str, action='store', help='location in which to write cosi output')
 		cosi_parser.add_argument('--cosiBuild', action='store', default="coalescent", help='which version of cosi to run?')  
@@ -65,7 +93,7 @@ def full_parser_cms_modeller():
 	######################
 	point_parser.add_argument('--targetvalsFile', action='store', type=str, help='file containing target values for model')	
 	point_parser.add_argument('--plotStats', action='store_true', default=False, help='visualize goodness-of-fit to model targets')
-
+	point_parser.add_argument('--plotbase', action="store", default="/web/personal/vitti/test_dem")
 	#########################
 	## FIT MODEL TO TARGET ##
 	#########################
@@ -74,19 +102,14 @@ def full_parser_cms_modeller():
 	optimize_parser.add_argument('optimize_inputdimensionsfile', type=str, action='store', help='file with specifications of optimization. each parameter to vary is indicated: KEY\tINDEX')
 	optimize_parser.add_argument('--stepSize', action='store', type=float, help='scaled step size (i.e. whole range = 1)')
 	optimize_parser.add_argument('--method', action='store', type=str, default='SLSQP', help='algorithm to pass to scipy.optimize')
-
+	for common_parser in [optimize_parser, grid_parser]:
+		common_parser.add_argument('--savePar', action='store', type=str, default="opt_out.par")
 	for common_parser in [target_stats_parser, point_parser]:#[bootstrap_parser, grid_parser, optimize_parser]:
 		common_parser.add_argument('--printOnly', action='store_true', help='print rather than execute pipeline commands')
-
+	for common_parser in [point_parser, optimize_parser]:
+		common_parser.add_argument('--startPointFileName', action='store', type=str, default=None, help='start the gradient at a point in parameter-space with these specififications: KEY\tINDEX\tVALUE')
+	
 	return parser
-
-
-#############################
-## WRAPPER FOR OPTIMIZE   ###
-#############################
-def sample_point_wrapper(values):
-	'''function passed to scipy.optimize.'''
-	return sample_point(nreps, gradientname, keys, indices, values)
 
 ############################
 ## DEFINE EXEC FUNCTIONS ###
@@ -137,6 +160,7 @@ def execute_bootstrap(args):
 	### FREQ STATS ##
 	#################
 	if args.in_freqs is not None: 
+		nhist = args.nFreqHistBins
 		inputestimatefilenames = ''.join(args.in_freqs)
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
@@ -156,7 +180,7 @@ def execute_bootstrap(args):
 				totallen += sum(seqlens)
 				for i in range(len(allpi)):
 					nsnps += len(allpi[i])
-			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".\n")
+			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".")
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -215,20 +239,31 @@ def execute_bootstrap(args):
 	### LD ##
 	#########
 	if args.in_ld is not None:
+		nphysdisthist = args.nphysdisthist
+		ngendisthist = args.ngendisthist
 		inputestimatefilenames = ''.join(args.in_ld)
 		inputfilenames = inputestimatefilenames.split(',')
 		npops = len(inputfilenames)
+		#print('npops ' + str(npops)) #debug
 		for ipop in range(npops):
-			inputfilename = inputfilenames[i]
+			inputfilename = inputfilenames[ipop]
 			print("reading linkage disequilibrium statistics from: " + inputfilename)
 			writefile.write(str(ipop) + '\n')
-			alldists, allr2, allgendists, alldprime, nr2regions, ndprimeregions = readLDFile(ldfilename, dprimecutoff = mafcutoffdprime)
-			print("TOTAL: logged r2 values for " + str(allr2) + " SNP pairs.\n\tlogged D' values for " + str(alldprime) + " SNP pairs.\n")
+			N_r2regs, N_dprimeregs = 0, 0
+			N_r2snps, N_dprimesnps = 0, 0
+			allRegionDists, allRegionr2, allRegionGendists, allRegionDprime, nr2regions, ndprimeregions = readLDFile(inputfilename, dprimecutoff = args.mafcutoffdprime)
+			N_r2regs += nr2regions
+			N_r2snps += sum([len(x) for x in allRegionr2])
+			N_dprimeregs += ndprimeregions
+			N_dprimesnps += sum([len(x) for x in allRegionDprime])
+			print("\tlogged r2 values for " + str(N_r2snps) + " SNP pairs across " + str(N_r2regs) + " regions.")
+			print("\tlogged D' values for " + str(N_dprimesnps) + " SNP pairs across " + str(N_dprimeregs) + " regions.")
+
 
 			###################################
 			### r2: MEAN ACROSS ALL REGIONS ###
 			###################################
-			r2sums, physDistHist = estimater2decay(allRegionr2, allRegionDists)
+			r2sums, physDistHist = estimater2decay(allRegionr2, allRegionDists)#, nphysdisthist)
 			r2dist = [r2sums[u]/physDistHist[u] for u in range(len(r2sums))]
 			writefile.write(str(r2dist) + "\n")
 
@@ -247,7 +282,7 @@ def execute_bootstrap(args):
 					rep_all_physdist.append(flatregions[index_r2])
 
 				#add pseudocount for empty bins
-				repr2sum, repphysdisthist = estimater2decay(rep_all_r2, rep_all_physdist)
+				repr2sum, repphysdisthist = estimater2decay(rep_all_r2, rep_all_physdist)#, nphysdisthist)
 				for ibin in range(len(repphysdisthist)):
 					if repphysdisthist[ibin] == 0:
 						repphysdisthist[ibin] = 1
@@ -261,7 +296,7 @@ def execute_bootstrap(args):
 			####################################
 			### D': MEAN ACROSS ALL REGIONS ###
 			####################################
-			compLDhist, genDistHist = estimatedprimedecay(allRegionDprime, allRegionGendists)
+			compLDhist, genDistHist = estimatedprimedecay(allRegionDprime, allRegionGendists)#, ngendisthist)
 			#add pseudocounts
 			for ibin in range(len(genDistHist)):
 				if genDistHist[ibin] == 0:
@@ -285,7 +320,7 @@ def execute_bootstrap(args):
 					rep_all_dprime.append(flatdprime[index_dprime])
 					rep_all_gendist.append(flatgendist[index_dprime])
 
-				repcompLDhist, repgenDistHist = estimatedprimedecay(rep_all_dprime, rep_all_gendist)
+				repcompLDhist, repgenDistHist = estimatedprimedecay(rep_all_dprime, rep_all_gendist)#, ngendisthist)
 				for ibin in range(len(repgenDistHist)):
 					if repgenDistHist[ibin] == 0:
 						repgenDistHist[ibin] = 1
@@ -302,11 +337,13 @@ def execute_bootstrap(args):
 		inputestimatefilenames = ''.join(args.in_fst)
 		inputfilenames = inputestimatefilenames.split(',')
 		npopcomp = len(inputfilenames)
-		for icomp in range(len(npopcomp)):
+		for icomp in range(npopcomp):
 			fstfilename	= inputfilenames[icomp]
 			print("reading Fst values from: " + fstfilename)
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
+			else:
+				print('missing ' + fstfilename)
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allfst, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
@@ -320,81 +357,153 @@ def execute_point(args):
 	################
 	## FILE PREP ###
 	################
-	print("generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
+	if args.inputParamFile is not None:
+		print("generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
+		inputParamFile = args.inputParamFile
+		paramDict = get_dict_from_paramfile(inputParamFile)
+
+	else:
+		inputParamFile = "test_args.par"
+		#args.inputParamFile
+		paramDict = generate_params()
+		write_paramfile(inputParamFile, paramDict) #MAKE TWEAKABLE FROM CMDLINE
+
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
 	statfilename += "n" + str(args.nCoalescentReps) + "stats.txt"
 
+	draw_tree(paramDict, "/web/personal/vitti/test_tree.png")
+	draw_tree(paramDict, "/web/personal/vitti/test_tree_recent.png", recent=True)
+	draw_tree(paramDict, "/web/personal/vitti/test_tree_very_recent.png", veryrecent=True)
+
 	###############
 	## RUN SIMS ###
 	###############
-	runStatsCommand = args.cosiBuild + " -p " + args.inputParamFile + " -n " + str(args.nCoalescentReps) 
+	runStatsCommand = args.cosiBuild + " -p " + inputParamFile + " -n " + str(args.nCoalescentReps) 
 	if args.dropSings is not None:
 		runStatsCommand += " --drop-singletons " + str(args.dropSings)
 	if args.genmapRandomRegions:
 		runStatsCommand += " --genmapRandomRegions"
 	if args.stopAfterMinutes is not None:
 		runStatsCommand += " --stop-after-minutes " + str(args.stopAfterMinutes)
-	runStatsCommand += " --custom-stats > " + statfilename
+	runStatsCommand += " --custom-stats "#"> " + statfilename
 
+	print(runStatsCommand)
 	if args.printOnly:
-			print(runStatsCommand)
+		print(runStatsCommand)
 	else:
-		subprocess.check_call( runStatsCommand.split() )
-
+		with open(statfilename, 'w') as outfile:
+			subprocess.run( runStatsCommand.split(), stdout=outfile)
+		outfile.close()
+		#print(x)
 	#################
 	## CALC ERROR ###
 	#################
 	if args.calcError is not None:
+		print('calculating error from ' + statfilename)
 		if args.calcError == '': #no error dimension file given
 			error = calc_error(statfilename)
 		else:
 			stats, pops = read_error_dimensionsfile(args.calcError) 
+			print('stats: ', stats)
+			print('pops: ', pops)
 			error = calc_error(statfilename, stats, pops)
-		print(" error: " + str(error)) #record?
-
+	else:
+		error = calc_error(statfilename)
+	print(" error: " + str(error)) #record?
+		
 	################
 	## VISUALIZE ###
 	################		
 	if args.plotStats:
-		plot_comparison(statfilename, args.nCoalescentReps)
-
+		print('plotting stats from: ' + statfilename)
+		plot_comparison(statfilename, args.nCoalescentReps, args.plotbase)
 
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
+	if args.calcError is not None:
+		#print('calculating error from ' + statfilename)
+		#if args.calcError == '': #no error dimension file given
+		#	error = calc_error(statfilename)
+		#else:
+		stats, pops = read_error_dimensionsfile(args.calcError) 
+	else:
+		stats=['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
+		pops = [1, 2, 3, 4]
+
+	writeparamfilename = args.savePar
 	print("loading dimensions of grid to search from: " + args.grid_inputdimensionsfile)
-	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid')
+	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid', probTakeSearchParam=100) #TAKE ALL FOR MANUALLY SPECIFIED GRID
 	assert len(keys) == len(indices) 
-	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
+	valuecombos = product(*values)
+	combos =  [' '.join(str(y) for y in x) for x in valuecombos]
 	errors = []
 	for combo in combos:
 		argstring = combo + "\n"
-		theseValues = eval(combo) #list of values
-		error = sample_point(args.nCoalescentReps, keys, indices, theseValues)
+		theseValues = [float(item) for item in combo.split(' ')]#eval(combo) #list of values
+		print('\n$$$$$$$$$$\n')
+		print(stats, pops)
+		print(keys, indices, theseValues)
+		print(writeparamfilename)
+		print('start call to SAMPLE POINT...')
+		error = sample_point(args.nCoalescentReps, keys, indices, theseValues, writeparamfilename, False, stats, pops) # add update_paramdict in here?
 		errors.append(error)
+
+
+	print('\n******************')
 	for icombo in range(len(combos)):
-		print(combo[icombo] + "\t" + errors[icombo] + "\n")
+		print(str(combos[icombo]) + "\t" + str(errors[icombo]))
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
+	if args.calcError is not None:
+		#print('calculating error from ' + statfilename)
+		#if args.calcError == '': #no error dimension file given
+		#	error = calc_error(statfilename)
+		#else:
+		stats, pops = read_error_dimensionsfile(args.calcError) 
+		print(stats, pops)
+	else:
+		stats=['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
+		pops = [1, 2, 3, 4]
+
 	print("loading dimensions to search from: " + args.optimize_inputdimensionsfile)
-	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
+	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize', probTakeSearchParam=20)
 
 	rangeDict = get_ranges()
-	paramDict = generate_params()
+	paramDict = generate_params() #<- this is the starting point for gradient. make it customizeable?
+	if args.startPointFileName is not None:
+		paramDict = update_paramdict(paramDict, args.startPointFileName)
+
 	x0 = []
 	bounds = []
+	values = []
+	scaleds = []
 	for i in range(len(keys)):
 		key = keys[i]
 		index = indices[i]
 		value = paramDict[key][index]
 		interval = rangeDict[key][index]
 		low, high = float(interval[0]), float(interval[1])
+		values.append(value)
 		scaled = get_scaled_value(value, low, high)
 		x0.append(scaled)
 		bounds.append([0,1])
+		scaleds.append(scaled)
+
+	def sample_point_wrapper(values):
+		'''function passed to scipy.optimize.'''
+		#SET THESE UP TO GET FROM FILE!!!
+		for i in range(len(values)):
+			if values[i] > 1:
+				values[i] = 1
+			if values[i] < 0:
+				values[i] = 0 #ENFORCE BOUNDS
+		writeparamfilename = args.savePar#args.optimize_inputdimensionsfile + "_explore.par" #<--LETS TRY THIS FOR NOW TO TRACK BETTER
+		return sample_point(args.nCoalescentReps, keys, indices, values, writeparamfilename, True, stats, pops)
+
 
 	x0 = np.array(x0)
 	stepdict = {'eps':float(args.stepSize)}
@@ -431,3 +540,4 @@ if __name__ == '__main__':
 	subcommand = sys.argv[1]
 	function_name = 'execute_' + subcommand + "(args)"
 	eval(function_name) #points to functions defined above, which wrap other programs in the pipeline
+

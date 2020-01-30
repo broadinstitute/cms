@@ -1,0 +1,14 @@
+lib/libgcc_s.so
+lib/libgcc_s.so.1
+lib/libgfortran.so
+lib/libgfortran.so.3
+lib/libgfortran.so.3.0.0
+lib/libgomp.so
+lib/libgomp.so.1
+lib/libgomp.so.1.0.0
+lib/libquadmath.so
+lib/libquadmath.so.0
+lib/libquadmath.so.0.0.0
+lib/libstdc++.so
+lib/libstdc++.so.6
+lib/libstdc++.so.6.0.21

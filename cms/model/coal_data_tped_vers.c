@@ -99,7 +99,7 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	int isamp, isnp, itoken, iRecom;
 	double genrate;
 	FILE *inf=NULL;
-
+	gzFile zinf=NULL;
 	/**************************
 	INITIALIZATION, ALLOCATION,
 	COUNTING nsample nsnp nrecom
@@ -124,10 +124,11 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	//handle zipped?
 
 	// Count number of SNPs in tped
-	inf = fopen(tpedfilename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
-	assert (inf != NULL);
-	while (fgets(newLine, line_size, inf) != NULL) {
+	//inf = fopen(tpedfilename, "r");
+	zinf = gzopen(tpedfilename, "rb");
+	if (zinf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
+	assert (zinf != NULL);
+	while (gzgets(zinf, newLine, line_size) != NULL) {
 		assert(strlen(newLine) < line_size);
 		data->nsnp++;
 	}
@@ -139,7 +140,8 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 		pch=strchr(pch+1,' ');
 	}
 	data->nsample = ik-3;
-	fclose(inf);
+	//fclose(inf);
+	gzclose(zinf);
 	//fprintf(stderr, "nSNP: %d\n", data->nsnp);
 	//fprintf(stderr, "nSample: %d\n", data->nsample);
 		
@@ -184,12 +186,13 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 	GET DATA FROM TPED
 	*******************/
 	//handle zipped
-	inf = fopen(tpedfilename, "r");
-	if (inf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
-	assert(inf != NULL);
+	//inf = fopen(tpedfilename, "r");
+	zinf = gzopen(tpedfilename, "rb");
+	if (zinf == NULL) {fprintf(stderr, "Missing TPED file: %s\n", tpedfilename);}
+	assert(zinf != NULL);
 
 	isnp = 0;
-	while (fgets(newLine, line_size, inf) != NULL) {
+	while (gzgets(zinf, newLine, line_size) != NULL) {
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
 			if (itoken == 0) {
 				//data->chrom[isnp] = chromosome;
@@ -212,8 +215,8 @@ void get_coal_data_tped_vers(coal_data* data, char tpedfilename[], char recomfil
 		} // END for running=newLine
 		isnp++;
 	} //END while(fgets(newLine))
-	fclose(inf);
-
+	//fclose(inf);
+	gzclose(zinf);
 	/**************************
 	GET DATA FROM RECOMB FILE
 	**************************/
@@ -343,6 +346,8 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 
 	isnp = 0;
 	while (gzgets(zinf, newLine, line_size) != NULL) { 
+		//fprintf(stderr, newLine);
+			
 		for (running = newLine, itoken = 0; (token = strsep(&running, " \t")) != NULL; itoken++) {
 			if (itoken == 0) {
 				//data->chrom[isnp] = chromosome;
@@ -360,6 +365,9 @@ void get_coal_data_tped_vers_gz(coal_data* data, char tpedfilename[], char recom
 			}
 			else if (itoken >= 4) {
 				isamp = itoken - 4; //RIGHT?
+				//fprintf(stderr, "%d\t%d\n", isamp, isnp);
+				//fprintf(stderr, token);
+				//fprintf(stderr, "\n");
 				data->genotype[isamp][isnp] = atoi(token);
 			}
 		} // END for running=newLine

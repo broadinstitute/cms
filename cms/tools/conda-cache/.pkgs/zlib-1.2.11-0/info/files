@@ -1,0 +1,7 @@
+lib/libz.so.1
+lib/libz.so
+lib/libz.so.1.2.11
+include/zconf.h
+lib/libz.a
+include/zlib.h
+lib/pkgconfig/zlib.pc

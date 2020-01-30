@@ -1,0 +1,7 @@
+name: cms-env2
+channels:
+- bioconda
+- defaults
+dependencies:
+
+- python=2.7.12

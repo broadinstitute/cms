@@ -1,0 +1,230 @@
+{
+  "_etag": "\"5882690a-4d0\"",
+  "_mod": "Fri, 20 Jan 2017 19:46:18 GMT",
+  "_url": "https://repo.continuum.io/pkgs/free/noarch/",
+  "info": {},
+  "packages": {
+    "alpaca_static-1.5.17-3.tar.bz2": {
+      "build": "3",
+      "build_number": 3,
+      "depends": [
+        "bootstrap_static >=3.2.0",
+        "handlebars_static >=3.0.3",
+        "jquery_static"
+      ],
+      "license": "Apache License 2.0",
+      "license_family": "Apache",
+      "md5": "40a3c7469e169fd4d1a56c36ea4c3482",
+      "name": "alpaca_static",
+      "sig": null,
+      "size": 817943,
+      "subdir": "noarch",
+      "version": "1.5.17"
+    },
+    "alpaca_static-1.5.22-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [
+        "bootstrap_static ==3.3.2",
+        "handlebars_static ==4.0.5",
+        "jquery_static >=2.1.0"
+      ],
+      "license": "Apache License 2.0",
+      "license_family": "Apache",
+      "md5": "16e6b6828299b96cd0649d956994be79",
+      "name": "alpaca_static",
+      "noarch": true,
+      "sig": null,
+      "size": 869829,
+      "subdir": "noarch",
+      "version": "1.5.22"
+    },
+    "blz-removed-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "9836aa5165997b410f5e4c87713f2cfc",
+      "name": "blz",
+      "sig": null,
+      "size": 356,
+      "subdir": "noarch",
+      "version": "removed"
+    },
+    "bootstrap_static-3.3.1-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [
+        "jquery_static"
+      ],
+      "license": "MIT license",
+      "license_family": "MIT",
+      "md5": "40950193c64e3c815df75dd07649f4c0",
+      "name": "bootstrap_static",
+      "sig": null,
+      "size": 205920,
+      "subdir": "noarch",
+      "version": "3.3.1"
+    },
+    "continuum-docs-2.0.0-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "a14efef77683c55f6302b9ce9f083135",
+      "name": "continuum-docs",
+      "sig": null,
+      "size": 9221218,
+      "subdir": "osx-64",
+      "version": "2.0.0"
+    },
+    "continuum-docs-2.0.1-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "ac1347f0b5fcafb6b196e3dd8b747295",
+      "name": "continuum-docs",
+      "sig": null,
+      "size": 22417803,
+      "subdir": "osx-64",
+      "version": "2.0.1"
+    },
+    "continuum-docs-2.0.2-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "ab761c9acaa93e418c73e8f1e0ec04c3",
+      "name": "continuum-docs",
+      "sig": null,
+      "size": 25615741,
+      "subdir": "osx-64",
+      "version": "2.0.2"
+    },
+    "continuum-docs-2.0.3-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "06e2c0ec48344ba16a21a0b6d9798f94",
+      "name": "continuum-docs",
+      "sig": null,
+      "size": 27027747,
+      "subdir": "osx-64",
+      "version": "2.0.3"
+    },
+    "continuum-docs-2.0.4-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "e445dd164a2c838a98712c918535489c",
+      "name": "continuum-docs",
+      "sig": null,
+      "size": 27470101,
+      "subdir": "osx-64",
+      "version": "2.0.4"
+    },
+    "dynd-python-removed-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "md5": "00c399950aeb9bbe2c736cec90544cf3",
+      "name": "dynd-python",
+      "sig": null,
+      "size": 297,
+      "subdir": "noarch",
+      "version": "removed"
+    },
+    "futures-compat-1.0-py2_0.tar.bz2": {
+      "build": "py2_0",
+      "build_number": 0,
+      "depends": [
+        "python 2.*",
+        "futures"
+      ],
+      "md5": "0208dcc06a097497dba36c6ba3eb3801",
+      "name": "futures-compat",
+      "sig": null,
+      "size": 317,
+      "subdir": "noarch",
+      "version": "1.0"
+    },
+    "futures-compat-1.0-py3_0.tar.bz2": {
+      "build": "py3_0",
+      "build_number": 0,
+      "depends": [
+        "python 3.*"
+      ],
+      "md5": "e3d52c397a27973bc694e31f41768154",
+      "name": "futures-compat",
+      "sig": null,
+      "size": 313,
+      "subdir": "noarch",
+      "version": "1.0"
+    },
+    "handlebars_static-3.0.3-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "license": "MIT license",
+      "license_family": "MIT",
+      "md5": "6c242565dbf0060a8843b829b97517a1",
+      "name": "handlebars_static",
+      "sig": null,
+      "size": 61984,
+      "subdir": "noarch",
+      "version": "3.0.3"
+    },
+    "handlebars_static-4.0.5-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "license": "MIT license",
+      "license_family": "MIT",
+      "md5": "bdb6a93a437852911bb570ec942a03a3",
+      "name": "handlebars_static",
+      "sig": null,
+      "size": 131818,
+      "subdir": "noarch",
+      "version": "4.0.5"
+    },
+    "jquery_static-1.11.1-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "license": "MIT license",
+      "license_family": "MIT",
+      "md5": "aea910dbf32b03741ee8c77e8062a7f1",
+      "name": "jquery_static",
+      "sig": null,
+      "size": 149066,
+      "subdir": "noarch",
+      "version": "1.11.1"
+    },
+    "jquery_static-3.1.1-0.tar.bz2": {
+      "build": "0",
+      "build_number": 0,
+      "depends": [],
+      "license": "MIT license",
+      "license_family": "MIT",
+      "md5": "1af357652ed951883f55c8c3b82557fe",
+      "name": "jquery_static",
+      "noarch": true,
+      "sig": null,
+      "size": 175014,
+      "subdir": "noarch",
+      "version": "3.1.1"
+    },
+    "matplotlib-tests-1.5.1-py_0.tar.bz2": {
+      "build": "py_0",
+      "build_number": 0,
+      "depends": [
+        "python"
+      ],
+      "license": "PSF-based (http://matplotlib.sourceforge.net/users/license.html)",
+      "license_family": "PSF",
+      "md5": "23256aaa796a208646b9744860421c44",
+      "name": "matplotlib-tests",
+      "sig": null,
+      "size": 35931550,
+      "subdir": "noarch",
+      "version": "1.5.1"
+    }
+  }
+}

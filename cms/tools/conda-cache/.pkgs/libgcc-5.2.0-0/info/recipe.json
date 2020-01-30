@@ -1,0 +1,44 @@
+{
+  "about": {
+    "home": "http://gcc.gnu.org/", 
+    "license": "GPL", 
+    "summary": "Shared libraries for the GNU Compiler Collection"
+  }, 
+  "app": {}, 
+  "build": {
+    "entry_points": [], 
+    "features": [], 
+    "number": "0", 
+    "pin_depends": "", 
+    "script_env": [], 
+    "string": "", 
+    "track_features": []
+  }, 
+  "extra": {
+    "recipe-maintainers": [
+      "msarahan"
+    ]
+  }, 
+  "package": {
+    "name": "libgcc", 
+    "version": "5.2.0"
+  }, 
+  "requirements": {
+    "build": [], 
+    "conflicts": [], 
+    "run": []
+  }, 
+  "source": {
+    "git_rev": "", 
+    "md5": "", 
+    "patches": [], 
+    "path": "", 
+    "svn_rev": ""
+  }, 
+  "test": {
+    "commands": [], 
+    "files": [], 
+    "imports": [], 
+    "requires": []
+  }
+}

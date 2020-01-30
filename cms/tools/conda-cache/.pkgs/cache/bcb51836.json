@@ -1,0 +1,13 @@
+{
+  "_etag": "\"flask-1485559340.73-128-617546958\"",
+  "_mod": "Fri, 27 Jan 2017 23:15:36 GMT",
+  "_url": "https://conda.anaconda.org/r/noarch/",
+  "info": {
+    "arch": null,
+    "default_numpy_version": "1.7",
+    "default_python_version": "2.7",
+    "platform": null,
+    "subdir": "noarch"
+  },
+  "packages": {}
+}

@@ -1,0 +1,3 @@
+--model nulldefault --simpop 1 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score ihs
+--model nulldefault --simpop 1 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score delihh
+--model nulldefault --simpop 1 --writedir /idi/sabeti-scratch/jvitti/clean/scores/ --nrep 1000 --score nsl

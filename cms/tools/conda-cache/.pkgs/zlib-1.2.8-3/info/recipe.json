@@ -1,0 +1,38 @@
+{
+  "about": {
+    "home": "http://zlib.net/",
+    "license": "zlib (http://zlib.net/zlib_license.html)",
+    "license_family": "Other",
+    "license_file": "license.txt",
+    "summary": "Massively spiffy yet delicately unobtrusive compression library"
+  },
+  "build": {
+    "features": "",
+    "number": "3"
+  },
+  "extra": {
+    "recipe-maintainers": [
+      "groutr",
+      "msarahan",
+      "ocefpaf"
+    ]
+  },
+  "package": {
+    "name": "zlib",
+    "version": "1.2.8"
+  },
+  "requirements": {
+    "build": ""
+  },
+  "source": {
+    "fn": "zlib-1.2.8.tar.gz",
+    "sha256": "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d",
+    "url": "http://zlib.net/zlib-1.2.8.tar.gz"
+  },
+  "test": {
+    "commands": [
+      "test -f ${PREFIX}/lib/libz.a",
+      "conda inspect linkages -n _test zlib"
+    ]
+  }
+}

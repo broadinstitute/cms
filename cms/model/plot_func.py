@@ -1,5 +1,6 @@
 ## this file contains functions for cms_modeller
 ## last updated: 09.10.16	vitti@broadinstitute.org
+#### ASW 11.01.2018
 
 from model.bootstrap_func import flattenList
 from model.params_func import get_target_values
@@ -8,7 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib import pylab
 import numpy as np
 
-def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r2', 'dprime'], pops=[1,2,3,4], poplabels=['1', '2', '3', '4'], ):
+#basedir = "/web/personal/vitti/PEL_"
+
+def plot_comparison(statfilename, numReps, basedir, stats =['pi', 'sfs', 'anc', 'fst', 'r2', 'dprime'], pops=[1,2,3,4], poplabels=['1', '2', '3', '4'], ):
 	targetcolor, modelcolor = 'purple', 'orange'
 	if "/" in statfilename:
 		entries = statfilename.split('/')
@@ -16,16 +19,24 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 	else:
 		scenariobase = statfilename
 	scenariobase = scenariobase.replace('.stat', '')
-
+	
 	targetstats = get_target_values()
+#	print('\n\n')
+
+#	print(targetstats.keys())
+#	print('\n\n')
+
 	modelstats = read_custom_statsfile(statfilename, 4)
-
-
+	print('loaded stats from '  + statfilename)
+	#print(modelstats.keys())
 	popPairs = []
 	for i in range(len(pops)):
 		for j in range(i+1, len(pops)):
 			popPair = (pops[i], pops[j])
 			popPairs.append(popPair)
+	#model_popPairs = [(1,4), (2,4), (3,4)]
+	#target_popPairs = [(4,1), (4,2), (4,3)]
+
 
 	for stat in stats:
 
@@ -44,18 +55,25 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 				model_se = np.sqrt(modelstats[varkey])
 				model_ses.append(model_se)
 		elif stat == 'fst':
-			for pair in popPairs:
-				item = (stat, pair)
-				target_val = targetstats[item]
+			for ipair in range(len(popPairs)):#len(model_popPairs)):
+				model_popPair =popPairs[ipair]#model_popPairs[ipair]
+				target_popPair =popPairs[ipair] #target_popPairs[ipair]
+				#print(target_popPair)
+			#pair in popPairs:
+				target_item = (stat, target_popPair)
+				target_val = targetstats[target_item]
 				target_vals.append(target_val)
-				varkey = (item[0] + "_var", item[1])
+				varkey = (target_item[0] + "_var", target_item[1])
 				target_se = np.sqrt(targetstats[varkey]) 
 				target_ses.append(target_se) 
-				model_val = modelstats[item]
+
+				model_item = (stat, model_popPair)
+				model_val = modelstats[model_item]
 				model_vals.append(model_val)
-				varkey = (item[0] + "_var", item[1])
+				varkey = (model_item[0] + "_var", model_item[1])
 				model_se = np.sqrt(modelstats[varkey])
 				model_ses.append(model_se)
+			#print(target_vals)
 
 		if stat == "pi":
 			#variance vs standard err
@@ -64,7 +82,7 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			model_vals = flattenList(model_vals)
 			target_ses = flattenList(target_ses)
 			model_ses = flattenList(model_ses)
-
+			savefilename = basedir + "_pi.png"
 			plt.figure()
 			plt.title("Pi, target vs. model calcs, " + str(numReps) + " reps")
 			ind = [x + .6 for x in np.arange(len(target_vals))]
@@ -75,17 +93,32 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			plt.xticks(ind2, poplabels)
 			plt.xlabel('pop')
 			plt.ylabel('ave. per-site heterozygosity')
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.close()
 
 		elif stat == 'sfs':
 			xlabels = ['sing','<0.1','<0.2','<0.3', '<0.4','<0.5']
 			ind = [x + .6 for x in np.arange(len(xlabels))]
 			ind2 = [x + 1 for x in np.arange(len(xlabels))]
+			savefilename = basedir + "_sfs.png"
+		
 			fig = plt.figure()
 			pylab.subplots_adjust(hspace=0.250)
 			#plt.ylabel('Fraction of SNPs')
 			for i in range(len(target_vals)):
+				#print(i, len(target_vals[i]))
+				#print(target_vals[i])
+				#target_vals = [float(item) for item in target_vals]
+				#print(target_vals[i])
+				#print(len(target_vals[i]))
+				#print(len(target_ses[i]))
+
+				#print(model_vals[i])
+				#print(len(model_vals[i]))
+				#print(len(model_ses[i]))
+
 				ax = fig.add_subplot(len(target_vals), 1, i+1, ylabel = poplabels[i], xticks = ind2, xticklabels = xlabels)
 				ax.bar(ind, target_vals[i],  label="target", width=.4, color=targetcolor, yerr=target_ses[i])
 				ax.bar(ind2, model_vals[i], label="model", width=.4, color=modelcolor, yerr=model_ses[i])
@@ -93,7 +126,9 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			plt.xlabel('Minor allele frequency')
 			plt.legend(loc='best')
 			plt.suptitle("Site frequency spectra, target vs. model calcs, " + str(numReps) + " reps")
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.close()
 
 
@@ -101,6 +136,8 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			xlabels = ['sing','<0.1','<0.2','<0.3', '<0.4','<0.5']
 			ind = [x + .6 for x in np.arange(len(xlabels))]
 			ind2 = [x + 1 for x in np.arange(len(xlabels))]
+			savefilename = basedir + "_panc.png"
+		
 			fig = plt.figure()
 			pylab.subplots_adjust(hspace=0.250)
 			for i in range(len(target_vals)):
@@ -111,10 +148,14 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			plt.legend(loc='best')
 			plt.xlabel('Allele frequency')
 			plt.suptitle("Percentrage ancestral by frequency, target vs. model calcs, " + str(numReps) + " reps")
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.close()
 
 		elif stat == 'r2':
+			savefilename = basedir + "_r2.png"
+		
 			plt.figure()
 			plt.title("LD, r2 vs phys dist, target vs. model calcs, " + str(numReps) + " reps")
 			xlabels = ['<5kb','<10kb','<15kb','<20kb','<25kb','<30kb','<35kb','<40kb','<45kb','<50kb','<55kb','<60kb','<65kb','<70kb']
@@ -128,11 +169,15 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 				ax.set_xticklabels(xlabels, rotation=20, fontsize =6)
 
 			plt.suptitle("r2 vs physical distance, target vs. model calcs, " + str(numReps) + " reps")
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.legend(loc = 'best')
 			plt.close()
 
 		elif stat == 'dprime':
+			savefilename = basedir + "_dprime.png"
+		
 			plt.figure()
 			plt.title("LD, P(D'=1) vs gen dist, target vs. model calcs, " + str(numReps) + " reps")
 			xlabels = ['<.001cM','<.002cM','<.003cM','<.004cM','<.005cM','<.006cM','<.007cM','<.008cM','<.009cM','<.010cM','<.011cM','<.012cM','<.013cM','<.014cM','<.015cM','<.016cM','<.017cM']
@@ -146,15 +191,24 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 				ax.errorbar(ind, model_vals[i],  label="model", color=modelcolor, yerr=model_ses[i])
 			plt.legend(loc='best')
 			plt.suptitle("P(D'=1) vs genetic distance, target vs. model calcs, " + str(numReps) + " reps")
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.close()
 
 		elif stat == 'fst':
+			popPairLabels = ['(YRI CEU)', '(YRI CHB)', '(YRI PEL)', '(CEU CHB)', '(CEU PEL)', '(CHB PEL)']
+			savefilename = basedir + "_fst.png"
+		
+			#popPairLabels = ['(YRI ASW)', '(CEU ASW)', '(CHB ASW)']
+			#print(target_vals)
+
 			target_vals = flattenList(target_vals)
+			#print(target_vals)
 			model_vals = flattenList(model_vals)
 			target_ses = flattenList(target_ses)
 			model_ses = flattenList(model_ses)
-
+			#popPairs = target_popPairs
 			plt.figure()
 			plt.title("Fst, target vs. model calcs, " + str(numReps) + " reps")
 			ind = [x + .6 for x in np.arange(len(popPairs))]
@@ -165,6 +219,9 @@ def plot_comparison(statfilename, numReps, stats =['pi', 'sfs', 'anc', 'fst', 'r
 			plt.xticks(ind2, popPairLabels, fontsize=10)
 			plt.xlabel('pop pair')
 			plt.ylabel('Fst')
-			plt.show()
+			plt.savefig(savefilename)
+			print("saved to " + savefilename)
+			#plt.show()
 			plt.close()
 	return
+

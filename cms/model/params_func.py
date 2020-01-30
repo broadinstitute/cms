@@ -1,25 +1,20 @@
-## !!-----this is where the user specifies the INPUT PARAMETERS for the demographic model to be fit-------!!
-## By way of example, currently configured to fit African populations from 1000 Genomes. (YRI, LWK, MSL, ESN)
-## User should duplicate/adapt this file to reflect the populations being modeled. 
-## See http://broad-cms.readthedocs.io/en/latest/workflow.html 		last updated: 07.05.16		vitti@broadinstitute.org
+##	12.17.2018
+bootstrap_targetval_filename = "/idi/sabeti-scratch/jvitti/remodel/fit/targetstats.txt"
+#"/idi/sabeti-scratch/jvitti/PEL_model/target_test_ldfixed2.txt"
+#"/idi/sabeti-scratch/jvitti/PEL_model/target_test.txt"
 
-#generated for dataset using cms_modeller.py, e.g.
-bootstrap_targetval_filename = "/Users/vitti/n2stats.txt"
-#"results_inclusive_targetstats_thinned_bootstrap_bysnp_2reps_120915_3pm_chr21-22.txt"
-
-
+##########################
+## DEFINE TARGET VALUES ##
+##########################
 
 def read_lines(openfile, numlines):
 	for i in range(numlines):
 		line = openfile.readline()
 	return line
 
-##########################
-## DEFINE TARGET VALUES ##
-##########################
 def get_target_values():
-	popDict = {'1': 1, '2': 2, '3': 3, '4':4, 'ESN':5}
-	#popDict = {'LWK': 1, 'GWD': 2, 'MSL': 3, 'YRI':4, 'ESN':5}
+	#print('getting TARGET VALS from ' + bootstrap_targetval_filename) #load VARIANCE as it says!
+	popDict = {'YRI': 1, 'CEU': 2, 'CHB': 3, 'BEB':4}
 	stats = {}
 	openfile = open(bootstrap_targetval_filename, 'r')
 	for ipop in range(1,5):
@@ -30,44 +25,72 @@ def get_target_values():
 		
 		piline = read_lines(openfile, 1)
 		entries = piline.split()
-		pi_mean, pi_se = float(entries[0]), float(entries[1])
+		#pi_mean, pi_se = float(entries[0]), float(entries[1])
+		pi_mean = float(entries[0])
 		stats[('pi', ipop)] = [pi_mean]
-		stats[('pi_var', ipop)] = [pi_se ** 2]
+		#stats[('pi_var', ipop)] = [pi_se ** 2]
 
 		sfs_mean_line = read_lines(openfile, 1)
 		entries = sfs_mean_line.split()
 		sfs_mean = eval(sfs_mean_line)
 		stats[('sfs', ipop)] = sfs_mean
-		sfs_se_line = read_lines(openfile, 1)
-		sfs_se = eval(sfs_se_line)
-		sfs_var = [float(x)**2 for x in sfs_se]
-		stats[('sfs_var', ipop)] = sfs_var
+		#sfs_se_line = read_lines(openfile, 1)
+		#sfs_se = eval(sfs_se_line)
+		#sfs_var = [float(x)**2 for x in sfs_se]
+		#stats[('sfs_var', ipop)] = sfs_var
 
 		anc_mean_line = read_lines(openfile, 1)
 		anc_mean = eval(anc_mean_line)
 		stats[('anc', ipop)] = anc_mean
+		#anc_se_line = read_lines(openfile, 1)
+		#anc_se = eval(anc_se_line)
+		#anc_var = [float(x)**2 for x in anc_se]
+		#stats[('anc_var', ipop)] = anc_var
+
+
+	#for ipop in range(1, 5):
+		r2_mean_line = read_lines(openfile, 1)
+		r2_mean = eval(r2_mean_line)
+		stats[('r2', ipop)] = r2_mean
+		#r2_se_line = read_lines(openfile, 1)
+		#r2_se = eval(r2_se_line)
+		#r2_var = [float(x)**2 for x in r2_se]
+		#stats[('r2_var', ipop)] = r2_var
+
+		dprime_mean_line = read_lines(openfile, 1)
+		dprime_mean = eval(dprime_mean_line)
+		stats[('dprime', ipop)] = dprime_mean
+		#dprime_se_line = read_lines(openfile, 1)
+		#dprime_se = eval(dprime_se_line)
+		#dprime_var = [float(x)**2 for x in dprime_se]
+		#stats[('dprime_var', ipop)] = dprime_var
+
+
+		pi_se_line = read_lines(openfile, 1)
+		entries = pi_se_line.split()
+		pi_se = float(entries[0])
+		stats[('pi_var', ipop)] = [pi_se ** 2]
+
+		sfs_se_line = read_lines(openfile, 1)
+		sfs_se = eval(sfs_se_line) #WAIT RIGHT? IS THIS HOW I RECORDED IT?
+		sfs_var = [float(x)**2 for x in sfs_se]
+		stats[('sfs_var', ipop)] = sfs_var
+
 		anc_se_line = read_lines(openfile, 1)
 		anc_se = eval(anc_se_line)
 		anc_var = [float(x)**2 for x in anc_se]
 		stats[('anc_var', ipop)] = anc_var
-
-
-	for ipop in range(1, 5):
-		r2_mean_line = read_lines(openfile, 1)
-		r2_mean = eval(r2_mean_line)
-		stats[('r2', ipop)] = r2_mean
+		
 		r2_se_line = read_lines(openfile, 1)
 		r2_se = eval(r2_se_line)
 		r2_var = [float(x)**2 for x in r2_se]
 		stats[('r2_var', ipop)] = r2_var
 
-		dprime_mean_line = read_lines(openfile, 1)
-		dprime_mean = eval(dprime_mean_line)
-		stats[('dprime', ipop)] = dprime_mean
 		dprime_se_line = read_lines(openfile, 1)
 		dprime_se = eval(dprime_se_line)
 		dprime_var = [float(x)**2 for x in dprime_se]
 		stats[('dprime_var', ipop)] = dprime_var
+
 
 	popPairs = []
 	for ipop in range(1, 5):
@@ -81,7 +104,6 @@ def get_target_values():
 		fst, fst_se = float(entries[2]), float(entries[3])
 		stats[("fst", popPair)] = [fst]
 		stats[("fst_var", popPair)] =[fst_se ** 2]
-	
 	return stats
 
 ##########################
@@ -90,87 +112,99 @@ def get_target_values():
 def generate_params():
 	############################
 	##DEFINE GLOBAL PARAMETERS##
-	############################
-
+	############################ #FAST FOR FITTING
 	paramDict = {'chromlength':100000, 'mutation_rate':1.25e-08, 'num_indivs_per_sample':170, 'gene_conv_rel_rate':2.3, 'singrate':.25,
+	#paramDict = {'chromlength':1000000, 'mutation_rate':1.25e-08, 'num_indivs_per_sample':170, 'gene_conv_rel_rate':2.3, 'singrate':.25,
 	'recomfilename':'results_inclusive_test_filter.recom'}
 
 	paramDict['numPops'] = 4
-	paramDict['labels'] = {1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}	
+	paramDict['labels'] = {1:'YRI', 2:'CEU', 3:'CHB', 4:'PEL'}	
 
 	###################
 	##DEFINE BRANCHES##
 	###################
 
-	paramDict[('split', 2)] = [175]
-	paramDict[('split', 3)] = [105]
-	paramDict[('split', 4)] = [75]
+	paramDict[('split', 2)] = [2250]#[2025]
+	paramDict[('split', 3)] = [1400]#[1800]
+	paramDict[('split', 4)] = [400]#500]#[700]#[1600]#[1200]  #this wants to be more like 400
 									
 									#Indexing: At THIS TIME, arrive at THIS SIZE via THIS KIND of change (forward not coalescent perspective)
-									#0			#1			#2			#3					#4					#5				#6
-									#present 	#midexp		#pre exp 	minimum				#transitional		#anc			#base
-	paramDict[('Ne', 1)] = 			[75000000,	40000,		8000,		18400,				15666,				30700,			15000]
-	paramDict[('Ne_times', 1)] = 	[1,			60,			390,		400,				2200,				3300,			15000]
-	paramDict[('Ne_change', 1)] = 	[1,			1,			1,			1,					0,					0,					1] #code = {1: 'exp', 0:'normal'}
+									#0			#1			#2			#3							#5				#6
+									#present 	#midexp		#pre exp 	minimum						#anc			#base
+	paramDict[('Ne', 1)] = 			[500000,	10000,		6000,		25000,				25000,			17500]
+	paramDict[('Ne_times', 1)] = 	[1,			80,			85,			600,				4000,			10000]
+	paramDict[('Ne_change', 1)] = 	[1,			1,			1,			1,					0,					0] #code = {1: 'exp', 0:'normal'}
 
-	paramDict[('Ne', 2)] = 			[300000,	40000,		8000]
-	paramDict[('Ne_times', 2)] =	[1, 		50,			paramDict[('split', 2)][0]-1]
-	paramDict[('Ne_change', 2)] = 	[1, 		1,			1]
+	paramDict[('Ne', 2)] = 			[500000,	2500,		4000,	 1250]
+	paramDict[('Ne_times', 2)] =	[1, 		50,			300,	2000]
+	paramDict[('Ne_change', 2)] = 	[1, 		1,			1,		1]
 
-	paramDict[('Ne', 3)] = 			[300000,	40000,		8000]
-	paramDict[('Ne_times', 3)] = 	[1, 		75, 		paramDict[('split', 3)][0]-1]
-	paramDict[('Ne_change', 3)] = 	[1, 		1,			1]
+	paramDict[('Ne', 3)] = 			[750000,	15000,		2000, 	1000]
+	paramDict[('Ne_times', 3)] = 	[1, 		75, 		300, 	900]
+	paramDict[('Ne_change', 3)] = 	[1, 		1,			0, 		1]
 
-	paramDict[('Ne', 4)] = 			[300000,	40000,		8000]
-	paramDict[('Ne_times', 4)] = 	[1,			50, 		paramDict[('split', 4)][0]-1]
+	paramDict[('Ne', 4)] = 			[100000,		5000,		1000]
+	paramDict[('Ne_times', 4)] = 	[1,			25, 		100]#paramDict[('split', 4)][0]-1]
 	paramDict[('Ne_change', 4)] = 	[1, 		1, 			1]
 
 	##############
 	##POP EVENTS##
 	##############
  
-	paramDict[('bn', 1)] = [1e-10, 1e-10, 0.001]
-	paramDict[('bn_times', 1)] = [50, 3000, 5000]
-	paramDict[('bn', 2)] = [1e-10, 1e-10,]
-	paramDict[('bn_times', 2)] = [paramDict[('split', 2)][0] - 1, 50]
-	paramDict[('bn', 3)] = [1e-10, 1e-10,]
-	paramDict[('bn_times', 3)] = [paramDict[('split', 3)][0] - 1, 50]
-	paramDict[('bn', 4)] = [1e-10, 1e-10,]
-	paramDict[('bn_times', 4)] = [paramDict[('split', 4)][0] - 1, 50] 
+	paramDict[('bn', 1)] = [.005, .001, 1e-10]
+	paramDict[('bn_times', 1)] = [100, 500, 5000]
+
+	paramDict[('bn', 2)] = [0.01, 0.0005]
+	paramDict[('bn_times', 2)] = [100, 2000]
+
+	paramDict[('bn', 3)] = [0.035, 0.1]
+	paramDict[('bn_times', 3)] = [100, 1500]
+
+	paramDict[('bn', 4)] = [.05, .05]#[1.00000052029e-06, 1.00000031898e-06]
+	paramDict[('bn_times', 4)] = [10, 100]#[paramDict[('split', 4)][0] - 1, 25] 
 
 	#############
 	##GENE FLOW##
 	#############
 
-	paramDict[('mig', '1->2')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '1->2')] = [0, 10, 100]
-	paramDict[('mig', '2->1')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '2->1')] = [0, 10, 100]
+	#YRI,CEU
+	paramDict[('mig', '1->2')] = [.005, .0001, .1e-10]
+	paramDict[('mig_time', '1->2')] = [0, 10, 149]
+	paramDict[('mig', '2->1')] = [.01, .0001, 1e-10]
+	paramDict[('mig_time', '2->1')] = [0, 10, 149]
 
-	paramDict[('mig', '1->3')] =  [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '1->3')] = [0, 10, 100]
-	paramDict[('mig', '3->1')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '3->1')] = [0, 10, 100]
+	#YRI,CHB
+	paramDict[('mig', '1->3')] =  [.005, .0001, 1e-10]
+	paramDict[('mig_time', '1->3')] = [0, 10, 149]
+	paramDict[('mig', '3->1')] = [.00975, .0001, 1e-10]
+	paramDict[('mig_time', '3->1')] = [0, 10, 149]
 
-	paramDict[('mig', '1->4')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '1->4')] = [0, 10, 100]
-	paramDict[('mig', '4->1')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '4->1')] = [0, 10, 100]
+	#YRI,PEL
+	paramDict[('mig', '1->4')] = [.005, .0001, 0]
+	paramDict[('mig_time', '1->4')] = [0, 10, 149]
+	paramDict[('mig', '4->1')] = [.016, .0001, 0]
+	paramDict[('mig_time', '4->1')] = [0, 10, 149]
 
-	paramDict[('mig', '2->3')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '2->3')] = [0, 10, 100]
-	paramDict[('mig', '3->2')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '3->2')] = [0, 10, 100]
+	#CEU,CHB
+	paramDict[('mig', '2->3')] = [.001, .0001, 0]
+	paramDict[('mig_time', '2->3')] = [0, 10, 149]
+	paramDict[('mig', '3->2')] = [.001, .0001, .00025]
+	paramDict[('mig_time', '3->2')] = [0, 10, 149]
 
-	paramDict[('mig', '2->4')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '2->4')] = [0, 10, 100]
-	paramDict[('mig', '4->2')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '4->2')] = [0, 10, 100]
+	#CEU,PEL (ALSO: admix)
+	paramDict[('mig', '2->4')] = [.001, 1e-09, 0] #LESS?
+	paramDict[('mig_time', '2->4')] = [0, 10, 149]
+	paramDict[('mig', '4->2')] = [.00005, 1e-09, .0005]
+	paramDict[('mig_time', '4->2')] = [0, 10, 149]
 
-	paramDict[('mig', '3->4')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '3->4')] = [0, 10, 100]
-	paramDict[('mig', '4->3')] = [0, 0, 0]#[1e-10, 1e-10, 1e-10]
-	paramDict[('mig_time', '4->3')] = [0, 10, 100]
+	#CHB,PEL
+	paramDict[('mig', '3->4')] = [.001, 0, 0] #LESS?
+	paramDict[('mig_time', '3->4')] = [0, 10, 149]
+	paramDict[('mig', '4->3')] = [.001, 0, 0]
+	paramDict[('mig_time', '4->3')] = [0, 10, 149]
+
+	paramDict['admix_rate'] = [.3]#[1e-10]#[.267]
+	paramDict['admix_time'] = [10]
 
 	return paramDict
 def get_ranges():
@@ -180,17 +214,17 @@ def get_ranges():
 	split4time = paramDict[('split', 4)][0]
 
 	rangeDict = {}
-	rangeDict[('split', 2)] = [[175, 500]]
-	rangeDict[('split', 3)] = [[100, 174]]
-	rangeDict[('split', 4)] = [[10, 99]]
-	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000], [100, 100000]]
-	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 199], [200, 1000], [500, 8000], [2000, 12000], [2500, 25000], [12000, 50000]]
-	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 200], [200, split2time]]
-	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 3)] = [[1, 5], [6, split3time], [10, split3time]]
+	rangeDict[('split', 2)] = [[2000, 5000]]
+	rangeDict[('split', 3)] = [[1400, 2000]]
+	rangeDict[('split', 4)] = [[400, 1400]]
+	rangeDict[('Ne', 1)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 100000], [1000, 1000000], [1000, 1000000]]#, [100, 100000]]
+	rangeDict[('Ne_times', 1)] = [[1, 5], [6, 84], [85, 399], [400, 1999], [2000, 11999], [12000, 25000]]#, [25000, 50000]]
+	rangeDict[('Ne', 2)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 1000000]]
+	rangeDict[('Ne_times', 2)] = [[1, 5], [6, 199], [200, 499], [500, split2time]]
+	rangeDict[('Ne', 3)] = [[50000, 10000000], [5000, 500000],  [1000, 100000], [1000, 1000000],]
+	rangeDict[('Ne_times', 3)] = [[1, 5], [6, 249], [250, 749], [750, split3time]] 
 	rangeDict[('Ne', 4)] = [[50000, 10000000], [5000, 500000],  [1000, 100000]]
-	rangeDict[('Ne_times', 4)] = [[1, 5], [6, split4time], [10, split4time]]
+	rangeDict[('Ne_times', 4)] = [[1, 5], [6, 25], [25, split4time]]
 	rangeDict[('bn', 1)] = [[1e-6, .5], [1e-6, .5],  [1e-6, .5], [1e-6, .5]]
 	rangeDict[('bn_times', 1)] = [[0,50000],[0,50000],[0,50000],[0,50000]]
 	rangeDict[('bn', 2)] = [[1e-6, .5], [1e-6, .5], [1e-6, .5], [1e-6, .5]]
@@ -227,12 +261,19 @@ def get_ranges():
 	rangeDict[('Ne_change', 2)] = [[0,1] for i in rangeDict[('Ne', 2)]]
 	rangeDict[('Ne_change', 3)] = [[0,1] for i in rangeDict[('Ne', 3)]]
 	rangeDict[('Ne_change', 4)] = [[0,1] for i in rangeDict[('Ne', 4)]]
+
+	rangeDict['admix_rate'] = [[0,1]]
+	rangeDict['admix_time'] = [[0, split4time]]
+
 	return rangeDict
 
 ############################################
 ## INPUTFILE <-model params-> PYTHON DICT ##
 ############################################
 def write_paramfile(paramfilename, paramDict):
+	#print(paramDict[('Ne_times', 3)])
+	#print(paramDict[('Ne', 3)])
+
 	#####################
 	### Global params ###
 	#####################
@@ -371,6 +412,19 @@ def write_paramfile(paramfilename, paramDict):
 				towriteLines.append(migline)
 				towriteAges.append(mig_time[i])
 
+	## ADMIX???
+	admixTime = paramDict['admix_time'][0]
+	#print(paramDict['admix_rate'])
+	admixRate = paramDict['admix_rate'][0]
+	#print(admixTime, admixRate)
+	#if type(admixRate) == list:
+	#	admixRate = float(admixRate[0])
+	admix_line = "pop_event admix \"PEL admix\" 4 2 " + str(admixTime) + " " + str(admixRate)  + "\n"
+	towriteLines.append(admix_line)
+	towriteAges.append(admixTime)
+
+	#print("PARAMLINESN=",str(len(towriteLines)))
+
 	###################################
 	### Sort and record demography ####
 	###################################
@@ -381,25 +435,34 @@ def write_paramfile(paramfilename, paramDict):
 
 	#migration automatically is set to zero when populations coalesce
 	nomiglines = ["pop_event migration_rate \"no mig YRI->GWD\" 1 2 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig GWD->YRI\" 2 1 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig YRI->MSL\" 1 3 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig MSL->YRI\" 3 1 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig GWD->MSL\" 2 3 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig MSL->GWD\" 3 2 " + str(split2time -1) + " 0\n",
-	"pop_event migration_rate \"no mig YRI->YRI\" 1 4 " + str(split4time -1) + " 0\n",
-	"pop_event migration_rate \"no mig YRI->YRI\" 4 1 " + str(split4time -1) + " 0\n",
-	"pop_event migration_rate \"no mig GWD->YRI\" 2 4 " + str(split4time -1) + " 0\n",
-	"pop_event migration_rate \"no mig YRI->GWD\" 4 2 " + str(split4time -1) + " 0\n",
-	"pop_event migration_rate \"no mig MSL->YRI\" 3 4 " + str(split4time -1) + " 0\n",
-	"pop_event migration_rate \"no mig YRI->MSL\" 4 3 " + str(split4time -1) + " 0\n"]
+	"pop_event migration_rate \"no mig CEU->YRI\" 2 1 " + str(split2time -1) + " 0\n",
+	"pop_event migration_rate \"no mig YRI->CHB\" 1 3 " + str(split3time -1) + " 0\n",
+	"pop_event migration_rate \"no mig CHB->YRI\" 3 1 " + str(split3time -1) + " 0\n",
+	"pop_event migration_rate \"no mig CEU->CHB\" 2 3 " + str(split3time -1) + " 0\n",
+	"pop_event migration_rate \"no mig CHB->CEU\" 3 2 " + str(split3time -1) + " 0\n",
+	"pop_event migration_rate \"no mig YRI->PEL\" 1 4 " + str(split4time -1) + " 0\n",
+	"pop_event migration_rate \"no mig PEL->YRI\" 4 1 " + str(split4time -1) + " 0\n",
+	"pop_event migration_rate \"no mig CEU->PEL\" 2 4 " + str(split4time -1) + " 0\n",
+	"pop_event migration_rate \"no mig PEL->CEU\" 4 2 " + str(split4time -1) + " 0\n",
+	"pop_event migration_rate \"no mig CHB->PEL\" 3 4 " + str(split4time -1) + " 0\n",
+	"pop_event migration_rate \"no mig PEL->CHB\" 4 3 " + str(split4time -1) + " 0\n"]
 	for line in nomiglines:
 		openfile.write(line)
 	openfile.write('\n')
 	openfile.close()
+
+	#nLines = 0
+	#openfile = open(paramfilename, 'r')
+	#for line in openfile:
+	#	nLines +=1
+	#	if "exp_change_size2" in line and "CHB" in line:
+	#		print(line)
+	#openfile.close()
+	#print('param file has ' + str(nLines) + " lines in it")
 	return
 def get_dict_from_paramfile(paramfilename):
 	#initialize empty lists so we can append from paramfile as we parse
-	paramDict = {'numPops':4,'labels':{1:'LWK', 2:'GWD', 3:'MSL', 4:'YRI'}, 'singrate':.25, 'presentSizes':[], 'num_indivs_per_sample':200}
+	paramDict = {'numPops':4,'labels':{1:'YRI', 2:'CEU', 3:'CHB', 4:'PEL'}, 'singrate':.25, 'presentSizes':[], 'num_indivs_per_sample':200}
 	for pop in range(1,5):
 		for parameter in ['Ne', 'Ne_times', 'Ne_change', 'bn', 'bn_times']:
 			key = (parameter, pop)
@@ -466,8 +529,8 @@ def get_dict_from_paramfile(paramfilename):
 			paramDict[key] = [time]
 		elif "admix" in entries:
 			targetpop, sourcepop, time, rate = int(entries[-4]), int(entries[-3]), float(entries[-2]), float(entries[-1])
-			paramDict['admix_rate'] = [rate]
-			paramDict['admix_time'] = [time]
+			paramDict['admix_rate'] = rate#[rate]
+			paramDict['admix_time'] = time#[time]
 	openfile.close()
 	return paramDict
 def update_params(paramDict, keys, indices, values):
@@ -475,13 +538,19 @@ def update_params(paramDict, keys, indices, values):
 	keys: indicate which items in paramDict to be modified.
 	indices: parallel to keys; indicate which element in paramDict[key] to be modified.
 	values: parallel to above; indicate new value to substitute."""
+
+	# COULD ADD A CHECK HERE TO ENFORCE BOUNDS by first calling (or passing) (get_)rangeDict
+
 	assert len(keys) == len(indices) and len(keys) == len(values)
 	for i in range(len(keys)):
 		thisKey, thisIndex, thisValue = keys[i], indices[i], values[i]
 		paramDict[thisKey][thisIndex] = thisValue
+		print("\tupdateParams:\t", thisKey, thisIndex,thisValue)
 		if 'split' in thisKey:
 			bnkey = ('bn_times', thisKey[1])
 			nekey = ('Ne_times', thisKey[1])
 			paramDict[bnkey][0] = thisValue-1
 			paramDict[nekey][-1] = thisValue - 1
 	return paramDict
+
+

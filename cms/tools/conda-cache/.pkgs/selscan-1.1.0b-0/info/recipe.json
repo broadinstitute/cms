@@ -1,0 +1,38 @@
+{
+  "about": {
+    "home": "https://github.com/szpiech/selscan",
+    "license": "GPLv3",
+    "summary": "a program to calculate EHH-based scans for positive selection in genomes"
+  },
+  "build": {
+    "number": "0",
+    "skip": "False"
+  },
+  "package": {
+    "name": "selscan",
+    "version": "1.1.0b"
+  },
+  "requirements": {
+    "build": [
+      "gcc",
+      "zlib"
+    ],
+    "run": [
+      "libgcc",
+      "zlib"
+    ]
+  },
+  "source": {
+    "fn": "1.1.0b.zip",
+    "md5": "02a39fff61fadcfb5df248d37111141f",
+    "patches": [
+      "Makefile.linux.patch"
+    ],
+    "url": "https://github.com/szpiech/selscan/archive/1.1.0b.zip"
+  },
+  "test": {
+    "commands": [
+      "selscan 2>&1 | grep 'selscan' &> /dev/null"
+    ]
+  }
+}
