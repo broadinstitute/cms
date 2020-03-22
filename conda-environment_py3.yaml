@@ -1,15 +1,17 @@
 name: cms-env3
 channels:
+- conda-forge
 - bioconda
 - defaults
+- notestaff
 dependencies:
 - python
-- alabaster=0.7.8
-- babel=2.3.3
+- alabaster=0.7.12
+- babel=2.8.0
 - bcftools=1.3.1
 - boltons=16.4.1
 - cosi2=2.3.0rc4
-- curl
+- curl=7.68.0
 - htslib=1.3.1=0
 - peewee=2.8.0
 - pysam=0.9.1
@@ -20,17 +22,15 @@ dependencies:
 - cloog=0.18.0
 - docutils=0.12
 - ecdsa=0.13
-- gcc=4.8.5=3
-- gmp=5.1.2
+- gmp=6.2.0
 - imagesize=0.7.1
 - isl=0.12.2
 - jinja2=2.8
-- libgcc=4.8.5
-- matplotlib=1.5.1
+- libgcc
+- matplotlib
 - markupsafe=0.23
-- mkl=11.3.3
-- mpc=1.0.1
-- mpfr=3.1.2
+- mpc=1.1.0
+- mpfr=4.0.2
 - ncurses=5.9
 - openssl=1.0.2h
 - pandas=0.18.1
@@ -48,7 +48,7 @@ dependencies:
 - snowballstemmer=1.2.1
 - sphinx_rtd_theme=0.1.9
 - sqlite=3.13.0
-- tk=8.5.18
+- tk=8.6.10
 - wheel=0.29.0
 - xz=5.0.5
 - zlib=1.2.8

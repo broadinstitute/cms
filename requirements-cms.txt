@@ -1,4 +1,4 @@
-python
+python=3.6
 alabaster
 babel
 bcftools
@@ -6,11 +6,11 @@ boltons
 cosi2=2.3.0rc4
 curl
 htslib
-peewee
+peewee=2.8.0
 pysam
 python-dateutil
 samtools
-selscan
+selscan=1.1.0b
 biopython
 cloog
 docutils
