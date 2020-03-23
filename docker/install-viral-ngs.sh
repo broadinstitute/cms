@@ -30,16 +30,16 @@ sync
 # manually install it ourselves instead of using easy-deploy
 if [[ "$1" == "minimal" ]]; then
 	# a more minimal set of tools (smaller docker image?)
-	conda install -y \
+	conda install -y -v -v \
 		-q $CONDA_CHANNEL_STRING \
 		--file "$VIRAL_NGS_PATH/requirements-minimal.txt" \
 		-p "${CONDA_PREFIX}"
 else
-	conda install -y \
+	conda install -y -v -v \
 		-q $CONDA_CHANNEL_STRING \
 		--file "$VIRAL_NGS_PATH/requirements-py3.txt" \
 		--file "$VIRAL_NGS_PATH/requirements-conda.txt" \
-		--file "$VIRAL_NGS_PATH/requirements-conda-tests.txt" \
+#		--file "$VIRAL_NGS_PATH/requirements-conda-tests.txt" \
 		-p "${CONDA_PREFIX}"
 fi
 
