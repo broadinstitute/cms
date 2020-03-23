@@ -17,8 +17,8 @@ env:
   - DOCKER_REPO_PROD="quay.io/repository/ilya_broad/cms"
   - DOCKER_REPO_DEV="quay.io/repository/ilya_broad/cms-dev"
   
-  - DOCKER_REGISTRY_MIRROR="docker.io"
-  - DOCKER_REPO_PROD_MIRROR="notestaff/cms"
+#  - DOCKER_REGISTRY_MIRROR="docker.io"
+#  - DOCKER_REPO_PROD_MIRROR="notestaff/cms"
   
   - BOTO_CONFIG=/dev/null # bogus value to override config on travis
   - _JAVA_OPTIONS="-Xmx3g" # overrides jvm opts set elsewhere; see: https://stackoverflow.com/questions/28327620/difference-between-java-options-java-tool-options-and-java-opts
@@ -67,7 +67,7 @@ jobs:
         - if [ -f "$CACHE_DIR/old-docker-tag.txt" ]; then OLD_DOCKER_TAG=$(cat $CACHE_DIR/old-docker-tag.txt); else OLD_DOCKER_TAG=$DOCKER_REPO_PROD; fi; echo "old docker tag = $OLD_DOCKER_TAG"
         - if docker pull $OLD_DOCKER_TAG; then _CACHE_FROM="--cache-from $OLD_DOCKER_TAG"; else _CACHE_FROM=""; fi
         # build new docker image
-        - docker build -t local/viral-ngs:build $_CACHE_FROM .;
+        - travis_wait 30 docker build -t local/viral-ngs:build $_CACHE_FROM .;
         # run tests using the docker image
         - travis/tests-docker.sh
         # deploy docker image
