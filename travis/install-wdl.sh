@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e -o pipefail
+set -e -o pipefail -x
 
 cached_fetch_jar_from_github () {
 	_github_org=$1
