@@ -131,68 +131,68 @@ jobs:
     #    - travis/validate-wdl.sh
     #    - travis/tests-cromwell.sh
 
-    - language: python
-      sudo: false
-      #stage: build
-      env: TRAVIS_JOB=build_docs
-      install: travis/install-pip-docs.sh
-      script: travis/build-docs.sh
+    # - language: python
+    #   sudo: false
+    #   #stage: build
+    #   env: TRAVIS_JOB=build_docs
+    #   install: travis/install-pip-docs.sh
+    #   script: travis/build-docs.sh
 
-    - language: python
-      python: 3.6
-      sudo: required
-      #stage: test
-      env:
-        - TRAVIS_JOB=build_conda
-        # $ANACONDA_TOKEN for uploading builds to anaconda.org ("notestaff" channel)
-        - secure: "XwMC+g2gUeLmNPS+hB1n137Te8gV3RaGIEBX6GZrGdMkeISY7pKrF8U5Opl1C1C+hV4SoQjLcvpHMbE14J0rXnqvwnkRcdPo+EiLxOVjZozZaffeTI/2xQt49EXJrACtmzT4klbfIsP6W8L2zd3CgLij02Pkw36WjfPxbNkbqu8="
+    # - language: python
+    #   python: 3.6
+    #   sudo: required
+    #   #stage: test
+    #   env:
+    #     - TRAVIS_JOB=build_conda
+    #     # $ANACONDA_TOKEN for uploading builds to anaconda.org ("notestaff" channel)
+    #     - secure: "XwMC+g2gUeLmNPS+hB1n137Te8gV3RaGIEBX6GZrGdMkeISY7pKrF8U5Opl1C1C+hV4SoQjLcvpHMbE14J0rXnqvwnkRcdPo+EiLxOVjZozZaffeTI/2xQt49EXJrACtmzT4klbfIsP6W8L2zd3CgLij02Pkw36WjfPxbNkbqu8="
 
-      install:
-        - source travis/install-conda.sh
-        - travis/install-conda-build.sh
-      script:
-        - travis/build-conda.sh
-      before_cache:
-        - conda clean --all --yes
+    #   install:
+    #     - source travis/install-conda.sh
+    #     - travis/install-conda-build.sh
+    #   script:
+    #     - travis/build-conda.sh
+    #   before_cache:
+    #     - conda clean --all --yes
 
-    - language: python
-      python: 3.6
-      #stage: test
-      sudo: required
-      env:
-        - TRAVIS_JOB=test_py36
-      before_install: travis/before_install.sh
-      install:
-        - source travis/install-conda.sh
-        - travis/install-gatk.sh
-        - travis/install-tools.sh
-        - source travis/activate-conda.sh
-      script:
-        - travis/tests-long.sh
-        - travis/tests-unit.sh
-      after_success:
-        - coveralls
-      before_cache:
-        - conda clean --all --yes
+    # - language: python
+    #   python: 3.6
+    #   #stage: test
+    #   sudo: required
+    #   env:
+    #     - TRAVIS_JOB=test_py36
+    #   before_install: travis/before_install.sh
+    #   install:
+    #     - source travis/install-conda.sh
+    #     - travis/install-gatk.sh
+    #     - travis/install-tools.sh
+    #     - source travis/activate-conda.sh
+    #   script:
+    #     - travis/tests-long.sh
+    #     - travis/tests-unit.sh
+    #   after_success:
+    #     - coveralls
+    #   before_cache:
+    #     - conda clean --all --yes
 
-    - language: python
-      python: 3.6
-      #stage: test
-      sudo: required
-      env:
-        - TRAVIS_JOB=test_snakemake
-      before_install: travis/before_install.sh
-      install:
-        - source travis/install-conda.sh
-        - travis/install-gatk.sh
-        - travis/install-tools.sh
-        - source travis/activate-conda.sh
-      script:
-        - travis/tests-snakemake.sh
-      after_success:
-        - coveralls
-      before_cache:
-        - conda clean --all --yes
+    # - language: python
+    #   python: 3.6
+    #   #stage: test
+    #   sudo: required
+    #   env:
+    #     - TRAVIS_JOB=test_snakemake
+    #   before_install: travis/before_install.sh
+    #   install:
+    #     - source travis/install-conda.sh
+    #     - travis/install-gatk.sh
+    #     - travis/install-tools.sh
+    #     - source travis/activate-conda.sh
+    #   script:
+    #     - travis/tests-snakemake.sh
+    #   after_success:
+    #     - coveralls
+    #   before_cache:
+    #     - conda clean --all --yes
 
     #- language: python
     #  stage: test
