@@ -14,8 +14,8 @@ env:
   - PYTEST_ADDOPTS="-rsxX -n 2 --durations=25 --fixture-durations=10 --junit-xml=pytest.xml --cov-report= --cov broad_utils --cov illumina --cov assembly --cov interhost --cov intrahost --cov metagenomics --cov ncbi --cov read_utils --cov kmer_utils --cov reports --cov taxon_filter --cov tools --cov util --cov file_utils"
   
   - DOCKER_REGISTRY="quay.io"
-  - DOCKER_REPO_PROD="quay.io/repository/ilya_broad/cms"
-  - DOCKER_REPO_DEV="quay.io/repository/ilya_broad/cms-dev"
+  - DOCKER_REPO_PROD="quay.io/ilya_broad/cms"
+  - DOCKER_REPO_DEV="quay.io/ilya_broad/cms-dev"
   
 #  - DOCKER_REGISTRY_MIRROR="docker.io"
 #  - DOCKER_REPO_PROD_MIRROR="notestaff/cms"
@@ -67,7 +67,7 @@ jobs:
         - if [ -f "$CACHE_DIR/old-docker-tag.txt" ]; then OLD_DOCKER_TAG=$(cat $CACHE_DIR/old-docker-tag.txt); else OLD_DOCKER_TAG=$DOCKER_REPO_PROD; fi; echo "old docker tag = $OLD_DOCKER_TAG"
         - if docker pull $OLD_DOCKER_TAG; then _CACHE_FROM="--cache-from $OLD_DOCKER_TAG"; else _CACHE_FROM=""; fi
         # build new docker image
-        - travis_wait 30 docker build -t local/viral-ngs:build $_CACHE_FROM .;
+        - docker build -t local/viral-ngs:build $_CACHE_FROM .;
         # run tests using the docker image
         - travis/tests-docker.sh
         # deploy docker image
