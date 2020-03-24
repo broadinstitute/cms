@@ -39,7 +39,6 @@ else
 		-q $CONDA_CHANNEL_STRING \
 		--file "$VIRAL_NGS_PATH/requirements-py3.txt" \
 		--file "$VIRAL_NGS_PATH/requirements-conda.txt" \
-#		--file "$VIRAL_NGS_PATH/requirements-conda-tests.txt" \
 		-p "${CONDA_PREFIX}"
 fi
 
