@@ -1,0 +1,80 @@
+python=3.6
+alabaster
+babel
+bcftools
+boltons
+cosi2=2.3.0rc4
+curl
+htslib
+peewee=2.8.0
+pysam
+python-dateutil
+samtools
+selscan=1.1.0b
+biopython
+cloog
+docutils
+ecdsa
+#gcc=4.8.5=3
+gmp
+imagesize
+isl
+jinja2
+libgcc
+matplotlib
+markupsafe
+mkl
+mpc
+mpfr
+ncurses
+openssl
+pandas
+paramiko
+pip
+pycrypto
+pygments
+python
+pytz
+readline
+scipy
+setuptools
+six
+snakemake
+snowballstemmer
+sphinx_rtd_theme
+sqlite
+tk
+wheel
+xz
+zlib
+pysam
+#
+apipkg
+boltons
+#
+python-dateutil
+pytest
+pytest-cov
+pytest-xdist
+requests
+coveralls
+#coverage==4.1
+#  coveralls==1.1
+#  docopt==0.6.2
+#execnet==1.4.1
+#  flake8==2.6.0
+#  mccabe==0.5.0
+#  mock==2.0.0
+#  pbr==1.10.0
+#  peewee==2.8.0
+#  py==1.4.31
+#  pycodestyle==2.0.0
+#  pyflakes==1.2.3
+# pytest==2.9.2
+# pytest-cov==2.2.1
+# pytest-xdist==1.14
+# python-dateutil==2.3
+# requests==2.10.0
+# sphinx==1.4.4
+# sphinx-argparse==0.1.15
+# sphinx-rtd-theme==0.1.9
