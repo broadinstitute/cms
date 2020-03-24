@@ -31,7 +31,7 @@ ENV \
 # Set it up so that this slow & heavy build layer is cached
 # unless the requirements* files or the install scripts actually change
 WORKDIR $INSTALL_PATH
-RUN conda update -n base -c defaults conda && conda create -n $CONDA_DEFAULT_ENV python=3.6
+RUN conda update -y -n base -c defaults conda && conda create -y -n $CONDA_DEFAULT_ENV python=3.6
 RUN echo "source activate $CONDA_DEFAULT_ENV" > ~/.bashrc
 RUN hash -r
 COPY docker/install-viral-ngs.sh $VIRAL_NGS_PATH/docker/

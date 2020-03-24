@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e -o pipefail
+set -e -o pipefail -x
 
 if [ -z "$DX_API_TOKEN" ]; then
   echo "ERROR: DX_API_TOKEN is not set, this is needed to build dxWDL workflows."
@@ -58,18 +58,18 @@ for workflow in pipes/WDL/workflows/*.wdl; do
   fi
 done
 
-# Special case: build demux_launcher (a native DNAnexus applet), embedding the
-# demux_plus workflow ID as a default input
-demux_plus_workflow_id=$(grep demux_plus $COMPILE_SUCCESS | cut -f 2)
-pushd pipes/WDL/dx-launcher
-cp consolidate_run_tarballs.yml dxapp.yml
-dx_id=$(./dx-yml-build -a --destination /build/$VERSION/ | jq -r ".id")
-echo -e "consolidate_run_tarballs\t$dx_id" >> $COMPILE_SUCCESS
-sed "s/DEFAULT_DEMUX_WORKFLOW_ID/$demux_plus_workflow_id/" demux_launcher.yml \
-  | sed "s/DEFAULT_CONSOLIDATE_RUN_TARBALLS_APPLET_ID/$dx_id/" > dxapp.yml
-dx_id=$(./dx-yml-build -a --destination /build/$VERSION/ | jq -r ".id")
-popd
-echo -e "demux_launcher\t$dx_id" >> $COMPILE_SUCCESS
+# # Special case: build demux_launcher (a native DNAnexus applet), embedding the
+# # demux_plus workflow ID as a default input
+# demux_plus_workflow_id=$(grep demux_plus $COMPILE_SUCCESS | cut -f 2)
+# pushd pipes/WDL/dx-launcher
+# cp consolidate_run_tarballs.yml dxapp.yml
+# dx_id=$(./dx-yml-build -a --destination /build/$VERSION/ | jq -r ".id")
+# echo -e "consolidate_run_tarballs\t$dx_id" >> $COMPILE_SUCCESS
+# sed "s/DEFAULT_DEMUX_WORKFLOW_ID/$demux_plus_workflow_id/" demux_launcher.yml \
+#   | sed "s/DEFAULT_CONSOLIDATE_RUN_TARBALLS_APPLET_ID/$dx_id/" > dxapp.yml
+# dx_id=$(./dx-yml-build -a --destination /build/$VERSION/ | jq -r ".id")
+# popd
+# echo -e "demux_launcher\t$dx_id" >> $COMPILE_SUCCESS
 
 # the presence of this file in the project denotes successful build
 dx upload --brief --no-progress --destination /build/$VERSION/ $COMPILE_SUCCESS

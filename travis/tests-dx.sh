@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e -o pipefail
+set -e -o pipefail -x
 
 # obtain version tag
 VERSION=`travis/list-docker-tags.sh | tail -1 | sed 's/:/\//'`
@@ -71,18 +71,18 @@ done
 
 # Special case: run test for the demux_launcher native applet (which invokes
 # the demux_plus WDL workflow)
-demux_launcher_id=$(grep demux_launcher $COMPILE_SUCCESS | cut -f 2)
-demux_plus_workflow_id=$(grep demux_plus $COMPILE_SUCCESS | cut -f 2)
-timeout_args=$(dx_run_timeout_args $demux_plus_workflow_id $demux_launcher_id)
-dx_job_id=$(dx run \
-  $demux_launcher_id -y --brief \
-  -i upload_sentinel_record=record-Bv8qkgQ0jy198GK0QVz2PV8Y \
-  --name "$VERSION demux_launcher" \
-  -i folder=/tests/$VERSION/demux_launcher \
-  --extra-args $timeout_args \
-  )
-echo "Launched demux_launcher as $dx_job_id"
-echo -e "demux_launcher\t$demux_launcher_id\t$dx_job_id" >> $TEST_LAUNCH_ALL
+# demux_launcher_id=$(grep demux_launcher $COMPILE_SUCCESS | cut -f 2)
+# demux_plus_workflow_id=$(grep demux_plus $COMPILE_SUCCESS | cut -f 2)
+# timeout_args=$(dx_run_timeout_args $demux_plus_workflow_id $demux_launcher_id)
+# dx_job_id=$(dx run \
+#   $demux_launcher_id -y --brief \
+#   -i upload_sentinel_record=record-Bv8qkgQ0jy198GK0QVz2PV8Y \
+#   --name "$VERSION demux_launcher" \
+#   -i folder=/tests/$VERSION/demux_launcher \
+#   --extra-args $timeout_args \
+#   )
+# echo "Launched demux_launcher as $dx_job_id"
+# echo -e "demux_launcher\t$demux_launcher_id\t$dx_job_id" >> $TEST_LAUNCH_ALL
 
 # the presence of this file in the project denotes all tests launched
 dx upload --brief --no-progress --destination /build/$VERSION/ $TEST_LAUNCH_ALL

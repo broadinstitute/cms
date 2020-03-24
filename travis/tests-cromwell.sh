@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # intentionally allow for pipe failures below
+set -e -x # intentionally allow for pipe failures below
 
 ln -s $GATK_PATH/GenomeAnalysisTK.jar .
 mkdir -p workflows
