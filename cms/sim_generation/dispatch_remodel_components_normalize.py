@@ -12,7 +12,7 @@ import subprocess
 
 models = [ 'gradient15', 'defdef15', 'def15']
 regimes = ['lct', 'slc24a5', 'edar']
-reps = range(0,1001)
+reps = list(range(0,1001))
 basewritedir = "/idi/sabeti-scratch/jvitti/remodel/run4/"  
 #models, regimes, pops, reps = ['nd'], ['neut'], [1,2,3, 4], range(0,1001) #'gravel', 
 #models, regimes, pops, reps = ['gradient15', 'defdef15', 'def15', 'gravel'], ['neut'], [1,2,3, 4], range(1,1001) #'gravel', 
@@ -143,7 +143,7 @@ def main():
 	## DISPATCH ##
 	##############
 	#shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

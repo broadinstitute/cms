@@ -57,7 +57,7 @@ class RBNode(object):
     def __str__(self):
         return repr(self.key) + ': ' + repr(self.value)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.nonzero
 
     def __len__(self):
@@ -86,7 +86,7 @@ class RBTreeIter(object):
         """
         return self.node.value
 
-    def next (self):
+    def __next__ (self):
         """ Return the next item in the container
             Once we go off the list we stay off even if the list changes
         """
@@ -290,7 +290,7 @@ class RBTree(object):
                 if self.unique == False: 
                     current.count += 1
                 else: # raise an Error
-                    print "Warning: This element is already in the list ... ignored!"
+                    print("Warning: This element is already in the list ... ignored!")
                     #SF I don't want to raise an error because I want to keep 
                     #SF the code compatible to previous versions
                     #SF But here would be the right place to do this
@@ -563,7 +563,7 @@ class RBList(RBTree):
 
     def __str__ (self):
         # eval(str(self)) returns a regular list
-        return '['+ string.join(map(lambda x: str(x.value), self.nodes()), ', ')+']'
+        return '['+ string.join([str(x.value) for x in self.nodes()], ', ')+']'
 
     def findNodeByIndex (self, index):
         if (index < 0) or (index >= self.elements):
@@ -658,10 +658,10 @@ class RBList(RBTree):
         self.elements = 0
 
     def values (self):
-        return map (lambda x: x.value, self.nodes())
+        return [x.value for x in self.nodes()]
 
     def reverseValues (self):
-        values = map (lambda x: x.value, self.nodes())
+        values = [x.value for x in self.nodes()]
         values.reverse()
         return values
 
@@ -670,12 +670,12 @@ class RBDict(RBTree):
 
     def __init__(self, dict={}, cmpfn=cmp):
         RBTree.__init__(self, cmpfn)
-        for key, value in dict.items():
+        for key, value in list(dict.items()):
             self[key]=value
 
     def __str__(self):
         # eval(str(self)) returns a regular dictionary
-        return '{'+ string.join(map(str, self.nodes()), ', ')+'}'
+        return '{'+ string.join(list(map(str, self.nodes())), ', ')+'}'
 
     def __repr__(self):
         return "<RBDict object " + str(self) + ">"
@@ -707,16 +707,16 @@ class RBDict(RBTree):
         return default
 
     def keys(self):
-        return map(lambda x: x.key, self.nodes())
+        return [x.key for x in self.nodes()]
 
     def values(self):
-        return map(lambda x: x.value, self.nodes())
+        return [x.value for x in self.nodes()]
 
     def items(self):
-        return map(tuple, self.nodes())
+        return list(map(tuple, self.nodes()))
 
     def has_key(self, key):
-        return self.findNode(key) <> None
+        return self.findNode(key) != None
 
     def clear(self):
         """delete all entries"""
@@ -742,11 +742,11 @@ class RBDict(RBTree):
         Will overwrite old entries with new ones.
 
         """
-        for key in other.keys():
+        for key in list(other.keys()):
             self[key] = other[key]
 
     def setdefault(self, key, value=None):
-        if self.has_key(key):
+        if key in self:
             return self[key]
         self[key] = value
         return value
@@ -757,13 +757,13 @@ class RBDict(RBTree):
 """
 def testRBlist():
     import random
-    print "--- Testing RBList ---"
-    print "    Basic tests..."
+    print("--- Testing RBList ---")
+    print("    Basic tests...")
 
     initList = [5,3,6,7,2,4,21,8,99,32,23]
     rbList = RBList (initList)
     initList.sort()
-    assert rbList.values() == initList
+    assert list(rbList.values()) == initList
     initList.reverse()
     assert rbList.reverseValues() == initList
     #
@@ -774,48 +774,48 @@ def testRBlist():
     # remove odd values
     for i in range (1,10,2):
         rbList.remove (i)
-    assert rbList.values() == [0,2,4,6,8]
+    assert list(rbList.values()) == [0,2,4,6,8]
 
     # pop tests
     assert rbList.pop() == 8
-    assert rbList.values() == [0,2,4,6]
+    assert list(rbList.values()) == [0,2,4,6]
     assert rbList.pop (1) == 2
-    assert rbList.values() == [0,4,6]
+    assert list(rbList.values()) == [0,4,6]
     assert rbList.pop (0) == 0
-    assert rbList.values() == [4,6]
+    assert list(rbList.values()) == [4,6]
 
     # Random number insertion test
     rbList = RBList()
     for i in range(5):
         k = random.randrange(10) + 1
         rbList.insert (k)
-    print "    Random contents:", rbList
+    print("    Random contents:", rbList)
 
     rbList.insert (0)
     rbList.insert (1)
     rbList.insert (10)
 
-    print "    With 0, 1 and 10:", rbList
+    print("    With 0, 1 and 10:", rbList)
     n = rbList.findNode (0)
-    print "    Forwards:",
+    print("    Forwards:", end=' ')
     while n is not None:
-        print "(" + str(n) + ")",
+        print("(" + str(n) + ")", end=' ')
         n = rbList.nextNode (n)
-    print
+    print()
 
     n = rbList.findNode (10)
-    print "    Backwards:",
+    print("    Backwards:", end=' ')
     while n is not None:
-        print "(" + str(n) + ")",
+        print("(" + str(n) + ")", end=' ')
         n = rbList.prevNode (n)
 
     if rbList.nodes() != rbList.nodesByTraversal():
-        print "node lists don't match"
-    print
+        print("node lists don't match")
+    print()
 
 def testRBdict():
     import random
-    print "--- Testing RBDict ---"
+    print("--- Testing RBDict ---")
 
     rbDict = RBDict()
     for i in range(10):
@@ -824,22 +824,22 @@ def testRBdict():
     rbDict[1] = 0
     rbDict[2] = "testing..."
 
-    print "    Value at 1", rbDict.get (1, "Default")
-    print "    Value at 2", rbDict.get (2, "Default")
-    print "    Value at 99", rbDict.get (99, "Default")
-    print "    Keys:", rbDict.keys()
-    print "    values:", rbDict.values()
-    print "    Items:", rbDict.items()
+    print("    Value at 1", rbDict.get (1, "Default"))
+    print("    Value at 2", rbDict.get (2, "Default"))
+    print("    Value at 99", rbDict.get (99, "Default"))
+    print("    Keys:", list(rbDict.keys()))
+    print("    values:", list(rbDict.values()))
+    print("    Items:", list(rbDict.items()))
 
     if rbDict.nodes() != rbDict.nodesByTraversal():
-        print "node lists don't match"
+        print("node lists don't match")
 
     # convert our RBDict to a dictionary-display,
     # evaluate it (creating a dictionary), and build a new RBDict
     # from it in reverse order.
     revDict = RBDict(eval(str(rbDict)),lambda x, y: cmp(y,x))
-    print "    " + str(revDict)
-    print
+    print("    " + str(revDict))
+    print()
 
 
 if __name__ == "__main__":

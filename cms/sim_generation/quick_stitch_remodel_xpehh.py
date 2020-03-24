@@ -3,7 +3,7 @@
 
 sourcedir = "/idi/sabeti-scratch/jvitti/remodel/run/"
 targetdir = "/idi/sabeti-scratch/jvitti/remodel/run/normalize_params/"
-models, regimes, pops, reps = ['defdef15', 'gradient15', 'from_RC/nd', 'from_RC/ndcs'], ['soft', 'hard'], [1,2,3,4], range(1,5001)
+models, regimes, pops, reps = ['defdef15', 'gradient15', 'from_RC/nd', 'from_RC/ndcs'], ['soft', 'hard'], [1,2,3,4], list(range(1,5001))
 
 import os
 import subprocess
@@ -16,7 +16,7 @@ def main():
 			for pop in pops:
 				basedir = sourcedir + model + "_" + regime + "_sel" + str(pop) + "/xpehh/"
 				all_sources.extend([basedir + item for item in os.listdir(basedir) if ".out" in item and "OUTGROUP" in item])
-		print(model, str(len(all_sources)))
+		print((model, str(len(all_sources))))
 		
 		for pop in pops:
 			altpops = pops[:]
@@ -33,7 +33,7 @@ def main():
 						writefile.write(line)
 					readfile.close()
 				writefile.close()
-				print('wrote to ' + writefilename)
+				print(('wrote to ' + writefilename))
 
 main()
 

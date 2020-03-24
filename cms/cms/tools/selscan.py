@@ -14,7 +14,7 @@ import argparse
 import operator
 
 try:
-    from itertools import izip as zip # pylint:disable=redefined-builtin
+     # pylint:disable=redefined-builtin
 except ImportError: # py3 zip is izip
     pass
 
@@ -110,7 +110,7 @@ class SelscanFormatter(object):
         if samples_to_include is not None and len(samples_to_include) > 0:
             indices_of_matching_samples = sorted([processor.sample_names.index(x) for x in samples_to_include])
         else:
-            indices_of_matching_samples = range(0,len(processor.sample_names))
+            indices_of_matching_samples = list(range(0,len(processor.sample_names)))
 
         indices_of_matching_genotypes = [(x*2, (x*2)+1) for x in indices_of_matching_samples]
         indices_of_matching_genotypes = list(np.ravel(np.array(indices_of_matching_genotypes)))
@@ -309,8 +309,8 @@ class SelscanFormatter(object):
                                 if sec_remaining > 10:
                                     human_time_remaining = relative_time(datetime.utcnow()+time_left)
                                     print("")
-                                    print("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos)))
-                                    print("Estimated time of completion: {}".format(human_time_remaining))
+                                    print(("Completed: {:.2%}".format(float(current_pos_bp)/float(end_pos))))
+                                    print(("Estimated time of completion: {}".format(human_time_remaining)))
                                     #log.info("Genotype counts found: %s", str(list(recordLengths)))
 
 

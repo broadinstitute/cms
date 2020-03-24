@@ -50,8 +50,8 @@ class GeneratorWrap(object):
         self.gen = gen
 
     def __iter__(self): return self
-    def next(self):
-        return self.gen.next()
+    def __next__(self):
+        return next(self.gen)
 
 
 

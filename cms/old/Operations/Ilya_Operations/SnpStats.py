@@ -10,7 +10,8 @@ from Operations.Ilya_Operations.PipeRun.python.PipeRun import GetDependsOn
 from Operations.Shari_Operations.localize.PopConsts import AllFreqs, AllPops, AllAges, CAUSAL_POS
 from Operations.IDotData import IDotData
 import operator, os, logging, contextlib, functools, collections, types, ast
-from itertools import izip
+from functools import reduce
+
 import itertools, string
 from UserDict import DictMixin
 import matplotlib
@@ -141,7 +142,7 @@ def histogramSnpStatistic( Ddata, thinSfx, scenDir, replicaTables, replicaCond, 
 
     snpTableFiles = [ os.path.join( Ddata,  'snpStats' + thinSfx, scenDir,
                                     AddFileSfx( snpTable + ( '.tsv' if '.' not in snpTable else '' ),
-                                                scenSfx if isinstance( scenSfx, types.StringTypes )
+                                                scenSfx if isinstance( scenSfx, (str,) )
                                                 else scenSfx[ os.path.splitext( snpTable )[0] ] ) )
                       for snpTable in snpTables ]
 
@@ -159,8 +160,8 @@ def histogramSnpStatistic( Ddata, thinSfx, scenDir, replicaTables, replicaCond, 
     
     replicaTableVals = [ DotData( SVPath = f ) for f in replicaTableFiles ]
 
-    replicasToUse = [ eval( replicaCondExpr, globals(), dict( zip( replicaTables, replicaTableRows ) ) )
-                      for replicaTableRows in izip( *replicaTableVals ) ]
+    replicasToUse = [ eval( replicaCondExpr, globals(), dict( list(zip( replicaTables, replicaTableRows )) ) )
+                      for replicaTableRows in zip( *replicaTableVals ) ]
 
     #dbg( 'sum(replicasToUse)' )
 
@@ -169,7 +170,7 @@ def histogramSnpStatistic( Ddata, thinSfx, scenDir, replicaTables, replicaCond, 
     histogramBuilder = Histogrammer( binSize = binSize, binShift = binShift )
 
     lastReplica = np.nan
-    for snpTableRows in izip( *snpTableVals ):
+    for snpTableRows in zip( *snpTableVals ):
         r0 = snpTableRows[ 0 ]
         assert all([ r.Chrom == r0.Chrom for r in snpTableRows ]) or all([ np.isnan( r.Chrom ) for r in snpTableRows ])
         assert all([ r.Pos == r0.Pos for r in snpTableRows ])
@@ -178,7 +179,7 @@ def histogramSnpStatistic( Ddata, thinSfx, scenDir, replicaTables, replicaCond, 
         useThisReplica = not replicaTables or replicasToUse[ replica ]
         if replica != lastReplica: dbg( 'replica useThisReplica histogramBuilder.getNumVals()' )
         if useThisReplica:
-            snpDict = dict( zip( snpTables, snpTableRows ) )
+            snpDict = dict( list(zip( snpTables, snpTableRows )) )
             if eval( snpCondExpr, globals(), snpDict ):
                 val = eval( snpStatExpr, globals(), snpDict )
                 histogramBuilder.addVal( val )
@@ -264,7 +265,7 @@ def AddUpHistograms( histFiles, outFile, getio = None ):
     if getio: return dict( depends_on = histFiles, creates = ( outFile, outFileStats ),
                            attrs = dict( piperun_short = True ) )
 
-    sumHist = reduce( operator.add, map( Histogrammer.load, histFiles ) )
+    sumHist = reduce( operator.add, list(map( Histogrammer.load, histFiles )) )
     sumHist.save( outFile )
     
 def GraphHistograms( histFiles, outFile = None, xlabel = '', ylabel = '', title = '',
@@ -326,9 +327,9 @@ def GraphHistograms( histFiles, outFile = None, xlabel = '', ylabel = '', title 
         theLabels = []
         theHandles = []
 
-        hists = map( Histogrammer.load, histFiles )
+        hists = list(map( Histogrammer.load, histFiles ))
         if coarsenBy: hists = [ hist.coarsenBy( coarsenBy ) for hist in hists ]
-        allBinIds = reduce( operator.concat, [ hist.bin2count.keys() for hist in hists ] )
+        allBinIds = reduce( operator.concat, [ list(hist.bin2count.keys()) for hist in hists ] )
         if not allBinIds: allBinIds = ( 0, )
         minBinId = min( allBinIds )
         maxBinId = max( allBinIds ) + 1
@@ -705,13 +706,13 @@ def identifyReplicasMeetingConds( Ddata, scenario, replicaTables, replicaConds, 
     
     for replicaCond in map( operator.itemgetter( 1 ), replicaConds ):
         replicaCondExpr = compile_expr( replicaCond )
-        replicasToUse = [ int( eval( replicaCondExpr, globals(), dict( zip( replicaTables, replicaTableRows ) ) ) )
-                          for replicaTableRows in izip( *replicaTableVals ) ]
+        replicasToUse = [ int( eval( replicaCondExpr, globals(), dict( list(zip( replicaTables, replicaTableRows )) ) ) )
+                          for replicaTableRows in zip( *replicaTableVals ) ]
         matchingReplicas.append( replicasToUse )
 
     Records = []
     condNames = tuple( map( operator.itemgetter( 0 ), replicaConds ) )
-    for replicaNum, condResults in enumerate( izip( *matchingReplicas ) ):
+    for replicaNum, condResults in enumerate( zip( *matchingReplicas ) ):
         Records.append( ( replicaNum, ','.join( replicaCondName for condNum, replicaCondName
                                                 in enumerate( condNames )
                                                 if condResults[ condNum ]  ) )
@@ -749,10 +750,10 @@ def splitSnpStatsFile( Ddata, scenario, inFileFN, condsFileFN, condNames, thinSf
     condsFile = IDotData( condsFileFN )
     inFile = IDotData( inFileFN )
 
-    with contextlib.nested( *map( functools.partial( IDotData.openForWrite, headings = inFile.headings ),
-                                  outFileFNs ) ) as outFiles:
+    with contextlib.nested( *list(map( functools.partial( IDotData.openForWrite, headings = inFile.headings ),
+                                  outFileFNs )) ) as outFiles:
 
-        for (replica, replicaRows), condValues in izip( inFile.groupby( replicaColName, multiPass = False ), condsFile ):
+        for (replica, replicaRows), condValues in zip( inFile.groupby( replicaColName, multiPass = False ), condsFile ):
 
             assert condValues.replicaNum == replica
 
@@ -780,7 +781,7 @@ def joinSnpStatsFiles( Ddata, scenario, outFileFN, condNames, condsFileFN, thinS
     if getio: return dict( depends_on = [ condsFileFN ] + inFileFNs, creates = outFileFN,
                            mediumRuleNameSfx = scenario.scenDir() )
 
-    inFiles = map( IDotData, inFileFNs )
+    inFiles = list(map( IDotData, inFileFNs ))
     dbg( 'inFiles' )
 
     condsFile = IDotData( condsFileFN )
@@ -896,7 +897,7 @@ def findTableFiles( Ddata, thinSfx, whichStats, tables, scenCond, allScens, scen
             scenSfx = DictGet( scen2sfxs, scen, '' )
             if scenSfx:
                 if IsSeq( scenSfx ): scenSfx = dict( scenSfx )
-                if not isinstance( scenSfx, types.StringTypes ): scenSfx = DictGet( dict( scenSfx ),
+                if not isinstance( scenSfx, (str,) ): scenSfx = DictGet( dict( scenSfx ),
                                                                                     os.path.splitext( table )[0], '' )
             
             tableFile = os.path.join( Ddata, whichStats+ thinSfx, scen.scenDir(),
@@ -907,7 +908,7 @@ def findTableFiles( Ddata, thinSfx, whichStats, tables, scenCond, allScens, scen
             thisScenDict[ table ] = tableFile
         scen2table2file[ scen ] = thisScenDict
 
-    tableNames = map( operator.itemgetter( 0 ), map( os.path.splitext, tables ) )
+    tableNames = list(map( operator.itemgetter( 0 ), list(map( os.path.splitext, tables )) ))
     return tableNames, tables, ourScens, scen2table2file, depends_on
                 
 
@@ -938,7 +939,7 @@ class NameCollector(ast.NodeVisitor):
 def FindTables( *exprs ):
     """Find tables referenced in specified expressions"""
 
-    return tuple( set( reduce( operator.concat, map( NameCollector.getNamesIn, exprs ) ) ) - set( ( 'True', 'False' ) ) )
+    return tuple( set( reduce( operator.concat, list(map( NameCollector.getNamesIn, exprs )) ) ) - set( ( 'True', 'False' ) ) )
     
 
 def findReplicasMatchingConds( Ddata, 
@@ -969,9 +970,9 @@ def findReplicasMatchingConds( Ddata,
 
     replicaCondExpr = compile_expr( replicaCond )
     showVals = MakeSeq( showVals )
-    showValsExpr = map( compile_expr, showVals )
+    showValsExpr = list(map( compile_expr, showVals ))
     if not showHeadings:
-        showHeadings = map( MakeAlphaNum, showVals )
+        showHeadings = list(map( MakeAlphaNum, showVals ))
         showHeadings2 = []
         for h in showHeadings:
             h_new = h
@@ -997,19 +998,19 @@ def findReplicasMatchingConds( Ddata,
             replicaTableVals = [ IDotData( thisScenDict[ replicaTable ] ) for replicaTable in replicaTables ]
 
             for replicaTableRows in \
-                    IDotData.TableIterInnerJoinAuxAsTuples( tableIters = map( iter, replicaTableVals ),
-                                                            cols = map( FindChromCol, replicaTableVals ),
+                    IDotData.TableIterInnerJoinAuxAsTuples( tableIters = list(map( iter, replicaTableVals )),
+                                                            cols = list(map( FindChromCol, replicaTableVals )),
                                                             blanks = ( None, ) * len( replicaTableVals ),
-                                                            headingLens = map( IDotData.rootClass.numCols,
-                                                                               replicaTableVals ) ):
+                                                            headingLens = list(map( IDotData.rootClass.numCols,
+                                                                               replicaTableVals )) ):
 
-                vdict = dict( zip( replicaTableNames, replicaTableRows ) )
+                vdict = dict( list(zip( replicaTableNames, replicaTableRows )) )
                 dbg( 'scen vdict' )
                     
                 evalHere = lambda expr: eval( expr, globals(), vdict )
                 if evalHere( replicaCondExpr ):
                     numReplicasAllowed += 1
-                    yield [ scen.scenName(), replicaTableRows[0].replicaNum ] + map( evalHere, showValsExpr )
+                    yield [ scen.scenName(), replicaTableRows[0].replicaNum ] + list(map( evalHere, showValsExpr ))
                 else:
                     numReplicasSkipped += 1
 
@@ -1052,8 +1053,8 @@ def findSnpsMatchingConds( Ddata,
 
     snpCondExpr = compile_expr( snpCond )
     showVals = MakeSeq( showVals )
-    showValsExpr = map( compile_expr, showVals )
-    if not showHeadings: showHeadings = map( MakeAlphaNum, showVals )
+    showValsExpr = list(map( compile_expr, showVals ))
+    if not showHeadings: showHeadings = list(map( MakeAlphaNum, showVals ))
 
     numSnpsSkippedTot, numSnpsAllowedTot = 0, 0
 
@@ -1084,12 +1085,12 @@ def findSnpsMatchingConds( Ddata,
             numSnpsSkippedTot, numSnpsAllowedTot = 0, 0
             
             for snpTableRows in \
-                    IDotData.TableIterInnerJoinAuxAsTuples( tableIters = map( iter, snpTableVals ),
-                                                            cols = zip( map( FindChromCol, snpTableVals ),
-                                                                        map( FindPosCol, snpTableVals ) ),
+                    IDotData.TableIterInnerJoinAuxAsTuples( tableIters = list(map( iter, snpTableVals )),
+                                                            cols = list(zip( list(map( FindChromCol, snpTableVals )),
+                                                                        list(map( FindPosCol, snpTableVals )) )),
                                                             blanks = ( None, ) * len( snpTableVals ),
-                                                            headingLens = map( IDotData.rootClass.numCols,
-                                                                               snpTableVals ) ):
+                                                            headingLens = list(map( IDotData.rootClass.numCols,
+                                                                               snpTableVals )) ):
 
                 thisReplica = snpTableRows[0][ replicaCol ]
                 if thisReplica != lastReplica:
@@ -1099,12 +1100,12 @@ def findSnpsMatchingConds( Ddata,
                     lastReplica = thisReplica
                     
                 if thisReplicaResult:
-                    localDict = dict( zip( snpTableNames, snpTableRows ) )
+                    localDict = dict( list(zip( snpTableNames, snpTableRows )) )
                     evalHere = lambda expr: eval( expr, globals(), localDict )
                     evalResult = evalHere( snpCondExpr )
                     if evalResult:
                         v = [ scen.scenName(), thisReplica, snpTableRows[0][ posCol ] ] \
-                            + map( evalHere, showValsExpr )
+                            + list(map( evalHere, showValsExpr ))
                         numSnpsAllowed += 1
                         yield v
                     else: numSnpsSkipped += 1
@@ -1138,7 +1139,7 @@ def gatherCausalStat( Ddata, scenario, snpStatFN, replicaCol = 'Chrom', posCol =
 def DefineRulesTo_gatherCausalStat( pr, Ddata, scen2snpStatFN, posCol = 'Pos' ):
     """Define rules to gather a specified per-SNP statistic for the causal SNPs into a replica stat."""
 
-    for scenario, snpStatFN in scen2snpStatFN.items():
+    for scenario, snpStatFN in list(scen2snpStatFN.items()):
         pr.addInvokeRule( invokeFn = gatherCausalStat, invokeArgs = Dict( 'Ddata scenario snpStatFN posCol' ) )
         
         

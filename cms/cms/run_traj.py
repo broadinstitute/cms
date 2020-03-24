@@ -17,4 +17,4 @@ while itWorked == False:
 		continue
 	itWorked = True	
 
-print("found a trajectory in " + str(nAttempts) + " attempts.")
+print(("found a trajectory in " + str(nAttempts) + " attempts."))

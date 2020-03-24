@@ -14,7 +14,7 @@ import time
 models = [ 'gradient15', 'defdef15', 'def15']#'nd', 'ndcs', 'gravel']#'gravel'] #--drop-singletons " + str(singrate) <--- absent from gravel as run! presnt in gradient15!
 regimes = ['lct', 'edar', 'slc24a5']#['neut']
 basedir = "/idi/sabeti-scratch/jvitti/remodel/run4/" #NEUT #run/"
-reps = range(0, 1001)
+reps = list(range(0, 1001))
 basecmd = "python /home/unix/vitti/rerun_cosi.py"
 
 def chunks(l, n):
@@ -53,7 +53,7 @@ def main():
 					subprocess.check_output( mkdir_cmd.split() )
 				paramfilename = basedir + "params/" + model + "_" + regime + ".par" 
 				if not os.path.isfile(paramfilename) or os.path.getsize(paramfilename) == 0:
-					print('missing ' + paramfilename)
+					print(('missing ' + paramfilename))
 				for irep in reps:
 					trajfilename = this_rundir + "sampled_vars/rep" + str(irep) + ".traj"
 					save_sample_filename = this_rundir + "sampled_vars/rep" + str(irep) + ".sampled"
@@ -64,7 +64,7 @@ def main():
 						arguments.append(argstring)
 
 	
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	shuffle(arguments)
 	for argchunk in chunks(arguments,ncmds_script):

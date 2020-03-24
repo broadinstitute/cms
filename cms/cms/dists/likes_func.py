@@ -166,7 +166,7 @@ def plot_pdf_comparison_from_scores(ax, neutvals, causalvals, linkedvals, minVal
 		neutfile.close()
 		causalfile.close()
 		linkedfile.close()
-		print('wrote to e.g.: ' + neutwritefilename)
+		print(('wrote to e.g.: ' + neutwritefilename))
 	return
 
 ##########################
@@ -240,13 +240,13 @@ def get_likes_filenames(baseloc, model, score, pop, like_savestring = "test"):
 	#hit_allfreqs_filename = shared_prefix + "_allfreq_" + like_savestring + "_likes_causal.txt"
 	for likes_filename in [neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename]:
 		if not os.path.isfile(likes_filename):
-			print("missing: " + likes_filename)
+			print(("missing: " + likes_filename))
 	return neut_filename, linked_filename, hit_hi_filename, hit_mid_filename, hit_low_filename, hit_allfreqs_filename
 def write_master_likesfile(writefilename, neut_filename, hit_hi_filename, hit_mid_filename, hit_low_filename):
 	''' designate input frequency for SNP classes  '''
 	for filename in [neut_filename, hit_hi_filename, hit_mid_filename, hit_low_filename]:
 		if not os.path.isfile(filename):
-			print('MASTERFILE REQUIRES: ' + filename)
+			print(('MASTERFILE REQUIRES: ' + filename))
 			return
 	writefile = open(writefilename, 'w')
 	writefile.write(neut_filename + '\n')
@@ -254,7 +254,7 @@ def write_master_likesfile(writefilename, neut_filename, hit_hi_filename, hit_mi
 	writefile.write(hit_mid_filename + '\n')
 	writefile.write(hit_low_filename + '\n')
 	writefile.close()
-	print('wrote to: ' + writefilename)
+	print(('wrote to: ' + writefilename))
 	return
 def get_master_likefiles(likesdir, model, selpop, alt_likes = "vsNeut", likes_suffix = "allFreqs", checkExists = False):
 	''' can toggle checkExists to for creating vs. reading masterlikes files'''
@@ -267,7 +267,7 @@ def get_master_likefiles(likesdir, model, selpop, alt_likes = "vsNeut", likes_su
 	if checkExists:
 		for masterlikesfile in [ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile]:
 			if not os.path.isfile(masterlikesfile):
-				print("MISSING: " + masterlikesfile)
+				print(("MISSING: " + masterlikesfile))
 	return ihs_master_likesfile, nsl_master_likesfile, delihh_master_likesfile, xpehh_master_likesfile, fst_master_likesfile, deldaf_master_likesfile
 def get_likes_savestrings(score, basedir):
 	""" facilitates pulling combinations of likelihood tables for masters, depending e.g. on what has completed """

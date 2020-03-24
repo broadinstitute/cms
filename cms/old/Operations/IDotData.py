@@ -45,18 +45,19 @@ notes:
 
   """
 
-from __future__ import with_statement, division
+
 
 __all__ = ( 'IDotData', )
 
 import sys, os, logging, itertools, operator, copy, contextlib, time, numbers, types, glob, math, collections, \
-    heapq, inspect, abc, __builtin__
+    heapq, inspect, abc, builtins
 import traceback as tb
 from abc import ABCMeta, abstractmethod
 from Operations.MiscUtil import chomp, dbg, coerceVal, is_sorted, IsSeq, MakeSeq, MakeDir, DumpFile, SlurpFileLines, \
     WaitForFileToAppear, joinstr, Sfx, IsScalar, DictGet, flatten, SystemSucceed, ReplaceFileExt, BreakString, joinstr, \
     RestrictDict, MergeDicts, tabwriten, AtomicForIsSeq, DbgIter, Dict, OpenForRead, OpenForWrite, SumKeeper, tmap, \
     MapPath, DictGetNotNone, tabwrite, AddFileSfx, SplitStr, FirstVal, ExtractOpts, IsFileType, iter_ith
+from functools import reduce
 
 try:
     import numpy as np
@@ -115,7 +116,7 @@ class IDotDataRecord(collections.Sequence):
         """
 
         if IsSeq( key ): return tuple( self[k] for k in key )
-        return  coerceVal( self.lineVals[ self.colName2num[ key ] if isinstance( key, types.StringTypes ) else key ] )
+        return  coerceVal( self.lineVals[ self.colName2num[ key ] if isinstance( key, (str,) ) else key ] )
 
     def GetStrItem(self, key):
         """Get value of one field of this named tuple, either by field name or by position (column number).
@@ -124,11 +125,11 @@ class IDotDataRecord(collections.Sequence):
         """
 
         if IsSeq( key ): return tuple( self[k] for k in key )
-        return  self.lineVals[ self.colName2num[ key ] if isinstance( key, types.StringTypes ) else key ]
+        return  self.lineVals[ self.colName2num[ key ] if isinstance( key, (str,) ) else key ]
 
     
-    def __iter__(self): return itertools.imap( coerceVal, self.lineVals )
-    def __repr__(self): return str( zip( self.headings, self.lineVals ) )
+    def __iter__(self): return map( coerceVal, self.lineVals )
+    def __repr__(self): return str( list(zip( self.headings, self.lineVals )) )
     def __len__(self): return len(self.headings)
 
     def __add__(self,other):
@@ -139,13 +140,13 @@ class IDotDataRecord(collections.Sequence):
     
     def __eq__(self,other):
         other = MakeSeq( other )
-        return len(self) == len(other) and all([ a == b for a,b in itertools.izip( self, other ) ])
+        return len(self) == len(other) and all([ a == b for a,b in zip( self, other ) ])
 
     def __ne__(self,other): return not self == other
     def __lt__(self,other):
         other = MakeSeq( other )
-        return any( a < b for a,b in itertools.izip( self, other ) ) \
-            or len(self) < len(other) and all([ a == b for a,b in itertools.izip( self, other ) ])
+        return any( a < b for a,b in zip( self, other ) ) \
+            or len(self) < len(other) and all([ a == b for a,b in zip( self, other ) ])
 
     def __le__(self,other): return self == other or self < other
     def __gt__(self,other): return not self <= other
@@ -165,9 +166,7 @@ class my_dtype(object):
         self.names = names
 
     
-class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
-
-    __metaclass__ = ABCMeta
+class IDotDataRoot(collections.Iterable, AtomicForIsSeq, metaclass=ABCMeta):
 
     """Abstract base class for various IDotData implementations.
     The implementation (a sublcass of IDotDataRoot) provides the tuple of headings when it calls
@@ -236,11 +235,11 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
            for which item is True.  
         """
 
-        if all([ isinstance( it, types.StringTypes ) for it in MakeSeq( item ) ]):
+        if all([ isinstance( it, (str,) ) for it in MakeSeq( item ) ]):
             for it in MakeSeq( item ):
                 if it not in self.headings: raise AttributeError( item )
             return IDotDataGetColumns( parent = self, item = item )
-        if isinstance( item, ( types.IntType, types.LongType ) ): return iter_ith( self, item )
+        if isinstance( item, int ): return iter_ith( self, item )
         if isIDotData( item ): return IDotDataFilterBool( parent = self, filter = item )
         if hasattr( type( item ), 'isDotData' ): return self[ IDotData.fromDotData( item ) ] 
         asDotData = self.toDotData()[ item ]
@@ -380,12 +379,12 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
 
     def mapVals(self, f):
         """Return an IDotData with all values mapped by the given function"""
-        return self.mapRecords( ( lambda x: f(x) ) if self.numCols() == 1 else ( lambda r: map( f, r ) ) )
+        return self.mapRecords( ( lambda x: f(x) ) if self.numCols() == 1 else ( lambda r: list(map( f, r )) ) )
 
     def addComputedCols( self, newColNames, newColFn):
         """Add a column computed from the records according to specified function"""
 
-        if isinstance( newColNames, types.StringTypes ) and ( ' ' in newColNames or '\t' in newColNames ):
+        if isinstance( newColNames, (str,) ) and ( ' ' in newColNames or '\t' in newColNames ):
             newColNames = tuple( newColNames.split( '\t' if '\t' in newColNames else None ) )
         
         return self.mapRecords( func = lambda r: tuple( r ) + tuple( MakeSeq( newColFn( r ) ) ),
@@ -479,10 +478,10 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
     def __len__(self):
         """Return the number of data rows in this IDotData.   Note that the first time this is called,
         it may take linear time to run."""
-        if self.len is None: self.len = sum( itertools.imap( lambda x: 1, self ) )
+        if self.len is None: self.len = sum( map( lambda x: 1, self ) )
         return self.len
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Return True if self has at least one row, False otherwise"""
 
         try:
@@ -496,10 +495,10 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
     #def __neg__(self): return self.
 
     def dbg(self, msg = None):
-        print '=============================='
+        print('==============================')
         if msg is not None:
-            print '\n' + msg + '\n'
-            print '=============================='
+            print('\n' + msg + '\n')
+            print('==============================')
         tabwrite( sys.stdout, *self.headings )
         nlines = 0
         for line in self:
@@ -509,7 +508,7 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
 #                                                else (str(line),) ) )
             nlines += 1
         sys.stdout.write( '\n%d rows\n' % nlines )
-        print '=============================='
+        print('==============================')
 
     def dbgGraph(self, fname):
         """Write a graph representation of the current object"""
@@ -583,7 +582,7 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
 
         multiPass = DictGet( kwargs, 'multiPass', True )
         if not isinstance( multiPass, bool ):
-            for v in itertools.izip( *[ self.groupby( *cols, multiPass = False ) for i in range( multiPass ) ] ):
+            for v in zip( *[ self.groupby( *cols, multiPass = False ) for i in range( multiPass ) ] ):
                 yield ( v[0][0], ) + tmap( operator.itemgetter( 1 ), v )
             return
 
@@ -614,7 +613,7 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
 
         """
 
-        if isinstance(expr, types.CodeType) or isinstance(expr, types.StringTypes):
+        if isinstance(expr, types.CodeType) or isinstance(expr, (str,)):
             exprCode = expr if isinstance(expr, types.CodeType) \
                 else compile( expr, sys._getframe(0).f_code.co_filename, 'eval' )
 
@@ -647,8 +646,8 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
         elif callable(expr):
             return self.filter( expr )
         elif isinstance(expr, dict):
-            exprItems = frozenset( [ (columnName, val) for columnName, val in expr.items() if val != None ] )
-            return self.filter( lambda r: exprItems <= frozenset( r.asDict().items() ) )
+            exprItems = frozenset( [ (columnName, val) for columnName, val in list(expr.items()) if val != None ] )
+            return self.filter( lambda r: exprItems <= frozenset( list(r.asDict().items()) ) )
         else:
             raise TypeError('selectRows() requires either an expression (string or code object) or a dictionary')
 
@@ -699,7 +698,7 @@ class IDotDataRoot(collections.Iterable, AtomicForIsSeq):
             meansStds = imeanstd( self[ cols ] )
             if len( cols ) == 1: meansStds = [ meansStds ]
         
-        col2meanStd = dict( zip( cols, meansStds ) )
+        col2meanStd = dict( list(zip( cols, meansStds )) )
 
         colMeanStds = [ DictGet( col2meanStd, c, ( None, None ) ) for c in self.headings ]
 
@@ -1067,11 +1066,11 @@ class TableReaderBase(collections.Iterator):
         self.headings = tuple( headings )
 
         if not len( set( headings ) ) == len( headings ):
-            print 'headings=', headings
+            print('headings=', headings)
             seen = set()
             for h in headings:
                 if h in seen:
-                    print 'duplicate heading: ', h
+                    print('duplicate heading: ', h)
                 seen.add( h )
             
         assert len( set( headings ) ) == len( headings )
@@ -1082,7 +1081,7 @@ class TableReaderBase(collections.Iterator):
         self.valueFixer = valueFixer
         self.lineNum = 0
         
-    def next(self):
+    def __next__(self):
         try:
             lineVals = self._nextLine()
 
@@ -1090,16 +1089,16 @@ class TableReaderBase(collections.Iterator):
 
             if self.lineNum % 200000  ==  0:
                 logging.info( joinstr(' ', self.lineNum, ' of ', \
-                                  self.fname, ': ', zip( self.headings, lineVals ) ) )
+                                  self.fname, ': ', list(zip( self.headings, lineVals )) ) )
 
             if len( lineVals ) != len( self.headings ):
                 logging.error( 'invalid table format: header has %d columns, line %d has %d items'
                                % ( len( self.headings ), self.lineNum, len( lineVals ) ) ) 
-                print 'lineVals=', lineVals, ' self.headings=', self.headings, ' \nzip=', zip( self.headings, lineVals )
+                print('lineVals=', lineVals, ' self.headings=', self.headings, ' \nzip=', list(zip( self.headings, lineVals )))
                 
             assert len( lineVals ) == len( self.headings )
 
-            if self.valueFixer: lineVals = map( self.valueFixer, lineVals )
+            if self.valueFixer: lineVals = list(map( self.valueFixer, lineVals ))
 
             return IDotDataRecord( lineVals = lineVals,
                                    colName2num = self.colName2num,
@@ -1132,7 +1131,7 @@ class IDotDataGetColumns(IDotDataRoot):
         self.item = item
 
     def _iter(self):
-        return itertools.imap( self.getter, self.parent.recordsIter() )
+        return map( self.getter, self.parent.recordsIter() )
 
     def __str__(self):
         return 'IDotDataGetColumns(' + ','.join( self.item ) + ')'
@@ -1150,7 +1149,7 @@ class IDotDataFilterBool(IDotDataRoot):
         self.filter = filter
 
     def _iter(self):
-        for p, f in itertools.izip( self.parent, self.filter.flatIter() ):
+        for p, f in zip( self.parent, self.filter.flatIter() ):
             assert isinstance( f, bool )
             if f: yield p
 
@@ -1196,7 +1195,7 @@ class IDotDataRenameCols(IDotDataRoot):
     def __init__(self, parent, renamings):
         renamings = dict( renamings )
         assert set( renamings.keys() ) <= set( parent.headings ), \
-            'keys are %s headings are %s' % ( renamings.keys(), parent.headings )
+            'keys are %s headings are %s' % ( list(renamings.keys()), parent.headings )
         
         super(type(self), self).__init__( headings =
                                           [ DictGet( renamings, h, h) for h in parent.headings ],
@@ -1269,10 +1268,10 @@ class IDotData_tsv(IDotDataRoot):
     def __init__(self, fname, **tableReadOpts ):
         self.fname = fname
         self.tableReadOpts = tableReadOpts
-        exec ExtractOpts( tableReadOpts,
+        exec(ExtractOpts( tableReadOpts,
                           'headings', None,
                           'headingSep', None,
-                          'commentPrefix', '##' )
+                          'commentPrefix', '##' ))
         self.comments = []
 
         if headings is None:
@@ -1315,13 +1314,13 @@ class IDotData_dotData(IDotDataRoot):
         super(type(self),self).__init__( headings = tuple( SlurpFileLines( headerFN ) ) )
 
         tsvFiles = [ f for f in reduce( operator.concat,
-                                        map( operator.itemgetter(2), os.walk( fname ) ) ) if f.endswith('.csv') ]
+                                        list(map( operator.itemgetter(2), os.walk( fname ) )) ) if f.endswith('.csv') ]
         colNames = [ os.path.splitext( os.path.splitext( tsvF )[0] )[0] for tsvF in tsvFiles ]
 
         assert len( set( colNames ) ) == len( colNames )
         assert sorted( colNames ) == sorted( self.headings )
         
-        col2file = dict( zip( colNames, tsvFiles ) )
+        col2file = dict( list(zip( colNames, tsvFiles )) )
         self.allFiles = [ fname + col2file[ col ] for col in self.headings ]
 
     def _iter(self):
@@ -1358,7 +1357,7 @@ class TSVReader(TableReaderBase):
 
     def _nextLine(self):
         """Get next line"""
-        rawLine = chomp( self.freader.next() )
+        rawLine = chomp( next(self.freader) )
         if not rawLine:
 
             # possible bug: if there is only one heading and the line is
@@ -1371,12 +1370,12 @@ class TSVReader(TableReaderBase):
 
         # skip any comment lines.  normally these only appear at the beginning.
         while rawLine.startswith( commentPrefix ):
-            rawLine = chomp( self.freader.next() )
+            rawLine = chomp( next(self.freader) )
             if not rawLine: raise StopIteration
 
         while self.skipFirstLines > 0:
             dbg( '"skipping" rawLine' )
-            rawLine = chomp( self.freader.next() )
+            rawLine = chomp( next(self.freader) )
             if not rawLine: raise StopIteration
             self.skipFirstLines -= 1
 
@@ -1402,14 +1401,14 @@ class DotDataReader(TableReaderBase):
                                          valueFixer = valueFixer )
         
         self.fs = tuple( map( open, allFiles ) )
-        self.freaders = map( iter, self.fs )
+        self.freaders = list(map( iter, self.fs ))
 
     def _nextLine(self):
         """Get next line"""
-        result =  tuple( chomp( freader.next() ) for freader in self.freaders )
+        result =  tuple( chomp( next(freader) ) for freader in self.freaders )
         if not result: raise StopIteration
         if len(result) != len( self.fs ):
-            print 'result=', result
+            print('result=', result)
         assert len(result) == len( self.fs )
         return result
 
@@ -1463,7 +1462,7 @@ def IDotData( fname = None, sep = '\t', headingSep = None, fileType = None, head
                                  'Columns multiPass ToLoad' ) ).oneRegion( **( iddRegionInfo[ CanonFN( fname ) ] ) )
     
     if not headings and names: headings = names
-    if isinstance( headings, types.StringTypes ) and ( ' ' in headings or '\t' in headings ):
+    if isinstance( headings, (str,) ) and ( ' ' in headings or '\t' in headings ):
         headings = tuple( headings.split( '\t' if '\t' in headings else None ) )
     if not skipFirstLines and SVSkipFirstLines: skipFirstLines = SVSkipFirstLines
     if SVDelimiter: sep = SVDelimiter
@@ -1501,12 +1500,12 @@ def IDotData( fname = None, sep = '\t', headingSep = None, fileType = None, head
 
 def makeIdxPrepender( idx ):
     """Creates a function that prepends a given index to its argument, returning a tuple."""
-    return lambda( v ): ( idx, v )
+    return lambda v: ( idx, v )
 
 class attrDbg(object):
 
     def __getattribute__(self, attr):
-        print 'getting attr ', attr
+        print('getting attr ', attr)
         return attr
     
 def makeKeyGetter( k ):
@@ -1551,24 +1550,24 @@ def itermerge( iters, keys = None, ids = None, includeKeys = False ):
 
     if keys is not None:
         keys = [ ( operator.itemgetter( k ) if isinstance( k, (int,tuple,list) ) else
-                   ( operator.attrgetter( k ) if isinstance( k, types.StringTypes ) else k ) ) for k in keys ]
+                   ( operator.attrgetter( k ) if isinstance( k, (str,) ) else k ) ) for k in keys ]
     
     if ids:
-        return itermerge( iters = [ itertools.imap( makeIdxPrepender( idx ), i ) for idx, i in
-                                    ( enumerate( iters ) if ids == True else zip( ids, iters ) ) ],
+        return itermerge( iters = [ map( makeIdxPrepender( idx ), i ) for idx, i in
+                                    ( enumerate( iters ) if ids == True else list(zip( ids, iters )) ) ],
                           keys = ( operator.itemgetter( 1 ), ) * len( iters ) if keys is None else
-                          map( makeKeyGetter, keys ),
+                          list(map( makeKeyGetter, keys )),
                           includeKeys = includeKeys )
     
     if keys is not None:
-        result = itermerge( iters = [ itertools.imap( makeKeyApplier( k ), i )
+        result = itermerge( iters = [ map( makeKeyApplier( k ), i )
                                       for k, i in zip( keys, iters ) ] )
-        if not includeKeys: result = itertools.imap( operator.itemgetter( 1 ), result )
+        if not includeKeys: result = map( operator.itemgetter( 1 ), result )
         return result
     
     def merge( i1, i2 ):
-        next1 = iter( i1 ).next
-        next2 = iter( i2 ).next
+        next1 = iter( i1 ).__next__
+        next2 = iter( i2 ).__next__
         try:        
             v1 = next1()
         except StopIteration:
@@ -1644,8 +1643,8 @@ def TableIterInnerJoinAux( tableIters, cols, headings, blanks, headingLens, colN
                 positionFilled[ i ] = True
 
         if all( positionFilled ):
-            rec = map( tuple, recordsList )
-            assert map( len, rec ) == headingLens
+            rec = list(map( tuple, recordsList ))
+            assert list(map( len, rec )) == headingLens
             rec = reduce( operator.concat, rec )
             yield IDotDataRecord( lineVals = rec + ( k if keyHeadings else () ), colName2num = colName2num,
                                   fname = None, headings = headings + keyHeadings )
@@ -1667,7 +1666,7 @@ def mergeHeadings( iDotDatas, suffixes = None ):
     
 
 def GetIDotDatas(iDotDatas):
-    return tuple( IDotData(iDotData) if isinstance(iDotData, types.StringTypes) else
+    return tuple( IDotData(iDotData) if isinstance(iDotData, (str,)) else
                   ( IDotData.fromDotData( iDotData ) if hasattr( type( iDotData ), 'isDotData' ) else iDotData )
                   for iDotData in iDotDatas  )
 
@@ -1702,7 +1701,7 @@ class IDotDataJoin(IDotDataRoot):
 
 def IDotDataAsTuples( iDotDatas, cols, blanks = None ):
 
-    return TableIterInnerJoinAuxAsTuples( tableIters = map( iter, iDotDatas ), cols = cols,
+    return TableIterInnerJoinAuxAsTuples( tableIters = list(map( iter, iDotDatas )), cols = cols,
                                           blanks = blanks if blanks is not None else [ (None,)*len(idd.headings)
                                                                                        for idd in iDotDatas ],
                                           headingLens = [ len( idd.headings ) for idd in iDotDatas ] )
@@ -1726,7 +1725,7 @@ def TableIterInnerJoinAuxAsTuples( tableIters, cols, blanks, headingLens ):
 
         # check that the keys are sorted in strictly increasing order -- important for correct operation of join 
         if not( prevKey==None or k > prevKey ):
-            print 'prevKey=', prevKey, ' key=', k, ' g is ', tuple( g )
+            print('prevKey=', prevKey, ' key=', k, ' g is ', tuple( g ))
         assert prevKey==None or k > prevKey
         prevKey = k
 
@@ -1734,8 +1733,8 @@ def TableIterInnerJoinAuxAsTuples( tableIters, cols, blanks, headingLens ):
 
         origins = [ r[1][0] for r in records ]
         if not is_sorted( origins, strict = True ):
-            print 'records are ', records
-            print 'origins are ', origins
+            print('records are ', records)
+            print('origins are ', origins)
         assert is_sorted( origins, strict = True )
 
         recordsList = [ None ] * len( tableIters )
@@ -1761,15 +1760,15 @@ class IDotDataVStack(IDotDataRoot):
 
     def __init__(self, *iDotDatas, **kwargs):
 
-        print 'befFlatten: ', iDotDatas
+        print('befFlatten: ', iDotDatas)
         iDotDatas = flatten( iDotDatas )
 
-        print 'aftFlatten: ', iDotDatas
+        print('aftFlatten: ', iDotDatas)
         assert len( iDotDatas ) > 0
 
-        iDotDatas = map( IDotData, iDotDatas )
+        iDotDatas = list(map( IDotData, iDotDatas ))
         if 'sourceCol' in kwargs:
-            ids = DictGetNotNone( kwargs, 'sourceIds', map( operator.attrgetter( 'fname' ), iDotDatas ) )
+            ids = DictGetNotNone( kwargs, 'sourceIds', list(map( operator.attrgetter( 'fname' ), iDotDatas )) )
             dbg( 'kwargs["sourceCol"] ids' )
             iDotDatas = [ iDotData.hstack( IDotData.repeat( kwargs[ 'sourceCol' ], idd_id ) )
                           for idd_id, iDotData in zip( ids, iDotDatas ) ]
@@ -1829,11 +1828,11 @@ class IDotDataHStack(IDotDataRoot):
 
         lineValsGetter = operator.attrgetter( 'lineVals' )
         def mergeRecs( *vals ):
-            return  IDotDataRecord( lineVals = reduce( operator.concat, map( lineValsGetter, vals ) ),
+            return  IDotDataRecord( lineVals = reduce( operator.concat, list(map( lineValsGetter, vals )) ),
                                     colName2num = self.colName2num,
                                     headings = self.headings )
 
-        return itertools.imap( mergeRecs, *[ idd.recordsIter() for idd in self.iDotDatas ] )
+        return map( mergeRecs, *[ idd.recordsIter() for idd in self.iDotDatas ] )
 
 
 class IDotDataFilter(IDotDataRoot):
@@ -1860,7 +1859,7 @@ class IDotDataMapRecords(IDotDataRoot):
         self.iDotDatas = iDotDatas
         self.func = func
 
-    def _iter(self): return itertools.imap( self.func, *self.iDotDatas )
+    def _iter(self): return map( self.func, *self.iDotDatas )
 
 class IDotDataStarMap(IDotDataRoot):
 
@@ -1934,7 +1933,7 @@ class IDotDataWhere(IDotDataRoot):
         self.ifFalse = ifFalse
 
     def _iter(self):
-        for whichVal, ifTrueVal, ifFalseVal in itertools.izip( self.which, self.ifTrue, self.ifFalse ):
+        for whichVal, ifTrueVal, ifFalseVal in zip( self.which, self.ifTrue, self.ifFalse ):
             yield ifTrueVal if whichVal else ifFalseVal
 
 IDotData.where = IDotDataWhere
@@ -1962,7 +1961,7 @@ class IDotDataChoose(IDotDataRoot):
         self.choices = choices
 
     def _iter(self):
-        for r in itertools.izip( self.which, *self.choices ):
+        for r in zip( self.which, *self.choices ):
             yield r[ r[0] + 1 ]
 
 IDotData.choose = IDotDataChoose
@@ -1989,7 +1988,7 @@ class IDotDataFromIterable(IDotDataRoot):
     """
 
     def __init__(self, headings, iterable, multiPass = False):
-        if isinstance( headings, types.StringTypes ) and ( ' ' in headings or '\t' in headings ):
+        if isinstance( headings, (str,) ) and ( ' ' in headings or '\t' in headings ):
             headings = tuple( headings.split( '\t' if '\t' in headings else None ) )
         super(type(self),self).__init__( headings = headings )
         if multiPass and isinstance( iterable, collections.Iterator ): iterable = tuple( iterable )
@@ -2019,15 +2018,13 @@ def IDotDataFromDotData( d ):
 
 IDotData.fromDotData = IDotDataFromDotData
 
-class IDotDataWriterRoot(object):
-    __metaclass__ = ABCMeta
-
+class IDotDataWriterRoot(object, metaclass=ABCMeta):
     """Abstract base class for classes that help you incrementally write out an IDotData file record-by-record."""
 
     def __init__(self, headings):
         #assert headings
 
-        if isinstance( headings, types.StringTypes ) and ( ' ' in headings or '\t' in headings ):
+        if isinstance( headings, (str,) ) and ( ' ' in headings or '\t' in headings ):
             headings = tuple( headings.split( '\t' if '\t' in headings else None ) )
         self.headings = headings
 
@@ -2096,10 +2093,10 @@ class IDotDataDotDataWriter(IDotDataWriterRoot):
                   + '.header.txt', '\n'.join( self.headings ) )
         self.isFirstRecord = True
 
-    type2name = { float: 'float', int: 'int', str: 'str', bool: 'bool', long: 'long' }
+    type2name = { float: 'float', int: 'int', str: 'str', bool: 'bool', int: 'long' }
     if haveNumpy: type2name.update( ( ( np.int64, 'long' ), (np.bool_, 'bool' ), ( np.float64, 'float' ) ) )
     typeOrder = ( bool, ) + ( ( np.bool_, ) if haveNumpy else () ) + \
-        ( int, long ) + ( ( np.int64, np.float64 ) if haveNumpy else () ) +  ( float, str )
+        ( int, int ) + ( ( np.int64, np.float64 ) if haveNumpy else () ) +  ( float, str )
 
     def __initColTypes(self, colTypes):
 
@@ -2245,7 +2242,7 @@ def imeanstd( iterable ):
     seqStds = [ math.sqrt( sumSq.getSum() / n -
                            seqMean * seqMean )
                 for sumSq, seqMean, n in zip( sumSqs, seqMeans, ns ) ]
-    seqMeansStds = zip( seqMeans, seqStds )
+    seqMeansStds = list(zip( seqMeans, seqStds ))
 
     return seqMeansStds if numCols > 1 else seqMeansStds[ 0 ]
 
@@ -2289,7 +2286,7 @@ def imeanstd_plusStats( iterable ):
     seqStds = [ math.sqrt( sumSq.getSum() / n -
                            seqMean * seqMean )
                 for sumSq, seqMean, n in zip( sumSqs, seqMeans, ns ) ]
-    seqMeansStds = zip( seqMeans, seqStds, ns, ntots )
+    seqMeansStds = list(zip( seqMeans, seqStds, ns, ntots ))
 
     return seqMeansStds if numCols > 1 else seqMeansStds[ 0 ]
 
@@ -2305,7 +2302,7 @@ if haveNumpy:
         if any arguments are IDotDatas, otherwise calls a numpy function of the same name.
         """
         
-        orig_fn = eval( 'np.' + f.func_name )
+        orig_fn = eval( 'np.' + f.__name__ )
 
         def new_f( *args, **kwargs ):
             return f( *args, **kwargs ) if any( IDotData.isA( a ) for a in args ) \
@@ -2313,7 +2310,7 @@ if haveNumpy:
 
         new_f.__doc__ = orig_fn.__doc__
 
-        setattr( np, f.func_name, new_f )
+        setattr( np, f.__name__, new_f )
         
         return f
         
@@ -2360,10 +2357,10 @@ if haveNumpy:
     def mean(a): return imean( a )
 
     @extendNumpy
-    def min(a): return __builtin__.min( a )
+    def min(a): return builtins.min( a )
 
     @extendNumpy
-    def max(a): return __builtin__.max( a )
+    def max(a): return builtins.max( a )
 
     numpy_abs = np.abs
     @extendNumpy
@@ -2390,7 +2387,7 @@ if haveNumpy:
             else:
                 return numpy_atleast_1d( *arys  )
         else:
-            return map( atleast_1d, arys )
+            return list(map( atleast_1d, arys ))
 
     np.atleast_1d = atleast_1d
 

@@ -1,7 +1,7 @@
 from System.Utils import *
 from numpy import int64
 import logging
-import cPickle
+import pickle
 from Operations.MiscUtil import dbg, chomp
 
 def DotDataListFromDirectory(path, data_list = None, attribute_names = None, rootpath = '', rootheader = None, coloring = None, ToLoad = None, Nrecords = None):
@@ -32,14 +32,14 @@ def DotDataListFromDirectory(path, data_list = None, attribute_names = None, roo
 			expectedheader = rootpath.strip('/').split('/')[-1][:-5] + '.header.txt'
 			if len(H) == 1:
 				if H[0] != expectedheader:
-					print "Warning: the file, ", rootpath + H[0], " is being used to determine the order of the attribute names, even though ", rootpath + expectedheader, " was expected."
+					print("Warning: the file, ", rootpath + H[0], " is being used to determine the order of the attribute names, even though ", rootpath + expectedheader, " was expected.")
 				rootheader =  open_for_read(path + H[0])[0].read().strip('\n').split('\n')
 			elif len(H) > 1:
 				if expectedheader in H:
 					rootheader = open_for_read(path + H[0])[0].read().strip('\n').split('\n')
-					print "Warning: the file, ", rootpath + expectedheader, " is being used to determine the order of the attribute names. Multiple .header.txt files were provided."
+					print("Warning: the file, ", rootpath + expectedheader, " is being used to determine the order of the attribute names. Multiple .header.txt files were provided.")
 				else:
-					print "Warning: there are multiple .header.txt files in the directory ", rootpath, ", and so none will be used."
+					print("Warning: there are multiple .header.txt files in the directory ", rootpath, ", and so none will be used.")
 	if coloring == None:
 		coloring = {}	
 
@@ -83,10 +83,10 @@ def DotDataListFromDirectory(path, data_list = None, attribute_names = None, roo
 							data_list += [attribute_typed]
 							attribute_names += [attribute_name]		 		
 					except:
-						print "Warning: the data in the .csv file ", path + l if l != path else path, " does not match the given data type, ", parsed_filename[-2], ", and was not loaded"
+						print("Warning: the data in the .csv file ", path + l if l != path else path, " does not match the given data type, ", parsed_filename[-2], ", and was not loaded")
 						raise
 				else:
-					print "Warning: the column" + path + (l if l != path else path) + " has " + str(len(attribute_string)) + " records, which does not agree with the number of records in first column loaded, '" + attribute_names[0] + "', which has " + str(Nrecords) + " records -- only the first column loaded, as well as all the other columns which also have " + str(Nrecords) + " records, will be loaded."
+					print("Warning: the column" + path + (l if l != path else path) + " has " + str(len(attribute_string)) + " records, which does not agree with the number of records in first column loaded, '" + attribute_names[0] + "', which has " + str(Nrecords) + " records -- only the first column loaded, as well as all the other columns which also have " + str(Nrecords) + " records, will be loaded.")
 					raise
 							
 		elif parsed_filename[-1] == 'data' and IsDir(path):
@@ -99,7 +99,7 @@ def DotDataListFromDirectory(path, data_list = None, attribute_names = None, roo
 			
 	if len(CSVList) > 0:
 		for color in coloring_names:
-			coloring[color] = list(set(coloring[color] + CSVList if color in coloring.keys() else CSVList))
+			coloring[color] = list(set(coloring[color] + CSVList if color in list(coloring.keys()) else CSVList))
 
 	if path == rootpath and len(rootheader) > 1:
 	#Use header in top directory to order attributes and colorings
@@ -114,7 +114,7 @@ def DotDataListFromDirectory(path, data_list = None, attribute_names = None, roo
 	if  IsDir(path):
 		if '__rowdata__.pickle' in listdir(path):
 			try:
-				rowdata = cPickle.load(open(Backslash(path) + '__rowdata__.pickle','r'))
+				rowdata = pickle.load(open(Backslash(path) + '__rowdata__.pickle','r'))
 				if len(rowdata) != len(data_list[0]):
 					rowdata = None
 			except:

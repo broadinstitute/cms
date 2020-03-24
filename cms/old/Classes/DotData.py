@@ -2,7 +2,7 @@
 Classes and functions pertaining to the DotData class, a structured tabular data object. 
 '''
 
-from __future__ import with_statement
+
 import numpy, types, copy, sys, itertools, operator, System.Utils
 from Operations.DotDataFunctions.SaveDotDataAsSV import *
 from Operations.DotDataFunctions.SaveDotData import *
@@ -14,6 +14,7 @@ from Operations.DotDataFunctions.datahstack import *
 from Operations.DotDataFunctions.DictionaryOps import MergeDicts, RestrictDict
 from System.Colors import GrayScale
 from Operations.MiscUtil import dbg, TableIterInnerJoin, TblIterFromDotData, tabwriten
+from functools import reduce
 
 class DotData(numpy.core.records.recarray):
 	"""A numpy recarray (a table with named columns where each column is of a uniform Python type),
@@ -138,7 +139,7 @@ class DotData(numpy.core.records.recarray):
 
 		assert not ( Path and SVPath )
 
-		if isinstance( Array, types.StringTypes ):
+		if isinstance( Array, (str,) ):
 			if Array.endswith( '.data' ) or Array.endswith( '.data/' ):
 				Path = Array
 			else:
@@ -152,9 +153,8 @@ class DotData(numpy.core.records.recarray):
 			
 
 		# Ensure that any iterable can be used as arguments: e.g. tuples, not just lists
-		Records, Columns, names, ToLoad = map( lambda x: x if x == None or isinstance(x, types.ListType)
-						       else list(x),
-						       ( Records, Columns, names, ToLoad ) )
+		Records, Columns, names, ToLoad = [x if x == None or isinstance(x, list)
+						       else list(x) for x in ( Records, Columns, names, ToLoad )]
 
 		###
 		
@@ -195,7 +195,7 @@ class DotData(numpy.core.records.recarray):
 			if len(coloringsInNames) == 0:
 				self.coloring = coloring				
 			else:
-				print "Warning: the following coloring keys,", coloringsInNames, ", are also attribute (column) names in the DotData. This is not allowed, and so these coloring keys will be deleted. The corresponding columns of data will not be lost and will retain the same names."
+				print("Warning: the following coloring keys,", coloringsInNames, ", are also attribute (column) names in the DotData. This is not allowed, and so these coloring keys will be deleted. The corresponding columns of data will not be lost and will retain the same names.")
 				for c in coloringsInNames:
 					coloring.pop(c)
 				self.coloring = coloring
@@ -245,7 +245,7 @@ class DotData(numpy.core.records.recarray):
 
 		"""
 
-		if isinstance(expr, types.CodeType) or isinstance(expr, types.StringType):
+		if isinstance(expr, types.CodeType) or isinstance(expr, bytes):
 			exprCode = expr if isinstance(expr, types.CodeType) \
 			    else compile( expr, sys._getframe(0).f_code.co_filename, 'eval' )
 
@@ -273,8 +273,8 @@ class DotData(numpy.core.records.recarray):
 		elif callable(expr):
 			return self[ numpy.array( [ expr(r) for r in self.recordsAsDicts() ]  ) ]
 		elif isinstance(expr, dict):
-			exprItems = frozenset( [ (columnName, val) for columnName, val in expr.items() if val != None ] )
-			return self[ numpy.array( [ exprItems <= frozenset( r.items() ) for r in self.recordsAsDicts() ]  ) ]
+			exprItems = frozenset( [ (columnName, val) for columnName, val in list(expr.items()) if val != None ] )
+			return self[ numpy.array( [ exprItems <= frozenset( list(r.items()) ) for r in self.recordsAsDicts() ]  ) ]
 		else:
 			raise TypeError('selectRows() requires either an expression (string or code object) or a dictionary')
 
@@ -331,21 +331,21 @@ class DotData(numpy.core.records.recarray):
 
 		"""
 
-		if 'coloring' in dir(self) and attribute in self.coloring.keys():
-			restrictedcoloring = dict([(a,self.coloring[a]) for a in self.coloring.keys() if set(self.coloring[a]) < set(self.coloring[attribute])])
+		if 'coloring' in dir(self) and attribute in list(self.coloring.keys()):
+			restrictedcoloring = dict([(a,self.coloring[a]) for a in list(self.coloring.keys()) if set(self.coloring[a]) < set(self.coloring[attribute])])
 			return DotData(Columns = [numpy.core.records.recarray.__getitem__(self.view(),attrib) for attrib in self.coloring[attribute]],dtype = numpy.dtype([(a,self.dtype[a].str) for a in self.coloring[attribute]]),coloring = restrictedcoloring,rowdata = self.rowdata)
-		elif isinstance(attribute,(list,tuple)) and all( isinstance( x, types.StringType ) for x in attribute ):
+		elif isinstance(attribute,(list,tuple)) and all( isinstance( x, bytes ) for x in attribute ):
 			if not ( set(attribute) <= set(self.coloring.keys()).union(self.dtype.names) ):
-				print "Unknown column name(s):", set(attribute) - set(self.coloring.keys()).union(self.dtype.names)
+				print("Unknown column name(s):", set(attribute) - set(self.coloring.keys()).union(self.dtype.names))
 			assert set(attribute) <= set(self.coloring.keys()).union(self.dtype.names)
 			attribset = []
 			for att in attribute:
 				if att in self.dtype.names and att not in attribset:
 					attribset += [att]
-				elif att in self.coloring.keys():
+				elif att in list(self.coloring.keys()):
 					attribset += [j for j in self.coloring[att] if j not in attribset]
 			#return DotData(Columns = [numpy.core.records.recarray.__getitem__(self.view(),a) for a in attribset], names = attribset, coloring = dict([(a,self.coloring[a]) for a in attribute if a in self.coloring.keys()]))
-			return DotData(Columns = [numpy.core.records.recarray.__getitem__(self.view(),a) for a in attribset], names = attribset, coloring = dict([(a,list(set(self.coloring[a]).intersection(set(attribute)))) for a in self.coloring.keys() if len(set(self.coloring[a]).intersection(set(attribute))) > 0]),rowdata=self.rowdata)
+			return DotData(Columns = [numpy.core.records.recarray.__getitem__(self.view(),a) for a in attribset], names = attribset, coloring = dict([(a,list(set(self.coloring[a]).intersection(set(attribute)))) for a in list(self.coloring.keys()) if len(set(self.coloring[a]).intersection(set(attribute))) > 0]),rowdata=self.rowdata)
 		elif isinstance(attribute,numpy.ndarray) or (isinstance(attribute,list)):
 			if self.rowdata != None:
 				rowdata = self.rowdata[attribute]
@@ -462,7 +462,7 @@ class DotData(numpy.core.records.recarray):
 		#assert all( len( blank ) == dotData.numCols() for dotData, blank in zip( dotDatas, blanks ) )
 
 
-		return DotDataFromTblIter( TableIterInnerJoin( tableIters = map( TblIterFromDotData, dotDatas ),
+		return DotDataFromTblIter( TableIterInnerJoin( tableIters = list(map( TblIterFromDotData, dotDatas )),
 							       cols = primaryKeyCols,
 							       suffixes = suffixes,
 							       blanks = blanks ) )
@@ -531,7 +531,7 @@ class DotData(numpy.core.records.recarray):
 		newRecords = [ ]
 
 		# Create a flat list that has a triple (primaryKeyVal, dotDataId, row) for each occurrence of a primary key value in a dotData row.
-		vals = sorted( [ (primaryKeyVal if isinstance( primaryKeyCol, types.StringType ) or \
+		vals = sorted( [ (primaryKeyVal if isinstance( primaryKeyCol, bytes ) or \
 					  len( primaryKeyCol ) == 1 else tuple( primaryKeyVal ), dotDataId, row ) \
 				  for dotDataId, ( dotData, primaryKeyCol ) in enumerate( zip( dotDatas, primaryKeyCols ) ) \
 					 for row, primaryKeyVal in enumerate( dotData[ primaryKeyCol ] ) ] )
@@ -544,7 +544,7 @@ class DotData(numpy.core.records.recarray):
 			if verbose:
 				if ( iteration % 100 ) == 0:
 					iteration = 0
-					print "merging: primary key ", primaryKeyVal
+					print("merging: primary key ", primaryKeyVal)
 				iteration += 1
 					
 			# For the primary key value 'primaryKeyVal', make a map from dotDataId to the row in that dotData where this primary key value occurs.
@@ -556,10 +556,10 @@ class DotData(numpy.core.records.recarray):
 			if innerJoin and len( dotDataId2row ) < len( dotDatas ): continue
 			newRecord = reduce( operator.concat, \
 						   [ tuple( dotDatas[ dotDataId ][ dotDataId2row[ dotDataId ] ] \
-								    if dotDataId2row.has_key( dotDataId ) \
+								    if dotDataId in dotDataId2row \
 								    else blanks[ dotDataId ] ) \
 						     for dotDataId in range( len( dotDatas ) ) ] )
-			newRecordType = map( type, newRecord )
+			newRecordType = list(map( type, newRecord ))
 			if recordType == None: recordType = newRecordType
 			else: assert newRecordType == recordType
 			newRecords.append( newRecord )
@@ -627,7 +627,7 @@ class DotData(numpy.core.records.recarray):
 			new = numpy.array(new)
 			for a in cols:
 				if self.dtype[a] < new.dtype:
-					print 'WARNING: dtype of column', a, 'is inferior to dtype of ', new, 'which may cause problems.'
+					print('WARNING: dtype of column', a, 'is inferior to dtype of ', new, 'which may cause problems.')
 				self[a][(self[a] == old)[rows]] = new
 		else:
 			for a in cols:
@@ -643,9 +643,9 @@ class DotData(numpy.core.records.recarray):
 				else:
 					ok = set(range(65536)).difference(avoid)
 					if len(ok) > 0:
-						sep = unichr(list(ok)[0])
+						sep = chr(list(ok)[0])
 					else:
-						print 'All unicode characters represented in column', a ,', can\t replace quickly.'
+						print('All unicode characters represented in column', a ,', can\t replace quickly.')
 						QuickRep = False
 						
 				if QuickRep:
@@ -655,7 +655,7 @@ class DotData(numpy.core.records.recarray):
 				self[a][rows] = numpy.cast[self.dtype[a]](newrows)
 					
 				if newrows.dtype > self.dtype[a]:
-						print 'WARNING: dtype of column', a, 'is inferior to dtype of its replacement which may cause problems.'
+						print('WARNING: dtype of column', a, 'is inferior to dtype of its replacement which may cause problems.')
 
 	def isPrimaryKey(self, columnName):
 		"""Test whether the given column is a primary key, i.e. that each row has a
@@ -663,19 +663,19 @@ class DotData(numpy.core.records.recarray):
 		return len( frozenset( self[ columnName ] ) ) == self.numRows()
 
 	def dbg(self, msg = None):
-		print '=============================='
+		print('==============================')
 		if msg is not None:
-		    print '\n' + msg + '\n'
-		    print '=============================='
+		    print('\n' + msg + '\n')
+		    print('==============================')
 		tabwriten( sys.stdout, self.headings )
 		nlines = 0
 		for line in self:
-		    sys.stdout.write( '\n' + '\t'.join( map( str, line )
-							if ( hasattr(line,'__iter__') and not isinstance(line,types.StringTypes) )
+		    sys.stdout.write( '\n' + '\t'.join( list(map( str, line ))
+							if ( hasattr(line,'__iter__') and not isinstance(line,(str,)) )
 							else (str(line),) ) )
 		    nlines += 1
 		sys.stdout.write( '\n%d rows\n' % nlines )
-		print '=============================='
+		print('==============================')
 
 	def aggregate(self,On=None,AggFuncDict = None,AggFunc=None):
 		"""
@@ -771,7 +771,7 @@ class DotData(numpy.core.records.recarray):
 		
 		#s = len(ANLen) - ANLen.argsort() - 1
 		s = ANLen.argsort()
-		Aggregates = Aggregates[s[range(len(Aggregates)-1,-1,-1)]]
+		Aggregates = Aggregates[s[list(range(len(Aggregates)-1,-1,-1))]]
 		
 		if not interspersed or len(AggVars) == 0:
 			return dv.datavstack([X,Aggregates])
@@ -783,17 +783,17 @@ class DotData(numpy.core.records.recarray):
 			HH = {}
 			for l in uniqify(Aggregates.rowdata['Aggregates']):
 				Avars = l.split(',')
-				print Avars
+				print(Avars)
 				HH[l] = System.Utils.FastRecarrayEqualsPairs(X[Avars][Diffs[:-1]],Aggregates[Avars])
 			
 			Order = []
 			for i in range(len(Diffs)-1):
 				t = time.time()
-				Order.extend(range(Diffs[i],Diffs[i+1]))
+				Order.extend(list(range(Diffs[i],Diffs[i+1])))
 				
 				Get = []
-				for l in HH.keys():
-					Get += [len(X) + j  for j in HH[l][2][range(HH[l][0][i],HH[l][1][i])] if len(set(DiffAtts[i]).intersection(Aggregates.rowdata['Aggregates'][j].split(','))) > 0 and set(Aggregates.rowdata['Aggregates'][j].split(',')) == set(l.split(','))]
+				for l in list(HH.keys()):
+					Get += [len(X) + j  for j in HH[l][2][list(range(HH[l][0][i],HH[l][1][i]))] if len(set(DiffAtts[i]).intersection(Aggregates.rowdata['Aggregates'][j].split(','))) > 0 and set(Aggregates.rowdata['Aggregates'][j].split(',')) == set(l.split(','))]
 	
 				Order.extend(Get)
 			
@@ -876,11 +876,11 @@ def DotDataAggregate(X,On=None,AggFuncDict = None,AggFunc=None,returnsort = Fals
 		AggFuncDict = {}
 		
 	if AggFunc != None:
-		AggFuncDict.update( dict([(o,AggFunc) for o in Off if o not in AggFuncDict.keys()]) )
+		AggFuncDict.update( dict([(o,AggFunc) for o in Off if o not in list(AggFuncDict.keys())]) )
 		
-	NotProvided = Off.difference(AggFuncDict.keys()) if AggFuncDict else Off
+	NotProvided = Off.difference(list(AggFuncDict.keys())) if AggFuncDict else Off
 	if len(NotProvided) > 0:
-		print 'No aggregation function provided for axes: ' , NotProvided, 'so assuming "sum".'
+		print('No aggregation function provided for axes: ' , NotProvided, 'so assuming "sum".')
 		AggFuncDict.update(dict([(o,sum) for o in NotProvided]))
 
 	if len(On) > 0:	
@@ -989,7 +989,7 @@ def Pivot(X,a,b,Keep=None):
 			[AA,BB] = System.Utils.fastequalspairs(cvals,X[c])
 			
 			for (i,cc) in enumerate(cvals):
-				print time.time() - t, i, cc
+				print(time.time() - t, i, cc)
 				blist = [str(bv).replace(' ','') for bv in Bvals if bv in X[b][AA[i]:BB[i]]]
 				D.coloring[str(cc)] = [a] + [bn + '_' + d for bn in blist for d in NonTrivials]
 				for d in NonTrivials:
@@ -1031,7 +1031,7 @@ def SVIter( SVPath, SVDelimiter = '\t', ToLoad = None ):
 			
 def DotDataFromTblIter( tableIter ):
 	"""Construct a DotData from a TableIter"""
-	return DotData( names = tableIter.headings, Records = map( tuple, tableIter ) )
+	return DotData( names = tableIter.headings, Records = list(map( tuple, tableIter )) )
 
 def SaveToSV( dotData, outFN, getio = None ):
 	"""Save given DotData to a .tsv file"""

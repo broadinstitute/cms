@@ -1,4 +1,4 @@
-from __future__ import with_statement
+
 
 from contextlib import contextmanager, nested
 import os, operator, itertools, glob
@@ -14,7 +14,7 @@ def VStackDotDataFiles( inFiles, outFile, getio = None ):
 
     if getio: return dict( depends_on = inFiles, creates = outFile )
 
-    IDotData.vstackFromIterable( itertools.imap( IDotData, inFiles ) ).save( outFile )
+    IDotData.vstackFromIterable( map( IDotData, inFiles ) ).save( outFile )
 
 def VStackTableFiles( inFiles, outFile, fileIdColumn = None, fileIdVals = None, getio = None ):
     """Vertically stack the specified DotData or tsv files"""
@@ -44,8 +44,8 @@ def VStackTableFiles( inFiles, outFile, fileIdColumn = None, fileIdVals = None, 
                     theHeader = header
                 else:
                     if header != theHeader:
-                        print 'theHeader=', theHeader
-                        print 'header=', header
+                        print('theHeader=', theHeader)
+                        print('header=', header)
                     assert header == theHeader
                     
                 if needNewline: outF.write( '\n' )
@@ -68,7 +68,7 @@ def linkDotDatas( source, target, getio = None ):
     if source.endswith('/'): source = source[:-1]
     if target.endswith('/'): target = target[:-1]
 
-    print 'linking ' + source + ' to ' + target
+    print('linking ' + source + ' to ' + target)
     SystemSucceed( 'mkdir -p ' + target )
     for f in os.listdir( source ):
         os.link( os.path.join( source, f ),

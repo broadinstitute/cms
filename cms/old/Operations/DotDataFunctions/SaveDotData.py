@@ -1,5 +1,5 @@
 from System.Utils import *
-import logging, cPickle
+import logging, pickle
 
 def SaveDotData(Data, TargetFolderName, HeaderOn = 1):
 
@@ -10,7 +10,7 @@ def SaveDotData(Data, TargetFolderName, HeaderOn = 1):
 		
 	MakeDir(TargetFolderName)
 
-	KeyList = Data.coloring.keys()
+	KeyList = list(Data.coloring.keys())
 
 	Nkeys = len(KeyList)		
 	pairwise = [[set(Data.coloring[key1]) > set(Data.coloring[key2]) for key1 in KeyList] for key2 in KeyList]
@@ -44,7 +44,7 @@ def SaveDotData(Data, TargetFolderName, HeaderOn = 1):
 		
 	if Data.rowdata != None:
 		G = open(TargetFolderName + '__rowdata__.pickle','w')
-		cPickle.dump(Data.rowdata,G)
+		pickle.dump(Data.rowdata,G)
 		G.close()
 
 	logging.info( 'Saved DotData (%d rows, %d cols) to %s' % ( Data.numRows(), Data.numCols(), TargetFolderName ) )

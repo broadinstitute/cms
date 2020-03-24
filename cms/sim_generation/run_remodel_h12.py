@@ -103,7 +103,7 @@ def main():
 	## DISPATCH ##
 	##############
 	shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

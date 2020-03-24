@@ -33,7 +33,7 @@ class NeutralScenario(Scenario, namedtuple('NeutralScenario', '')):
         """Return a string representing a subdir in which data for this scenario is stored."""
         return 'neutral'
 
-    def __nonzero__(self): return True
+    def __bool__(self): return True
 
     def __str__( self ):
         """Return an informal string representation"""

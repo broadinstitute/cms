@@ -15,7 +15,7 @@ models = [ 'gradient15', 'defdef15', 'def15']#'nd', 'ndcs', 'gravel']#'gravel'] 
 regimes = ['lct', 'slc24a5']
 #'edar']#'lct', 'edar', 'slc24a5']#['neut']
 pops = [1,2,3,4]
-reps = range(0,1001)
+reps = list(range(0,1001))
 #models, regimes, pops, reps = ['def15', 'defdef15', 'gradient15', 'nd', 'ndcs', 'gravel'], ['neut'], [1,2,3, 4], range(1,1001)
 #models, regimes, pops, reps = ['gradient15',], ['neut'], [1,2,3, 4], range(0,1001)
 basewritedir = "/idi/sabeti-scratch/jvitti/remodel/run4/" #'nd', 'ndcs', 
@@ -128,7 +128,7 @@ def main():
 	## DISPATCH ##
 	##############
 	shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

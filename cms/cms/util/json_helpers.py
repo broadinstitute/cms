@@ -35,7 +35,7 @@ class JSONHelper(object):
                     metaDataDict.setdefault(key_to_act_on, []).append(dict_to_set)
                 else:
             
-                    for k,v in dict_to_set.iteritems():
+                    for k,v in dict_to_set.items():
                         if not key_to_act_on:
                             metaDataDict[k] = v
                         else:

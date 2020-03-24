@@ -33,20 +33,20 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 
 	if Path[-4:] == '.csv':
 		if Delimiter == None:
-			print "Warning: no Delimiter argument specified, assuming ',' because of file extension."
+			print("Warning: no Delimiter argument specified, assuming ',' because of file extension.")
 			Delimiter = ','
 	elif Path[-4:] == '.tsv':
 		if Delimiter == None:
-			print "Warning: no Delimiter argument specified, assuming '\\t' because of file extension."
+			print("Warning: no Delimiter argument specified, assuming '\\t' because of file extension.")
 			Delimiter = '\t'
 
 	if Delimiter == None:
-		print "Warning: no Delimiter argument specified, defaulting to '\\t'."
+		print("Warning: no Delimiter argument specified, defaulting to '\\t'.")
 		Delimiter = '\t'
 	
 	if LineBreak == None or LineBreak == '\n':
 		if LineBreak == None:
-			print "Warning: no LineBreak argument specified, using '\\n'."
+			print("Warning: no LineBreak argument specified, using '\\n'.")
 			LineBreak = '\n'
 		F = open(Path,'rU').read().strip(LineBreak).split(LineBreak)
 		
@@ -57,12 +57,12 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 
 	F = F[SkipFirstLines:]
 
-	if LineFixer: F = map( LineFixer, F )
+	if LineFixer: F = list(map( LineFixer, F ))
 	if DelimiterRegExp:
-		if isinstance( DelimiterRegExp, types.StringType ):
+		if isinstance( DelimiterRegExp, bytes ):
 			import re
 			DelimiterRegExp = re.compile( DelimiterRegExp )
-		F = map( lambda line: DelimiterRegExp.sub( Delimiter, line ), F )
+		F = [DelimiterRegExp.sub( Delimiter, line ) for line in F]
 	
 	if SVHash != None:
 		headerlines = 0
@@ -72,7 +72,7 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 			else:
 				break
 		if Header:
-			print "Assuming that the last line in ", Path, " beginning with '", SVHash, "' has attribute names."
+			print("Assuming that the last line in ", Path, " beginning with '", SVHash, "' has attribute names.")
 			F = F[headerlines-1:]
 			F[0] = F[0][1:]
 		else:
@@ -91,7 +91,7 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 		#Extract records to a list of strings
 		records_list = F
 
-	print 'attribute_names=', attribute_names
+	print('attribute_names=', attribute_names)
 		
 	# Parse records into a list of lists
 	# records_parsed - list of lists of strings, where each inner list of strings is the parsing of one file line
@@ -105,7 +105,7 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 	if attribute_names:
 		for r in records_parsed:
 			if not len( r ) >= len( attribute_names ):
-				print 'r=', r
+				print('r=', r)
 			assert len( r ) >= len( attribute_names )
 	
 	# Type the columns	and save to a list of (attribute) columns
@@ -116,7 +116,7 @@ def DotDataListFromSV(Path, Delimiter = None, DelimiterRegExp = None, LineBreak 
 		# Restrict the columns to the subset requested by the user
 		for TL in ToLoad:
 			if TL not in attribute_names:
-				print 'column ', TL, ' not in ', attribute_names
+				print('column ', TL, ' not in ', attribute_names)
 			
 		load_ind = [attribute_names.index(TL) for TL in ToLoad]
 		attribute_names = [ attribute_names[ i ] for i in load_ind ]

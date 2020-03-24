@@ -128,7 +128,7 @@ def execute_generate_sel_bins(args):
 		bounds = bin_starts[ibin], bin_ends[ibin]
 		paramfilename = populateDir + "/params"
 		write_bin_paramfile(neutParamfile, paramfilename, bounds)
-		print('wrote to: ' + paramfilename)	
+		print(('wrote to: ' + paramfilename))
 	return
 def execute_get_sel_traj(args):
 	'''generate forward trajectories of simulated allele frequencies for demographic scenarios with selection'''
@@ -162,7 +162,7 @@ def execute_run_neut_sim(args):
 			renamed = outbase +"_" + str(ipop) + ".tped"
 			renamecmd = "mv "  + torenamefile + " " + renamed
 			execute(renamecmd)
-	print("wrote simulates to e.g. " + renamed)
+	print(("wrote simulates to e.g. " + renamed))
 	return
 def execute_run_sel_sim(args):
 	''' generates tped data for one replicate from a demographic model parameter file and selection trajectory file using coalescent simulator cosi '''
@@ -188,7 +188,7 @@ def execute_run_sel_sim(args):
 			renamed = outbase +"_" + str(ipop) + ".tped"
 			renamecmd = "mv "  + torenamefile + " " + renamed
 			execute(renamecmd)
-	print("wrote simulates to e.g. " + renamed)
+	print(("wrote simulates to e.g. " + renamed))
 	return
 
 ### Calculate component scores from 
@@ -309,7 +309,7 @@ def execute_get_neut_norm_params(args):
 				if os.path.isfile(unnormedfile):
 					repfiles.append(unnormedfile)
 				else:
-					print('missing: ' + unnormedfile)
+					print(('missing: ' + unnormedfile))
 			concatfile = open(concatfilename, 'w')
 			for irepfile in range(len(repfiles)):
 				repfile = repfiles[irepfile]
@@ -327,7 +327,7 @@ def execute_get_neut_norm_params(args):
 						concatfile.write(line)
 				readfile.close()
 			concatfile.close()
-			print('wrote to: ' + concatfilename)
+			print(('wrote to: ' + concatfilename))
 
 		#already have concatfile
 		infilename = concatfilename
@@ -355,7 +355,7 @@ def execute_get_neut_norm_params(args):
 			with open(binfilename, 'w') as outfile:
 				subprocess.check_output( fullcmd.split(), stderr=outfile)
 			outfile.close()
-			print('wrote to: ' + binfilename)
+			print(('wrote to: ' + binfilename))
 	return
 def execute_norm_from_neut_params(args): 
 	''' using parameters from neutral simulates, normalizes component scores '''
@@ -373,7 +373,7 @@ def execute_norm_from_neut_params(args):
 	#else:
 	#	scenario_dir = "sel" + str(pop) + "/sel_" + str(args.selbin) + "/"
 	concatfilename, binfilename = get_concat_files(pop, score, altpop, basedir=basedir) #I NEED TO MAKE THIS HANDLE SEL SITUATION
-	print('loading normalization parameters from ' + binfilename + "...")
+	print(('loading normalization parameters from ' + binfilename + "..."))
 	###############
 	## NORMALIZE ##
 	###############
@@ -394,7 +394,7 @@ def execute_norm_from_neut_params(args):
 			print('currently handling this manually: rewrite_fst_bins.py')
 			pass
 		if irep%100 == 0:
-			print("currently rep: " + str(irep))
+			print(("currently rep: " + str(irep)))
 	return	
 
 ### Define component score likelihood 
@@ -429,7 +429,7 @@ def execute_likes_from_scores(args):
 			if (all_present.count(True)) == 9: #replicate done
 				completed_neut.append(loaded_neut_files)
 		all_completed_neut.append(completed_neut)
-	print("loaded " + str(sum([len(item) for item in all_completed_neut])) + " neutral replicates with complete component scores from " + neutdir)
+	print(("loaded " + str(sum([len(item) for item in all_completed_neut])) + " neutral replicates with complete component scores from " + neutdir))
 	####################
 	## LOAD SEL FILES ## 
 	####################
@@ -474,7 +474,7 @@ def execute_likes_from_scores(args):
 				completed_sel.append(completed_bin)
 			all_completed_sel.append(completed_sel) #[ipop][ibin][irep][iscore]
 			nChunks, chunk_labels = len(binlabels), bin_medians_str
-	print("loaded " + str(selcounter) + " selection replicates with complete component scores")
+	print(("loaded " + str(selcounter) + " selection replicates with complete component scores"))
 	#################################
 	## SORT SCORES INTO HISTOGRAMS ## 
 	################################# 
@@ -543,7 +543,7 @@ def execute_likes_from_scores(args):
 			#f1.ylabel("p(score)")
 			plt.savefig(savefilename)
 			plt.close()
-			print('saved to ' + savefilename)
+			print(('saved to ' + savefilename))
 
 		##################
 		## PER POP COMP ##
@@ -609,7 +609,7 @@ def execute_likes_from_scores(args):
 			#f1.subplots_adjust(hspace=0)
 			plt.savefig(savefilename)
 			plt.close()
-			print('saved to ' + savefilename)
+			print(('saved to ' + savefilename))
 	return
 def execute_plot_likes_vs_scores(args): ##REVISIT
 	''' useful QC step; visualize the function that converts score values into likelihood contributions towards composite scores '''
@@ -629,14 +629,14 @@ def execute_plot_likes_vs_scores(args): ##REVISIT
 	fig, ax = plt.subplots()
 	ax.scatter(np.arange(len(comp_like_ratios)), comp_like_ratios) #I want to make this use the actual score ranges.
 	plt.savefig(savefilename)
-	print('saved to: ' + savefilename)
+	print(('saved to: ' + savefilename))
 	plt.close()
 
 	savefilename = inputprefix + "_cl_likes_vs_likesscores.png"
 	fig, ax = plt.subplots()
 	ax.scatter(np.arange(len(comp_likes)), comp_likes)
 	plt.savefig(savefilename)
-	print('saved to: ' + savefilename)
+	print(('saved to: ' + savefilename))
 	plt.close()
 	return
 def execute_write_master_likes(args):

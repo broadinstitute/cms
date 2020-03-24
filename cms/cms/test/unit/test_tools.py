@@ -38,7 +38,7 @@ def all_tool_tests():
 
 @pytest.fixture(params=all_tool_tests())
 def tool_class(request):
-    print(request.param)
+    print((request.param))
     return request.param
 
 

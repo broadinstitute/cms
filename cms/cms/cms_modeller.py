@@ -107,7 +107,7 @@ def execute_target_stats(args):
 	inputtpedstring = ''.join(args.inputTpeds)
 	inputtpeds = inputtpedstring.split(',')
 	npops = len(inputtpeds)
-	print("calculating summary statistics for " +  str(npops) + " populations...")
+	print(("calculating summary statistics for " +  str(npops) + " populations..."))
 	allCmds = []
 	for ipop in range(npops):
 		inputtped = inputtpeds[ipop]
@@ -135,7 +135,7 @@ def execute_target_stats(args):
 def execute_bootstrap(args):
 	'''pulls all per-snp/per-snp-pair values to get genome-wide bootstrap estimates.'''
 	nbootstraprep = args.nBootstrapReps
-	print("running " + str(nbootstraprep) + " bootstrap estimates of summary statistics...")
+	print(("running " + str(nbootstraprep) + " bootstrap estimates of summary statistics..."))
 	targetstats_filename = args.out + "_bootstrap_n" + str(nbootstraprep) + ".txt"
 	writefile = open(targetstats_filename, 'w')
 
@@ -151,7 +151,7 @@ def execute_bootstrap(args):
 			allRegionDER, allRegionANC, allRegionPI, allseqlens = [], [], [], []
 			nsnps, totalregions, totallen = 0, 0, 0
 			inputfilename = inputfilenames[ipop]
-			print("reading allele frequency statistics from: " + inputfilename)
+			print(("reading allele frequency statistics from: " + inputfilename))
 			writefile.write(str(ipop) + '\n')
 			if checkFileExists(inputfilename):
 				allpi, allnderiv, allnanc, nregions, seqlens = readFreqsFile(inputfilename)
@@ -163,7 +163,7 @@ def execute_bootstrap(args):
 				totallen += sum(seqlens)
 				for i in range(len(allpi)):
 					nsnps += len(allpi[i])
-			print("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + ".")
+			print(("TOTAL: logged frequency values for " + str(nsnps) + " SNPS across " + str(totalregions) + "."))
 			
 			####################################
 			#### PI: MEAN & BOOTSTRAP STDERR ###
@@ -230,7 +230,7 @@ def execute_bootstrap(args):
 		#print('npops ' + str(npops)) #debug
 		for ipop in range(npops):
 			inputfilename = inputfilenames[ipop]
-			print("reading linkage disequilibrium statistics from: " + inputfilename)
+			print(("reading linkage disequilibrium statistics from: " + inputfilename))
 			writefile.write(str(ipop) + '\n')
 			N_r2regs, N_dprimeregs = 0, 0
 			N_r2snps, N_dprimesnps = 0, 0
@@ -239,8 +239,8 @@ def execute_bootstrap(args):
 			N_r2snps += sum([len(x) for x in allRegionr2])
 			N_dprimeregs += ndprimeregions
 			N_dprimesnps += sum([len(x) for x in allRegionDprime])
-			print("\tlogged r2 values for " + str(N_r2snps) + " SNP pairs across " + str(N_r2regs) + " regions.")
-			print("\tlogged D' values for " + str(N_dprimesnps) + " SNP pairs across " + str(N_dprimeregs) + " regions.")
+			print(("\tlogged r2 values for " + str(N_r2snps) + " SNP pairs across " + str(N_r2regs) + " regions."))
+			print(("\tlogged D' values for " + str(N_dprimesnps) + " SNP pairs across " + str(N_dprimeregs) + " regions."))
 
 
 			###################################
@@ -322,25 +322,25 @@ def execute_bootstrap(args):
 		npopcomp = len(inputfilenames)
 		for icomp in range(npopcomp):
 			fstfilename	= inputfilenames[icomp]
-			print("reading Fst values from: " + fstfilename)
+			print(("reading Fst values from: " + fstfilename))
 			if checkFileExists(fstfilename):
 				allfst, nregions = readFstFile(fstfilename)
 			else:
-				print('missing ' + fstfilename)
+				print(('missing ' + fstfilename))
 			target_mean, target_se = estimateFstByBootstrap_bysnp(allfst, nrep = nbootstraprep)
 			writeline =  str(icomp) + "\t" + str(target_mean) + "\t" + str(target_se) + '\n'
 			writefile.write(writeline)
-			print("TOTAL: logged Fst values for " + str(len(allfst)) + " SNPs.\n")
+			print(("TOTAL: logged Fst values for " + str(len(allfst)) + " SNPs.\n"))
 
 	writefile.close()
-	print("wrote to file: " + targetstats_filename)
+	print(("wrote to file: " + targetstats_filename))
 	return
 def execute_point(args):
 	'''runs simulates of a point in parameter-space, comparing to specified target'''
 	################
 	## FILE PREP ###
 	################
-	print("generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile)
+	print(("generating " + str(args.nCoalescentReps) + " simulations from model: " + args.inputParamFile))
 	statfilename = args.outputDir
 	if args.outputDir[-1] != "/":
 		statfilename += "/"
@@ -372,7 +372,7 @@ def execute_point(args):
 		else:
 			stats, pops = read_error_dimensionsfile(args.calcError) 
 			error = calc_error(statfilename, stats, pops)
-		print(" error: " + str(error)) #record?
+		print((" error: " + str(error))) #record?
 
 	################
 	## VISUALIZE ###
@@ -384,7 +384,7 @@ def execute_point(args):
 	return
 def execute_grid(args):
 	'''run points in parameter-space according to specified grid'''
-	print("loading dimensions of grid to search from: " + args.grid_inputdimensionsfile)
+	print(("loading dimensions of grid to search from: " + args.grid_inputdimensionsfile))
 	gridname, keys, indices, values = read_dimensionsfile(args.grid_inputdimensionsfile, 'grid')
 	assert len(keys) == len(indices) 
 	combos =  [' '.join(str(y) for y in x) for x in product(*values)]
@@ -395,11 +395,11 @@ def execute_grid(args):
 		error = sample_point(args.nCoalescentReps, keys, indices, theseValues)
 		errors.append(error)
 	for icombo in range(len(combos)):
-		print(combo[icombo] + "\t" + errors[icombo] + "\n")
+		print((combo[icombo] + "\t" + errors[icombo] + "\n"))
 	return
 def execute_optimize(args):
 	'''run scipy.optimize module according to specified parameters'''
-	print("loading dimensions to search from: " + args.optimize_inputdimensionsfile)
+	print(("loading dimensions to search from: " + args.optimize_inputdimensionsfile))
 	runname, keys, indices = read_dimensionsfile(args.optimize_inputdimensionsfile, runType='optimize')
 
 	rangeDict = get_ranges()
@@ -432,7 +432,7 @@ def execute_optimize(args):
 		low, high = float(interval[0]), float(interval[1])
 		realVal = get_real_value(result.x[i], low, high)
 		bestparams.append(result.x[i])
-		print("best " + str(key) + "|" + str(index) + "|" + str(realVal))
+		print(("best " + str(key) + "|" + str(index) + "|" + str(realVal)))
 	return
 
 ##########

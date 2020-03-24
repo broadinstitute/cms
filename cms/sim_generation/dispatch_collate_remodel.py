@@ -90,7 +90,7 @@ def main():
 	for subdir in subdirs:
 		if True:
 			for pop in [1]:
-				reps = range(1,1001)
+				reps = list(range(1,1001))
 				this_rundir = this_basedir + subdir
 				for irep in reps:
 					tpedfilename = this_rundir + "tpeds/rep" + str(irep) + "_0_" + str(pop) + ".tped"
@@ -129,7 +129,7 @@ def main():
 								#subprocess.check_output(fullcmd.split())
 
 
-	print('loaded ' + str(len(allargs)) + " cmds")
+	print(('loaded ' + str(len(allargs)) + " cmds"))
 	####################
 	## DISPATCH JOBS ###
 	####################

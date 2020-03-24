@@ -4,6 +4,7 @@ from Classes.DotData import DotData
 from Operations.Shari_Operations.localize.xpopMerge import xpopMerge
 from Operations.Shari_Operations.localize.Scenario import GetSelectionScenarios, GetScenarios
 from Operations.MiscUtil import MakeAlphaNum, Dict, Sfx, progress, AddFileSfx
+from functools import reduce
 
 def mergeSims( scenario, Ddata = '../Data/Shari_Data/sim/', simsOut = 'simsOut3', nreplicas = 5,
 	       thinExt = '.thin', thinSfx = '',
@@ -177,16 +178,16 @@ def mergeSims( scenario, Ddata = '../Data/Shari_Data/sim/', simsOut = 'simsOut3'
 
 		logging.info( 'Done merging.' )
 		logging.info( 'type(posAll) is ' + str( type( posAll ) ) )
-		print len(posAll)
+		print(len(posAll))
 		chrom = numpy.ones(len(posAll))*ichrom
 		newChrom = DotData(Columns = [chrom,],names=['newChrom',])
-		print newChrom
+		print(newChrom)
 		posAll = posAll[['CHROM_POS 1','FREQ1 1','FREQ1 4','FREQ1 5']]
 		posAll.hstack(newChrom)
 
 		logging.info( 'added replica number column' )
 		
-		print posAll
+		print(posAll)
 		posAllBlank = (numpy.nan,)*posAll.numCols()
 		
 		# 10-16-08 ADDED CHROM TO MERGED OUTPT  ( not now used -- can be removed? )
@@ -244,7 +245,7 @@ def DefineRulesTo_MergeSims( pr, mutAges, mutPops, mutFreqs, noNeutral, nreplica
     """
 
     for scenario in ( GetSelectionScenarios if noNeutral else GetScenarios)( mutAges, mutPops, mutFreqs ):
-        print 'generating rule for scenario ', scenario
+        print('generating rule for scenario ', scenario)
         pr.addInvokeRule( invokeFn = mergeSims,
                           invokeArgs = Dict( 'scenario nreplicas Ddata simsOut thinExt thinSfx' ) )
 

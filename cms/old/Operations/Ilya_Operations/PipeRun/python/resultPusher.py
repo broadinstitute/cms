@@ -54,7 +54,7 @@ def PushResults( options ):
             logging.info( 'Pushing results in ' + queue + '...' )
 
             # find an unclaimed task in this queue, and try to claim it
-            try: taskDirs = filter( lambda f: f.startswith('mq'), os.listdir( queue ) )
+            try: taskDirs = [f for f in os.listdir( queue ) if f.startswith('mq')]
             except EnvironmentError as e:
                 logging.info( 'Error getting list of tasks in queue ' + queue + ': ' + str( e ) )
                 # sleep a bit -- maybe it's some transient condition that will resolve itself
@@ -91,7 +91,7 @@ def PushResults( options ):
                             logging.info( 'Could not read attrs for task in ' + fullTaskDir + ': ' + str( e ) )
                         
                         try:
-                            infoFNs = [ os.path.join( fullTaskDir, f ) for f in 'command.dat', 'attrs.tsv', 'claimed.dat' ]
+                            infoFNs = [ os.path.join( fullTaskDir, f ) for f in ('command.dat', 'attrs.tsv', 'claimed.dat') ]
                             infoContents = '\n'.join([ SlurpFile( f ) if os.path.exists( f ) else 'missing file: ' + f
                                                        for f in infoFNs ])
 
@@ -168,7 +168,7 @@ def RunPushers( use_args = None ):
 
         
 if __name__ == '__main__':
-    print 'STARTING PUSHERS FROM MAIN'
+    print('STARTING PUSHERS FROM MAIN')
     StartPushers()
                     
                     

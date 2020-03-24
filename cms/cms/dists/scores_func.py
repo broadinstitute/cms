@@ -129,7 +129,7 @@ def norm_neut_ihs(inputScoreFile, outfileName, runProgram = "cms/cms/scans.py"):
 	return
 def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	''' normalize iHS component score for selection scenarios to neutral parameters ''' 
-	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
+	print(("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename))
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
 	#print(str(means))
 	#print(str(variances))
@@ -155,7 +155,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 		normfile.write(writeline)		
 	openfile.close()
 	normfile.close()
-	print("wrote to: " + normfilename)
+	print(("wrote to: " + normfilename))
 	return
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):##JV: I found the way to properly write to file; should implement here
 	'''wraps call to scans.py'''
@@ -179,7 +179,7 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 		normfile.write(writeline)
 	openfile.close()
 	normfile.close()
-	print("wrote to: " + normfilename)
+	print(("wrote to: " + normfilename))
 	return
 
 #############################
@@ -210,10 +210,10 @@ def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel
 	neut_values2 = load_from_files(neut_files2,  startbound, endbound, absVal = foldDists)
 	neut_values3 = load_from_files(neut_files3,  startbound, endbound, absVal = foldDists)
 	neut_values4 = load_from_files(neut_files4,  startbound, endbound, absVal = foldDists)
-	print("loaded " + str(len(neut_values1)) + " neutral values for pop 1...")
-	print("loaded " + str(len(neut_values2)) + " neutral values for pop 2...")	
-	print("loaded " + str(len(neut_values3)) + " neutral values for pop 3...")			
-	print("loaded " + str(len(neut_values4)) + " neutral values for pop 4...")
+	print(("loaded " + str(len(neut_values1)) + " neutral values for pop 1..."))
+	print(("loaded " + str(len(neut_values2)) + " neutral values for pop 2..."))
+	print(("loaded " + str(len(neut_values3)) + " neutral values for pop 3..."))
+	print(("loaded " + str(len(neut_values4)) + " neutral values for pop 4..."))
 
 	sel_files1 = [all_completed_sel[0][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[0][sel_bin_index]))]
 	sel_files2 = [all_completed_sel[1][sel_bin_index][irep][scoreindex] for irep in range(len(all_completed_sel[1][sel_bin_index]))]
@@ -223,10 +223,10 @@ def get_scores_from_files(all_completed_neut, all_completed_sel, scoreindex, sel
 	causal_values2, linked_values2 = load_from_files_discriminate_causal(sel_files2,  startbound, endbound, absVal = foldDists)
 	causal_values3, linked_values3 = load_from_files_discriminate_causal(sel_files3,  startbound, endbound, absVal = foldDists)
 	causal_values4, linked_values4 = load_from_files_discriminate_causal(sel_files4,  startbound, endbound, absVal = foldDists)
-	print("loaded " + str(len(causal_values1)) + " causal SNP and " + str(len(linked_values1)) + " linked SNP iHS values for pop 1...")
-	print("loaded " + str(len(causal_values2)) + " causal SNP and " + str(len(linked_values2)) + " linked SNP iHS values for pop 2...")
-	print("loaded " + str(len(causal_values3)) + " causal SNP and " + str(len(linked_values3)) + " linked SNP iHS values for pop 3...")
-	print("loaded " + str(len(causal_values4)) + " causal SNP and " + str(len(linked_values4)) + " linked SNP iHS values for pop 4...")
+	print(("loaded " + str(len(causal_values1)) + " causal SNP and " + str(len(linked_values1)) + " linked SNP iHS values for pop 1..."))
+	print(("loaded " + str(len(causal_values2)) + " causal SNP and " + str(len(linked_values2)) + " linked SNP iHS values for pop 2..."))
+	print(("loaded " + str(len(causal_values3)) + " causal SNP and " + str(len(linked_values3)) + " linked SNP iHS values for pop 3..."))
+	print(("loaded " + str(len(causal_values4)) + " causal SNP and " + str(len(linked_values4)) + " linked SNP iHS values for pop 4..."))
 
 	all_score_values = [[neut_values1, causal_values1, linked_values1],
 						[neut_values2, causal_values2, linked_values2],
@@ -298,26 +298,26 @@ def get_compscores_from_files_flatten(all_completed_neut, all_completed_sel, sco
 		sel_files4c = [all_completed_sel[3][sel_bin_index][irep][7] for irep in range(len(all_completed_sel[3][sel_bin_index]))]
 
 	neut_values1 = load_from_files_flatten(neut_files1a, neut_files1b, neut_files1c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(neut_values1)) + " neutral values for pop 1 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(neut_values1)) + " neutral values for pop 1 ... (chosen from among three pop comps)"))
 	neut_values2 = load_from_files_flatten(neut_files2a, neut_files2b, neut_files2c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(neut_values2)) + " neutral values for pop 2 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(neut_values2)) + " neutral values for pop 2 ... (chosen from among three pop comps)"))
 	neut_values3 = load_from_files_flatten(neut_files3a, neut_files3b, neut_files3c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(neut_values3)) + " neutral values for pop 3 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(neut_values3)) + " neutral values for pop 3 ... (chosen from among three pop comps)"))
 	neut_values4 = load_from_files_flatten(neut_files4a, neut_files4b, neut_files4c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(neut_values4)) + " neutral values for pop 4 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(neut_values4)) + " neutral values for pop 4 ... (chosen from among three pop comps)"))
 
 	causal_values1, linked_values1 = load_from_files_discriminate_causal_flatten(sel_files1a, sel_files1b, sel_files1c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(causal_values1)) + " causal values for pop 1 ... (chosen from among three pop comps)")
-	print("loaded " + str(len(linked_values1)) + " linked values for pop 1 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(causal_values1)) + " causal values for pop 1 ... (chosen from among three pop comps)"))
+	print(("loaded " + str(len(linked_values1)) + " linked values for pop 1 ... (chosen from among three pop comps)"))
 	causal_values2, linked_values2 = load_from_files_discriminate_causal_flatten(sel_files2a, sel_files2b, sel_files2c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(causal_values2)) + " causal values for pop 2 ... (chosen from among three pop comps)")
-	print("loaded " + str(len(linked_values2)) + " linked values for pop 2 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(causal_values2)) + " causal values for pop 2 ... (chosen from among three pop comps)"))
+	print(("loaded " + str(len(linked_values2)) + " linked values for pop 2 ... (chosen from among three pop comps)"))
 	causal_values3, linked_values3 = load_from_files_discriminate_causal_flatten(sel_files3a, sel_files3b, sel_files3c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)
-	print("loaded " + str(len(causal_values3)) + " causal values for pop 3 ... (chosen from among three pop comps)")
-	print("loaded " + str(len(linked_values3)) + " linked values for pop 3 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(causal_values3)) + " causal values for pop 3 ... (chosen from among three pop comps)"))
+	print(("loaded " + str(len(linked_values3)) + " linked values for pop 3 ... (chosen from among three pop comps)"))
 	causal_values4, linked_values4 = load_from_files_discriminate_causal_flatten(sel_files4a, sel_files4b, sel_files4c, startbound, endbound, scorestring, stripHeader=True, physIndex=physIndex, absVal = foldDists, takeIndex =takeIndex, selDafIndex=selDafIndex)	
-	print("loaded " + str(len(causal_values4)) + " causal values for pop 4 ... (chosen from among three pop comps)")
-	print("loaded " + str(len(linked_values4)) + " linked values for pop 4 ... (chosen from among three pop comps)")
+	print(("loaded " + str(len(causal_values4)) + " causal values for pop 4 ... (chosen from among three pop comps)"))
+	print(("loaded " + str(len(linked_values4)) + " linked values for pop 4 ... (chosen from among three pop comps)"))
 	
 	all_score_values = [[neut_values1, causal_values1, linked_values1],
 						[neut_values2, causal_values2, linked_values2],

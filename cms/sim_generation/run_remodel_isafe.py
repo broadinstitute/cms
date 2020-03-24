@@ -63,7 +63,7 @@ def rewrite_from_tped_add_og(tped_base, vcf_filename):
 				physpos = int(entries[3])
 				genotypes = entries[4:]
 				these_reformatted_genotypes, nIndivs = reformat_genotypes_as_diploid_string(genotypes)
-				if physpos in writelines.keys():
+				if physpos in list(writelines.keys()):
 					writelines[physpos] +=  "\t" + these_reformatted_genotypes
 				else:
 					writelines[physpos] = these_reformatted_genotypes
@@ -74,7 +74,7 @@ def rewrite_from_tped_add_og(tped_base, vcf_filename):
 			full_writeline = "1\t" + str(item) + "\t" + str(item) + "\t0\t1\t100\tPASS\t.\tGT\t" + str(writelines[item]) + "\n"
 			vcf_file.write(full_writeline)
 		vcf_file.close()
-		print('wrote to ' + vcf_filename)
+		print(('wrote to ' + vcf_filename))
 		bgzip_cmd = "bgzip " + vcf_filename
 		print(bgzip_cmd)
 		subprocess.check_output(bgzip_cmd.split())

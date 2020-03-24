@@ -226,7 +226,7 @@ def execute_composite_sims(args):
 	else:
 		suffix = ""
 	paramfilename = write_run_paramfile(paramfilename, ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master, cutoffline, includeline)
-	print("wrote CMS run parameters to: " + paramfilename)
+	print(("wrote CMS run parameters to: " + paramfilename))
 	altpops = [1, 2, 3, 4]
 	selpop = int(selpop)
 	altpops.remove(selpop)
@@ -288,7 +288,7 @@ def execute_composite_sims(args):
 					altpairs.append(pairfilename)
 				else:
 					print('missing')
-					print(in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file)
+					print((in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file))
 			if len(altpairs) !=0:
 				outfile = compositedir + "rep" + str(irep) + "_" + str(selpop) + file_ending + suffix
 				alreadyExists = False
@@ -305,11 +305,11 @@ def execute_composite_sims(args):
 					print(fullcmd)
 					execute(fullcmd)
 				else:
-					print(outfile + " already exists") 
+					print((outfile + " already exists")) 
 			else:
 				print("no altpairs")
 	
-	print('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin.")
+	print(('calculated CMS scores for ' + str(numPerBin_neut) + ' neutral replicates and ' + str(numPerBin_sel) + " selection replicates per bin."))
 	return
 def execute_composite_emp(args):
 	''' given component scores from empirical data (e.g. from scans.py) together with likelihood tables, generate CMS scores '''
@@ -326,7 +326,7 @@ def execute_composite_emp(args):
 
 	if args.regional_cms_chrom is None:
 		cmd += "combine/combine_scores_gw" #genome-wide
-		chroms = range(1,23)
+		chroms = list(range(1,23))
 		file_ending = ".cms.gw.out"
 	else:
 		cmd += "combine/combine_scores_local" #within-region
@@ -378,7 +378,7 @@ def execute_composite_emp(args):
 		suffix = ""
 	paramfilename += "_" + str(model_selpop)
 	paramfilename = write_run_paramfile(paramfilename, ihs_master, nsl_master, delihh_master, xpehh_master, fst_master, deldaf_master, cutoffline, includeline)
-	print("wrote CMS run parameters to: " + paramfilename)
+	print(("wrote CMS run parameters to: " + paramfilename))
 
 	#############################################
 	## CALCULATE CMS: ITERATE OVER CHROMOSOMES ##
@@ -420,7 +420,7 @@ def execute_composite_emp(args):
 				fullcmd = cmd + " " + argstring
 				print(fullcmd)
 				execute(fullcmd)	
-	print('calculated CMS scores for ' + str(len(chroms)) + ' chromosomes.')
+	print(('calculated CMS scores for ' + str(len(chroms)) + ' chromosomes.'))
 
 	return
 def execute_normsims_genomewide(args): 
@@ -448,9 +448,9 @@ def execute_normsims_genomewide(args):
 				values.append(rawscore)
 			openfile.close()
 		else:
-			print('missing: ' + outfile)
+			print(('missing: ' + outfile))
 
-	print('loaded ' + str(len(values)) + ' values from neutral sims...')
+	print(('loaded ' + str(len(values)) + ' values from neutral sims...'))
 
 	#check for nans
 	values = np.array(values)
@@ -466,10 +466,10 @@ def execute_normsims_genomewide(args):
 	var = np.var(values)
 	sd = np.sqrt(var)
 
-	print("max: " + str(max(values)))
-	print("min: " + str(min(values)))
-	print("mean: " + str(np.mean(values)))
-	print("var: " + str(np.var(values)))
+	print(("max: " + str(max(values))))
+	print(("min: " + str(min(values))))
+	print(("mean: " + str(np.mean(values))))
+	print(("var: " + str(np.var(values))))
 
 	############################
 	## NORMALIZE NEUTRAL SIMS ##
@@ -493,7 +493,7 @@ def execute_normsims_genomewide(args):
 					writefile.write(writeline)
 				openfile.close()
 				writefile.close()
-	print("wrote to eg: " + normedfile)	
+	print(("wrote to eg: " + normedfile))
 	
 	########################
 	## NORMALIZE SEL SIMS ##
@@ -518,7 +518,7 @@ def execute_normsims_genomewide(args):
 						writefile.write(writeline)
 					openfile.close()
 					writefile.close()
-	print("wrote to eg: " + normedfile)	
+	print(("wrote to eg: " + normedfile))	
 	return
 def execute_normemp_genomewide(args):
 	""" given output from composite_emp, normalize CMS scores genome-wide """  #could also introduce a feature to normalize to explicitly neutral regions. 
@@ -544,11 +544,11 @@ def execute_normemp_genomewide(args):
 	scores = scores[~np.isinf(scores)]
 	scores = list(scores)
 	
-	print('loaded ' + str(len(scores)) + " scores")
-	print("max: " + str(max(scores)))
-	print("min: " + str(min(scores)))
-	print("mean: " + str(np.mean(scores)))
-	print("var: " + str(np.var(scores)))
+	print(('loaded ' + str(len(scores)) + " scores"))
+	print(("max: " + str(max(scores))))
+	print(("min: " + str(min(scores))))
+	print(("mean: " + str(np.mean(scores))))
+	print(("var: " + str(np.var(scores))))
 
 	mean = np.mean(scores)
 	var = np.var(scores)
@@ -557,7 +557,7 @@ def execute_normemp_genomewide(args):
 	##############
 	## NORMALIZE #
 	############## 
-	chroms = range(1,23)
+	chroms = list(range(1,23))
 	for thischrom in chroms:
 		unnormedfile = get_emp_cms_file(selpop, thischrom, normed=False, basedir=score_basedir, suffix=suffix,) #model #selpop, chrom, normed=False, suffix=suffix, basedir = score_basedir)
 		assert os.path.isfile(unnormedfile)
@@ -575,7 +575,7 @@ def execute_normemp_genomewide(args):
 			writefile.write(writeline)
 		readfile.close()
 		writefile.close
-		print('wrote to '  + normedfile)
+		print(('wrote to '  + normedfile))
 	return
 
 ### Visualize and hone in 
@@ -596,7 +596,7 @@ def execute_hapviz(args):
 			startpos = int(args.startpos)
 			endpos = int(args.endpos)
 			haplotypes, coreindex, physpositions = pullRegion(inputfilename, startpos, endpos, args.maf, corePos = args.corepos)
-	print("loaded genotypes for " + str(len(haplotypes[0])) + " sites... ")
+	print(("loaded genotypes for " + str(len(haplotypes[0])) + " sites... "))
 
 	########################
 	## SORT BY SIMILARITY ##
@@ -627,14 +627,14 @@ def execute_hapviz(args):
 				dif = [item - int(snppos) for item in physpositions]
 				minDif = min(dif)
 				minDifIndex = dif.index(minDif)
-				print(str(minDifIndex))
+				print((str(minDifIndex)))
 				ax.axvline(minDifIndex, color="orange")
-				print('found nearest proxy variant based on physical distance ' + str(physpositions[minDifIndex]))
+				print(('found nearest proxy variant based on physical distance ' + str(physpositions[minDifIndex])))
 	if args.title is not None:
 		plt.title(args.title, fontsize=5)
 	plt.tight_layout()
 	plt.savefig(args.out, dpi=float(args.dpi))
-	print("plotted to: " + args.out)
+	print(("plotted to: " + args.out))
 	plt.close()
 	return	
 def execute_ml_region(args):
@@ -662,7 +662,7 @@ def execute_ucsc_viz(args):
 			outfile.write(writestring)
 		infile.close()
 	outfile.close()
-	print("wrote to: " + outfilename)
+	print(("wrote to: " + outfilename))
 	#convertBedGraphtoBigWig:
 	print("for large datasets, convert to BigWig format, e.g.: http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedGraphToBigWig\n")
 	return

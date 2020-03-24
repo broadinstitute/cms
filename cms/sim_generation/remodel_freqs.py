@@ -33,7 +33,7 @@ def main():
 	if not os.path.isfile(tped_filename):
 		tped_filename += ".gz"					
 	if not os.path.isfile(tped_filename):
-		print('missing: ', tped_filename)	
+		print(('missing: ', tped_filename))	
 		sys.exit(0)				
 	"""
 	ihs_commandstring = "python " + cmsdir + "scans.py selscan_ihs"

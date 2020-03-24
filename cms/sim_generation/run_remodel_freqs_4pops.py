@@ -10,7 +10,7 @@ import os
 from random import shuffle
 import subprocess
 
-models, regimes, pops, reps = ['gradient15'], ['hard', 'soft'], [1,2,3,4], range(1,5001)#range(1001, 5000)#
+models, regimes, pops, reps = ['gradient15'], ['hard', 'soft'], [1,2,3,4], list(range(1,5001))#range(1001, 5000)#
 basewritedir = "/idi/sabeti-scratch/jvitti/remodel/run/"
 
 def chunks(l, n):
@@ -94,7 +94,7 @@ def main():
 	## DISPATCH ##
 	##############
 	shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

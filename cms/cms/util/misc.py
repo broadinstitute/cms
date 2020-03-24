@@ -1,5 +1,5 @@
 '''A few miscellaneous tools. '''
-from __future__ import print_function, division  # Division of integers with / should never round!
+  # Division of integers with / should never round!
 import collections
 import itertools
 import logging
@@ -53,7 +53,7 @@ def freqs(items, zero_checks=None):
         out.setdefault(i, 0)
         out[i] += 1
         tot += 1
-    for k, v in out.items():
+    for k, v in list(out.items()):
         yield (k, v, float(v) / tot)
     for i in zero_checks:
         if i not in out:
@@ -84,10 +84,10 @@ def pairwise(iterable):
     next(b, None)
     if hasattr(itertools, 'izip'):
         # Python 2
-        return itertools.izip(a, b)
+        return zip(a, b)
     else:
         # Python 3
-        return zip(a, b)
+        return list(zip(a, b))
 
 
 def batch_iterator(iterator, batch_size):

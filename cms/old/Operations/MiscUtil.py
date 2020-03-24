@@ -3,8 +3,9 @@
 For general utilities related to our datasets, see Operations.Ilya_Operations.DataUtil.py .
 """
 
-from __future__ import with_statement, division
+
 import platform
+from functools import reduce
 assert platform.python_version_tuple() >= ( 2, 6 )
 
 import sys, os, subprocess, operator, itertools, functools, inspect, logging, traceback, shutil, math, copy, types, \
@@ -41,12 +42,12 @@ from contextlib import contextmanager, nested
 
 def dump_args(func, fname = None):
     "This decorator dumps out the arguments passed to a function before calling it"
-    argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
-    if not fname: fname = func.func_name
+    argnames = func.__code__.co_varnames[:func.__code__.co_argcount]
+    if not fname: fname = func.__name__
     def echo_func(*args,**kwargs):
         callStr = fname + ":" + ', '.join(
             '%s=%r' % entry
-            for entry in zip(argnames,args) + kwargs.items())
+            for entry in list(zip(argnames,args)) + list(kwargs.items()))
         logging.info( 'calling ' + str(callStr) )
         retVal = func(*args, **kwargs)
         logging.info( 'from ' + str(callStr) + ' returned ' + str(retVal) )
@@ -187,7 +188,7 @@ def remap( orig_func, n_args = 1, module = None ):
 
     @functools.wraps( orig_func )
     def newFunc( *args, **kwargs ):
-        newPaths = map( MapPath, args[ :n_args ] )
+        newPaths = list(map( MapPath, args[ :n_args ] ))
         if str( newPaths ) != str( args[ :n_args ] ):
           logging.info( 'MiscUtil.remap: applying ' + orig_func.__name__ + ' to ' + ','.join( newPaths ) + ' instead of ' + ','.join( args[ :n_args ] ) )
         specialPaths = dict( stdin = sys.stdin, stdout = sys.stdout )
@@ -221,10 +222,10 @@ def InitPathMapping():
       try:
           import posix
 
-          map( functools.partial( remap, module = posix ),
+          dummy = list(map( functools.partial( remap, module = posix ),
                ( posix.access, posix.chdir, posix.chmod, posix.chown, posix.listdir, posix.link, posix.lstat,
                  posix.stat, posix.mknod, posix.mkdir, posix.pathconf, posix.remove, posix.readlink,
-                 posix.rmdir, posix.stat, posix.statvfs, posix.unlink, posix.utime ) )
+                 posix.rmdir, posix.stat, posix.statvfs, posix.unlink, posix.utime ) ))
           
           remap( posix.rename, module = posix, n_args = 2 )
           logging.info( 'REMAPPED os.rename' )
@@ -234,7 +235,7 @@ def InitPathMapping():
       try:
           import posixpath
 
-          map( remap, ( posixpath.walk, ) )
+          dummy = list(map( remap, ( posixpath.walk, ) ))
       except ImportError: pass
 
       global orig_open
@@ -242,11 +243,11 @@ def InitPathMapping():
 
       remap( open )
       
-      map( functools.partial( remap, module = os ),
+      dummy = list(map( functools.partial( remap, module = os ),
            ( os.access, os.chdir, os.chmod, os.chown, os.listdir, os.link, os.lstat,
              os.stat, os.mknod, os.mkdir, os.makedirs, os.open, os.pathconf, os.remove, os.readlink, os.removedirs,
              os.rmdir, os.stat, os.statvfs, os.unlink, os.utime, os.walk, os.path.walk,
-             os.path.exists ) )
+             os.path.exists ) ))
 
       remap( os.rename, module = os, n_args = 2 )
       logging.info( 'REMAPPED os.rename' )
@@ -474,15 +475,15 @@ def func_sig(func):
     """
     if hasattr(func,'im_func'):
         # func is a method
-        func = func.im_func
-    code = func.func_code
+        func = func.__func__
+    code = func.__code__
     fname = code.co_name
     callargs = code.co_argcount
     # XXX Uses hard coded values taken from Include/compile.h
     args = list(code.co_varnames[:callargs])
-    if func.func_defaults:
-        i = len(args) - len(func.func_defaults)
-        for default in func.func_defaults:
+    if func.__defaults__:
+        i = len(args) - len(func.__defaults__)
+        for default in func.__defaults__:
             try:
                 r = repr(default)
             except:
@@ -613,7 +614,7 @@ class Struct(dict):
 
     def __init__(self, *args, **kwargs):
         assert not args
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             setattr(self, k, v)
 
     def __getattr__(self,name):
@@ -658,7 +659,7 @@ def namedtuple(typename, field_names, verbose=False):
 
     # Parse and validate the field names.  Validation serves two purposes,
     # generating informative error messages and preventing template injection attacks.
-    if isinstance(field_names, basestring):
+    if isinstance(field_names, str):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
     for name in (typename,) + field_names:
@@ -713,8 +714,8 @@ def namedtuple(typename, field_names, verbose=False):
     # Execute the template string in a temporary namespace
     namespace = dict(itemgetter=_itemgetter)
     try:
-        exec template in namespace
-    except SyntaxError, e:
+        exec(template, namespace)
+    except SyntaxError as e:
         raise SyntaxError(e.message + ':\n' + template)
     result = namespace[typename]
 
@@ -750,7 +751,7 @@ def IsSeq( val ):
     """
     return ( isinstance( val, ( collections.Sequence, types.GeneratorType ) ) or
              ( hasattr( val, '__getitem__' ) and hasattr( val, '__len__' ) ) )  \
-             and not isinstance( val, ( types.StringTypes, collections.Mapping, AtomicForIsSeq ) )
+             and not isinstance( val, ( (str,), collections.Mapping, AtomicForIsSeq ) )
 
 def MakeSeq( val ):
     """If val is a sequence (tuple or list) then return val, else return a new singleton tuple
@@ -759,7 +760,7 @@ def MakeSeq( val ):
 
 def IsScalar( val ):
     """Check if the value is a scalar value"""
-    return isinstance( val, ( numbers.Number, types.StringTypes ) )
+    return isinstance( val, ( numbers.Number, (str,) ) )
 
 def ToString( s ):
     """Convert s to string; handle numpy.charray correctly."""
@@ -786,30 +787,30 @@ def Str( s, frame = None, **substs ):
 def MergeDicts( *dicts ):
     """Construct a merged dictionary from the given dicts.
     If two dicts define the same key, the key from the dict later in the list is chosen."""
-    return dict( reduce( operator.add, map( dict.items, dicts ), [] ) )
+    return dict( reduce( operator.add, list(map( dict.items, dicts )), [] ) )
 
 def RestrictDict( aDict, restrictSet ):
     """Return a dict which has the mappings from the original dict only for keys in the given set"""
     restrictSet = frozenset( restrictSet )
-    return dict( item for item in aDict.items() if item[0] in restrictSet )
+    return dict( item for item in list(aDict.items()) if item[0] in restrictSet )
 
 
 def DictExcept( aDict, exceptSet ):
     """Return a dict which has the mappings from the original dict except for keys in the given set"""
     if not isinstance( exceptSet, collections.Set ):
         exceptSet = frozenset( MakeSeq( exceptSet ) )
-    return dict( item for item in aDict.items() if item[0] not in exceptSet )
+    return dict( item for item in list(aDict.items()) if item[0] not in exceptSet )
 
 
 def RestrictDictValues( aDict, restrictSet ):
     """Return a dict which has the mappings from the original dict only for values in the given set"""
-    return dict( item for item in aDict.items() if item[1] in restrictSet )
+    return dict( item for item in list(aDict.items()) if item[1] in restrictSet )
 
 
 def InvertDict( aDict ):
     """Return an inverse mapping for the given dictionary"""
     assert len( set( aDict.values() ) )  == len( aDict )
-    return dict( ( v, k ) for k, v in aDict.items() )
+    return dict( ( v, k ) for k, v in list(aDict.items()) )
 
 def DictGet( d, k, dflt ):
     """Get a value from the dictionary; if not such value, return the specified default"""
@@ -847,17 +848,17 @@ def cross(*sequences):
     Taken from the "Python recipes" site.
     """
     # visualize an odometer, with "wheels" displaying "digits"...:
-    wheels = map(iter, sequences)
-    digits = [it.next( ) for it in wheels]
+    wheels = list(map(iter, sequences))
+    digits = [next(it) for it in wheels]
     while True:
         yield tuple(digits)
         for i in range(len(digits)-1, -1, -1):
             try:
-                digits[i] = wheels[i].next( )
+                digits[i] = next(wheels[i])
                 break
             except StopIteration:
                 wheels[i] = iter(sequences[i])
-                digits[i] = wheels[i].next( )
+                digits[i] = next(wheels[i])
         else:
             break
 
@@ -926,22 +927,22 @@ def assertEq( x, y ):
     """Check that the two values are equal, if not then print them and abort"""
 
     if x != y:
-        print 'x (', type(x), ') = ', x
-        print 'y (', type(y), ') = ', y
+        print('x (', type(x), ') = ', x)
+        print('y (', type(y), ') = ', y)
         assert x == y
     
 def PV( valName, val, printVal = None ):
     """Print value and return it"""
     if printVal != None:
-        print valName, ' = ', printVal, ' type=', type( printVal )
+        print(valName, ' = ', printVal, ' type=', type( printVal ))
     else:
-        print valName, ' = ', val, ' type=', type( val )
+        print(valName, ' = ', val, ' type=', type( val ))
     return val
     
 def ListIdx( lst ):
     """Build a map from list value to its index in the list.
     If the value appears more than once, the index of the last occurrence is used."""
-    return dict( map( reversed, enumerate( lst ) ) )
+    return dict( list(map( reversed, enumerate( lst ) )) )
 
 def iter_ith( it, item ):
   """Return i'ith item from iterator"""
@@ -958,22 +959,22 @@ def relpath(target, base=os.curdir):
     """
 
     if not os.path.exists(target):
-        raise OSError, 'Target does not exist: '+target
+        raise OSError('Target does not exist: '+target)
 
     if not os.path.isdir(base):
-        raise OSError, 'Base is not a directory or does not exist: '+base
+        raise OSError('Base is not a directory or does not exist: '+base)
 
     base_list = (os.path.abspath(base)).split(os.sep)
     target_list = (os.path.abspath(target)).split(os.sep)
 
     # On the windows platform the target may be on a completely different drive from the base.
-    if os.name in ['nt','dos','os2'] and base_list[0] <> target_list[0]:
-        raise OSError, 'Target is on a different drive to base. Target: '+target_list[0].upper()+', base: '+base_list[0].upper()
+    if os.name in ['nt','dos','os2'] and base_list[0] != target_list[0]:
+        raise OSError('Target is on a different drive to base. Target: '+target_list[0].upper()+', base: '+base_list[0].upper())
 
     # Starting from the filepath root, work out how much of the filepath is
     # shared by base and target.
     for i in range(min(len(base_list), len(target_list))):
-        if base_list[i] <> target_list[i]: break
+        if base_list[i] != target_list[i]: break
     else:
         # If we broke out of the loop, i is pointing to the first differing path elements.
         # If we didn't break out of the loop, i is pointing to identical path elements.
@@ -1060,7 +1061,7 @@ def Enum(*names):
           assert self.EnumType is other.EnumType, "Only values from the same enum are comparable"
           return cmp(self.__value, other.__value)
        def __invert__(self):      return constants[maximum - self.__value]
-       def __nonzero__(self):     return bool(self.__value)
+       def __bool__(self):     return bool(self.__value)
        def __repr__(self):        return str(names[self.__value])
 
     maximum = len(names) - 1
@@ -1122,7 +1123,7 @@ def Sfx( *vals ):
     def underscorify( val ):
         """prepend undescrore if needed"""
         if not val and val != 0: return ''
-        noPrefix = isinstance( val, types.StringTypes) and val.startswith('#')
+        noPrefix = isinstance( val, (str,)) and val.startswith('#')
         alphaVal = MakeAlphaNum( str( val ) )
         return alphaVal[1:] if noPrefix else ( alphaVal if alphaVal.startswith( '_' ) else '_' + alphaVal )
     
@@ -1270,10 +1271,10 @@ class Histogrammer(object):
 
     def getAllBinIds( self, minBinId = None, maxBinId = None ):
         """Return a sequence of all bin IDs, including empty bins."""
-        keys = self.bin2count.keys()
+        keys = list(self.bin2count.keys())
         if not keys: keys = ( 0, )
-        return range( min( keys ) if minBinId is None else minBinId ,
-                      max( keys )+1 if maxBinId is None else maxBinId, 1 )
+        return list(range( min( keys ) if minBinId is None else minBinId ,
+                      max( keys )+1 if maxBinId is None else maxBinId, 1))
     
     def getAllBinLefts( self, minBinId = None, maxBinId = None ):
         """Return the left boundaries of all bins"""
@@ -1316,7 +1317,7 @@ class Histogrammer(object):
 
     def getBinCounts( self, normed = False, cumulative = False ):
         """Return the counts of all non-empty bins"""
-        return self.__fixBinCounts( binCounts = map( operator.itemgetter( 1 ), sorted( self.bin2count.items() ) ),
+        return self.__fixBinCounts( binCounts = list(map( operator.itemgetter( 1 ), sorted( self.bin2count.items() ) )),
                                     **Dict( 'cumulative normed' ) )
 
     def coarsenBy( self, factor ):
@@ -1326,7 +1327,7 @@ class Histogrammer(object):
         """
 
         newHist = Histogrammer( binSize = self.binSize * factor, binShift = self.binShift )
-        for bin, count in self.bin2count.items():
+        for bin, count in list(self.bin2count.items()):
             newBin = int( math.floor( bin / factor ) )
             newHist.bin2count[ newBin ] += count
 
@@ -1350,7 +1351,7 @@ class Histogrammer(object):
             assert abs( self.binSize - v.binSize ) < 1e-12
             assert abs( self.binShift - v.binShift ) < 1e-12
 
-            for bin, count in v.bin2count.items():
+            for bin, count in list(v.bin2count.items()):
                 self.bin2count[ bin ] += count
 
             self.valSum += v.valSum
@@ -1404,13 +1405,13 @@ class Histogrammer(object):
                     with htag('tr'):
                         for heading in headings:
                             with htag('th'):
-                                print heading
+                                print(heading)
                 with htag('tbody'):
                     for r in binRecords:
                         with htag('tr'):
                             for val in map( str, r ):
                                 with htag('td'):
-                                    print val
+                                    print(val)
         else:    
 
             tabwrite( out, *headings )
@@ -1434,7 +1435,7 @@ class Histogrammer(object):
             tabwrite( f, 'stat', 'val', 'encodedVal' )
             isFirst = True
             for stat, val in sorted( self.__dict__.items() ):
-                if isinstance( val, ( numbers.Number, types.StringTypes ) ):
+                if isinstance( val, ( numbers.Number, (str,) ) ):
                     if not isFirst: f.write( '\n' )
                     tabwriten( f, stat, val, base64.urlsafe_b64encode( pickle.dumps( val ) ) )
                     isFirst = False
@@ -1453,7 +1454,7 @@ class Histogrammer(object):
                 attrs[ stat ] = pickle.loads( base64.urlsafe_b64decode( encodedVal ) ) 
 
         result = Histogrammer( binSize = attrs[ 'binSize' ] )
-        for attr, val in attrs.items():
+        for attr, val in list(attrs.items()):
             setattr( result, attr, val )
 
         with TableIter( fname ) as f:
@@ -1469,7 +1470,7 @@ class Histogrammer(object):
     def printVals( self ):
         """Print the histogram"""
 
-        print 'binSize=', self.binSize, ' bin2count=', self.bin2count, ' avgVal=', self.getValAvg()
+        print('binSize=', self.binSize, ' bin2count=', self.bin2count, ' avgVal=', self.getValAvg())
 
     __hash__ = None
 
@@ -1491,12 +1492,12 @@ class Histog(object):
 @contextmanager
 def htag(x, **kwargs):
     """Write out an html tag"""
-    print '<%s' % x
-    for k, v in kwargs.items():
-        print ' %s="%s"' % ( k, v )
-    print '>'
+    print('<%s' % x)
+    for k, v in list(kwargs.items()):
+        print(' %s="%s"' % ( k, v ))
+    print('>')
     yield
-    if x != 'col': print '</%s>' % x
+    if x != 'col': print('</%s>' % x)
 
 def make_htag( out ):
     """Create an htag function for writing out HTML tags to a given outfile"""
@@ -1505,7 +1506,7 @@ def make_htag( out ):
     def htag(x, **kwargs):
         """Write out an html tag"""
         out.write( '<%s' % x )
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             out.write( ' %s="%s"' % ( k, v ) )
         out.write( '>' )
         yield
@@ -1516,9 +1517,9 @@ def make_htag( out ):
 @contextmanager
 def hparen(x = '()'):
     """Print open and close parentheses"""
-    print x[0]
+    print(x[0])
     yield
-    print x[1]
+    print(x[1])
     
     
 def chomp( s ):
@@ -1533,7 +1534,7 @@ def coerceVal( s ):
     floats are converted to float.  Strings not interpretable as a Boolean, int or float are returned as-is,
     and no exception is generated.
     """
-    if not isinstance( s, types.StringTypes ): return s
+    if not isinstance( s, (str,) ): return s
     if s == 'True': return True
     if s == 'False': return False
     try: return int(s)
@@ -1559,7 +1560,7 @@ class TableReaderBase(object):
             if name.startswith( '__' ): return object.__getattr__( self, name )
             try: return coerceVal( self.lineVals[ self.colName2num[ name ] ] )
             except KeyError:
-                print 'lineVals=', self.lineVals, ' fname=', self.fname, ' headings=', self.headings
+                print('lineVals=', self.lineVals, ' fname=', self.fname, ' headings=', self.headings)
                 raise
                 
 
@@ -1575,10 +1576,10 @@ class TableReaderBase(object):
             return retVal
 
         def __iter__(self):
-            return itertools.imap( coerceVal, self.lineVals )
+            return map( coerceVal, self.lineVals )
 
         def __str__(self):
-            return str( zip( self.headings, self.lineVals ) )
+            return str( list(zip( self.headings, self.lineVals )) )
 
         def __repr__(self):
             return self.__str__()
@@ -1593,11 +1594,11 @@ class TableReaderBase(object):
         self.headings = tuple( headings )
 
         if not len( set( headings ) ) == len( headings ):
-            print 'headings=', headings
+            print('headings=', headings)
             seen = set()
             for h in headings:
                 if h in seen:
-                    print 'duplicate heading: ', h
+                    print('duplicate heading: ', h)
                 seen.add( h )
             
         assert len( set( headings ) ) == len( headings )
@@ -1616,7 +1617,7 @@ class TableReaderBase(object):
         """Returns an TblIter that gets only specified columns"""
 
         return IterReader( headings = tuple( self.headings[h] if isinstance(h,int) else h for h in MakeSeq(item) ),
-                           recordsIter = itertools.imap( operator.itemgetter(*MakeSeq(item)), self ) )
+                           recordsIter = map( operator.itemgetter(*MakeSeq(item)), self ) )
 
     def __getattr__(self,name):
         """Return a given column"""
@@ -1636,7 +1637,7 @@ class TableReaderBase(object):
         return IterReader( headings = [ h if h not in renamings else renamings[h] for h in self.headings ],
                            recordsIter = self )
     
-    def next(self):
+    def __next__(self):
         try:
             lineVals = self._nextLine()
             #print '***lineVals: ', lineVals
@@ -1645,14 +1646,14 @@ class TableReaderBase(object):
 
             if self.lineNum % 20000  ==  0:
                 logging.info( joinstr(' ', self.lineNum, ' of ', \
-                                  self.fname, ': ', zip( self.headings, lineVals ) ) )
+                                  self.fname, ': ', list(zip( self.headings, lineVals )) ) )
 
             if len( lineVals ) != len( self.headings ):
-                print 'lineVals=', lineVals, ' self.headings=', self.headings, ' \nzip=', zip( self.headings, lineVals )
+                print('lineVals=', lineVals, ' self.headings=', self.headings, ' \nzip=', list(zip( self.headings, lineVals )))
                 
             assert len( lineVals ) == len( self.headings ), 'lineVals=%d self.headings=%d: %s' % ( len( lineVals ), len( self.headings ), self.headings )
 
-            if self.valueFixer: lineVals = map( self.valueFixer, lineVals )
+            if self.valueFixer: lineVals = list(map( self.valueFixer, lineVals ))
 
             return TableReaderBase.TSVRecord( lineVals, self.colName2num, self.fname, self.headings )
         except StopIteration:
@@ -1687,16 +1688,16 @@ class TSVReader(TableReaderBase):
 
     def _nextLine(self):
         """Get next line"""
-        rawLine = chomp( self.freader.next() )
+        rawLine = chomp( next(self.freader) )
         if not rawLine: raise StopIteration
 
         # skip any comment lines.  normally these only appear at the beginning.
         while rawLine.startswith( '#' ):
-            rawLine = chomp( self.freader.next() )
+            rawLine = chomp( next(self.freader) )
             if not rawLine: raise StopIteration
 
         while self.skipFirstLines > 0:
-            rawLine = chomp( self.freader.next() )
+            rawLine = chomp( next(self.freader) )
             if not rawLine: raise StopIteration
             self.skipFirstLines -= 1
 
@@ -1727,7 +1728,7 @@ class DotDataReader(TableReaderBase):
 
     def _nextLine(self):
         """Get next line"""
-        nextLine =  tuple( chomp( freader.next() ) for freader in self.freaders )
+        nextLine =  tuple( chomp( next(freader) ) for freader in self.freaders )
         if not nextLine: raise StopIteration
         return nextLine
 
@@ -1743,13 +1744,13 @@ class IterReader(TableReaderBase):
     def __init__(self, headings, recordsIter):
         TableReaderBase.__init__(self, headings = headings)
 
-        self.recordsIter = itertools.ifilter( lambda x: x != None, iter( recordsIter ) )
+        self.recordsIter = filter( lambda x: x != None, iter( recordsIter ) )
         if len(headings)==1:
-            self.recordsIter = itertools.imap( lambda v: (v,) if isinstance( v, (int, float, str)) else v,
+            self.recordsIter = map( lambda v: (v,) if isinstance( v, (int, float, str)) else v,
                                                self.recordsIter )
 
 
-    def _nextLine(self): return self.recordsIter.next()
+    def _nextLine(self): return next(self.recordsIter)
         
 @contextmanager
 def TableIter( fname, sep = '\t', fileType = None ):
@@ -1777,12 +1778,12 @@ def TableIter( fname, sep = '\t', fileType = None ):
 
         cols = tuple( SlurpFileLines( headerFN ) )
 
-        tsvFiles = [ f for f in reduce( operator.concat, map( operator.itemgetter(2), os.walk( fname ) ) ) if f.endswith('.csv') ]
+        tsvFiles = [ f for f in reduce( operator.concat, list(map( operator.itemgetter(2), os.walk( fname ) )) ) if f.endswith('.csv') ]
 
         col2file = dict( ( os.path.splitext( os.path.splitext( tsvF )[0] )[0], tsvF ) for tsvF in tsvFiles )
         allFiles = [ fname + col2file[ col ] for col in cols ]
         
-        with nested( *map( open, allFiles ) ) as fs:
+        with nested( *list(map( open, allFiles )) ) as fs:
             yield DotDataReader( fname = fname, fs = fs, cols = cols, allFiles = allFiles )
             
 
@@ -1811,12 +1812,12 @@ def TblIter( fname, sep = '\t', fileType = None, headings = None, valueFixer = N
 
         cols = tuple( SlurpFileLines( headerFN ) )
 
-        tsvFiles = [ f for f in reduce( operator.concat, map( operator.itemgetter(2), os.walk( fname ) ) ) if f.endswith('.csv') ]
+        tsvFiles = [ f for f in reduce( operator.concat, list(map( operator.itemgetter(2), os.walk( fname ) )) ) if f.endswith('.csv') ]
 
         col2file = dict( ( tsvF.split('.')[0], tsvF ) for tsvF in tsvFiles )
         allFiles = [ fname + col2file[ col ] for col in cols ]
         
-        return DotDataReader( fname = fname, fs = map( open, allFiles ), cols = cols, allFiles = allFiles, closeWhenDone = True,
+        return DotDataReader( fname = fname, fs = list(map( open, allFiles )), cols = cols, allFiles = allFiles, closeWhenDone = True,
                               valueFixer = valueFixer )
 
             
@@ -1841,7 +1842,7 @@ def SaveTableIterToDotData( tableIter, fname ):
 
     recordsIter = iter( tableIter )
     
-    firstRec = recordsIter.next()
+    firstRec = next(recordsIter)
     colTypes = [ type(coerceVal(val)) for val in firstRec ]
 
     type2name = { float: 'float', int: 'int', str: 'str' }
@@ -1892,19 +1893,19 @@ def PrintTableIter( tableIter ):
             
 def makeIdxPrepender( idx ):
     """Creates a function that prepends a given index to its argument, returning a tuple."""
-    return lambda( v ): ( idx, v )
+    return lambda v: ( idx, v )
 
 class attrDbg(object):
 
     def __getattribute__(self, attr):
-        print 'getting attr ', attr
+        print('getting attr ', attr)
         return attr
     
 def makeKeyGetter( k ):
     """Creates a function that gets a key"""
     def myFunc( v ):
         return k( v[1] )
-    print 'making key getter for k=', k
+    print('making key getter for k=', k)
     return myFunc
 
 def makeKeyApplier( k ):
@@ -1949,9 +1950,9 @@ def itermerge( iters, keys = None, ids = None, includeKeys = False ):
             if isinstance( k, str ): return operator.attrgetter( k )
             if isinstance( k, ( tuple, list ) ):
                 return functools.partial( lambda keys, vals: tuple( a_key( a_val ) for a_key, a_val in zip( keys, vals ) ),
-                                          map( fixKey, k ) )
+                                          list(map( fixKey, k )) )
 
-                return fixTuple( map( fixKey, k ) )
+                return fixTuple( list(map( fixKey, k )) )
 
             return k
         
@@ -1959,22 +1960,22 @@ def itermerge( iters, keys = None, ids = None, includeKeys = False ):
                    ( operator.attrgetter( k ) if isinstance( k, str ) else k ) ) for k in keys ]
     
     if ids:
-        return itermerge( iters = [ itertools.imap( makeIdxPrepender( idx ), i ) for idx, i in
-                                    ( enumerate( iters ) if ids == True else zip( ids, iters ) ) ],
+        return itermerge( iters = [ map( makeIdxPrepender( idx ), i ) for idx, i in
+                                    ( enumerate( iters ) if ids == True else list(zip( ids, iters )) ) ],
                           keys = ( operator.itemgetter( 1 ), ) * len( iters ) if keys == None else
-                          map( makeKeyGetter, keys ),
+                          list(map( makeKeyGetter, keys )),
                           includeKeys = includeKeys )
     
     if keys:
-        print 'keys are: ', keys
-        result = itermerge( iters = [ itertools.imap( makeKeyApplier( k ), i )
+        print('keys are: ', keys)
+        result = itermerge( iters = [ map( makeKeyApplier( k ), i )
                                       for k, i in zip( keys, iters ) ] )
-        if not includeKeys: result = itertools.imap( operator.itemgetter( 1 ), result )
+        if not includeKeys: result = map( operator.itemgetter( 1 ), result )
         return result
     
     def merge( i1, i2 ):
-        next1 = iter( i1 ).next
-        next2 = iter( i2 ).next
+        next1 = iter( i1 ).__next__
+        next2 = iter( i2 ).__next__
         try:        
             v1 = next1()
         except StopIteration:
@@ -2020,8 +2021,8 @@ class GeneratorWrap(object):
         self.gen = gen
 
     def __iter__(self): return self
-    def next(self):
-        v =  self.gen.next()
+    def __next__(self):
+        v =  next(self.gen)
         #print 'yiiiield ', v
         return v 
     
@@ -2031,7 +2032,7 @@ def TableMaker( fn ):
     def tmaker( *args, **kwargs):
 
         gen = fn( *args, **kwargs )
-        headings = gen.next()
+        headings = next(gen)
 
         logging.info( 'creating IterReader with headings %s' % headings )
         return IterReader( headings = headings,
@@ -2069,8 +2070,8 @@ def TableIterInnerJoin( tableIters, cols, suffixes = None, blanks = None, concat
 
             origins = [ r[1][0] for r in records ]
             if not is_sorted( origins, strict = True ):
-                print 'records are ', records
-                print 'origins are ', origins
+                print('records are ', records)
+                print('origins are ', origins)
             assert is_sorted( origins, strict = True )
 
             recordsList = [ None ] * len( tableIters )
@@ -2085,8 +2086,8 @@ def TableIterInnerJoin( tableIters, cols, suffixes = None, blanks = None, concat
                     positionFilled[ i ] = True
 
             if all( positionFilled ):
-                rec = map( tuple, recordsList )
-                assert map( len, rec ) == headingLens
+                rec = list(map( tuple, recordsList ))
+                assert list(map( len, rec )) == headingLens
                 if concat: rec = reduce( operator.concat, rec )
                 yield rec
 
@@ -2117,14 +2118,14 @@ def TableIterInnerJoin( tableIters, cols, suffixes = None, blanks = None, concat
 
 
 def mergeRecs( *vals ):
-    return reduce( operator.concat, map( tuple, vals ) )
+    return reduce( operator.concat, list(map( tuple, vals )) )
 
 
 def ihstack( *tableIters ):
     """Create a new table iterator that yields these tables stacked horizontally"""
 
-    return IterReader( headings = reduce( operator.concat, map( operator.attrgetter( 'headings' ), tableIters ) ),
-                       recordsIter = itertools.imap( mergeRecs, *tableIters ) )
+    return IterReader( headings = reduce( operator.concat, list(map( operator.attrgetter( 'headings' ), tableIters )) ),
+                       recordsIter = map( mergeRecs, *tableIters ) )
 
 
 def ivstack( *tableIters ):
@@ -2160,14 +2161,14 @@ def TblIterFromDotData( dotData ):
     """Create a TblIter from DotData"""
 
     return IterReader( headings = dotData.dtype.names,
-                       recordsIter = dotData if dotData.numCols() > 1 else itertools.imap( (lambda x: (x,)), dotData ) )
+                       recordsIter = dotData if dotData.numCols() > 1 else map( (lambda x: (x,)), dotData ) )
 
 
 def TblIterFilter( pred, tableIter ):
     """Filter a TableIter with a predicate"""
 
     return IterReader( headings = tableIter.headings,
-                       recordsIter = itertools.ifilter( pred, tableIter ) )
+                       recordsIter = filter( pred, tableIter ) )
     
 
 def is_sorted( s, strict = True ):
@@ -2201,7 +2202,7 @@ IUPAC_ambig_codes = { 'A': 'A',
                       'CGT': 'B',
                       'ACGT': 'N' }
 
-IUPAC_ambig_codes_set = dict( ( frozenset( k ), v ) for k, v in IUPAC_ambig_codes.items() )
+IUPAC_ambig_codes_set = dict( ( frozenset( k ), v ) for k, v in list(IUPAC_ambig_codes.items()) )
 
 def ambiguousIUPACdnaCode( codes ):
     """Given a set of DNA codes, return the one-letter IUPAC code representing them;
@@ -2226,7 +2227,7 @@ def GetDefaultArgs( fn ):
 
     argInfo = inspect.getargspec( fn )
     if not argInfo.defaults: return {}
-    return dict( zip( argInfo.args[ -len( argInfo.defaults ): ], argInfo.defaults ) )
+    return dict( list(zip( argInfo.args[ -len( argInfo.defaults ): ], argInfo.defaults )) )
 
 def IsValidFileName( fname ):
     """Return true if fname is a valid file name"""
@@ -2252,7 +2253,7 @@ class DbgIter(collections.Iterator):
         self.valNum = 0
         self.lastVal = None
 
-    def next(self):
+    def __next__(self):
         self.valNum += 1
         self.lastVal = next( self.it )
         return self.lastVal
@@ -2465,11 +2466,11 @@ def clamp( v, v_min, v_max ):
 def PrintDictDiff( d1, d2 ):
     """Print the differences between dictionaries"""
 
-    d1only = [ k1 for k1 in d1.keys() if k1 not in d2 ]
-    d2only = [ k2 for k2 in d2.keys() if k2 not in d1 ]
-    diffVals = [ k for k in d1.keys() if k in d2.keys() and d1[k] != d2[k] ]
+    d1only = [ k1 for k1 in list(d1.keys()) if k1 not in d2 ]
+    d2only = [ k2 for k2 in list(d2.keys()) if k2 not in d1 ]
+    diffVals = [ k for k in list(d1.keys()) if k in list(d2.keys()) and d1[k] != d2[k] ]
 
-    print 'd1only=', d1only, ' d2only=', d2only, ' diffVals=', diffVals
+    print('d1only=', d1only, ' d2only=', d2only, ' diffVals=', diffVals)
     
         
 def GetHostName():
@@ -2498,8 +2499,7 @@ def parseNumList( s ):
     """Parse list of numbers, possibly with ranges"""
 
     return reduce( operator.concat,
-                   map( lambda term: apply( range, map( int, term.split( '-' ) ) ) if '-' in term else [ int( term ) ],
-                        s.split( ',' ) ),
+                   [list(range(*list(map( int, term.split( '-' ) )))) if '-' in term else [ int( term ) ] for term in s.split( ',' )],
                    [] )
 
     
@@ -2509,7 +2509,7 @@ def NoDups( s ):
     
 def mapValues( d, f ):
   """Return a new dict, with each value mapped by the given function"""
-  return dict([ ( k, f( v ) ) for k, v in d.items() ]) 
+  return dict([ ( k, f( v ) ) for k, v in list(d.items()) ]) 
         
 
 class EventCounter(object):
@@ -2637,7 +2637,7 @@ def vstack_tsvs_lenient( inFNs, outFN, commentPrefix = '#', blockSize = 67000, u
                          headings = None, getio = None ):
   """Vertically stack tsv files"""
 
-  inFNs = filter( os.path.exists, inFNs )
+  inFNs = list(filter( os.path.exists, inFNs ))
 
   if getio: return dict( depends_on = inFNs, creates = outFN, attrs = dict( piperun_short = True )  )
 
@@ -2710,7 +2710,7 @@ def groupIntoTuples(lst, n):
 
     From http://code.activestate.com/recipes/303060-group-a-list-into-sequential-n-tuples/
     """
-    return itertools.izip(*[itertools.islice(lst, i, None, n) for i in range(n)])
+    return zip(*[itertools.islice(lst, i, None, n) for i in range(n)])
 
 def IsEven( x ):
   """Tests if x is even"""
@@ -2888,7 +2888,7 @@ if have_fcntl:
                 fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 # Lock acquired!
                 return
-             except IOError, ex:
+             except IOError as ex:
                 if ex.errno != errno.EAGAIN: # Resource temporarily unavailable
                    raise
                 elif self._timeout is not None and time.time() > (start_lock_search + self._timeout):

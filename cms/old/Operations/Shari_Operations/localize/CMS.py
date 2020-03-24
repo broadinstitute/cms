@@ -3,7 +3,7 @@ using given likelihood tables.
 """
 
 
-from __future__ import division, with_statement
+
 
 __all__ = ( 'DefineRulesTo_computeCMSstats', 'DefineRulesTo_computeCMSforSims', 'DefineRulesTo_normalizeCMS', 'DefineRulesTo_createLikesTables' ) 
 
@@ -41,6 +41,7 @@ from Operations.tsvutils import computeSumsWithinGroups
 from operator import concat, attrgetter, itemgetter, add
 import logging, os, types, itertools, sys, math, operator
 import matplotlib.pyplot as pp
+from functools import reduce
 
 
 # Bin boundaries for CMS statistics
@@ -146,13 +147,13 @@ def computeCMSstats_old( Ddata, thinSfx,
                          'and the average of derived allele frequencies in the non-selected populations.' ) ) ) }
     
     if getio: return dict( depends_on = ( mergedData, ) +
-                           ( ( pop2sampleSize, ) if isinstance( pop2sampleSize, types.StringTypes ) else () ),
+                           ( ( pop2sampleSize, ) if isinstance( pop2sampleSize, (str,) ) else () ),
                            creates = cmsStatsRawFN,
                            mediumRuleNameSfx = ( scenario.scenDir(), putativeMutPop ),
                            fileDescrs = fileDescrs )
 
 
-    if isinstance( pop2sampleSize, types.StringTypes ): pop2sampleSize = dict( IDotData( pop2sampleSize ) )
+    if isinstance( pop2sampleSize, (str,) ): pop2sampleSize = dict( IDotData( pop2sampleSize ) )
 
     dbg( 'pop2sampleSize' )
     
@@ -231,10 +232,10 @@ def computeCMSstats_old( Ddata, thinSfx,
     # Make new pos column
     Pos = Data['CHROM_POS %d' % minPopNum]
 
-    Chrom = map( float, Data.replicaNum if 'replicaNum' in Data.dtype.names
+    Chrom = list(map( float, Data.replicaNum if 'replicaNum' in Data.dtype.names
                  else where( isnan( Data.Chrom ),
                              Data[ 'Chrom ' + aPopPair ],
-                             Data.Chrom ) )
+                             Data.Chrom ) ))
     
     cmsStatsRaw = DotData( Columns = [Chrom, Pos, gdPos, ihs, StdDiff, meanFst, derFreq,
                                       max_xpop, mean_anc, freqDiff,iHHDiff, Data['FREQ1 %d' % putativeMutPop] ],
@@ -328,14 +329,14 @@ def computeCMSstats( Ddata, thinSfx,
                          'and the average of derived allele frequencies in the non-selected populations.' ) ) ) }
     
     if getio: return dict( depends_on = ( mergedData, ihhDiff_sumsByFreqFN, ihhDiff_sumsFN ) +
-                           ( ( pop2sampleSize, ) if isinstance( pop2sampleSize, types.StringTypes ) else () ),
+                           ( ( pop2sampleSize, ) if isinstance( pop2sampleSize, (str,) ) else () ),
                            creates = cmsStatsRawFN,
                            splitByCols = { mergedData: dict( keyCols = () ) },
                            mediumRuleNameSfx = ( scenario.scenDir(), putativeMutPop ),
                            fileDescrs = fileDescrs )
 
 
-    if isinstance( pop2sampleSize, types.StringTypes ): pop2sampleSize = dict( IDotData( pop2sampleSize ) )
+    if isinstance( pop2sampleSize, (str,) ): pop2sampleSize = dict( IDotData( pop2sampleSize ) )
 
     dbg( 'pop2sampleSize' )
     
@@ -718,7 +719,7 @@ def histogramCMSstats( Ddata, thinSfx, scenario, putativeMutPop, stats = CMSBins
     for causal and non-causal SNPs.
     """
 
-    print 'deprecated!'
+    print('deprecated!')
     sys.exit(1)
 
     snpStatsDir = os.path.join( Ddata, 'snpStats' + thinSfx, scenario.scenDir() )
@@ -781,7 +782,7 @@ def addHistogramsForSelectionScenarios( inFiles, outFile, stats = CMSBins.CMSsta
 
     cols = dtype.names
     DotData( names = cols,
-             Columns = [ reduce( add, map( itemgetter( col ), hists ) ) for col in cols ] ).save( outFile )
+             Columns = [ reduce( add, list(map( itemgetter( col ), hists )) ) for col in cols ] ).save( outFile )
 
 
 def LoadBins( fname ):    
@@ -814,7 +815,7 @@ def LoadBins( fname ):
 def LoadLikesTable( likesTable, likesTableSfx = '', mutPop = None, Ddata = None  ):
     """Load a likes table, returning a dictionary that maps likes table
     attributes to values.  For example, gives the name of hitLikes and missLikes files."""
-    if isinstance( likesTable, types.StringTypes ):
+    if isinstance( likesTable, (str,) ):
         if Ddata and not os.path.dirname( likesTable ): likesTable = os.path.join( Ddata, likesTable )
         dbg( 'likesTable likesTableSfx' )
         likesTable = IDotData( AddFileSfx( likesTable, likesTableSfx, mutPop ) )
@@ -848,7 +849,7 @@ def computeCMS_old( Ddata, thinSfx, scenario, putativeMutPop, nreplicas = 100, l
 
     #stats = ( 'max_xpop', )
     
-    print 'in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable
+    print('in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable)
 
     if likesTable:
         likesTable = LoadLikesTable( **Dict( 'Ddata likesTable likesTableSfx' ) )
@@ -1017,7 +1018,7 @@ def computeCMS_smlMem( Ddata, thinSfx, scenario, putativeMutPop, nreplicas = 100
 
     #stats = ( 'max_xpop', )
     
-    print 'in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable
+    print('in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable)
 
     if likesTable:
         likesTable = LoadLikesTable( **Dict( 'Ddata likesTable likesTableSfx' ) )
@@ -1121,7 +1122,7 @@ def computeCMS_smlMem( Ddata, thinSfx, scenario, putativeMutPop, nreplicas = 100
                                 tuple([ stat + 'likeRatio' for stat in stats ]) + tuple([ stat + 'likeBin' for stat in stats ]) ) \
                                 as complikeOut:
     
-        for rowNum, ( rRaw, rNorm ) in enumerate( itertools.izip( cmsStatsRaw, cmsStatsNorm ) ):
+        for rowNum, ( rRaw, rNorm ) in enumerate( zip( cmsStatsRaw, cmsStatsNorm ) ):
 
             if rRaw.Chrom >= nreplicas: break 
 
@@ -1183,7 +1184,7 @@ def chooseCMS( Ddata, scenario, replicaTables, replicaCond2choice,
 
     replica2choice = {}
     
-    for r in findReplicasMatchingConds( allScens = ( scenario, ), showVals = map( itemgetter( 0 ), replicaCond2choice ),
+    for r in findReplicasMatchingConds( allScens = ( scenario, ), showVals = list(map( itemgetter( 0 ), replicaCond2choice )),
                                         **Dict( 'Ddata replicaTables' ) ):
         gotChoice = False
         for replicaNum, choice in enumerate( r[2:] ):
@@ -1194,10 +1195,10 @@ def chooseCMS( Ddata, scenario, replicaTables, replicaCond2choice,
         assert gotChoice
 
     dbg( 'replica2choice' )
-    iDotDatas = map( IDotData, complikeFNs_in ) 
+    iDotDatas = list(map( IDotData, complikeFNs_in )) 
     def makeResult():
         yield iDotDatas[0].headings
-        for r in itertools.izip( *iDotDatas ):
+        for r in zip( *iDotDatas ):
             yield r[ replica2choice[ r[0].Chrom ] ]
 
     IDotData.fromFn( makeResult ).save( complikeFN )
@@ -1236,7 +1237,7 @@ def computeCMS( Ddata = None, thinSfx = '', scenario = None, putativeMutPop = No
 
     #stats = ( 'max_xpop', )
     
-    print 'in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable
+    print('in computeCMS: likesBins is ', likesBins, 'likesSfx is ', likesSfx, ' likesTable is ', likesTable)
 
     if not likesTableNeut: likesTableNeut = likesTable
 
@@ -1434,7 +1435,7 @@ def plotCMS( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None, complik
         return dict( depends_on = ( complikeFN, gdMapFN ) +
                      ( ( causalGdPosFN, ) if not scenario.isNeutral() else () ) +
                      ( ( intervalsListFN, ) if includeSpatialLoc else () ),
-                     creates = tuple( filter( None, plotFilesFNs ) ),
+                     creates = tuple( [_f for _f in plotFilesFNs if _f] ),
                      name = 'plotCMS' + Sfx( xAxis, whichSpatialLoc if includeSpatialLoc else None ),
                      mediumRuleNameSfx = ( scenario.scenDir(), putativeMutPop if scenario.isNeutral() else None,
                                            xAxis ) )
@@ -1443,7 +1444,7 @@ def plotCMS( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None, complik
     
     usedReplicas = zeros( nreplicas, dtype = bool )
     for ( replicaNum, cmsForReplica ), plotFileFN, ( replicaNum2, intervals ) in \
-            itertools.izip( IDotData( complikeFN ).groupby( 'Chrom' ),
+            zip( IDotData( complikeFN ).groupby( 'Chrom' ),
                             plotFilesFNs,
                             IDotData( intervalsListFN ).groupby( 'replicaNum' ) if includeSpatialLoc \
                                 else itertools.repeat( ( None, None ) ) ):
@@ -1479,7 +1480,7 @@ def plotCMS( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None, complik
             
             foundLike = 0
             margin = ( maxCMS - minCMS ) / 100
-            for pos, absLikeHere, likeHere in itertools.izip( cmsForReplica[ xCol ], X.complikeExp, like ):
+            for pos, absLikeHere, likeHere in zip( cmsForReplica[ xCol ], X.complikeExp, like ):
                 if likeHere > .2:
                     pp.vlines( [ pos ], absLikeHere - margin, absLikeHere + margin, color = 'g',
                                linewidth = 3.0 ).set_urls( [ 'like:_%.2f' % likeHere ] )
@@ -1573,7 +1574,7 @@ def plotCMS( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None, complik
         usedReplicas[ replicaNum ] = True
 
     numMissingReplicas = 0
-    for replicaNum, plotFileFN in zip( range( nreplicas ), plotFilesFNs ):
+    for replicaNum, plotFileFN in zip( list(range( nreplicas)), plotFilesFNs ):
         if plotFileFN and not usedReplicas[ replicaNum ]:
             pp.figure()
             pp.xlabel( xLabel )
@@ -1612,7 +1613,7 @@ def plotCMSstat( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None,
        xAxisGd - use genetic distance for the X axis if True, physical distance if False.
     """
 
-    if isinstance( scenario, types.StringTypes ): scenario = Scenario.fromString( scenario )
+    if isinstance( scenario, (str,) ): scenario = Scenario.fromString( scenario )
     snpStatsDir = os.path.join( Ddata, 'snpStats'+ thinSfx, scenario.scenDir() )
     replicaStatsDir = os.path.join( Ddata, 'replicastats'+ thinSfx, scenario.scenDir() )
     if putativeMutPop == None: putativeMutPop = scenario.mutPop
@@ -1661,7 +1662,7 @@ def plotCMSstat( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None,
 
     pp.figure( figsize = figSize )
     for ( replicaNum, cmsForReplica ), ( replicaNum2, intervals ) in \
-            itertools.izip( IDotData( complikeFN ).groupby( 'Chrom' ),
+            zip( IDotData( complikeFN ).groupby( 'Chrom' ),
                             IDotData( intervalsListFN ).groupby( 'replicaNum' ) if includeSpatialLoc \
                                 else itertools.repeat( ( None, None ) ) ):
         replicaNum = int( replicaNum )
@@ -1698,7 +1699,7 @@ def plotCMSstat( Ddata, thinSfx, scenario, nreplicas, putativeMutPop = None,
             
             foundLike = 0
             margin = ( maxCMS - minCMS ) / 100
-            for pos, absLikeHere, likeHere in itertools.izip( cmsForReplica[ xCol ], X[ snpStat ], like ):
+            for pos, absLikeHere, likeHere in zip( cmsForReplica[ xCol ], X[ snpStat ], like ):
                 if likeHere > .2:
                     pp.vlines( [ pos ], absLikeHere - margin, absLikeHere + margin, color = 'g',
                                linewidth = 3.0 ).set_urls( [ 'like:_%.2f' % likeHere ] )
@@ -1857,14 +1858,14 @@ def plotCMS_gd2( Ddata, thinSfx, scenario, putativeMutPop, nreplicas, complikeSf
     usedReplicas = zeros( nreplicas, dtype = bool )
     for ( replicaNum, cmsForReplica ), plotFileFN, ( replicaNum2, intervals ), \
             ( replicaNum3, posteriorSpline ), ( replicaNum4, binInfo ), intervalsStats in \
-            itertools.izip( IDotData( complikeFN ).groupby( 'Chrom' ),
+            zip( IDotData( complikeFN ).groupby( 'Chrom' ),
                             plotFilesFNs,
                             IDotData( intervalsListFN ).groupby( 'replicaNum' ),
                             IDotData( posteriorSplineFN ).groupby( 'replicaNum' ),
                             IDotData( binInfoFN ).groupby( 'replicaNum' ),
                             IDotData( intervalsStatsFN ) ):
         replicaNum, replicaNum2, replicaNum3, replicaNum4 = \
-            map( int, ( replicaNum, replicaNum2, replicaNum3, replicaNum4 ) )
+            list(map( int, ( replicaNum, replicaNum2, replicaNum3, replicaNum4 ) ))
 
         assert replicaNum2 == replicaNum == replicaNum3 == replicaNum4 == intervalsStats.replicaNum
             
@@ -2040,7 +2041,7 @@ def normalizeComplikeRatioWithinReplicas( Ddata, thinSfx, scenario, putativeMutP
             z = DotData( names = r.headings, Records = r )
             z = clean_hapmap2_region( z, cleanIHS = True, cleanDer = False, cleanAnc = False, keepCausal = True )
             
-            yield IDotData.fromIterable( headings = z.dtype.names, iterable = itertools.imap( tuple, z ) )
+            yield IDotData.fromIterable( headings = z.dtype.names, iterable = map( tuple, z ) )
 
     IDotData.vstackFromIterable( GetNormedBlocks() ).save( complikeWithLogCLRFN )
 
@@ -2321,7 +2322,7 @@ def DefineRulesTo_computeCMSforSims( pr, Ddata, simsOut = 'simsOut', mutPops = A
                 # now has CMS scores for all the replicas.
                 #
                 
-                condNames = map( itemgetter(0), replicaConds )
+                condNames = list(map( itemgetter(0), replicaConds ))
                 condsFileFN = AddFileSfx( 'replicaConds.tsv', complikeSfx, *condNames )
                 pr.addInvokeRule( invokeFn = identifyReplicasMeetingConds,
                                   invokeArgs = 
@@ -2784,7 +2785,7 @@ def DefineRulesTo_createLikesTables( pr, Ddata, simsOut = 'simsOut', mutPops = A
         DefineRulesTo_computeCMSstats( **Dict( 'pr Ddata simsOut mutPops mutAges mutFreqs nreplicas thinExt thinSfx '
                                                'sampleSize pop2sampleSize pop2name statsSfx' ) )
 
-    condNames = map( itemgetter(0), replicaConds )
+    condNames = list(map( itemgetter(0), replicaConds ))
     
     if normalizeWithinReplicas:
         stat_start = CMSBinsLocal.stat_start
@@ -2905,11 +2906,11 @@ def analsim_old( Ddata, scenario, putativeMutPop = None, thinSfx = '', likesSfx 
 
         assert all([ len( rtv ) == nreplicas for rtv in replicaTableVals ])
 
-        replicasToUse = array( [ eval( replicaCondExpr, globals(), dict( zip( replicaTables, replicaTableRows ) ) )
-                                 for replicaTableRows in itertools.izip( *replicaTableVals ) ] ) if replicaTables \
-                                 else repeat( eval( replicaCondExpr, globals(), {} ), nreplicas )
+        replicasToUse = array( [ eval( replicaCondExpr, globals(), dict( list(zip( replicaTables, replicaTableRows )) ) )
+                                 for replicaTableRows in zip( *replicaTableVals ) ] ) if replicaTables \
+                                 else np.repeat( eval( replicaCondExpr, globals(), {} ), nreplicas )
                                  
-        rowsToUse = replicasToUse[ array( map( int, cmsStatsNorm.Chrom ) ) ]
+        rowsToUse = replicasToUse[ array( list(map( int, cmsStatsNorm.Chrom )) ) ]
         cmsStatsNorm = cmsStatsNorm[ rowsToUse ]
         cmsStatsRaw = cmsStatsRaw[ rowsToUse ]
 
@@ -2932,7 +2933,7 @@ def analsim_old( Ddata, scenario, putativeMutPop = None, thinSfx = '', likesSfx 
     with open(summaryFN, 'w') as  outfile:
         outfile.write('N causal: 0 N missed: 0\n')  # dummy line
         tabwrite( outfile, 'Stat', 'Start', 'End', 'N_bin')
-        for stat in stat_nbin.keys():
+        for stat in list(stat_nbin.keys()):
             tabwrite( outfile, stat, stat_start[stat], stat_end[stat], stat_nbin[stat] )
 
 
@@ -2998,9 +2999,9 @@ def analsim( Ddata, scenario, putativeMutPop = None, thinSfx = '', likesSfx = ''
 
         assert all([ len( rtv ) == nreplicas for rtv in replicaTableVals ])
 
-        replicasToUse = array( [ eval( replicaCondExpr, globals(), dict( zip( replicaTables, replicaTableRows ) ) )
-                                 for replicaTableRows in itertools.izip( *replicaTableVals ) ] ) if replicaTables \
-                                 else repeat( eval( replicaCondExpr, globals(), {} ), nreplicas )
+        replicasToUse = array( [ eval( replicaCondExpr, globals(), dict( list(zip( replicaTables, replicaTableRows )) ) )
+                                 for replicaTableRows in zip( *replicaTableVals ) ] ) if replicaTables \
+                                 else np.repeat( eval( replicaCondExpr, globals(), {} ), nreplicas )
 
     hitmissCols = {}
     hitmissNames = []
@@ -3023,7 +3024,7 @@ def analsim( Ddata, scenario, putativeMutPop = None, thinSfx = '', likesSfx = ''
     hmColsHits = [ hitmissCols[ stat + 'Hits' ] for stat in stats ]
     hmColsMisses = [ hitmissCols[ stat + 'Misses' ] for stat in stats ]
             
-    for rowNum, r in enumerate( itertools.izip( cmsStatsRaw, cmsStatsNorm ) ):
+    for rowNum, r in enumerate( zip( cmsStatsRaw, cmsStatsNorm ) ):
         if replicasToUse is not None and not replicasToUse[ int( r[0].Chrom ) ]: continue
 
         for stat, start, bin_size, nbin, normedOrNot, hmColsHit, hmColsMiss \
@@ -3043,7 +3044,7 @@ def analsim( Ddata, scenario, putativeMutPop = None, thinSfx = '', likesSfx = ''
     with open(summaryFN, 'w') as  outfile:
         outfile.write('N causal: 0 N missed: 0\n')  # dummy line
         tabwrite( outfile, 'Stat', 'Start', 'End', 'N_bin')
-        for stat in stat_nbin.keys():
+        for stat in list(stat_nbin.keys()):
             tabwrite( outfile, stat, stat_start[stat], stat_end[stat], stat_nbin[stat] )
 
 def likes( Ddata = '../Data/Shari_Data/sim/', mutAges = AllAges, mutPops = AllPops,
@@ -3072,7 +3073,7 @@ def likes( Ddata = '../Data/Shari_Data/sim/', mutAges = AllAges, mutPops = AllPo
                                                                    putativeMutPop, statsSfx, condName ) ) )
                        for likes in ( 'Likes', '' ) for which in ( 'hits', 'miss', 'region' ) ])
 
-    if getio: return dict( depends_on = scen2ranksFile.values(), creates = likesFiles.values(),
+    if getio: return dict( depends_on = list(scen2ranksFile.values()), creates = list(likesFiles.values()),
                            attrs = dict( piperun_short = True ),
                            mediumRuleNameSfx = ( likesSfx, putativeMutPop, condName ) )
 
@@ -3085,7 +3086,7 @@ def likes( Ddata = '../Data/Shari_Data/sim/', mutAges = AllAges, mutPops = AllPo
     misses = {}
     region = {}
 
-    print 'stats are ', stats
+    print('stats are ', stats)
     for stat in stats:
         nbin_here = CMSBins.stat_nbin[stat] + CMSBinsBase.maxSpecialBins
         hits[stat] = zeros( nbin_here, dtype = int )
@@ -3204,7 +3205,7 @@ def likes2( Ddata = '../Data/Shari_Data/sim/', mutAges = AllAges, mutPops = AllP
                                                                    putativeMutPop, statsSfx, condName ) ) )
                        for likes in ( 'Likes', '' ) for which in ( 'hits', 'miss', 'region' ) ])
 
-    if getio: return dict( depends_on = scen2ranksFile.values(), creates = likesFiles.values() + [ likesRatiosFile ],
+    if getio: return dict( depends_on = list(scen2ranksFile.values()), creates = list(likesFiles.values()) + [ likesRatiosFile ],
                            attrs = dict( piperun_short = True ),
                            mediumRuleNameSfx = ( likesSfx, putativeMutPop, condName ) )
 
@@ -3217,7 +3218,7 @@ def likes2( Ddata = '../Data/Shari_Data/sim/', mutAges = AllAges, mutPops = AllP
     misses = {}
     region = {}
 
-    print 'stats are ', stats
+    print('stats are ', stats)
     for stat in stats:
         nbin_here = CMSBins.stat_nbin[stat] + CMSBinsBase.maxSpecialBins
         hits[stat] = zeros( nbin_here, dtype = int )
@@ -3383,7 +3384,7 @@ def plotLikesTable( hitsLikesFile, missLikesFile, plotFile, normalizeWithinRepli
     """Visually plot a likes table.
     """
 
-    if getio: return dict( depends_on = filter( None, ( hitsLikesFile, missLikesFile, regionLikesFile, likesTable, likesBinsFile ) ),
+    if getio: return dict( depends_on = [_f for _f in ( hitsLikesFile, missLikesFile, regionLikesFile, likesTable, likesBinsFile ) if _f],
                            creates = plotFile,
                            mediumRuleNameSfx = ( likesSfx, putativeMutPop, condName ),
                            attrs = Dict( 'includeSpecialBins', piperun_short = True ) )
@@ -3435,7 +3436,7 @@ def plotLikesTable( hitsLikesFile, missLikesFile, plotFile, normalizeWithinRepli
         missLine, = pp.plot( binStarts , missLikes[ stat ][:len( binStarts )], 'g-' )
         if regionLikesFile: regionLine, = pp.plot( binStarts, regionLikes[ stat ][:len(binStarts)], 'b-' )
 
-    pp.figlegend( filter( None, ( hitsLine, missLine, regionLine) ),
+    pp.figlegend( [_f for _f in ( hitsLine, missLine, regionLine) if _f],
                   ( 'selected SNPs', 'neutral SNPs in neutral regions' ) +
                   ( ( 'neutral SNPs in selected regions', ) if regionLikesFile else () ),
                   'upper center' )
@@ -3454,7 +3455,7 @@ def plotLikesTablePair( likesTableFNs,
                            creates = plotFile,
                            attrs = dict( piperun_short = True ) )
 
-    likesTable = map( LoadLikesTable, likesTableFNs )
+    likesTable = list(map( LoadLikesTable, likesTableFNs ))
 
     hitsLikes = [ IDotData( likesTable[ i ].hitsLikes ) for i in range( 2 ) ]
     missLikes = [ IDotData( likesTable[ i ].missLikes ) for i in range( 2 ) ]
@@ -3509,8 +3510,8 @@ def plotLikesTablePair( likesTableFNs,
             missLine[i], = pp.plot( binStarts , missLikes[i][ stat ][:len( binStarts )], 'g' + style )
             regionLine[i], = pp.plot( binStarts, regionLikes[i][ stat ][:len(binStarts)], 'b' + style )
 
-    pp.figlegend( filter( None, ( hitsLine[0], missLine[0], regionLine[0],
-                                  hitsLine[1], missLine[1], regionLine[1] ) ),
+    pp.figlegend( [_f for _f in ( hitsLine[0], missLine[0], regionLine[0],
+                                  hitsLine[1], missLine[1], regionLine[1] ) if _f],
                   ( 'selected SNPs 1', 'neutral SNPs in neutral regions 1', 'region snps 1',
                     'selected SNPs 2', 'neutral SNPs in neutral regions 2', 'region snps 2',
                 ),
@@ -3594,7 +3595,7 @@ def writeLikesCounts( Ddata, complikeSfx, putativeMutPop, normalizeWithinReplica
                                                                       putativeMutPop, condName ) ) )
                           for likesKind in ( 'Likes', '' ) for which in ( 'hits', 'miss', 'region' ) )
 
-    likesFiles = dict( [ ( k, IDotData( FN ) ) for k, FN in likesFilesFNs.items() ] )
+    likesFiles = dict( [ ( k, IDotData( FN ) ) for k, FN in list(likesFilesFNs.items()) ] )
     
     if normalizeWithinReplicas:
         stat_start, stat_end, stat_nbins = CMSBinsLocal.stat_start, CMSBinsLocal.stat_end, CMSBinsLocal.stat_nbin
@@ -3662,11 +3663,11 @@ def compareLikesTables( likesTableDefs, putativeMutPop, normalizeWithinReplicas,
                      for likesTableDef in likesTableDefs ]
 
     outFN = os.path.join( likesTableDefs[0]['Ddata'], 'graphs',
-                          AddFileSfx( 'likesCmp.svg', putativeMutPop, cmpOp, *map( operator.itemgetter( 'complikeSfx' ), likesTableDefs ) ) )
+                          AddFileSfx( 'likesCmp.svg', putativeMutPop, cmpOp, *list(map( operator.itemgetter( 'complikeSfx' ), likesTableDefs )) ) )
 
     if getio: return dict( depends_on = likesDataFNs, creates = outFN, attrs = Dict( 'putativeMutPop cmpOp', piperun_short = True ) )
 
-    likesDataFiles = map( IDotData, likesDataFNs )
+    likesDataFiles = list(map( IDotData, likesDataFNs ))
 
     pp.figure( figsize = ( 16, 18 ) )
 

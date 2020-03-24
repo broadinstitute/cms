@@ -340,7 +340,7 @@ class DatabaseManager(object):
                               }
 
         matchingPopSets = []
-        for k,v in popSets.iteritems():
+        for k,v in popSets.items():
             if v["pops"]==set(pop_ids) and v["superpops"] == set(superpop_ids):
                 matchingPopSets.append(k)
 

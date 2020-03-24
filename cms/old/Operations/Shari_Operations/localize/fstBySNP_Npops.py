@@ -1,4 +1,4 @@
-from __future__ import division
+
 from Operations.MiscUtil import dbg
 import numpy as np
 from numpy import *
@@ -20,7 +20,7 @@ def fst(pop2name, sampleSize, pop2ancFreqs, pop2sampleSize = {}):
 
        	n = {}
 	Fst = {}
-	f1 = dict( ( pop2name[ popNum ], ancFreqs ) for popNum, ancFreqs in pop2ancFreqs.items() )
+	f1 = dict( ( pop2name[ popNum ], ancFreqs ) for popNum, ancFreqs in list(pop2ancFreqs.items()) )
 	f2 = {}
 	
 	nanc = {}
@@ -37,7 +37,7 @@ def fst(pop2name, sampleSize, pop2ancFreqs, pop2sampleSize = {}):
 		
 	for ipop in pops:
 		for jpop in pops:
-			if jpop + '_' + ipop in Fst.keys() or ipop == jpop:
+			if jpop + '_' + ipop in list(Fst.keys()) or ipop == jpop:
 				continue
 			Fst[ipop + '_' + jpop] = zeros(len(f1[ipop]))
 			for i in range(len(f1[ipop])):			
@@ -138,7 +138,7 @@ def fst_oneSnp(pop2name, sampleSize, pop2ancFreq, pop2sampleSize = {}):
 
        	n = {}
 	Fst = {}
-	f1 = dict( ( pop2name[ popNum ], ancFreq ) for popNum, ancFreq in pop2ancFreq.items() )
+	f1 = dict( ( pop2name[ popNum ], ancFreq ) for popNum, ancFreq in list(pop2ancFreq.items()) )
 	f2 = {}
 	
 	nanc = {}
@@ -153,7 +153,7 @@ def fst_oneSnp(pop2name, sampleSize, pop2ancFreq, pop2sampleSize = {}):
 		
 	for ipop in pops:
 		for jpop in pops:
-			if jpop + '_' + ipop in Fst.keys() or ipop == jpop:
+			if jpop + '_' + ipop in list(Fst.keys()) or ipop == jpop:
 				continue
 			Fst[ipop + '_' + jpop] = 0
 			pmean = (nanc[ipop] + nanc[jpop]) / (n[ipop] + n[jpop])

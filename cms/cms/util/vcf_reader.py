@@ -4,7 +4,7 @@
 import re
 
 try:
-    from itertools import izip as zip # pylint:disable=redefined-builtin
+     # pylint:disable=redefined-builtin
 except ImportError: # py3 zip is izip
     pass
 
@@ -49,7 +49,7 @@ class VCFReader(object):
         Consume an iterable not reading it into memory; return the number of items.
         """
         counter = count()
-        deque(zip(iterable, counter), maxlen=0)  # (consume at C speed)
+        deque(list(zip(iterable, counter)), maxlen=0)  # (consume at C speed)
         return next(counter)
 
     @staticmethod

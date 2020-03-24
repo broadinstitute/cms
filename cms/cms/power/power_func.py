@@ -25,7 +25,7 @@ def write_master_likesfile(writefilename, model, selpop, freq,basedir,  miss = "
 		#assert(os.path.isfile(hitlikesfilename) and os.path.isfile(misslikesfilename))
 		writefile.write(hitlikesfilename + "\n" + misslikesfilename + "\n")
 	writefile.close()
-	print("wrote to: " + writefilename)
+	print(("wrote to: " + writefilename))
 	return
 
 ###############
@@ -181,13 +181,13 @@ def plot_dist(allvals, savefilename= "/web/personal/vitti/test.png", numBins=100
 	allvals = allvals[~np.isinf(allvals)]
 	#allvals = list(allvals)
 	#print(allvals)
-	print("percentile for score = 10: " + str(percentileofscore(allvals, 10)))
-	print("percentile for score = 15: " + str(percentileofscore(allvals, 15)))
+	print(("percentile for score = 10: " + str(percentileofscore(allvals, 10))))
+	print(("percentile for score = 15: " + str(percentileofscore(allvals, 15))))
 	if len(allvals) > 0:
 		f, ax = plt.subplots(1)
 		ax.hist(allvals, bins=numBins)
 		plt.savefig(savefilename)
-		print('plotted to ' + savefilename)
+		print(('plotted to ' + savefilename))
 	return
 def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal = 0, zscores = True):
 	#neut_rep_scores.sort()
@@ -218,15 +218,15 @@ def plotManhattan(ax, neut_rep_scores, emp_scores, chrom_pos, nSnps, maxSkipVal 
 				#	pval = get_pval(neut_rep_scores, item)
 				#pvalues.append(pval)
 
-			print("calculated pvalues for chrom " + str(chrom))
-			chrom_pos = range(lastpos, lastpos + len(pvalues))
+			print(("calculated pvalues for chrom " + str(chrom)))
+			chrom_pos = list(range(lastpos, lastpos + len(pvalues)))
 
 			logtenpvals = [(-1. * math.log10(pval)) for pval in pvalues]
 			ax.scatter(chrom_pos, logtenpvals, color =plotcolor, s=.5)
 			lastpos = chrom_pos[-1]
 		else:
 
-			chrom_pos = range(lastpos, lastpos + len(emp_scores[ichrom]))
+			chrom_pos = list(range(lastpos, lastpos + len(emp_scores[ichrom])))
 			ax.scatter(chrom_pos, emp_scores[ichrom], color=plotcolor, s=.5)
 			lastpos = chrom_pos[-1]
 	return ax

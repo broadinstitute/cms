@@ -1,6 +1,6 @@
 """Fast CMS computation"""
 
-from __future__ import print_function, absolute_import, division
+
 
 import os, logging
 #import blaze as bz
@@ -28,10 +28,10 @@ def getFN_ihs_signif( sweepDir, chrom, pop ):
 def gatherXPOPscores( pops, chrom, selPop, sweepDir, outFN, getio = None ):
     """Gather xpop scores into a convenient form."""
 
-    pops = filter( lambda p: p != selPop, pops )
+    pops = [p for p in pops if p != selPop]
     pop2FN = dict([ ( pop, getFN_xpop_signif( pop1 = selPop, pop2 = pop, **Dict( 'sweepDir chrom' ) ) ) for pop in pops ])
 
-    if getio: return dict( depends_on = pop2FN.values(), creates = outFN, attrs = Dict( 'chrom', pop = pops, piperun_short = True ) )
+    if getio: return dict( depends_on = list(pop2FN.values()), creates = outFN, attrs = Dict( 'chrom', pop = pops, piperun_short = True ) )
 
     def LoadComparison( pop ):
         """Load comparison with one pop"""
@@ -60,7 +60,7 @@ def gatherXPOPscores( pops, chrom, selPop, sweepDir, outFN, getio = None ):
     # end: def LoadComparison( pop )
 
     comparisons = reduce( lambda d1, d2: d1.join( d2, how = 'inner' ),
-                          map( LoadComparison, pops ) ).max( axis = 1,
+                          list(map( LoadComparison, pops )) ).max( axis = 1,
                                                              columns = ( 'max_xpop', ) )
     comparisons.index.name = 'pos'
     comparisons.name = 'max_xpop'
@@ -73,7 +73,7 @@ def gatherXPOPscores( pops, chrom, selPop, sweepDir, outFN, getio = None ):
 def gather_snp_info( pops, pop2snpInfoFN, pop2ancFreqFN, pop2sampleSizeFN, getio = None ):
     """Gather SNP freq info"""
     
-    if getio: return dict( depends_on = pop2snpInfoFN.values(), creates = ( pop2ancFreqFN, pop2sampleSizeFN ),
+    if getio: return dict( depends_on = list(pop2snpInfoFN.values()), creates = ( pop2ancFreqFN, pop2sampleSizeFN ),
                            attrs = dict( pop = pops ) )
 
 
@@ -285,7 +285,7 @@ def normalizeByFreq_getMeanStd_tsv(iHHDiffFNs, globalStatFN, binsStatFN, getio =
 
     pd.DataFrame( dict( std = ( stdKeeper.getStd(), ) ) ).to_csv( globalStatFN, sep = '\t', na_rep = 'NaN',
                                                                   header = True, index = False )
-    pd.DataFrame( dict( mean = map( StatKeeper.getMean, meanKeepers ) ) ).to_csv( binsStatFN,
+    pd.DataFrame( dict( mean = list(map( StatKeeper.getMean, meanKeepers )) ) ).to_csv( binsStatFN,
                                                                                   sep = '\t', na_rep = 'NaN',
                                                                                   header = True, index_label = 'binId' )
 

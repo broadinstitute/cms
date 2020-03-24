@@ -12,7 +12,7 @@ import subprocess
 models = [ 'gradient15', 'defdef15', 'def15']#'nd', 'ndcs', 'gravel']#'gravel'] #--drop-singletons " + str(singrate) <--- absent from gravel as run! presnt in gradient15!
 regimes = ['lct', 'edar', 'slc24a5']#['neut']
 pops = [1,2,3,4]
-reps = range(0,1001)
+reps = list(range(0,1001))
 #models, regimes, pops, reps = ['gravel'], ['neut'], [1,2,3], range(0,1001)
 #models, regimes, pops, reps = ['defdef15', 'def15', 'nd', 'ndcs', 'gradient15'], ['neut'], [1,2,3, 4], range(0,1001)
 basewritedir = "/idi/sabeti-scratch/jvitti/remodel/run4/"
@@ -124,7 +124,7 @@ def main():
 	## DISPATCH ##
 	##############
 	shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

@@ -8,6 +8,7 @@ from Operations.Ilya_Operations.PipeRun.python.PipeRun import PipeRun
 from Operations.Shari_Operations.localize.Scenario import GetScenarios
 from Operations.Shari_Operations.localize.PopConsts import AllAges, AllPops, AllFreqs, pop2name
 import os, operator
+from functools import reduce
 
 
 def DefineRulesTo_RunSimsOnly( pr, mutAges = AllAges, mutPops = AllPops, mutFreqs = AllFreqs, nreplicas = 100,

@@ -50,7 +50,7 @@ def get_emp_component_score_files(chrom, pop, basedir, altpop = "", suffix = "_c
 		in_fst_deldaf_file = basedir + "freqs/chr" + str(chrom) + "_strictMask_" + str(pop) + "_" + str(altpop)
 	for filename in [in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(filename):
-			print("MISSING: " + filename)
+			print(("MISSING: " + filename))
 	return in_ihs_file, in_delihh_file, in_nsl_file, in_xp_file, in_fst_deldaf_file
 def get_sim_component_score_files(model, irep, selpop, scenariopop, altpop, selbin = "neut", filebase = "/idi/sabeti-scratch/jvitti/clean/scores/", normed = False):
 	""" locates component score files for simulated data """
@@ -70,7 +70,7 @@ def get_sim_component_score_files(model, irep, selpop, scenariopop, altpop, selb
 		in_xp_file += ".norm"
 	for returnfile in [in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file]:
 		if not os.path.isfile(returnfile):
-			print("Missing: " + returnfile)
+			print(("Missing: " + returnfile))
 	return in_ihs_file, in_nsl_file, in_delihh_file, in_xp_file, in_fst_deldaf_file 
 def get_concat_files(model, pop, score, altpop = '', basedir = "/idi/sabeti-scratch/jvitti/clean/scores/"):
 	""" locates concatenated component score files to facilitate normalization to neutral replicates """
@@ -131,7 +131,7 @@ def get_pr_filesnames(key, modeldir, likes_dir_suffix = ""):
 	#modeldir + "sel" + str(pop) + "/tpr" + likes_dir_suffix + "/tpr_" + str(regionlen) + "_" + str(percentage) + "_" + str(cutoff) + "_" + str(selFreq)
 	for filename in [tprfile, fprfile]:
 		if not os.path.isfile(filename):
-			print("missing: " + filename)
+			print(("missing: " + filename))
 		else:
 			pass
 	return fprfile, tprfile 
@@ -141,7 +141,7 @@ def get_emp_cms_file(selpop, chrom, normed = False, basedir = "", suffix = ""):
 	if normed:
 		filename += ".norm"
 	if not os.path.isfile(filename):
-		print("MISSING empirical file : " + filename)
+		print(("MISSING empirical file : " + filename))
 	return filename
 
 ##################
@@ -211,11 +211,11 @@ def load_simscores(model, pop, numRep = 500, normed = False, takeIndex = -1):
 	return all_simscores
 def load_empscores(selpop, normed = False, basedir =  "", suffix = '', takeIndex = -1):
 	""" for genome-wide empirical CMS data, loads a value according to takeIndex """	
-	chroms = range(1,23)
+	chroms = list(range(1,23))
 	scores = []
 	for chrom in chroms:
 		scorefile = get_emp_cms_file(selpop, chrom, normed=normed, basedir=basedir, suffix=suffix)
-		print('loading from ' + scorefile)
+		print(('loading from ' + scorefile))
 		assert os.path.isfile(scorefile)
 		openfile = open(scorefile, 'r')
 		openfile.readline() #header
@@ -265,7 +265,7 @@ def load_power_dict(modeldir, likes_dir_suffix = ""):
 							allpops_fpr.append(fpr)
 							allpops_tpr.append(tpr)
 						else:
-							print("missing " + tprfile + "\t" + fprfile)				
+							print(("missing " + tprfile + "\t" + fprfile))
 					ave_fpr = np.average(allpops_fpr)
 					ave_tpr = np.average(allpops_tpr)
 					popave_key = (regionlen, percentage, cutoff, "ave")

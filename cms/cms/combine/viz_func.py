@@ -112,7 +112,7 @@ def pullRegion(inputfilename, startpos, endpos, maf=None, corePos = None, transp
 		haplotypes.append(haplotype)
 
 	if transpose:
-		haplotypes2 = zip(*haplotypes)
+		haplotypes2 = list(zip(*haplotypes))
 		haplotypes = list(haplotypes2)
 
 	if saveHapFile is not None:
@@ -137,8 +137,8 @@ def hapSort(haplotypes):
 	
 	
 	for i in range(len(haplotypes)):
-		if i % 10 == 0: print("now haplotype " + str(i) + " out of " + str(len(haplotypes)))
-		hapsToCompare = range(i,len(haplotypes))
+		if i % 10 == 0: print(("now haplotype " + str(i) + " out of " + str(len(haplotypes))))
+		hapsToCompare = list(range(i,len(haplotypes)))
 		a = [difference(haplotypes[i],haplotypes[x]) for x in hapsToCompare]
 		for j in range(len(hapsToCompare)):
 			diffArray[i][hapsToCompare[j]] = a[j]
@@ -213,8 +213,8 @@ def hapSortSub(haplotypes):
 	
 	
 	for i in range(len(haplotypes)):
-		if i % 10 == 0: print("now haplotype " + str(i) + " out of " + str(len(haplotypes)))
-		hapsToCompare = range(i,len(haplotypes))
+		if i % 10 == 0: print(("now haplotype " + str(i) + " out of " + str(len(haplotypes))))
+		hapsToCompare = list(range(i,len(haplotypes)))
 		a = [difference(haplotypes[i],haplotypes[x]) for x in hapsToCompare]
 		for j in range(len(hapsToCompare)):
 			diffArray[i][hapsToCompare[j]] = a[j]
@@ -305,7 +305,7 @@ def hapViz(ax, haplotypes,out,coreindex = None,markers=None):
 	return ax
 def readAnnotations(annotationfilename):
 	if not os.path.isfile(annotationfilename):
-		print("missing file: " + annotationfilename)
+		print(("missing file: " + annotationfilename))
 		return [], []
 	else:
 		positions, annotations = [], []

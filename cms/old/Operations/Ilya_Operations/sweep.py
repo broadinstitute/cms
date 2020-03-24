@@ -24,7 +24,7 @@ def DefineRulesTo_RunSweep( pr, phasedFilesDir, geneticMapsDir, ancestralDir, ou
 
     moreOpts = ''
     if backgroundSweepDir: moreOpts += ' --background-sweep-dir ' + backgroundSweepDir
-    if backgroundPopMap: moreOpts += ' --background-pop-map ' + ','.join( k + ':' + v for k, v in backgroundPopMap.items() )
+    if backgroundPopMap: moreOpts += ' --background-pop-map ' + ','.join( k + ':' + v for k, v in list(backgroundPopMap.items()) )
     if backgroundPopOrder: moreOpts += ' --background-pop-order ' + ','.join( backgroundPopOrder )
 
     if tests: moreOpts += ' --tests ' + ','.join( tests )

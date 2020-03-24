@@ -1,4 +1,4 @@
-from __future__ import with_statement, division
+
 
 __all__ = ( 'DefineRulesTo_normalizeColumnsWithinGroups', )
 
@@ -226,7 +226,7 @@ def sortTableOn( inFN, outFN, keyCols, reverse = False, getio = None ):
   result = IDotData( inFN ).sortedOn( *MakeSeq( keyCols ) )
   if reverse:
     d = result.toDotData()
-    result = d[ range( len( d )-1, -1, -1 ) ]
+    result = d[ list(range( len( d )-1, -1, -1)) ]
   result.save( outFN )
 
 
@@ -346,7 +346,7 @@ def computeMeanStd_binned_tsvs( inFNs, valCol, binCol, binMin, binMax, binStep, 
   if getio: return dict( depends_on = inFNs, creates = outFN,
                          uses = computeMeanStd_binned )
 
-  computeMeanStd_binned( inDatas = itertools.imap( lambda f: pd.read_table( f, usecols = ( valCol, binCol ) ).dropna(),
+  computeMeanStd_binned( inDatas = map( lambda f: pd.read_table( f, usecols = ( valCol, binCol ) ).dropna(),
                                                    MakeSeq( inFNs ) ),
                          **Dict( 'valCol binCol binMin binMax binStep' ) ).to_csv( outFN, sep = '\t',
                                                                                    index_label = 'binId',

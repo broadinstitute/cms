@@ -3,7 +3,7 @@
 '''
 import numpy
 from System.Utils import uniqify, ListUnion, SimpleStack1, ListArrayTranspose
-import Classes.DotData, cPickle
+import Classes.DotData, pickle
 
 def datavstack(ListOfDatas):
 #if all([isinstance(l,DotData) for l in ListOfDatas]):	
@@ -19,15 +19,15 @@ def datavstack(ListOfDatas):
 		try:
 			return numpy.row_stack(ListOfDatas)
 		except:
-			print "The data arrays you tried to stack couldn't be stacked."
+			print("The data arrays you tried to stack couldn't be stacked.")
 	else:
 		
 		A = SimpleStack1([l[CommonAttributes] for l in ListOfDatas])
 			
 		if all(['coloring' in dir(l) for l in ListOfDatas]):
-			restrictedcoloring = dict([(a,list(set(ListOfDatas[0].coloring[a]).intersection(set(CommonAttributes)))) for a in ListOfDatas[0].coloring.keys()])
+			restrictedcoloring = dict([(a,list(set(ListOfDatas[0].coloring[a]).intersection(set(CommonAttributes)))) for a in list(ListOfDatas[0].coloring.keys())])
 			for l in ListOfDatas[1:]:
-				restrictedcoloring.update(dict([(a,list(set(l.coloring[a]).intersection(set(CommonAttributes)))) for a in l.coloring.keys()]))
+				restrictedcoloring.update(dict([(a,list(set(l.coloring[a]).intersection(set(CommonAttributes)))) for a in list(l.coloring.keys())]))
 		else:
 			restrictedcoloring = {}
 		if not all ([l.rowdata == None for l in ListOfDatas]):

@@ -42,7 +42,7 @@ def get_scaled_values():
 	ranges = get_ranges()
 	params = generate_params()
 	scaledParams = {}
-	for key in ranges.keys():
+	for key in list(ranges.keys()):
 		low, high = float(ranges[key][0]), float(ranges[key][1])
 		interval = high - low
 		value = params[key]

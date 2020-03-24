@@ -10,7 +10,7 @@ questions:
 
 """
 
-from __future__ import division, with_statement
+
 from Operations.MiscUtil import GetHostName, SlurpFile, DumpFile, dbg, SystemSucceed, coerceVal, EnsureDirExists
 import os, errno, time, getpass, multiprocessing, atexit, optparse, sys, random, stat, types, logging, socket, signal, traceback, re, shutil
 
@@ -33,9 +33,8 @@ try:
 except ImportError:
     haveParamiko = False
 
-class FileSystem(object):
+class FileSystem(object, metaclass=ABCMeta):
     """A unified interface to local or remote file systems"""
-    __metaclass__ = ABCMeta
 
     def __init__(self):
         self.path = self  # to allow the usage of os.path routines
@@ -150,7 +149,7 @@ class RemoteFileSystem(FileSystem):
         self.hostname, self.root = hostAndPath.split( ':' )
         self.pw = pw
         if not pw and not pkey: pkey = '~/.ssh/identity'
-        if isinstance( pkey, types.StringTypes ):
+        if isinstance( pkey, (str,) ):
             pkey = pm.RSAKey.from_private_key_file( filename = os.path.expanduser( pkey ) )
         self.pkey = pkey
         self.transport = None
@@ -412,7 +411,7 @@ def RunTasks( options ):
 
                         try:
                             fs.write( fd, 'locked by process %d on host %s\n' % ( os.getpid(), GetHostName() ) )
-                            for v in os.environ.keys():
+                            for v in list(os.environ.keys()):
                                 fs.write( fd, '%s=%s\n' % ( v, os.environ[v] ) )
                         finally:
                             fs.close( fd )
@@ -466,7 +465,7 @@ def RunTasks( options ):
                                 SystemSucceed( 'rm -rf ' + srcLockFile )
 
                             targets = fs.SlurpFile( os.path.join( fs.root, fullTaskDir, 'targets.lst' ) ).rstrip( '\n' ).split('\n')
-                            targetDirs = set( map( os.path.dirname, filter( None, map( str.strip, targets ) ) ) )
+                            targetDirs = set( map( os.path.dirname, [_f for _f in map( str.strip, targets ) if _f] ) )
                             dbg( '"DDDDDD" targetDirs' )
 
                             for targetDir in targetDirs:

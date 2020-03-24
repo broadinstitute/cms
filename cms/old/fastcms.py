@@ -8,13 +8,13 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 #from into import into
-from Operations.MiscUtil import Dict, dbg, AddFileSfx, MakeSeq, StatKeeper
-from Operations.tsvutils import DefineRulesTo_computeMeanStd, DefineRulesTo_normalizeOneColumn, \
+from .Operations.MiscUtil import Dict, dbg, AddFileSfx, MakeSeq, StatKeeper
+from .Operations.tsvutils import DefineRulesTo_computeMeanStd, DefineRulesTo_normalizeOneColumn, \
     computeMeanStd_binned_tsvs, normalizeInBins_tsv
-from Operations.Shari_Operations.localize import subs
-from Operations.Shari_Operations.localize.fstBySNP_Npops import fst_onePopPair
-from Operations.Shari_Operations.localize.CMS import CMSBins
-from Operations.bioutil import genomeBuild2genMapSfx
+from .Operations.Shari_Operations.localize import subs
+from .Operations.Shari_Operations.localize.fstBySNP_Npops import fst_onePopPair
+from .Operations.Shari_Operations.localize.CMS import CMSBins
+from .Operations.bioutil import genomeBuild2genMapSfx
 
 def getFN_xpop_signif( sweepDir, chrom, pop1, pop2 ):
     """Return filename of xpop significance scores from Sweep output"""

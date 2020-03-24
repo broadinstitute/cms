@@ -36,9 +36,9 @@ def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
 				p1_ind, ihh1_ind, p2_ind, ihh2_ind = 4, 3, 6, 5
 			else:
 				print(line)
-				print(str(testXp))
-				print(str(testXp2))
-				print('check indices ' + infilename)
+				print((str(testXp)))
+				print((str(testXp2)))
+				print(('check indices ' + infilename))
 			break
 	infile.close()
 	if ".gz" in infilename:
@@ -64,7 +64,7 @@ def write_perpop_ihh_from_xp(infilename, outfilename, popNum = 1):
 		outfile.write(writeline)
 	outfile.close()
 	infile.close()
-	print('wrote to: ' + outfilename)
+	print(('wrote to: ' + outfilename))
 	return outfilename
 def write_pair_sourcefile(writefilename, ihsfilename, delihhfilename, nslfilename, xpehhfilename, freqsfilename):
 	#if not os.path.isfile(writefilename):

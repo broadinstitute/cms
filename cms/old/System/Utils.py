@@ -30,8 +30,8 @@ def PermInverse(s):
 	'''
 		Fast invert a numpy permutation.
 	'''
-	X = numpy.array(range(len(s)))
-	X[s] = range(len(s))
+	X = numpy.array(list(range(len(s))))
+	X[s] = list(range(len(s)))
 	return X
 
 
@@ -40,7 +40,7 @@ class BadCheckError:
 		Error class used for raising I/O errors (maybe should be moved to system_io_override?)
 	'''
 	def __init__(self,iofunc,readfiles,writefiles, Dependencies,Creates):
-		print "\nCHECK_ERROR: An I/O exception occured in function", iofunc, ": either the files" , readfiles , "aren't in" , Dependencies, "or the files", writefiles, "aren't in ", Creates, '. \n'
+		print("\nCHECK_ERROR: An I/O exception occured in function", iofunc, ": either the files" , readfiles , "aren't in" , Dependencies, "or the files", writefiles, "aren't in ", Creates, '. \n')
 		
 
 def RecursiveFileList(ToList,Avoid=None):
@@ -250,10 +250,10 @@ def FixedPath(path):
 
 def GetDataEnvironmentDirectory():
 	x = os.environ
-	if 'DataEnvironmentDirectory' in x.keys():
+	if 'DataEnvironmentDirectory' in list(x.keys()):
 		return x['DataEnvironmentDirectory']
 	else:
-		print 'DataEnvironmentDirectory not an environment variable, assuming it is ' , os.getcwd()[:os.getcwd().find('/')] + '/'
+		print('DataEnvironmentDirectory not an environment variable, assuming it is ' , os.getcwd()[:os.getcwd().find('/')] + '/')
 		return os.getcwd()[:os.getcwd().find('/')] + '/' 
 	
 def PathAlong(a,b):
@@ -541,7 +541,7 @@ def getpathalong(YY,ZZ):
 		T = numpy.array(['/'.join(z.split('/')[:i]) + ('/' if len(z.split('/')) > i else '')  for z in Z ])    #get i-reduced slash list from Z, call it T
 		R = (T[1:] != T[:-1]).nonzero()[0] 
 		R = numpy.append(R,numpy.array([len(T)-1]))
-		M = R[R.searchsorted(range(len(T)))]
+		M = R[R.searchsorted(list(range(len(T))))]
 		#get set of guys in Y with i slashes, call it L
 		L = (SlashList == i)
 		H = Y[L]
@@ -563,7 +563,7 @@ def getpathalongs(Y,Z):
 	s = Z.argsort()
 	Z = Z[s]
 	[A,B] = getpathalong(Y,Z)
-	L = ListUnion([range(A[i],B[i]) for i in range(len(A)) if A[i] < B[i]])
+	L = ListUnion([list(range(A[i],B[i])) for i in range(len(A)) if A[i] < B[i]])
 	return s[L]
 
 
@@ -597,7 +597,7 @@ def fastequalspairs(Y,Z):
 	T = Z.copy()
 	R = (T[1:] != T[:-1]).nonzero()[0] 
 	R = numpy.append(R,numpy.array([len(T)-1]))
-	M = R[R.searchsorted(range(len(T)))]
+	M = R[R.searchsorted(list(range(len(T))))]
 	D = T.searchsorted(Y)
 	T = numpy.append(T,numpy.array([0]))
 	M = numpy.append(M,numpy.array([0]))
@@ -872,7 +872,7 @@ def Backslash(Dir,Verbose=False):
 
 	if Dir[-1] != '/':
 		if Verbose:
-			print "Warning: the directory name, ", Dir, ", was provided. The character '/' was appended to the end of the name."
+			print("Warning: the directory name, ", Dir, ", was provided. The character '/' was appended to the end of the name.")
 		return Dir + '/'
 	else:
 		return Dir
@@ -917,13 +917,13 @@ def copy_to_archive(toarchive,depends_on=('../',),creates=('../Archive/',)):
 	ArchivedName = GetTimeStampedArchiveName(toarchive)
 
 	if not PathExists('../Archive/'):
-		print 'Creating Archive ....'
+		print('Creating Archive ....')
 		MakeDir('../Archive/')
 		
 	if PathExists(toarchive):
 		strongcopy(toarchive,'../Archive/' + ArchivedName)
 	else:
-		print 'ERROR: The path', toarchive, 'does not exist; nothing archived.'
+		print('ERROR: The path', toarchive, 'does not exist; nothing archived.')
 
 
 def move_to_archive(toarchive,depends_on=('../',),creates=('../Archive/',)):
@@ -935,13 +935,13 @@ def move_to_archive(toarchive,depends_on=('../',),creates=('../Archive/',)):
 	ArchivedName = GetTimeStampedArchiveName(toarchive)
 	
 	if not PathExists('../Archive/'):
-		print 'Creating Archive ....'
+		print('Creating Archive ....')
 		MakeDir('../Archive/')
 		
 	if PathExists(toarchive):
 		Rename(toarchive,'../Archive/' + ArchivedName)
 	else:
-		print 'ERROR: The path', toarchive, 'does not exist; nothing archived.'
+		print('ERROR: The path', toarchive, 'does not exist; nothing archived.')
 		
 
 def CompilerChecked(ToCheck):
@@ -955,7 +955,7 @@ def CompilerChecked(ToCheck):
 		try: 
 			re.compile(LL)
 		except:
-			print "Error: the string, ", LL, " was found calling", funcname(), ". This string could not be compiled as a regular expression and will not be loaded."
+			print("Error: the string, ", LL, " was found calling", funcname(), ". This string could not be compiled as a regular expression and will not be loaded.")
 		else:
 			X += [L if L != '' else '^$']
 	return X		
@@ -1058,7 +1058,7 @@ def DictInvert(D):
 		--dictionary whose keys are unique elements of values of D, and 
 		whose values on key 'K' are lists of keys 'k' in D such that D[k] = K
 	'''
-	return dict([(v,set([j for j in D.keys() if D[j] == v])) for v in set(D.values())])
+	return dict([(v,set([j for j in list(D.keys()) if D[j] == v])) for v in set(D.values())])
 
 
 def PathExists(ToCheck):

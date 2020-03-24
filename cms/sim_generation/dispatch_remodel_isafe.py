@@ -13,7 +13,7 @@ import time
 models = [ 'gradient15', 'defdef15', 'def15']#'nd', 'ndcs', 'gravel']#'gravel'] #--drop-singletons " + str(singrate) <--- absent from gravel as run! presnt in gradient15!
 regimes = ['lct', 'edar', 'slc24a5']#['neut']
 pops = [1,2,3,4]
-reps = range(0,1001)
+reps = list(range(0,1001))
 #models, regimes, pops, reps = ['def15',], ['neut'], [1,2,3,4], range(0,1001)#range(1001, 5000)#
 #models, regimes, pops, reps = ['defdef15', 'gradient15', 'def15', 'gravel', 'nd', 'ndcs'], ['neut'], [1,2,3,4], range(0,1001)#range(1001, 5000)#
 #models, regimes, pops, reps = ['gravel'], ['neut'], [1,2,3,], range(0,1001)#range(1001, 5000)#
@@ -71,7 +71,7 @@ def main():
 								arguments.append(argstring)
 					
 
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	shuffle(arguments)
 	for argchunk in chunks(arguments,ncmds_script):

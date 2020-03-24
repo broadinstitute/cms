@@ -1,5 +1,5 @@
 '''A few pure-python statistical tools to avoid the need to install scipy. '''
-from __future__ import division # Division of integers with / should never round!
+ # Division of integers with / should never round!
 from math import exp, log, sqrt, gamma, lgamma, erf
 import itertools
 
@@ -141,7 +141,7 @@ def fisher_exact(contingencyTable) :
 
     p0 = prob_of_table(table[0])
     result = 0
-    for firstRowM1 in itertools.product(*[range(min(rowSums[0], colSums[i]) + 1)
+    for firstRowM1 in itertools.product(*[list(range(min(rowSums[0], colSums[i]) + 1))
                                          for i in range(n - 1)]) :
         lastElmt = rowSums[0] - sum(firstRowM1)
         if lastElmt < 0 or lastElmt > colSums[-1] :

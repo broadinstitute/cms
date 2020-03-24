@@ -1,7 +1,7 @@
 """Code for spatially localizing the selected SNP: identifying sub-intervals of the selected region that likely contain
 the selected SNP."""
 
-from __future__ import division
+
 from Classes.DotData import DotData
 from Operations.IDotData import IDotData
 from Operations.MiscUtil import AddFileSfx, dbg, Dict
@@ -87,9 +87,9 @@ def localizeSpatiallyBySplineFitting( Ddata, scenario, nreplicas, thinSfx = '',
 
             for bin, valsInBin in \
                     complikeForReplica.addCol( 'bin',
-                                               map( functools.partial( min, nbins-1 ),
-                                                    map( int,
-                                                         ( complikeForReplica.gdPos - gdMin ) / binSize ))).groupby('bin'):
+                                               list(map( functools.partial( min, nbins-1 ),
+                                                    list(map( int,
+                                                         ( complikeForReplica.gdPos - gdMin ) / binSize ))))).groupby('bin'):
 
                 binNums[ bin ] = bin
                 if valsInBin:
@@ -139,7 +139,7 @@ def localizeSpatiallyBySplineFitting( Ddata, scenario, nreplicas, thinSfx = '',
 
             binInfo = IDotData( names = binInfoHeadings, 
                                 Columns = ( itertools.repeat( replicaNum, nbins ),
-                                            range( nbins ),
+                                            list(range( nbins)),
                                             binLefts, binRights, binsToUse,
                                             binCenters, binAvgCMS, binMaxCMS, binIntegral, binIntegralNormed, binRank
                                             ) )
@@ -231,12 +231,12 @@ def evalSpatialLoc( Ddata, thinSfx, scenario, putativeMutPop, nreplicas, complik
                                 'distanceToIntervalBoundaryBp distanceToIntervalBoundaryGd' ) as spatialLocEvalFile:
 
         for ( replicaNum2, replicaIntervals ), ( replicaNum3, causalGdPos, replicaNum4 ) in \
-                itertools.izip( IDotData( intervalsListFN ).groupby( 'replicaNum' ),
+                zip( IDotData( intervalsListFN ).groupby( 'replicaNum' ),
                                 IDotData.merge( iDotDatas = ( IDotData( causalGdPosFN ),
                                                               IDotData( intervalsListFN ).replicaNum.removeDups() ),
                                                 cols = ( 'replicaNum', 'replicaNum' ) ) ):
 
-            replicaNum2, replicaNum3, replicaNum4  = map( int, ( replicaNum2, replicaNum3, replicaNum4 ) )
+            replicaNum2, replicaNum3, replicaNum4  = list(map( int, ( replicaNum2, replicaNum3, replicaNum4 ) ))
             if not replicaNum2 == replicaNum3 == replicaNum4:
                 dbg( 'replicaNum2 replicaNum3 replicaNum4 intervalsListFN complikeFN causalGdPosFN spatialLocEvalFN' )
             assert replicaNum2 == replicaNum3 == replicaNum4

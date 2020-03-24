@@ -51,7 +51,7 @@ def read_neut_normfile(neutNormfilename, scoretype ='ihs'):
 
 def norm_sel_ihs(inputScoreFile, neutNormfilename):
 	''' normalize iHS component score for selection scenarios to neutral parameters ''' 
-	print("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename)
+	print(("normalizing selection simulates to neutral: \n" + inputScoreFile + "\n" + neutNormfilename))
 	bins, nums, means, variances = read_neut_normfile(neutNormfilename, 'ihs')
 	#print(str(means))
 	#print(str(variances))
@@ -77,7 +77,7 @@ def norm_sel_ihs(inputScoreFile, neutNormfilename):
 		normfile.write(writeline)		
 	openfile.close()
 	normfile.close()
-	print("wrote to: " + normfilename)
+	print(("wrote to: " + normfilename))
 	return
 def norm_neut_xpehh(inputScoreFile, outfileName, runProgram = "scans.py"):##JV: I found the way to properly write to file; should implement here
 	'''wraps call to scans.py'''
@@ -101,7 +101,7 @@ def norm_sel_xpehh(inputScoreFile, neutNormfilename):
 		normfile.write(writeline)
 	openfile.close()
 	normfile.close()
-	print("wrote to: " + normfilename)
+	print(("wrote to: " + normfilename))
 	return
 
 

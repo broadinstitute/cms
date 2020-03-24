@@ -29,14 +29,15 @@
     
 """
 
-from __future__ import with_statement, division
+
 import platform
+from functools import reduce
 assert platform.python_version_tuple() >= ( 2, 6 )
 from xml.dom.minidom import Document
 import os, sys, inspect, binascii, base64, zlib, pickle, types, logging, hashlib, string, tempfile, pprint, numpy, stat, \
     traceback, functools, itertools, contextlib, operator, socket, __main__
 from types import StringType
-from urlparse import urlparse
+from urllib.parse import urlparse
 from Operations.MiscUtil import SysTypeString, MakeAlphaNum, Str, ReserveTmpFileName, SystemSucceed, WaitForFileToAppear, \
     relpath, dbg, SlurpFile, Dict, MakeSeq, PV, MergeDicts, Sfx, DumpFile, RegisterTmpFile, AttrDict, GetDefaultArgs, \
     IsValidFileName, MAX_FILE_NAME_LEN, AddFileSfx, EnsureDirExists, DictGet
@@ -169,7 +170,7 @@ class PipeRun:
     def settingAttrs( self, *args, **kwargs ):
         """Add the specified attrs to all rules defined within this context"""
         attrs = args[0] if args else kwargs
-        if isinstance( attrs, types.StringTypes ):
+        if isinstance( attrs, (str,) ):
 
             caller = inspect.currentframe()
             thisFileName = caller.f_code.co_filename
@@ -239,12 +240,12 @@ class PipeRun:
         """
 
         if hasattr( invokeFn, 'im_class' ):
-            staticMethodClass = invokeFn.im_class
-            invokeFn = invokeFn.im_func
+            staticMethodClass = invokeFn.__self__.__class__
+            invokeFn = invokeFn.__func__
 
         # make sure we can invoke invokeFn using the doOp.py script,
         # by starting a fresh Python interpreter.
-        assert os.path.exists( invokeFn.func_code.co_filename )
+        assert os.path.exists( invokeFn.__code__.co_filename )
 
         # for compatibility with Dan and Elain's system, the 'creates' argument may be used
         # in place of the 'targets' argument, and 'depends_on' argument may be used in place
@@ -267,7 +268,7 @@ class PipeRun:
 
         # var: paramMap - map from function parameter to its value during the invocation; includes
         #   the default parameters.
-        paramMap = MergeDicts( dict( zip( args[ -len( defaults ): ], defaults ) if defaults else () ),
+        paramMap = MergeDicts( dict( list(zip( args[ -len( defaults ): ], defaults )) if defaults else () ),
                                invokeArgs )
 
         extraInfo = {}
@@ -277,7 +278,7 @@ class PipeRun:
             return Template( str( s ) ).substitute( paramMap )
 
         def fixParams( v, filterNone = True ):
-            if filterNone: v = filter( None, MakeSeq( v ) )
+            if filterNone: v = [_f for _f in MakeSeq( v ) if _f]
             return applyParams( v ) if not isinstance( v, ( tuple, list ) ) else tuple( map( applyParams, v ) )
 
         splitInfo = None
@@ -331,7 +332,7 @@ class PipeRun:
                 fileDescrs = dict( ( file, applyParams( descr ) if isinstance( descr, str ) else
                                      ( applyParams( descr[0] ),
                                        tuple( ( col, applyParams( colDescr ) ) for col, colDescr in descr[1] ) ) )
-                                     for file, descr in fileDescrs.items() )
+                                     for file, descr in list(fileDescrs.items()) )
 
             if 'fileTypes' in ruleElems:
                 fileTypes = MergeDicts( ruleElems[ 'fileTypes' ], fileDescrs )
@@ -371,7 +372,7 @@ class PipeRun:
         # for example, the user can configure to always extract a 'chr' argument passed to invokeFn
         # as a 'chrom' attribute of the created rule.
         if invokeArgs:
-            for arg, val in invokeArgs.iteritems():
+            for arg, val in invokeArgs.items():
                 if arg in self.arg2attr:
                     if attrs == None: attrs = { }
                     attrs[ self.arg2attr[ arg ] ] = val
@@ -381,7 +382,7 @@ class PipeRun:
         # then we can import invokeFn from that module inside doOp.py, and call it
         # with invokeArgs.            
 
-        relFilePath = relpath( invokeFn.func_code.co_filename )
+        relFilePath = relpath( invokeFn.__code__.co_filename )
 
         #relFilePath = relFilePath.replace( '../../../../selection/sweep2/nsvn/', '../' )
 
@@ -392,12 +393,12 @@ class PipeRun:
             ( inspect.getdoc( invokeFn ) if invokeFn.__doc__ else invokeFn.__name__ )
 
         defaultArgs = GetDefaultArgs( invokeFn )
-        if isinstance( ignoreArgsHere, types.StringTypes ): ignoreArgsHere = ignoreArgsHere.strip().split()
+        if isinstance( ignoreArgsHere, (str,) ): ignoreArgsHere = ignoreArgsHere.strip().split()
         ignoreArgsHere = set()
-        invokeArgsTrimmed = dict( ( arg, val ) for arg, val in invokeArgs.items()
+        invokeArgsTrimmed = dict( ( arg, val ) for arg, val in list(invokeArgs.items())
                                   if arg not in ignoreArgsHere and ( arg not in defaultArgs or defaultArgs[ arg ] != val ) )
 
-        func_name = ( '' if staticMethodClass is None else ( staticMethodClass.__name__ + '.' ) ) + invokeFn.func_name 
+        func_name = ( '' if staticMethodClass is None else ( staticMethodClass.__name__ + '.' ) ) + invokeFn.__name__ 
 
         def GetEncodedArgs( args, sfx ):
 
@@ -455,7 +456,7 @@ class PipeRun:
                     # as well as the arguments we are passing to it, in readable form.
                     commandsReadable = commandsReadable or \
                         func_name + '(' + ', '.join( [ arg + ' = ' + pprint.pformat( val ) \
-                                                                    for arg, val in invokeArgs.iteritems() ]  )+ ')',
+                                                                    for arg, val in invokeArgs.items() ]  )+ ')',
                     # the rule comment is normally taken from the Python doc string of invokeFn,
                     # but can be overridden with the comment argument to addInvokeRule().
                     # if there is neither a doc string nor a comment argument, then use the function name
@@ -467,7 +468,7 @@ class PipeRun:
                         + ( [ hashlib.sha512( ''.join( map( FunctionString, usedFnsOld ) ) ).hexdigest() ] if \
                                 invokeFnOld else [] ),
                     name = ruleName,
-                    targets = map( functools.partial( SplitFN, i = i ), targets ),
+                    targets = list(map( functools.partial( SplitFN, i = i ), targets )),
                     **Dict( 'sources binaries mediumRuleName mediumRuleNameSfx attrs fileDescrs fileTypes '
                             'paramMap saveOutputTo' ))
 
@@ -517,7 +518,7 @@ class PipeRun:
                           # as well as the arguments we are passing to it, in readable form.
                           commandsReadable = \
                               func_name + '(' + ', '.join( [ arg + ' = ' + pprint.pformat( val ) \
-                                                                          for arg, val in invokeArgs.iteritems() ]  )+ ')',
+                                                                          for arg, val in invokeArgs.items() ]  )+ ')',
                           # the rule comment is normally taken from the Python doc string of invokeFn,
                           # but can be overridden with the comment argument to addInvokeRule().
                           # if there is neither a doc string nor a comment argument, then use the function name
@@ -613,14 +614,14 @@ class PipeRun:
     class FileTuple(tuple):
 
         def containing( self, s ):
-            r = filter( lambda v: s in v, self )
+            r = [v for v in self if s in v]
             if not r: dbg( 'self s' )
             assert r
             return r[0] if len(r)==1 else r
 
 
         def not_containing( self, s ):
-            r = filter( lambda v: s not in v, self )
+            r = [v for v in self if s not in v]
             if not r: dbg( 'self s' )
             assert r
             return r[0] if len(r)==1 else r
@@ -667,7 +668,7 @@ class PipeRun:
         if creates and not targets: targets = creates
         if depends_on and not sources: sources = depends_on
 
-        assert saveOutputTo is None or isinstance( saveOutputTo, types.StringTypes )
+        assert saveOutputTo is None or isinstance( saveOutputTo, (str,) )
 
         if not targets and saveOutputTo: targets = saveOutputTo
         assert targets
@@ -676,7 +677,7 @@ class PipeRun:
 
         if saveOutputTo and saveOutputTo not in targets: targets += ( saveOutputTo, )
 
-        def IsString( s ): return isinstance( s, types.StringTypes )
+        def IsString( s ): return isinstance( s, (str,) )
         def ChkStrings( strs ):
             if not all( map( IsString, MakeSeq( strs ) ) ):
                 dbg( 'MakeSeq(strs) map(IsString,MakeSeq(strs))' )
@@ -719,11 +720,10 @@ class PipeRun:
 
         targets, sources, commands, commandsOld, commandsOld2, commandsOld3, commandsReadable, comment, mediumRuleName, \
             name = \
-            map( lambda s: s if isinstance( s, types.NoneType ) else \
+            [s if isinstance( s, type(None) ) else \
                      applyStr( s ) if isinstance( s, ( StringType, numpy.chararray ) ) else \
-                     map( applyStr, s ),
-                 ( targets, sources, commands, commandsOld, commandsOld2, commandsOld3, commandsReadable,
-                   comment, mediumRuleName, name ) )
+                     list(map( applyStr, s )) for s in ( targets, sources, commands, commandsOld, commandsOld2, commandsOld3, commandsReadable,
+                   comment, mediumRuleName, name )]
 
         #del applyStr
         #del caller  # to avoid circular references
@@ -770,7 +770,7 @@ class PipeRun:
 
             if attrs:
                 attrsElt = self.__addElt( "attrs", rule )
-                for a, v in attrs.iteritems():
+                for a, v in attrs.items():
                     vals = MakeSeq( v )
                     for val in vals:
                         self.__addElt( a, attrsElt, val )
@@ -786,7 +786,7 @@ class PipeRun:
                                                MakeSeq( usesTests ), rule )
 
             if fileDescrs:
-                for fileName, fileDescr in fileDescrs.items():
+                for fileName, fileDescr in list(fileDescrs.items()):
                     fileDescrElt = self.__addElt( "fileDescr", self.fileDescrsElt );
                     self.__addElt( "file", fileDescrElt, MakeSeq( targets )[ fileName ] if isinstance( fileName, int ) else fileName )
 
@@ -804,7 +804,7 @@ class PipeRun:
                                 self.__addElt( 'sameAsCol', thisColDescrElt, colDescr[1] )
 
             if fileTypes:
-                for fname, fileType in fileTypes.items():
+                for fname, fileType in list(fileTypes.items()):
                     for fileName in MakeSeq( fname ):
 
                         fileTypeElt = self.__addElt( "fileType", self.fileTypesElt );
@@ -844,7 +844,7 @@ class PipeRun:
         will find the right file.
         
         """
-        for fromStr, toStr in fileMapping.iteritems():
+        for fromStr, toStr in fileMapping.items():
             thisMapping = self.__addElt( "fileMapping", self.fileNameMap )
             self.__addElt( "from", thisMapping, fromStr )
             self.__addElt( "to", thisMapping, toStr )
@@ -1244,11 +1244,11 @@ def FunctionString( fn ):
     """
 
     # allow dependencies on a class; if anything in 
-    if isinstance( fn, (types.ClassType, types.ModuleType) ): return inspect.getsource( fn )
-    if isinstance( fn, types.MethodType ): fn = fn.im_func
+    if isinstance( fn, (type, types.ModuleType) ): return inspect.getsource( fn )
+    if isinstance( fn, types.MethodType ): fn = fn.__func__
 
     assert isinstance( fn, types.FunctionType )
-    code = fn.func_code
+    code = fn.__code__
     result = ''.join( FunctionChecksum( code, fn ) )
 
     # Because identifiers in Python are resolved dynamically at runtime,

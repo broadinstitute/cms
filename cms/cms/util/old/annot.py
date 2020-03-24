@@ -4,7 +4,7 @@ __author__ = "dpark@broadinstitute.org"
 __version__ = "PLACEHOLDER"
 __date__ = "PLACEHOLDER"
 
-import sqlite3, itertools, urllib, logging, re, os
+import sqlite3, itertools, urllib.request, urllib.parse, urllib.error, logging, re, os
 import util.file, util.misc
 
 log = logging.getLogger(__name__)
@@ -43,10 +43,10 @@ class SnpAnnotater(object):
                 self.cur.executemany("""insert into annot (chr,pos,allele_ref,allele_alt,
                     effect,impact,gene_id,gene_name,protein_pos,residue_ref,residue_alt)
                     values (?,?,?,?,?,?,?,?,?,?,?)""",
-                    imap(lambda row:
+                    map(lambda row:
                         [row['CHROM'], int(row['POS']), row['REF'], row['ALT']] +
                         parse_eff(row['CHROM'], row['POS'], row['INFO']),
-                        ifilter(lambda r: r['ALT'] != '.', ffp)))
+                        filter(lambda r: r['ALT'] != '.', ffp)))
             except Exception:
                 log.exception("exception processing file %s line %s", snpEffVcf, ffp.line_num)
                 raise
@@ -116,7 +116,7 @@ def parse_eff(chrom, pos, info, required=True):
                 gene_name = 'tRNA 3-trailer sequence RNase, putative'
             else:
                 try:
-                    gene_name = urllib.unquote_plus(other[5]).encode('ascii')
+                    gene_name = urllib.parse.unquote_plus(other[5]).encode('ascii')
                 except UnicodeDecodeError:
                     log.error("error at %s:%s decoding the string '%s'" % (chrom, pos, other[5]))
                     raise

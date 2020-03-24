@@ -103,7 +103,7 @@ def execute_regionviz(args):
 	savefilename = args.savefilename
 	cmsfilename = args.cmsInfile
 	if os.path.isfile(cmsfilename):
-		print('loading from... ' + cmsfilename)
+		print(('loading from... ' + cmsfilename))
 		physpos, genpos, daf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(cmsfilename) #need to make this flexible to regional input vs gw. (vs. likes)
 		causal_index = -1
 		if args.hilitePos is not None:
@@ -118,7 +118,7 @@ def execute_regionviz(args):
 		quick_plot(ax6, physpos, deldaf, "deldaf", causal_index)
 		quick_plot(ax7, physpos, cms_unnormed, "cms", causal_index)
 		plt.savefig(savefilename)
-		print("plotted to " + savefilename)
+		print(("plotted to " + savefilename))
 		plt.close()
 	return
 def execute_distviz(args):
@@ -139,7 +139,7 @@ def execute_distviz(args):
 		print('must supply input .cms files')
 		sys.exit(0)
 
-	print('loading cms values from ' + str(len(allfiles)) + " files...")
+	print(('loading cms values from ' + str(len(allfiles)) + " files..."))
 
 	#pass index, expectedlen?
 	savefilename = args.savefilename
@@ -190,9 +190,9 @@ def execute_extended_manhattan(args):
 	all_emp_pos, all_emp_scores = [], []
 	for chrom in range(1,numChr +1):
 		emp_cms_filename = get_emp_cms_file(selpop, chrom, normed=True, suffix=suffix, basedir=basedir)
-		print('loading chr ' + str(chrom) + ": " + emp_cms_filename)
+		print(('loading chr ' + str(chrom) + ": " + emp_cms_filename))
 		if not os.path.isfile(emp_cms_filename):
-			print("missing: " + emp_cms_filename)
+			print(("missing: " + emp_cms_filename))
 			break
 		physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(emp_cms_filename)
 
@@ -210,13 +210,13 @@ def execute_extended_manhattan(args):
 
 	if args.regionsfile is not None:
 		regionchrs, regionstarts, regionends = load_regions(args.regionsfile)
-		print('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile)
+		print(('loaded ' + str(len(regionchrs)) + ' significant regions from ' + args.regionsfile))
 		for iregion in range(len(regionchrs)):
 			regionchr, regionstart, regionend = regionchrs[iregion], regionstarts[iregion], regionends[iregion]
 			this_chrom = int(regionchr.strip('chr'))
 			ichrom = this_chrom-1
 			chrompos, chromscores = all_emp_pos[ichrom], all_emp_scores[ichrom]
-			zipped = zip(chrompos, chromscores)
+			zipped = list(zip(chrompos, chromscores))
 			plotpos, plotvals = [], []
 			for locus in zipped:
 				if locus[0] >= regionstart:
@@ -228,10 +228,10 @@ def execute_extended_manhattan(args):
 
 	if args.percentile is not None:
 		percentile = float(args.percentile)
-		print('plotting data with heuristic cutoff for ' + str(percentile) + " percentile...")
+		print(('plotting data with heuristic cutoff for ' + str(percentile) + " percentile..."))
 		flat_emp_scores = [item for sublist in all_emp_scores for item in sublist if not np.isnan(item)]
 		score_cutoff = float(np.percentile(flat_emp_scores, percentile))
-		print("score cutoff: " + str(score_cutoff))
+		print(("score cutoff: " + str(score_cutoff)))
 		for chrom in range(1,numChr +1):
 			iax = chrom-1
 			ax = axarr[iax]
@@ -242,14 +242,14 @@ def execute_extended_manhattan(args):
 
 			#get empirical scores and positions for pass threshhold and plot them as above with color
 			these_scores, these_pos = all_emp_scores[iax], all_emp_pos[iax]
-			zipped =  zip(these_scores, these_pos)
+			zipped =  list(zip(these_scores, these_pos))
 			significant = [item for item in zipped if item[0] >= score_cutoff]
 			signif_vals = [item[0] for item in significant]
 			signif_pos = [item[1] for item in significant]
 			ax.plot(signif_pos, signif_vals, color=colorDict[pop], linestyle='None', marker=".", markersize=.3)#, markersize=1)
 
 	plt.savefig(savename)
-	print('saved to: ' + savename)
+	print(('saved to: ' + savename))
 	return
 
 ########	Quantify and visualize power
@@ -283,11 +283,11 @@ def execute_cdf(args):
 						if not np.isnan(causal_rank):
 							this_array.append(causal_rank)
 				else:
-					print("missing; " + cmsfilename)
-	print("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates.")
-	print("for pop 2, loaded " + str(len(causal_ranks_2)) + " replicates.")
-	print("for pop 3, loaded " + str(len(causal_ranks_3)) + " replicates.")
-	print("for pop 4, loaded " + str(len(causal_ranks_4)) + " replicates.")
+					print(("missing; " + cmsfilename))
+	print(("for pop 1, loaded " + str(len(causal_ranks_1)) + " replicates."))
+	print(("for pop 2, loaded " + str(len(causal_ranks_2)) + " replicates."))
+	print(("for pop 3, loaded " + str(len(causal_ranks_3)) + " replicates."))
+	print(("for pop 4, loaded " + str(len(causal_ranks_4)) + " replicates."))
 
 	cdf_fig, cdf_ax = plt.subplots()
 	if len(causal_ranks_1) > 0:
@@ -308,7 +308,7 @@ def execute_cdf(args):
 	plt.xlabel('significance thresshold (i.e., examining the top x variants)')
 	plt.savefig(savefilename)
 	plt.close()
-	print('plotted to ' + savefilename)
+	print(('plotted to ' + savefilename))
 	return
 def execute_fpr(args):
 	''' estimate false positive rate for region identification '''
@@ -341,11 +341,11 @@ def execute_fpr(args):
 				#print(str(rep_percentages) + "\t" + repfilename)
 				if len(rep_percentages) > 0:
 					if max(rep_percentages) > thresshold:
-						print("false positive: " + repfilename)
+						print(("false positive: " + repfilename))
 
-	print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
+	print(('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "..."))
 	fpr = calc_pr(all_percentages, thresshold)
-	print('false positive rate: ' + str(fpr) + "\n")
+	print(('false positive rate: ' + str(fpr) + "\n"))
 
 	if args.saveLog	is not None:
 		writefilename = args.saveLog 
@@ -354,7 +354,7 @@ def execute_fpr(args):
 
 		writefile.write(model + "\t" + str(regionlen) + "\t" + str(thresshold) + '\t' + str(cutoff) + '\n')
 		writefile.close()
-		print('wrote to :  ' + str(writefilename))
+		print(('wrote to :  ' + str(writefilename)))
 	return
 def execute_tpr(args):
 	''' estimate true positive rate for region detection '''
@@ -390,7 +390,7 @@ def execute_tpr(args):
 					print(repfilename)
 				if os.path.isfile(repfilename):
 					allrepfilenames.append(repfilename)
-		print('loaded ' + str(len(allrepfilenames)) + " replicates...")
+		print(('loaded ' + str(len(allrepfilenames)) + " replicates..."))
 		#numToTake = min(500, len(allrepfilenames))
 		#chosen = np.random.choice(allrepfilenames, numToTake, replace=False) #take random sample	
 		chosen = allrepfilenames #this was just to expedite, no?
@@ -403,9 +403,9 @@ def execute_tpr(args):
 				rep_percentages = check_rep_windows(physpos, these_scores, regionlen, cutoff = cutoff)
 				all_percentages.append(rep_percentages)		
 
-		print('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "...")
+		print(('loaded ' + str(len(all_scores)) + " replicates populations for model " + model + "..."))
 		tpr = calc_pr(all_percentages, thresshold)
-		print('true positive rate: ' + str(tpr) + "\n")
+		print(('true positive rate: ' + str(tpr) + "\n"))
 
 		if args.saveLog	is not None:
 			writefilename = args.saveLog +"_" + thislabel
@@ -414,7 +414,7 @@ def execute_tpr(args):
 
 			writefile.write(model + "\t" + str(regionlen) + "\t" + str(thresshold) + '\t' + str(cutoff) + '\n')
 			writefile.close()
-			print('wrote to :  ' + str(writefilename))
+			print(('wrote to :  ' + str(writefilename)))
 	return	
 def execute_roc(args):
 	''' plot receiver operating characteristic curve -- false positive rate vs. true positive rate '''
@@ -426,8 +426,8 @@ def execute_roc(args):
 	savefilename = args.savefilename
 
 	allfpr, alltpr = load_power_dict(modeldir, likes_dir_suffix)
-	fpr_keys = allfpr.keys()
-	tpr_keys = alltpr.keys()
+	fpr_keys = list(allfpr.keys())
+	tpr_keys = list(alltpr.keys())
 	
 	regionlens = list(set([item[0] for item in fpr_keys]))
 	thressholds =list(set([item[1] for item in fpr_keys]))
@@ -453,7 +453,7 @@ def execute_roc(args):
 						pass
 
 		if (len(plotfpr)) > 0:
-			plotfpr, plottpr = zip(*sorted(zip(plotfpr, plottpr)))
+			plotfpr, plottpr = list(zip(*sorted(zip(plotfpr, plottpr))))
 			ax.scatter(plotfpr, plottpr, label=str(plot_set), color=colorDict[plot_set], s=.5)
 			
 	plt.suptitle('ROC for ' + model + " " + likes_dir_suffix)
@@ -464,7 +464,7 @@ def execute_roc(args):
 	plt.legend()
 	plt.savefig(savefilename)
 	plt.close()
-	print("plotted to " + savefilename)
+	print(("plotted to " + savefilename))
 	return
 def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 	''' given FPR and TPR calculations, select an optimal significance cutoff subject to a specified criterion '''
@@ -481,9 +481,9 @@ def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 	for pop in [1, 2, 3, 4, "ave"]:
 		best_tpr, best_fpr = 0, 0
 		best_cutoff = 0
-		print("Now finding optimal with a maximum FPR of " + str(maxFPR) + " for pop " + str(pop) + " using demographic model: " + model)
-		fpr_keys = all_fpr.keys()
-		tpr_keys = all_tpr.keys()
+		print(("Now finding optimal with a maximum FPR of " + str(maxFPR) + " for pop " + str(pop) + " using demographic model: " + model))
+		fpr_keys = list(all_fpr.keys())
+		tpr_keys = list(all_tpr.keys())
 		thesekeys_fpr = [key for key in fpr_keys if pop in key]
 		thesekeys_tpr = [key for key in tpr_keys if pop in key]
 		for key in thesekeys_fpr:
@@ -497,8 +497,8 @@ def execute_find_cutoff(args): #MUST ADD TRACK OF SUFFIX
 						best_cutoff = tprkey
 						best_fpr = all_fpr[key]
 		print(best_cutoff)
-		print("FPR: " + str(best_fpr))
-		print("TPR: " + str(best_tpr) + "\n")
+		print(("FPR: " + str(best_fpr)))
+		print(("TPR: " + str(best_tpr) + "\n"))
 	return
 
 ########	Apply significance cutoffs
@@ -512,7 +512,7 @@ def execute_gw_regions(args):
 	windowlen = args.regionlen
 	suffix = args.suffix
 
-	chroms = range(1,23)
+	chroms = list(range(1,23))
 	signif_windows = []
 	####################
 	## LOOP OVER CHRS ##
@@ -521,7 +521,7 @@ def execute_gw_regions(args):
 		chrom_signif = []
 		normedempfilename = get_emp_cms_file(pop, chrom, normed=True, suffix=suffix, basedir=basedir)
 		if not os.path.isfile(normedempfilename):
-			print("missing: " + normedempfilename)
+			print(("missing: " + normedempfilename))
 		else:
 			physpos, genpos, seldaf, ihs_normed, delihh_normed, nsl_normed, xpehh_normed, fst, deldaf, cms_unnormed, cms_normed = read_cms_repfile(normedempfilename)
 			for iPos in range(len(physpos)):
@@ -559,7 +559,7 @@ def execute_gw_regions(args):
 				writeline = "chr" + str(chromnum) + "\t" + str(starts[iregion]) + "\t" + str(ends[iregion]) + '\n'
 				writefile.write(writeline)
 		writefile.close()
-		print('wrote to ' + writefilename)	
+		print(('wrote to ' + writefilename))
 	return
 def execute_regionlog(args):
 	input_filelist = args.input_filelist
@@ -588,7 +588,7 @@ def execute_regionlog(args):
 		return
 	else:
 		totalselregions = 0
-		print('loaded regions from ' + str(len(regionfiles)) + " files...")
+		print(('loaded regions from ' + str(len(regionfiles)) + " files..."))
 
 		header = ['chrom', 'start', 'end', 'len (kb)', 'pop', 'genes',]
 		####################
@@ -629,7 +629,7 @@ def execute_regionlog(args):
 				selregion_start, selregion_end = item[1], item[2]
 				key = (selregion_chr, selregion_start, selregion_end)
 				generegion_id = item[6]
-				if key not in geneDict.keys():
+				if key not in list(geneDict.keys()):
 					geneDict[key] = [generegion_id]
 				else:
 					geneDict[key].append(generegion_id)
@@ -641,7 +641,7 @@ def execute_regionlog(args):
 				regionlen = int(end) - int(start)
 				kb_regionlen=round(regionlen/1000)
 
-				if key in geneDict.keys():
+				if key in list(geneDict.keys()):
 					genelist = geneDict[key]
 					genes = set(genelist)
 					genestring = ""
@@ -675,7 +675,7 @@ def execute_regionlog(args):
 		book.save(TemporaryFile())
 	else:
 		writefile.close()
-	print('wrote ' + str(totalselregions) + ' significant regions to: ' + savefilename)
+	print(('wrote ' + str(totalselregions) + ' significant regions to: ' + savefilename))
 	return
 
 ##########

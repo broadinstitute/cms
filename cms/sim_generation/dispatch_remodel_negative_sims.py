@@ -11,7 +11,7 @@ from random import shuffle
 import time
 
 basedir = "/n/scratchlfs/sabeti_lab/vitti/remodel_negsel/"
-reps = range(1, 1001)
+reps = list(range(1, 1001))
 basecmd = "python /n/home08/jvitti/remodel_rc/rerun_cosi.py"
 
 def chunks(l, n):
@@ -39,7 +39,7 @@ def main():
 	this_rundir = basedir
 	paramfilename = "/n/home08/jvitti/remodel_samplesize/params/test_neg.par"
 	if not os.path.isfile(paramfilename) or os.path.getsize(paramfilename) == 0:
-		print('missing ' + paramfilename)
+		print(('missing ' + paramfilename))
 	for irep in reps:
 		trajfilename = this_rundir + "sampled_vars/rep" + str(irep) + ".traj"
 		save_sample_filename = this_rundir + "sampled_vars/rep" + str(irep) + ".sampled"
@@ -51,7 +51,7 @@ def main():
 			commands.append(cmdstring)
 
 
-	print('loaded a total of ' + str(len(commands)) + " commands.")
+	print(('loaded a total of ' + str(len(commands)) + " commands."))
 	iscript = 0
 	shuffle(commands)
 	for commandchunk in chunks(commands,ncmds_script):

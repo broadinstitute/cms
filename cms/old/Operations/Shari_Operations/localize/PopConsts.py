@@ -7,7 +7,7 @@ import copy
 pn_European, pn_EastAsian, pn_WestAfrican, pn_LWK, pn_MKK = 1, 4, 5, 6, 7
 popName = { pn_European:'European',pn_EastAsian:'EastAsian',pn_WestAfrican:'WestAfrican' }
 pop2name = copy.deepcopy( popName )
-popName.update( ( str(k), v ) for k, v in popName.items() )
+popName.update( ( str(k), v ) for k, v in list(popName.items()) )
 
 pop2hm2name = { pn_European: 'CEU', pn_EastAsian: 'JPT+CHB', pn_WestAfrican: 'YRI' }
 

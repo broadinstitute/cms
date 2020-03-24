@@ -128,8 +128,8 @@ def root_mean_square_error(output, target, target_var, verbose = False):
 		d = float(target_var[i])
 		partialsum = ((a-c)**2)/(math.sqrt(d))
 		if verbose == True:
-			print("(" + str(a) + "-" + str(c) + ")^2  / " + str(d))
-			print(str(partialsum))
+			print(("(" + str(a) + "-" + str(c) + ")^2  / " + str(d)))
+			print((str(partialsum)))
 		sum_bins += partialsum
 	return (sum_bins/n)**.5
 def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst'], pops = [1, 2, 3, 4], piScaleFactor = 100, verbose=False): 
@@ -138,7 +138,7 @@ def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
 	targetStats = get_target_values() 
 	simStats = read_custom_statsfile(statfilename, len(pops))
 	if verbose:
-		print("getting statfile from " + statfilename)
+		print(("getting statfile from " + statfilename))
 	popPairs = []
 	for i in range(len(pops)):
 		for j in range(i, len(pops)):
@@ -162,7 +162,7 @@ def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
 
 				RMS = root_mean_square_error(sim_val, target_val, target_var)
 				if verbose:
-					print("RMS, " + str(item) + ": " + str(RMS) + "\t")
+					print(("RMS, " + str(item) + ": " + str(RMS) + "\t"))
 				tot += (RMS ** 2)
 				counter +=1
 		else:
@@ -178,7 +178,7 @@ def calc_error(statfilename, stats = ['pi', 'sfs', 'anc', 'r2', 'dprime', 'fst']
 				if stat == "pi": 
 					RMS *= piScaleFactor
 				if verbose:
-					print("RMS, " + str(item) + ": " + str(RMS) + "\t")
+					print(("RMS, " + str(item) + ": " + str(RMS) + "\t"))
 				tot += (RMS ** 2)
 				counter +=1
 

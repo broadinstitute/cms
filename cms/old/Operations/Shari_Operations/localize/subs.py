@@ -1,4 +1,4 @@
-from __future__ import with_statement, division
+
 from Classes.DotData import DotData
 from Operations.MiscUtil import dbg, clamp
 from Operations.Shari_Operations.localize.RunningStat import RunningStat 
@@ -9,7 +9,7 @@ import logging, itertools
 ## Normalizes an array by mean and std dev
 def normalize(rawVals, ind = itertools.repeat( True ) ):
     notNan = []
-    for val, useVal in itertools.izip( rawVals, ind ):
+    for val, useVal in zip( rawVals, ind ):
         if useVal and not isnan(val) and not isneginf(val):
             notNan.append(val)
 #    print len(notNan)
@@ -18,7 +18,7 @@ def normalize(rawVals, ind = itertools.repeat( True ) ):
     
     normVals = []
 
-    for val, useVal in itertools.izip( rawVals, ind ):
+    for val, useVal in zip( rawVals, ind ):
         normVals.append( (val - theMean)/theStd if useVal else nan )
 
     return normVals, theMean, theStd
@@ -302,7 +302,7 @@ def highScorers(stat,nbin,ntopbins,pos):
         bin = int(float(i)/len(stat)/bin_scale)
         if bin > ntopbins:
             highScorers.append(pos[sortInd[i]])
-            print str(pos[sortInd[i]]) + '\t' + str( stat[sortInd[i]] )
+            print(str(pos[sortInd[i]]) + '\t' + str( stat[sortInd[i]] ))
             CL.append(stat[i])
     
     output = array([highScorers,CL])
@@ -311,9 +311,9 @@ def highScorers(stat,nbin,ntopbins,pos):
 def calcCDF(ranksDotData, hitRanksName = 'hitsRanks'):
     hitRanks = array(ranksDotData[hitRanksName])
     totalHits = sum(hitRanks)
-    print totalHits
+    print(totalHits)
     fractions = hitRanks / float(totalHits)
-    print fractions
+    print(fractions)
 
     return cumsum(fractions)
 
@@ -322,9 +322,9 @@ def calcFreqCDF(ranksDotData, hitRanksName = 'hitsRanks'):
     for freq in ['high','low']:
         hitRanks = array(ranksDotData['hitsRanks_' + freq])
         totalHits = sum(hitRanks)
-        print totalHits
+        print(totalHits)
         fractions = hitRanks / float(totalHits)
-        print fractions
+        print(fractions)
 
         cdfs[freq] =  cumsum(fractions)
     
@@ -378,7 +378,7 @@ def meanStdDevOfTsvColumn2( tsvFileName, columnName ):
     with open( tsvFileName ) as f:
         header = f.readline().strip().split()
         colNum = header.index( columnName )
-        print 'colnum=', colNum
+        print('colnum=', colNum)
 
         lineNum = 0
         for line in f:
@@ -429,7 +429,7 @@ def likeRatio(stat,hitsLikes,missLikes,stat_start,stat_end,nbin,lik,ind=None):
     
     indNaN = hitsLikes != 1e-10
     missingVal = log(min(hitsLikes[indNaN]/missLikes[indNaN]))
-    print missingVal
+    print(missingVal)
 
     for i in range(len(stat)):
 
@@ -508,7 +508,7 @@ def likeValBin(stat,hitsLikes,missLikes,stat_start,stat_end,nbin,lik,ind=None):
     
     indNaN = hitsLikes != 1e-10
     missingVal = log(min(hitsLikes[indNaN]/missLikes[indNaN]))
-    print missingVal
+    print(missingVal)
 
     for i in range(len(stat)):
 

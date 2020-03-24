@@ -12,7 +12,7 @@ from random import shuffle
 import subprocess
 
 #'defdef15', 'gradient15'
-models, regimes, pops, reps = ['nd'], ['neut'], [1,2,3,4], range(1,1000)#range(1001, 5000)#
+models, regimes, pops, reps = ['nd'], ['neut'], [1,2,3,4], list(range(1,1000))#range(1001, 5000)#
 #models, regimes, pops, reps = ['nd', 'ndcs', 'def15', 'defdef15', 'gradient15', 'gravel' ], ['neut'], [1,2,3,4], range(0,1001)#range(1001, 5000)#
 #models, regimes, pops, reps = [ 'gradient15'], ['neut'], [1,2,3,4], range(0,1001)#range(1001, 5000)#
 
@@ -127,7 +127,7 @@ def main():
 	## DISPATCH ##
 	##############
 	shuffle(arguments)
-	print('loaded a total of ' + str(len(arguments)) + " commands.")
+	print(('loaded a total of ' + str(len(arguments)) + " commands."))
 	iscript = 0
 	for argchunk in chunks(arguments,ncmds_script):
 		iscript +=1

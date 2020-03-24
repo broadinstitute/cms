@@ -40,7 +40,7 @@ def run_traj(output, cosibuild, params, maxAttempts=100):
 		except:
 			continue
 		itWorked = True	
-	print("found a trajectory in " + str(nAttempts) + " attempts.")
+	print(("found a trajectory in " + str(nAttempts) + " attempts."))
 	assert os.path.isfile(output)
 	return
 def get_bin_strings(bin_medians):

@@ -58,7 +58,7 @@ def main_command(mainfunc):
         the values of the object on as parameters to the function call.
     '''
     def _main(args):
-        args2 = dict((k,v) for k,v in vars(args).items() if k not in ('loglevel','tmpDir','tmpDirKeep','version','func_main','command'))
+        args2 = dict((k,v) for k,v in list(vars(args).items()) if k not in ('loglevel','tmpDir','tmpDirKeep','version','func_main','command'))
         mainfunc(**args2)
     _main.__doc__ = mainfunc.__doc__
     return _main
@@ -112,7 +112,7 @@ def main_argparse(commands, description):
     log.info("software version: %s, python version: %s", __version__, sys.version)
     log.info("command: %s %s %s", 
         sys.argv[0], sys.argv[1],
-        ' '.join(["%s=%s" % (k,v) for k,v in vars(args).items() if k not in ('command', 'func_main')]))
+        ' '.join(["%s=%s" % (k,v) for k,v in list(vars(args).items()) if k not in ('command', 'func_main')]))
     
     if hasattr(args, 'tmpDir'):
         """ 

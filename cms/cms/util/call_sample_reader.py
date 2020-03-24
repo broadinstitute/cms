@@ -8,7 +8,7 @@ import csv
 import os
 from collections import defaultdict
 try:
-    from urllib2 import urlopen
+    from urllib.request import urlopen
 except ImportError: # for py3
     from urllib.request import urlopen
 
@@ -53,7 +53,7 @@ class CallSampleReader(object):
 
         reader = csv.DictReader(f, delimiter="\t")
         for row in  reader:
-            sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.items() if k not in ("sample", "")}
+            sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in list(row.items()) if k not in ("sample", "")}
         if isLocal:
             f.close()
         return sample_membership
@@ -107,7 +107,7 @@ class CallSampleReader(object):
         '''
             Add the metadata keys for a given row to the sample key of the sample_membership dict
         '''
-        self.sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in row.items() if k not in ("sample", "")}
+        self.sample_membership[row["sample"]] = {k.replace(" ", "_"):v for k,v in list(row.items()) if k not in ("sample", "")}
 
 
     def store_population_membership(self, row, rowFieldNames):
@@ -163,7 +163,7 @@ class CallSampleReader(object):
             return self.sample_names
 
         samples_to_include = set()
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             patterns = []
             # handle passing in either a single string or a list of strings
             if isinstance(value, list):
@@ -171,7 +171,7 @@ class CallSampleReader(object):
             else:
                 patterns.append(value)
 
-            samples_to_include |= set((k for k, v in self.sample_membership.items() if v[key] in patterns))
+            samples_to_include |= set((k for k, v in list(self.sample_membership.items()) if v[key] in patterns))
         return list(samples_to_include)
 
     def get_population_for_sample(self, sample_name):

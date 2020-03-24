@@ -149,12 +149,12 @@ def calc_maf(genos, ancestral=None, ploidy=1):
     # count up
     out = {'n_tot':len(alleles)}
     acounts = util.misc.histogram(alleles)
-    alist = sorted([(n,a) for a,n in acounts.items()])
+    alist = sorted([(n,a) for a,n in list(acounts.items())])
 
     # daf
     if ancestral is not None:
         out['a_ancestral'] = ancestral
-        derived = list(sorted([a for a in acounts.keys() if a!=ancestral]))
+        derived = list(sorted([a for a in list(acounts.keys()) if a!=ancestral]))
         out['a_derived'] = ','.join(derived)
         out['dac'] = sum(acounts[a] for a in derived)
         out['daf'] = out['n_tot'] and float(out['dac'])/out['n_tot'] or None

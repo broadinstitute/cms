@@ -21,8 +21,8 @@ try:
     from urllib.parse import urlparse    # pylint: disable=E0611
 except ImportError:
     # Python 2.x
-    from urllib import urlretrieve # pylint: disable=E0611
-    from urlparse import urlparse # pylint: disable=import-error
+    from urllib.request import urlretrieve # pylint: disable=E0611
+    from urllib.parse import urlparse # pylint: disable=import-error
 
 # Put all tool files in __all__
 # allows "from tools import *" to import all tooles for testtools
@@ -555,7 +555,7 @@ class CondaPackage(InstallMethod):
             _log.warning("failed to decode JSON output from conda create: %s", result.stdout.decode("UTF-8"))
             return # return rather than raise so we can fall back to the next install method
 
-        if "error" in data.keys() and "prefix already exists" in data["error"]:
+        if "error" in list(data.keys()) and "prefix already exists" in data["error"]:
             # the environment already exists
             # the package may not be installed...
             _log.debug("Conda environment already exists. Installing package...")
@@ -583,7 +583,7 @@ class CondaPackage(InstallMethod):
             self.apply_patches()
 
         else:
-            if "success" in data.keys() and data["success"]:
+            if "success" in list(data.keys()) and data["success"]:
                 # we were able to create the environment and install the package
                 _log.debug("Conda environment created and package installed.")
 

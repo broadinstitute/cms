@@ -1,5 +1,5 @@
 
-from __future__ import division, with_statement
+
 
 __all__ = ( 'DefineRulesTo_CreateSimulationParams', 'DefineRulesTo_runSims' )
 
@@ -11,6 +11,7 @@ from Operations.Shari_Operations.localize.PopConsts import pn_European, pn_EastA
 from operator import concat
 from shutil import copyfile
 import itertools, os
+from functools import reduce
 
 def CreateSimsParams_neutral( Ddata, suffix, inputParamsFiles, getio = None ):
 	"""Write the neutral parameter file.
@@ -22,7 +23,7 @@ def CreateSimsParams_neutral( Ddata, suffix, inputParamsFiles, getio = None ):
 
 	if getio: return dict( depends_on = inputParamsFiles, creates = neutralParamsFile )
 
-	neutralParams = reduce( concat, map( SlurpFile, inputParamsFiles ) )
+	neutralParams = reduce( concat, list(map( SlurpFile, inputParamsFiles )) )
 	
 	DumpFile( neutralParamsFile, neutralParams )
 	
@@ -38,8 +39,8 @@ def CreateSimsParams_selection( mutAges, mutPops, mutFreqs, Ddata, suffix, scen2
 				       suffix + '/%dky/params_sel%d_%d' % ( mutAge, mutFreq, mutPop ) )
 				     for mutAge in mutAges for mutPop in mutPops for mutFreq in mutFreqs )
 
-	if getio: return dict( depends_on = [ neutralParamsFile ] + scen2alternateNeutralParams.values(),
-			       creates = selectionParamsFiles.values() )
+	if getio: return dict( depends_on = [ neutralParamsFile ] + list(scen2alternateNeutralParams.values()),
+			       creates = list(selectionParamsFiles.values()) )
 
 	neutralParams = SlurpFile( neutralParamsFile )
 
@@ -90,7 +91,7 @@ def DefineRulesTo_CreateSimulationParams( pr, mutAges, mutPops, mutFreqs,
 
 	dbg( '"YYYYYYYYYYYYY" inputParamsFiles' )
 	if inputParamsFiles == None:
-		inputParamsFiles = [ Ddata + '/simParams' + befAft + suffix + '.txt' for befAft in 'Bef', 'Aft' ]
+		inputParamsFiles = [ Ddata + '/simParams' + befAft + suffix + '.txt' for befAft in ('Bef', 'Aft') ]
 	dbg( '"ZZZZZZZZZZZZZ" inputParamsFiles' )
 
 	pr.addInvokeRule( invokeFn = CreateSimsParams_neutral, invokeArgs = Dict( 'Ddata suffix inputParamsFiles' ) )
@@ -128,7 +129,7 @@ def DefineRulesTo_runSims( pr, mutAges, mutPops, mutFreqs, nreplicas,
 	for scen in GetScenarios( **Dict( 'mutAges mutPops mutFreqs includeNeutral' ) ):
 		if DdataSeeds: seeds = IDotData( os.path.join( DdataSeeds, 'replicastats', scen.scenDir(), 'simSeeds.tsv' ) )
 
-		for replicaNum, seedsLine in zip( range( nreplicas ), seeds if DdataSeeds else itertools.repeat( None, nreplicas ) ):
+		for replicaNum, seedsLine in zip( list(range( nreplicas)), seeds if DdataSeeds else itertools.repeat( None, nreplicas ) ):
 
 			assert not DdataSeeds or seedsLine.replicaNum == replicaNum
 			
@@ -165,8 +166,8 @@ def DefineRulesTo_runSims( pr, mutAges, mutPops, mutFreqs, nreplicas,
 					    ( [ useGenMapFile, useMutRateFile ] if DdataMimic else [] ),
 				    commands = ' '.join(('perl ../Operations/Ilya_Operations/sim/sfs/working/pardis2/' \
 								 'runOneSim.pl' + ( ' --coalSeed %ld --recombSeed %ld --useMutRate %s'
-										    % ( long( seedsLine.coalescentSeed ),
-											long( seedsLine.recombSeed ),
+										    % ( int( seedsLine.coalescentSeed ),
+											int( seedsLine.recombSeed ),
 											seedsLine.GetStrItem( 'mutRate' ) )
 										    if DdataSeeds else '' )
 							 + ( ' --useGenMap ' + useGenMap if useGenMap else '' )
@@ -197,24 +198,24 @@ def WriteSimulationInfo( Ddata, mutAges, mutPops, mutFreqs, nreplicas, suffix, i
 
 	cfgDir = Ddata + '/config' + suffix
 
-	if getio: return dict( depends_on = configFiles.keys() + list( inputParamsFiles ),
-			       creates = [ cfgDir + '/' + f + powerSfx + '.txt' for f in 'scenarios', 'sims', 'pops'  ]
-			       + configFiles.values() )
+	if getio: return dict( depends_on = list(configFiles.keys()) + list( inputParamsFiles ),
+			       creates = [ cfgDir + '/' + f + powerSfx + '.txt' for f in ('scenarios', 'sims', 'pops')  ]
+			       + list(configFiles.values()) )
 
-	neutralParams = reduce( concat, map( SlurpFile, inputParamsFiles ), '' )
+	neutralParams = reduce( concat, list(map( SlurpFile, inputParamsFiles )), '' )
 
 	# Check that the list of pops defined in the param file matches the list of pops we are analyzing
 	assert sorted( [ int( s.split()[1] ) for s in neutralParams.split( '\n' ) if s.startswith( 'pop_define' ) ] ) \
 	    == sorted( mutPops )
 
-	assert set( map( int, pop2name.keys() ) ) == set( mutPops )
+	assert set( map( int, list(pop2name.keys()) ) ) == set( mutPops )
 
 	DumpFile( cfgDir + '/scenarios%s.txt' % powerSfx, '\n'.join( scen.scenDir()
 							      for scen in GetScenarios( mutAges, mutPops, mutFreqs ) ) )
 	DumpFile( cfgDir + '/sims%s.txt' % powerSfx, '%d\n%d' % (0, nreplicas-1) )
 	DumpFile( cfgDir + '/pops%s.txt' % powerSfx , '\n'.join( '%s\t%d' % ( popName, popNum )
-						   for popNum, popName in pop2name.items() ) )
-	for fromFile, toFile in configFiles.items():
+						   for popNum, popName in list(pop2name.items()) ) )
+	for fromFile, toFile in list(configFiles.items()):
 		copyfile( fromFile, toFile )
         
 #if __name__ == '__main__':
