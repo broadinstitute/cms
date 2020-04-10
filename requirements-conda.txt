@@ -42,3 +42,4 @@ future==0.16.0
 pysam=0.15.0
 pybedtools=0.7.10
 PyYAML=5.1
+cosi2=2.3.0rc4
