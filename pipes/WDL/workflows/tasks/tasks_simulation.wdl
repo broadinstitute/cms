@@ -5,6 +5,7 @@ task cosi2_run_one_sim {
     File         paramFile
     File         recombFile
     String       simId
+    Int          maxAttempts = 10000000
     String       cms_docker = "quay.io/ilya_broad/cms"
   }
 
@@ -12,7 +13,7 @@ task cosi2_run_one_sim {
     
     grep -v "recomb_file" "${paramFile}" > ${paramFile}.fixed.par
     echo "recomb_file ${recombFile}" >> ${paramFile}.fixed.par
-    env COSI_NEWSIM=1 COSI_MAXATTEMPTS=1000000 coalescent -p ${paramFile}.fixed.par --genmapRandomRegions --drop-singletons .25 --output-gen-map --tped "${simId}.tped"
+    env COSI_NEWSIM=1 COSI_MAXATTEMPTS=${maxAttempts} coalescent -p ${paramFile}.fixed.par --genmapRandomRegions --drop-singletons .25 --output-gen-map --tped "${simId}.tped"
   }
 
   output {
