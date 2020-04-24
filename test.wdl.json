@@ -1,0 +1,12 @@
+{
+  "run_sims.nreps": 1,
+  "run_sims.paramFiles": ["test.cosiParams"],
+    "run_sims.recombFile": "test_recom.recom",
+    "run_sims.cms_docker": "quay.io/ilya_broad/cms-dev:2.0.1-13-ge9837df-is-cms2-new"
+}
+
+
+
+
+
+
