@@ -601,7 +601,7 @@ def execute_hapviz(args):
 	########################
 	## SORT BY SIMILARITY ##
 	########################
-	if args.corepos is not -1:
+	if args.corepos != -1:
 		hap = hapSort_coreallele(haplotypes, coreindex)
 	else:
 		hap = hapSort(haplotypes) 
